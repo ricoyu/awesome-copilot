@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.loserico</groupId>
+    <groupId>com.copilot</groupId>
     <artifactId>awesome-copilot</artifactId>
     <packaging>pom</packaging>
     <version>17.0.1</version>
@@ -11,6 +11,7 @@
 
     <modules>
         <module>commons-lang</module>
+        <module>commons-spring</module>
     </modules>
 
     <properties>
@@ -458,11 +459,6 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk7</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-hibernate6</artifactId>
                 <version>${jackson.version}</version>
                 <exclusions>
@@ -480,6 +476,11 @@
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-parameter-names</artifactId>
+                <version>2.9.10</version>
             </dependency>
 
             <dependency>

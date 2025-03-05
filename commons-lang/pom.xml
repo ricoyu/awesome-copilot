@@ -9,7 +9,7 @@
     <url>http://maven.apache.org</url>
 
     <parent>
-        <groupId>com.loserico</groupId>
+        <groupId>com.copilot</groupId>
         <artifactId>awesome-copilot</artifactId>
         <relativePath>../pom.xml</relativePath>
         <version>17.0.1</version>
