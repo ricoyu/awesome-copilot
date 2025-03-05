@@ -1,0 +1,91 @@
+package com.copilot.common.lang.utils;
+
+import lombok.Data;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+/**
+ * <p>
+ * Copyright: (C), 2020-10-13 10:55
+ * <p>
+ * <p>
+ * Company: Sexy Uncle Inc.
+ *
+ * @author Rico Yu ricoyu520@gmail.com
+ * @version 1.0
+ */
+public class ProtostuffUtilsTest {
+	
+	@Test
+	public void test() {
+		SimpleGrantedAuthority grantedAuthority = new SimpleGrantedAuthority("ROLE_USER");
+		
+		byte[] bytes = ProtostuffUtils.toBytes(grantedAuthority);
+		SimpleGrantedAuthority grantedAuthority1 = ProtostuffUtils.toObject(bytes, SimpleGrantedAuthority.class);
+		assertEquals(grantedAuthority.getAuthority(), "ROLE_USER");
+		
+		SimpleGrantedAuthority grantedAuthority2 = ProtostuffUtils.toObject(bytes, SimpleGrantedAuthority.class);
+		assertEquals(grantedAuthority.getAuthority(), grantedAuthority2.getAuthority());
+		
+		assertFalse(grantedAuthority1 == grantedAuthority2);
+	}
+	
+	static class SimpleGrantedAuthority  {
+		
+		private final String role;
+		
+		private List<Resources> resources = new ArrayList<>();
+		
+		public SimpleGrantedAuthority(String role) {
+			Assert.hasText(role, "A granted authority textual representation is required");
+			this.role = role;
+			resources.add(new Resources("rico"));
+		}
+		
+		public String getAuthority() {
+			return role;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			
+			if (obj instanceof SimpleGrantedAuthority) {
+				return role.equals(((SimpleGrantedAuthority) obj).role);
+			}
+			
+			return false;
+		}
+		
+		@Override
+		public int hashCode() {
+			return this.role.hashCode();
+		}
+		
+		@Override
+		public String toString() {
+			return this.role + resources;
+		}
+	}
+	
+	@Data
+	static class Resources {
+		
+		private String name;
+		
+		public Resources(String name) {
+			this.name = name;
+		}
+		
+		@Override
+		public String toString() {
+			return this.name;
+		}
+	}
+}
