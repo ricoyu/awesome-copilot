@@ -1,9 +1,9 @@
 package com.copilot.cache.concurrent;
 
-import com.loserico.cache.JedisUtils;
-import com.loserico.cache.exception.OperationNotSupportedException;
-import com.loserico.cache.listeners.MessageListener;
-import com.loserico.common.lang.concurrent.LoserThreadFactory;
+import com.copilot.cache.JedisUtils;
+import com.copilot.cache.exception.OperationNotSupportedException;
+import com.copilot.cache.listeners.MessageListener;
+import com.copilot.common.lang.concurrent.LoserThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPubSub;

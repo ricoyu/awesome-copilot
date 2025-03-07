@@ -1,0 +1,34 @@
+package com.copilot.cache;
+
+import com.copilot.cache.concurrent.Lock;
+import org.junit.Test;
+
+/**
+ * <p>
+ * Copyright: (C), 2020/4/1 9:22
+ * <p>
+ * <p>
+ * Company: Sexy Uncle Inc.
+ *
+ * @author Rico Yu ricoyu520@gmail.com
+ * @version 1.0
+ */
+public class JedisLockTest {
+	
+	@Test
+	public void testBlockingLock() {
+		Lock lock = JedisUtils.blockingLock("lock001");
+		lock.lock();
+		System.out.println("...do some work");
+		lock.unlock();
+	}
+	
+	@Test
+	public void testnonBlockingLock() {
+		Lock lock = JedisUtils.nonBlockingLock("lock002");
+		lock.lock();
+		if (lock.locked()) {
+			System.out.println("加锁成功shijian");
+		}
+	}
+}

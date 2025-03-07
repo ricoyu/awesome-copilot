@@ -1,7 +1,7 @@
 package com.copilot.cache.factory;
 
-import com.loserico.cache.config.RedisProperties;
-import com.loserico.common.lang.resource.PropertyReader;
+import com.copilot.cache.config.RedisProperties;
+import com.copilot.common.lang.resource.PropertyReader;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import redis.clients.jedis.Jedis;

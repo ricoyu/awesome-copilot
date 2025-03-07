@@ -1,12 +1,12 @@
 package com.copilot.cache.factory;
 
-import com.loserico.cache.config.RedisProperties;
-import com.loserico.cache.operations.JedisClusterOperations;
-import com.loserico.cache.operations.JedisOperations;
-import com.loserico.cache.operations.JedisPoolOperations;
-import com.loserico.common.lang.resource.PropertyReader;
-import com.loserico.common.lang.resource.YamlOps;
-import com.loserico.common.lang.resource.YamlProfileReaders;
+import com.copilot.cache.config.RedisProperties;
+import com.copilot.cache.operations.JedisClusterOperations;
+import com.copilot.cache.operations.JedisOperations;
+import com.copilot.cache.operations.JedisPoolOperations;
+import com.copilot.common.lang.resource.PropertyReader;
+import com.copilot.common.lang.resource.YamlOps;
+import com.copilot.common.lang.resource.YamlProfileReaders;
 import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;

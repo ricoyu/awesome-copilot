@@ -1,9 +1,9 @@
 package com.copilot.cache.auth;
 
-import com.loserico.cache.JedisUtils;
-import com.loserico.common.lang.resource.PropertyReader;
-import com.loserico.common.lang.utils.StringUtils;
-import com.loserico.json.jackson.JacksonUtils;
+import com.copilot.cache.JedisUtils;
+import com.copilot.common.lang.resource.PropertyReader;
+import com.copilot.common.lang.utils.StringUtils;
+import com.copilot.json.jackson.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.loserico.json.jackson.JacksonUtils.toJson;
+import static com.copilot.json.jackson.JacksonUtils.toJson;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**

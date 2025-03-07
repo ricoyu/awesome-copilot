@@ -1,6 +1,6 @@
 package com.copilot.cache.operations;
 
-import com.loserico.json.jackson.JacksonUtils;
+import com.copilot.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.Jedis;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.loserico.cache.utils.ByteUtils.toBytes;
+import static com.copilot.cache.utils.ByteUtils.toBytes;
 import static java.util.stream.Collectors.*;
 
 /**

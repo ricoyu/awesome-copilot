@@ -1,7 +1,7 @@
 package com.copilot.cache.factory;
 
-import com.loserico.cache.config.RedisProperties;
-import com.loserico.common.lang.resource.PropertyReader;
+import com.copilot.cache.config.RedisProperties;
+import com.copilot.common.lang.resource.PropertyReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.ConnectionPoolConfig;

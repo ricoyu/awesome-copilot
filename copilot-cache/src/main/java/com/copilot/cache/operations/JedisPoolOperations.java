@@ -1,9 +1,9 @@
 package com.copilot.cache.operations;
 
-import com.loserico.cache.concurrent.ThreadPool;
-import com.loserico.cache.exception.JedisException;
-import com.loserico.cache.utils.ByteUtils;
-import com.loserico.json.jackson.JacksonUtils;
+import com.copilot.cache.concurrent.ThreadPool;
+import com.copilot.cache.exception.JedisException;
+import com.copilot.cache.utils.ByteUtils;
+import com.copilot.json.jackson.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.GeoCoordinate;

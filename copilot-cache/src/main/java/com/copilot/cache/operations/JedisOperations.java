@@ -1,6 +1,6 @@
 package com.copilot.cache.operations;
 
-import com.loserico.cache.exception.OperationNotSupportedException;
+import com.copilot.cache.exception.OperationNotSupportedException;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;

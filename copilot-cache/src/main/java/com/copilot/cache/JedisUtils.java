@@ -1,23 +1,25 @@
 package com.copilot.cache;
 
 
+import com.copilot.cache.collection.QueueListener;
+import com.copilot.cache.concurrent.BlockingLock;
+import com.copilot.cache.concurrent.Lock;
+import com.copilot.cache.concurrent.NonBlockingLock;
+import com.copilot.cache.exception.JedisValueOperationException;
+import com.copilot.cache.factory.JedisOperationFactory;
+import com.copilot.cache.listeners.MessageListener;
+import com.copilot.cache.operations.JedisClusterOperations;
+import com.copilot.cache.operations.JedisOperations;
+import com.copilot.cache.status.HSet;
+import com.copilot.cache.status.TTL;
+import com.copilot.cache.utils.ByteUtils;
+import com.copilot.cache.utils.KeyUtils;
+import com.copilot.cache.utils.UnMarshaller;
+import com.copilot.common.lang.concurrent.LoserThreadExecutor;
+import com.copilot.common.lang.utils.IOUtils;
+import com.copilot.common.lang.utils.PrimitiveUtils;
+import com.copilot.json.jackson.JacksonUtils;
 import com.fasterxml.jackson.databind.JavaType;
-import com.loserico.cache.collection.QueueListener;
-import com.loserico.cache.concurrent.BlockingLock;
-import com.loserico.cache.concurrent.Lock;
-import com.loserico.cache.concurrent.NonBlockingLock;
-import com.loserico.cache.exception.JedisValueOperationException;
-import com.loserico.cache.factory.JedisOperationFactory;
-import com.loserico.cache.listeners.MessageListener;
-import com.loserico.cache.operations.JedisClusterOperations;
-import com.loserico.cache.operations.JedisOperations;
-import com.loserico.cache.status.HSet;
-import com.loserico.cache.status.TTL;
-import com.loserico.cache.utils.UnMarshaller;
-import com.loserico.common.lang.concurrent.LoserThreadExecutor;
-import com.loserico.common.lang.utils.IOUtils;
-import com.loserico.common.lang.utils.PrimitiveUtils;
-import com.loserico.json.jackson.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.GeoCoordinate;
@@ -47,14 +49,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.loserico.cache.status.HSet.INSERTED;
-import static com.loserico.cache.status.HSet.UPDATED;
-import static com.loserico.cache.utils.ByteUtils.toBytes;
-import static com.loserico.cache.utils.KeyUtils.joinKey;
-import static com.loserico.cache.utils.UnMarshaller.toLong;
-import static com.loserico.cache.utils.UnMarshaller.toObject;
-import static com.loserico.cache.utils.UnMarshaller.toSeconds;
-import static com.loserico.json.jackson.JacksonUtils.toJson;
+import static com.copilot.cache.status.HSet.INSERTED;
+import static com.copilot.cache.utils.ByteUtils.toBytes;
+import static com.copilot.cache.utils.KeyUtils.joinKey;
+import static com.copilot.cache.utils.UnMarshaller.toLong;
+import static com.copilot.cache.utils.UnMarshaller.toSeconds;
+import static com.copilot.json.jackson.JacksonUtils.toJson;
+import static com.copilot.json.jackson.JacksonUtils.toList;
+import static com.copilot.json.jackson.JacksonUtils.toObject;
 import static java.lang.String.join;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -493,7 +495,7 @@ public final class JedisUtils {
 	
 	public static <T> List<T> getList(byte[] key, Class<T> clazz) {
 		byte[] value = jedisOperations.get(key);
-		return toList(value, clazz);
+		return UnMarshaller.toList(value, clazz);
 	}
 	
 	/**
@@ -1096,7 +1098,7 @@ public final class JedisUtils {
 			
 			return values.stream()
 					.map(json -> JacksonUtils.toObject(json, clazz))
-					.collect(toList());
+					.collect(Collectors.toList());
 		}
 		
 		/**
@@ -1639,7 +1641,7 @@ public final class JedisUtils {
 					field,
 					value,
 					toBytes(ttl));
-			return result.intValue() == 0 ? UPDATED : INSERTED;
+			return result.intValue() == 0 ? HSet.UPDATED : INSERTED;
 		}
 		
 		/**
@@ -1787,7 +1789,7 @@ public final class JedisUtils {
 				return null;
 			}
 			byte[] data = jedisOperations.hget(toBytes(key), toBytes(field));
-			return toList(data, clazz);
+			return UnMarshaller.toList(data, clazz);
 		}
 		
 		/**
@@ -1888,7 +1890,7 @@ public final class JedisUtils {
 			List<String> values = jedisOperations.hvals(key);
 			return values.stream()
 					.map((value) -> JacksonUtils.toObject(value, clazz))
-					.collect(toList());
+					.collect(Collectors.toList());
 		}
 		
 		/**
@@ -2158,7 +2160,7 @@ public final class JedisUtils {
 					toBytes(zsetKey),
 					toBytes("expiredFields"));
 			String json = UnMarshaller.toString(bytes);
-			return JacksonUtils.toList(json, String.class);
+			return toList(json, String.class);
 		}
 		
 		/**

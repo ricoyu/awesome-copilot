@@ -1,6 +1,6 @@
 package com.copilot.cache.factory;
 
-import com.loserico.common.lang.resource.PropertyReader;
+import com.copilot.common.lang.resource.PropertyReader;
 
 /**
  * Jedis连接池工厂类的工厂类

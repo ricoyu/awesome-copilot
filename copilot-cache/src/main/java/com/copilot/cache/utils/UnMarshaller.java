@@ -1,7 +1,7 @@
 package com.copilot.cache.utils;
 
-import com.loserico.common.lang.utils.PrimitiveUtils;
-import com.loserico.json.jackson.JacksonUtils;
+import com.copilot.common.lang.utils.PrimitiveUtils;
+import com.copilot.json.jackson.JacksonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +55,7 @@ public class UnMarshaller {
 		if (data == null || data.length == 0) {
 			return null;
 		}
-		return new Long(new String(data, UTF_8));
+		return Long.parseLong(new String(data, UTF_8));
 	}
 
 	public static int toSeconds(int time, TimeUnit timeUnit) {

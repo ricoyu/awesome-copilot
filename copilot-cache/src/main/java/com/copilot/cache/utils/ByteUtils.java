@@ -1,7 +1,7 @@
 package com.copilot.cache.utils;
 
-import com.loserico.common.lang.utils.PrimitiveUtils;
-import com.loserico.json.jackson.JacksonUtils;
+import com.copilot.common.lang.utils.PrimitiveUtils;
+import com.copilot.json.jackson.JacksonUtils;
 
 import java.math.BigDecimal;
 import java.util.Collection;
