@@ -22,7 +22,7 @@
         <jdk.version>17</jdk.version>
 
         <springframework.version>6.2.3</springframework.version>
-        <springsecurity.version>6.2.3</springsecurity.version>
+        <springsecurity.version>6.2.7</springsecurity.version>
 
         <hibernate.version>6.5.2.Final</hibernate.version>
 
