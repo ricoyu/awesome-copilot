@@ -1,52 +1,11 @@
 package com.copilot.orm.dao;
 
-import com.copilot.common.lang.vo.Page;
 import jakarta.persistence.Query;
 
 import java.util.List;
 import java.util.Map;
 
 public interface JPQLOperations {
-
-	/**
-	 * 命名JPQL/HQL查询, 不带参数
-	 * @param queryName
-	 * @param clazz
-	 * @return
-	 */
-	public <T> List<T> namedQuery(String queryName, Class<T> clazz);
-
-	/**
-	 * 命名JPQL/HQL查询
-	 * 
-	 * @param queryName
-	 * @param paramName
-	 * @param paramValue
-	 * @param clazz
-	 * @return
-	 */
-	public <T> List<T> namedQuery(String queryName, String paramName, Object paramValue, Class<T> clazz);
-
-	/**
-	 * 命名JPQL/HQL查询
-	 * 
-	 * @param queryName
-	 * @param params
-	 * @param clazz
-	 * @return
-	 */
-	public <T> List<T> namedQuery(String queryName, Map<String, Object> params, Class<T> clazz);
-
-	/**
-	 * 支持分页的命名JPQL/HQL查询，同时会自动调用queryName_count来获取总记录数
-	 * 
-	 * @param queryName
-	 * @param params
-	 * @param clazz
-	 * @param page
-	 * @return
-	 */
-	public <T> List<T> namedQuery(String queryName, Map<String, Object> params, Class<T> clazz, Page page);
 
 	public <T> List<T> find(String jpql, Class<T> clazz);
 	

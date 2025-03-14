@@ -57,7 +57,7 @@ public class PageDeserializer extends StdDeserializer<Page> {
 		}
 		
 		Page page = new Page();
-		page.setCurrentPage(currentPageNode.intValue());
+		page.setPageNum(currentPageNode.intValue());
 		page.setPageSize(pageSizeNode.intValue());
 		
 		JsonNode pagingIgnoreNode = pageNode.get("pagingIgnore");

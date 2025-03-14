@@ -24,13 +24,24 @@ public class Page implements Serializable {
 	/**
 	 * 当前第几页, 从1开始
 	 */
-	@JsonProperty("pageNum")
-	private int currentPage = 1;
+	private int pageNum = 1;
 
 	/**
 	 * 每页多少条记录
 	 */
 	private int pageSize = 10;
+
+	/**
+	 * 第一级排序, 如果只按一个字段排序，那么就用这个
+	 */
+	private OrderBean order;
+
+	/**
+	 * 如果提供了order，那么orders是第二第三...级排序
+	 * <p>
+	 * 如果需要先按A排序，相同的再按B排序，就可以用这个orders指定多个排序规则
+	 */
+	private List<OrderBean> orders = new ArrayList<>();
 
 	/**
 	 * 总共有多少页，通过查询结果返回给你显示用
@@ -46,31 +57,10 @@ public class Page implements Serializable {
 	private boolean autoCount = true;
 
 	/**
-	 * 还有没有下一页
-	 */
-	private boolean hasNextPage = false;
-
-	/**
-	 * 还有没有前一页
-	 */
-	private boolean hasPreviousPage = false;
-
-	/**
 	 * 对于某些接口，有些调用需要分页，有些不需要分页，如果不需要分页，传true就可以了
 	 */
 	private boolean pagingIgnore = false;
-	
-	/**
-	 * 第一级排序, 如果只按一个字段排序，那么就用这个
-	 */
-	private OrderBean order;
 
-	/**
-	 * 如果提供了order，那么orders是第二第三...级排序
-	 * <p>
-	 * 如果需要先按A排序，相同的再按B排序，就可以用这个orders指定多个排序规则
-	 */
-	private List<OrderBean> orders = new ArrayList<>();
 
 	/**
 	 * firstRowIndex begins from 0
@@ -79,7 +69,7 @@ public class Page implements Serializable {
 	 */
 	@JsonIgnore
 	public int getFirstResult() {
-		return (currentPage - 1) * pageSize;
+		return (pageNum - 1) * pageSize;
 	}
 
 	/**
@@ -92,16 +82,16 @@ public class Page implements Serializable {
 		return this.pageSize;
 	}
 
-	public int getCurrentPage() {
-		return currentPage;
+	public int getPageNum() {
+		return pageNum;
 	}
 	
 	/**
 	 * 页码从1开始
-	 * @param currentPage
+	 * @param pageNum
 	 */
-	public void setCurrentPage(int currentPage) {
-		this.currentPage = currentPage;
+	public void setPageNum(int pageNum) {
+		this.pageNum = pageNum;
 	}
 
 	public int getTotalCount() {
@@ -138,7 +128,7 @@ public class Page implements Serializable {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(currentPage, pageSize, totalPages, totalCount, hasNextPage, hasPreviousPage, order, orders);
+		return Objects.hash(pageNum, pageSize, totalPages, totalCount, order, orders);
 	}
 
 	/**
@@ -147,25 +137,6 @@ public class Page implements Serializable {
 	 */
 	private void updatePagingStatus() {
 		this.totalPages = (int) Math.ceil(this.totalCount / (double) this.pageSize);
-
-		// not record found or there is only one page
-		if (this.totalPages == 0 || this.totalPages == 1) {
-			this.hasNextPage = false;
-			this.hasPreviousPage = false;
-		} else {// more than one page
-			if (this.currentPage < this.totalPages) {
-				this.hasNextPage = true;
-			} else {
-				this.hasNextPage = false;
-			}
-
-			if (this.currentPage == 1) {
-				this.hasPreviousPage = false;
-			} else {
-				this.hasPreviousPage = true;
-			}
-		}
-
 	}
 	
 	@JsonIgnore
@@ -193,22 +164,6 @@ public class Page implements Serializable {
 		this.pageSize = pageSize;
 	}
 
-	public boolean isHasNextPage() {
-		return hasNextPage;
-	}
-
-	public void setHasNextPage(boolean hasNextPage) {
-		this.hasNextPage = hasNextPage;
-	}
-
-	public boolean isHasPreviousPage() {
-		return hasPreviousPage;
-	}
-
-	public void setHasPreviousPage(boolean hasPreviousPage) {
-		this.hasPreviousPage = hasPreviousPage;
-	}
-	
 	@JsonIgnore
 	public OrderBean getOrder() {
 		return order;

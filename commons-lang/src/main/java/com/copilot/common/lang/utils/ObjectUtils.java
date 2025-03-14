@@ -72,4 +72,48 @@ public final class ObjectUtils {
 
 		return obj1.equals(obj2);
 	}
+
+	/**
+	 * Return a hash code for the given object; typically the value of
+	 * {@code Object#hashCode()}}. If the object is an array,
+	 * this method will delegate to any of the {@code Arrays.hashCode}
+	 * methods. If the object is {@code null}, this method returns 0.
+	 * @see Object#hashCode()
+	 * @see Arrays
+	 */
+	public static int nullSafeHashCode(Object obj) {
+		if (obj == null) {
+			return 0;
+		}
+		if (obj.getClass().isArray()) {
+			if (obj instanceof Object[] objects) {
+				return Arrays.hashCode(objects);
+			}
+			if (obj instanceof boolean[] booleans) {
+				return Arrays.hashCode(booleans);
+			}
+			if (obj instanceof byte[] bytes) {
+				return Arrays.hashCode(bytes);
+			}
+			if (obj instanceof char[] chars) {
+				return Arrays.hashCode(chars);
+			}
+			if (obj instanceof double[] doubles) {
+				return Arrays.hashCode(doubles);
+			}
+			if (obj instanceof float[] floats) {
+				return Arrays.hashCode(floats);
+			}
+			if (obj instanceof int[] ints) {
+				return Arrays.hashCode(ints);
+			}
+			if (obj instanceof long[] longs) {
+				return Arrays.hashCode(longs);
+			}
+			if (obj instanceof short[] shorts) {
+				return Arrays.hashCode(shorts);
+			}
+		}
+		return obj.hashCode();
+	}
 }

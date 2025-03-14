@@ -15,14 +15,18 @@
         <module>copilot-json</module>
         <module>copilot-cache</module>
         <module>copilot-orm</module>
+        <module>copilot-codec</module>
+        <module>copilot-test</module>
+        <module>copilot-networking</module>
+        <module>copilot-workbook</module>
     </modules>
 
     <properties>
         <encoding>UTF-8</encoding>
         <jdk.version>17</jdk.version>
 
-        <springframework.version>6.2.3</springframework.version>
-        <springsecurity.version>6.2.7</springsecurity.version>
+        <springframework.version>6.1.5</springframework.version>
+        <springsecurity.version>6.2.3</springsecurity.version>
 
         <hibernate.version>6.5.2.Final</hibernate.version>
 
@@ -41,7 +45,6 @@
         <jedis.version>5.0.2</jedis.version>
 
         <elasticsearch.version>7.9.3</elasticsearch.version>
-        <redisson.version>3.11.5</redisson.version>
 
         <guava.version>29.0-jre</guava.version>
         <commons-lang3.version>3.4</commons-lang3.version>

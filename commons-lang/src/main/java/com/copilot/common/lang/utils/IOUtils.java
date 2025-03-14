@@ -86,6 +86,9 @@ import static org.apache.commons.lang3.StringUtils.join;
 public class IOUtils {
 	
 	private static final Logger log = LoggerFactory.getLogger(IOUtils.class);
+
+	public static final Charset GBK = Charset.forName("GBK");
+
 	/**
 	 * The Unix directory separator character.
 	 * 这个不要随便改, jar中的路径是以/分隔的
