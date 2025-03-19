@@ -15,7 +15,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import lombok.extern.slf4j.Slf4j;
-import net.minidev.json.JSONArray;
+import org.json.JSONArray;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ public final class JsonPathUtils {
             return false;
         }
         if (result instanceof JSONArray) {
-            return ((JSONArray) result).size() != 0;
+            return ((JSONArray) result).length() != 0;
         }
 
         return true;
@@ -302,7 +302,7 @@ public final class JsonPathUtils {
         }
         if (result instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) result;
-            if (jsonArray.size() == 0) {
+            if (jsonArray.length() == 0) {
                 return null;
             }
             return (T) jsonArray.get(0);

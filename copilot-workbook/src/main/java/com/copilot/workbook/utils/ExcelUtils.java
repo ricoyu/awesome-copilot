@@ -57,6 +57,9 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.poi.ss.usermodel.CellType.FORMULA;
+import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
+import static org.apache.poi.ss.usermodel.CellType.STRING;
 
 /**
  * 读写excel工具类
@@ -720,22 +723,22 @@ public class ExcelUtils {
 
 			// Set the cell data value
 			switch (oldCell.getCellType()) {
-				case Cell.CELL_TYPE_BLANK:
+				case BLANK:
 					newCell.setCellValue(oldCell.getStringCellValue());
 					break;
-				case Cell.CELL_TYPE_BOOLEAN:
+				case BOOLEAN:
 					newCell.setCellValue(oldCell.getBooleanCellValue());
 					break;
-				case Cell.CELL_TYPE_ERROR:
+				case ERROR:
 					newCell.setCellErrorValue(oldCell.getErrorCellValue());
 					break;
-				case Cell.CELL_TYPE_FORMULA:
+				case FORMULA:
 					newCell.setCellFormula(oldCell.getCellFormula());
 					break;
-				case Cell.CELL_TYPE_NUMERIC:
+				case NUMERIC:
 					newCell.setCellValue(oldCell.getNumericCellValue());
 					break;
-				case Cell.CELL_TYPE_STRING:
+				case STRING:
 					newCell.setCellValue(oldCell.getRichStringCellValue());
 					break;
 			}
@@ -850,7 +853,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.STRING) {
+				if (cell.getCellTypeEnum() == STRING) {
 					String cellValue = cell.getStringCellValue();
 					if ("\"\"".equals(cellValue)) {
 						return null;
@@ -862,7 +865,7 @@ public class ExcelUtils {
 					if (isNotBlank(cellValue)) {
 						return cellValue.trim();
 					}
-				} else if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				} else if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					return new BigDecimal(cell.getNumericCellValue()).toPlainString();
 				}
 			} catch (Exception e) {
@@ -875,7 +878,7 @@ public class ExcelUtils {
 	public static String stringVal(Cell cell) {
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.STRING) {
+				if (cell.getCellTypeEnum() == STRING) {
 					String cellValue = cell.getStringCellValue();
 					if ("\"\"".equals(cellValue)) {
 						return null;
@@ -887,7 +890,7 @@ public class ExcelUtils {
 					if (isNotBlank(cellValue)) {
 						return cellValue.trim();
 					}
-				} else if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				} else if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					return new BigDecimal(cell.getNumericCellValue()).toPlainString();
 				}
 			} catch (Exception e) {
@@ -901,7 +904,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.STRING) {
+				if (cell.getCellTypeEnum() == STRING) {
 					String dateStr = StringUtils.trimQuote(stringVal(row, cellIndex));
 					if (isBlank(dateStr)) {
 						return null;
@@ -921,7 +924,7 @@ public class ExcelUtils {
 		if (cell != null) {
 			try {
 				CellType cellTypeEnum = cell.getCellTypeEnum();
-				if (cellTypeEnum == CellType.STRING) {
+				if (cellTypeEnum == STRING) {
 					String dateStr = stringVal(row, cellIndex);
 					if (isBlank(dateStr)) {
 						return null;
@@ -940,7 +943,7 @@ public class ExcelUtils {
 				 * 遇到Excel某列值是如上, 获取到的CellType却是Numeric, 但是拿到的值是类似65333这样的
 				 * 所以现在改成先拿DateCellValue, 拿不到再走Numberic
 				 */
-				if (cellTypeEnum == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				if (cellTypeEnum == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					String dateStr = String.valueOf((long) cell.getNumericCellValue());
 					return DateUtils.toLocalDate(dateStr);
 				}
@@ -955,7 +958,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					return cell.getNumericCellValue();
 				}
 				String value = StringUtils.trimQuote(cell.getStringCellValue());
@@ -979,7 +982,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					return (long) cell.getNumericCellValue();
 				}
 				String value = StringUtils.trimQuote(cell.getStringCellValue());
@@ -998,7 +1001,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					return (int) cell.getNumericCellValue();
 				}
 				String value = StringUtils.trimQuote(cell.getStringCellValue());
@@ -1017,7 +1020,7 @@ public class ExcelUtils {
 		Cell cell = row.getCell(cellIndex);
 		if (cell != null) {
 			try {
-				if (cell.getCellTypeEnum() == CellType.NUMERIC || cell.getCellTypeEnum() == CellType.FORMULA) {
+				if (cell.getCellTypeEnum() == NUMERIC || cell.getCellTypeEnum() == FORMULA) {
 					double value = cell.getNumericCellValue();
 					return new BigDecimal(value);
 				}

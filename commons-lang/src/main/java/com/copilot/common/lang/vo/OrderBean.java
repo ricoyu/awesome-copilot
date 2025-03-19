@@ -31,9 +31,9 @@ public class OrderBean implements Serializable {
 	/**
 	 * 正序还是倒序
 	 */
-	private ORDER_BY direction = ORDER_BY.DESC;
+	private DIRECTION direction = DIRECTION.DESC;
 
-	public enum ORDER_BY {
+	public enum DIRECTION {
 		/**
 		 * 升序
 		 */

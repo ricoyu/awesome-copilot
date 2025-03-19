@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,7 +45,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
-
+ *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
@@ -75,13 +76,15 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	/**
 	 * 默认会根据CREATE_TIME倒序排
 	 */
-	private static final OrderBean DFAULT_ORDER = new OrderBean("CREATE_TIME", OrderBean.ORDER_BY.DESC);
+	private static final OrderBean DFAULT_ORDER = new OrderBean("CREATE_TIME", OrderBean.DIRECTION.DESC);
 
 	private static final ConcurrentMap<String, ArrayTypes> ARRAY_TYPE_MAP = new ConcurrentHashMap<>();
 
 	private String sqlOrQueryName;
 
 	private Map<String, Object> params = new HashMap<>();
+
+	private List<OrderBean> orders = new ArrayList<>();
 
 	private boolean logicalDelete;
 
@@ -90,8 +93,6 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	private Page page;
 
 	private Class resultClass;
-
-	private Class primitiveClass;
 
 	protected final EntityManager entityManager;
 
@@ -156,16 +157,11 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		this.logicalDeleteField = logicalDeleteField;
 	}
 
-	public NativeSqlQueryBuilder(EntityManager entityManager,  EntityManagerFactory entityManagerFactory, String logicalDeleteField) {
+	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
+	                             String logicalDeleteField) {
 		this.entityManager = entityManager;
 		this.entityManagerFactory = entityManagerFactory;
 		this.logicalDeleteField = logicalDeleteField;
-	}
-
-	@Override
-	public SqlQueryBuilder setSql(String sqlOrQueryName) {
-		this.sqlOrQueryName = sqlOrQueryName;
-		return this;
 	}
 
 	@Override
@@ -186,6 +182,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	@Override
 	public SqlQueryBuilder page(Page page) {
 		this.page = page;
+		if (page.getOrder() != null) {
+			orders.add(page.getOrder());
+		}
+		if (!page.getOrders().isEmpty()) {
+			orders.addAll(page.getOrders());
+		}
 		return this;
 	}
 
@@ -199,20 +201,21 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	}
 
 	@Override
+	public SqlQueryBuilder order(OrderBean order) {
+		orders.add(order);
+		return this;
+	}
+
+	@Override
+	public SqlQueryBuilder order(String orderBy, OrderBean.DIRECTION direction) {
+		OrderBean order = new OrderBean(orderBy, direction);
+		orders.add(order);
+		return this;
+	}
+
+	@Override
 	public <T> SqlQueryBuilder resultClass(Class<T> resultClass) {
 		this.resultClass = resultClass;
-		return this;
-	}
-
-	@Override
-	public <T> SqlQueryBuilder primitiveClass(Class<T> primitiveClass) {
-		this.primitiveClass = primitiveClass;
-		return this;
-	}
-
-	@Override
-	public SqlQueryBuilder logicalDelete(boolean logicalDelete) {
-		this.logicalDelete = logicalDelete;
 		return this;
 	}
 
@@ -229,7 +232,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
-
+		addOrder(queryString);
 
 		//建立context， 并放入数据
 		VelocityContext context = new VelocityContext();
@@ -254,11 +257,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		Class clazz = null;
 		if (this.resultClass != null) {
 			clazz = this.resultClass;
-		} else {
-			clazz = primitiveClass;
 		}
-		if (clazz!= null) {
-			query.setResultTransformer(ResultTransformerFactory.getResultTransformer(HashUtils.sha256(parsedSQL), clazz,
+		if (clazz != null) {
+			query.setResultTransformer(ResultTransformerFactory.getResultTransformer(HashUtils.sha256(parsedSQL),
+					clazz,
 					hibernateQueryMode,
 					enumLookupProperties));
 		}
@@ -368,11 +370,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		Class clazz = null;
 		if (this.resultClass != null) {
 			clazz = this.resultClass;
-		} else {
-			clazz = this.primitiveClass;
 		}
-		if (clazz!= null) {
-			query.setResultTransformer(ResultTransformerFactory.getResultTransformer(HashUtils.sha256(parsedSQL), clazz,
+		if (clazz != null) {
+			query.setResultTransformer(ResultTransformerFactory.getResultTransformer(HashUtils.sha256(parsedSQL),
+					clazz,
 					hibernateQueryMode,
 					enumLookupProperties));
 		}
@@ -441,6 +442,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 	@Override
 	public <T> T findOne() {
+		List<Object> results = findList();
+		if (!results.isEmpty()) {
+			return (T) results.get(0);
+		}
 		return null;
 	}
 
@@ -553,5 +558,34 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			default:
 				break;
 		}
+	}
+
+	private void addOrder(StringBuilder queryString) {
+		if (!this.orders.isEmpty()) { //2,3候选排序
+			queryString.append(" ORDER BY ");
+
+			for (OrderBean orderBean : this.orders) {
+				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
+			}
+		}
+		if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
+			queryString.delete(queryString.length() - 2, queryString.length());
+		}
+	}
+
+	private String addOrder(String sql) {
+		StringBuilder queryString = new StringBuilder(sql);
+		if (!this.orders.isEmpty()) { //2,3候选排序
+			queryString.append(" ORDER BY ");
+
+			for (OrderBean orderBean : this.orders) {
+				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
+			}
+		}
+		if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
+			queryString.delete(queryString.length() - 2, queryString.length());
+		}
+
+		return queryString.toString();
 	}
 }

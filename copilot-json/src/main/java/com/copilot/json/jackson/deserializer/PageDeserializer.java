@@ -3,7 +3,7 @@ package com.copilot.json.jackson.deserializer;
 import com.copilot.common.lang.utils.EnumUtils;
 import com.copilot.common.lang.utils.StringUtils;
 import com.copilot.common.lang.vo.OrderBean;
-import com.copilot.common.lang.vo.OrderBean.ORDER_BY;
+import com.copilot.common.lang.vo.OrderBean.DIRECTION;
 import com.copilot.common.lang.vo.Page;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -90,7 +90,7 @@ public class PageDeserializer extends StdDeserializer<Page> {
 				direction = directionNode.textValue();
 			}
 			
-			OrderBean order = new OrderBean(orderBy, (ORDER_BY) EnumUtils.lookupEnum(ORDER_BY.class, direction));
+			OrderBean order = new OrderBean(orderBy, (DIRECTION) EnumUtils.lookupEnum(DIRECTION.class, direction));
 			page.setOrder(order);
 			page.getOrders().add(order);
 			
@@ -130,7 +130,7 @@ public class PageDeserializer extends StdDeserializer<Page> {
 			direction = "ASC";
 		}
 		
-		OrderBean order = new OrderBean(orderBy, (ORDER_BY) EnumUtils.lookupEnum(ORDER_BY.class, direction));
+		OrderBean order = new OrderBean(orderBy, (DIRECTION) EnumUtils.lookupEnum(DIRECTION.class, direction));
 		page.getOrders().add(order);
 	}
 }

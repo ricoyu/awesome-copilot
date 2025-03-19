@@ -7,11 +7,11 @@ public final class Orders {
 	}
 
 	public static OrderBean asc(String propertyName) {
-		return new OrderBean(propertyName, OrderBean.ORDER_BY.ASC);
+		return new OrderBean(propertyName, OrderBean.DIRECTION.ASC);
 	}
 
 	public static OrderBean desc(String propertyName) {
-		return new OrderBean(propertyName, OrderBean.ORDER_BY.DESC);
+		return new OrderBean(propertyName, OrderBean.DIRECTION.DESC);
 	}
 
 }

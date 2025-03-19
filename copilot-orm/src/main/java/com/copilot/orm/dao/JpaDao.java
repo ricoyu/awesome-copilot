@@ -127,7 +127,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	/**
 	 * 默认会根据CREATE_TIME倒序排
 	 */
-	private OrderBean order = new OrderBean("CREATE_TIME", OrderBean.ORDER_BY.DESC);
+	private OrderBean order = new OrderBean("CREATE_TIME", OrderBean.DIRECTION.DESC);
 
 	/**
 	 * 配置JpaDao的时候指定context-className
@@ -161,9 +161,10 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		properties.setProperty("userdirective",
 				"com.copilot.orm.directive.IfNotNull," +
 						"com.copilot.orm.directive.IfNull," +
-						"com.copilot.orm.directive.Count," +
 						"com.copilot.orm.directive.Between," +
-						"com.copilot.orm.directive.OmitForCount," +
+						"com.copilot.orm.directive.LLike," +
+						"com.copilot.orm.directive.RLike," +
+						"com.copilot.orm.directive.Like," +
 						"com.copilot.orm.directive.IfPresent");
 		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
 				".Log4JLogChute");
@@ -465,7 +466,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	@Override
 	public SqlQueryBuilder query(String sqlOrQueryName) {
 		SqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager);
-		sqlQueryBuilder.setSql(sqlOrQueryName);
+		ReflectionUtils.setField("sqlOrQueryName", sqlQueryBuilder, sqlOrQueryName);
 		ReflectionUtils.setField("hibernateQueryMode", sqlQueryBuilder, hibernateQueryMode);
 		ReflectionUtils.setField("enumLookupProperties", sqlQueryBuilder, enumLookupProperties);
 		return sqlQueryBuilder;

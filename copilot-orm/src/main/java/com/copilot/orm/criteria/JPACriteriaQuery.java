@@ -1,7 +1,7 @@
 package com.copilot.orm.criteria;
 
 import com.copilot.common.lang.vo.OrderBean;
-import com.copilot.common.lang.vo.OrderBean.ORDER_BY;
+import com.copilot.common.lang.vo.OrderBean.DIRECTION;
 import com.copilot.common.lang.vo.Page;
 import com.copilot.orm.exception.JPACriteriaQueryException;
 import jakarta.persistence.EntityManager;
@@ -518,9 +518,9 @@ public class JPACriteriaQuery<T> implements Serializable {
 		if (this.orders == null)
 			this.orders = new ArrayList<Order>();
 
-		if (orderBean.getDirection() == ORDER_BY.ASC) {
+		if (orderBean.getDirection() == DIRECTION.ASC) {
 			this.orders.add(criteriaBuilder.asc(root.get(orderBean.getOrderBy())));
-		} else if (orderBean.getDirection() == ORDER_BY.DESC) {
+		} else if (orderBean.getDirection() == DIRECTION.DESC) {
 			this.orders.add(criteriaBuilder.desc(root.get(orderBean.getOrderBy())));
 		}
 	}

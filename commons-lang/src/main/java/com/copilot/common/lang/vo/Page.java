@@ -121,7 +121,7 @@ public class Page implements Serializable {
 		}
 	}
 	
-	public Page addOrder(String orderBy, OrderBean.ORDER_BY direction) {
+	public Page addOrder(String orderBy, OrderBean.DIRECTION direction) {
 		orders.add(new OrderBean(orderBy, direction));
 		return this;
 	}

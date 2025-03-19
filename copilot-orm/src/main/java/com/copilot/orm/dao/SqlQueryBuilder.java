@@ -1,5 +1,7 @@
 package com.copilot.orm.dao;
 
+import com.copilot.common.lang.vo.OrderBean;
+import com.copilot.common.lang.vo.OrderBean.DIRECTION;
 import com.copilot.common.lang.vo.Page;
 
 import java.util.List;
@@ -18,8 +20,6 @@ import java.util.Map;
  */
 public interface SqlQueryBuilder {
 
-	public SqlQueryBuilder setSql(String sqlOrQueryName);
-
 	public SqlQueryBuilder addParam(String paramName, Object paramValue);
 
 	public SqlQueryBuilder addParams(Map<String, Object> params);
@@ -27,6 +27,10 @@ public interface SqlQueryBuilder {
 	public SqlQueryBuilder page(Page page);
 
 	public SqlQueryBuilder page(int paggeNum, int pageSize);
+
+	public SqlQueryBuilder order(OrderBean order);
+
+	public SqlQueryBuilder order(String orderBy, DIRECTION direction);
 
 	/**
 	 * 将查到的每一行数据封装进这个class对应的对象中 <br/>
@@ -36,22 +40,6 @@ public interface SqlQueryBuilder {
 	 * @param <T>
 	 */
 	public <T> SqlQueryBuilder resultClass(Class<T> resultClass);
-
-	/**
-	 * 这种情况是只取某一列, 而不是整行记录
-	 * @param primitiveClass
-	 * @return
-	 * @param <T>
-	 */
-	public <T> SqlQueryBuilder primitiveClass(Class<T> primitiveClass);
-
-	/**
-	 * 是否考虑逻辑删除, 如果考虑, 逻辑删除的记录将不会被查询出来 <br/>
-	 * 如果不配置, 默认的逻辑删除条件是where deleted=0
-	 * @param logicalDelete 是否要添加逻辑删除的过滤条件
-	 * @return
-	 */
-	public SqlQueryBuilder logicalDelete(boolean logicalDelete);
 
 	/**
 	 * <ul>返回列表结果
