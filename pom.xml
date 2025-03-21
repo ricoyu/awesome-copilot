@@ -17,6 +17,7 @@
         <module>copilot-orm</module>
         <module>copilot-codec</module>
         <module>copilot-networking</module>
+        <module>copilot-search</module>
         <module>copilot-workbook</module>
         <module>copilot-test</module>
     </modules>

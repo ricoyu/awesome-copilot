@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                %black(%d{ISO8601}) %highlight(%-5level) [%blue(%t)] %yellow(%C{1.}[%L]): %msg%n%throwable
+            </pattern>
+        </layout>
+    </appender>
+    
+    <logger name="com.loserico.search" level="INFO"/>
+    
+    <logger name="com.loserico.networking.utils.HttpUtils" level="debug"/>
+    <logger name="com.loserico.search" level="debug"/>
+    <logger name="com.loserico.networking.builder.AbstractRequestBuilder" level="debug"/>
+    <logger name="com.loserico.networking.builder.JsonRequestBuilder" level="debug"/>
+    <logger name="com.loserico.networking.builder.FormRequestBuilder" level="debug"/>
+    <logger name="com.copilot.search.builder.query.BaseQueryBuilder" level="debug"/>
+    <logger name="com.copilot.search.builder.ElasticQueryBuilder" level="debug"/>
+    <logger name="com.copilot.search.builder.ElasticSuggestBuilder" level="debug"/>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
