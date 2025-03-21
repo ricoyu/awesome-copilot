@@ -13,6 +13,8 @@
         <module>commons-lang</module>
         <module>commons-spring</module>
         <module>copilot-json</module>
+        <module>copilot-web</module>
+        <module>copilot-validation</module>
         <module>copilot-cache</module>
         <module>copilot-orm</module>
         <module>copilot-codec</module>
