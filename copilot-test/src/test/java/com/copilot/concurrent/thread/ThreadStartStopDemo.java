@@ -20,7 +20,7 @@ public class ThreadStartStopDemo {
 	
 	@SneakyThrows
 	public static void main(String[] args) {
-		LoserThreadFactory threadFactory = new LoserThreadFactory("loser");
+		CopilotThreadFactory threadFactory = new CopilotThreadFactory("copilot");
 		Task task = new Task();
 		Thread thread = threadFactory.newThread(task);
 		thread.start();

@@ -1,6 +1,7 @@
 package com.copilot.aio;
 
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import org.assertj.core.api.Assertions;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -8,8 +9,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 /**
  * The Java Path interface is part of the Java NIO 2 update which Java NIO received in
@@ -50,10 +50,10 @@ public class PathTest {
 	public void testPathsGet() {
 		// Creating an absolute path is done by calling the Paths.get() factory
 		// method with the absolute file as parameter.
-		Path path = Paths.get("D:\\Loser\\loser-io\\test.txt");
+		Path path = Paths.get("D:\\copilot\\copilot-io\\test.txt");
 		// The first example creates a Java Path instance which points to the
-		// path (directory) D:\Loser
-		Path relativePath = Paths.get("D:\\", "Loser");
+		// path (directory) D:\copilot
+		Path relativePath = Paths.get("D:\\", "copilot");
 		System.out.println(relativePath.toString());
 
 		/*

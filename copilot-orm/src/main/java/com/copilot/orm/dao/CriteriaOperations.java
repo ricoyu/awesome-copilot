@@ -11,6 +11,14 @@ public interface CriteriaOperations {
 	/**
 	 * 根据属性查找，返回一个对象，如果找到多个，取第一个
 	 * @param entityClass 实体类
+	 * @return CriteriaQueryBuilder
+	 * @param entityClass
+	 */
+	public CriteriaQueryBuilder findBy(Class entityClass);
+
+	/**
+	 * 根据属性查找，返回一个对象，如果找到多个，取第一个
+	 * @param entityClass 实体类
 	 * @param propertyName 实体类属性名, 不是数据库字段名
 	 * @param value
 	 * @return
@@ -75,7 +83,16 @@ public interface CriteriaOperations {
 	 * @return T
 	 */
 	public <T> T ensureExists(Class<T> entityClass, String propertyName, Object value) throws EntityNotFoundException;
-	
+
+
+	/**
+	 * 根据属性值来删除
+	 * @param entityClass
+	 * @return CriteriaDeleteBuilder 删除生成器
+	 * @param entityClass
+	 */
+	public  CriteriaDeleteBuilder deleteBy(Class entityClass);
+
 	/**
 	 * 删除属性值在指定列表里面的所有对象
 	 * @param entityClass 实体类
@@ -84,6 +101,7 @@ public interface CriteriaOperations {
 	 * @return
 	 */
 	public <T> int deleteIn(Class<T> entityClass, String propertyName, Collection<?> value);
+
 
 	/**
 	 * 检查有对应entity是否存在, 不会真正把数据查询出来, 不存在返回false不会抛异常

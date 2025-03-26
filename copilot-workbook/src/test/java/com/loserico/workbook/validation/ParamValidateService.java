@@ -1,4 +1,4 @@
-package com.loserico.workbook.validation;
+package com.copilot.workbook.validation;
 
 import javax.validation.constraints.NotNull;
 

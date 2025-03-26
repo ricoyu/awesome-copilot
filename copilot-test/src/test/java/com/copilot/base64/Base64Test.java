@@ -109,7 +109,7 @@ public class Base64Test {
 
 		Base64.Decoder decoder = Base64.getMimeDecoder();
 		byte[] bytes = decoder.decode(encoded);
-		Files.write(Paths.get(System.getProperty("java.io.tmpdir"), "loser.png"), bytes, CREATE_NEW);
+		Files.write(Paths.get(System.getProperty("java.io.tmpdir"), "copilot.png"), bytes, CREATE_NEW);
 	}
 
 	/**

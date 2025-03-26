@@ -12,7 +12,7 @@ import java.text.MessageFormat;
  * User的专属地址，一个User可以有多个Address
  * 一个地址专属与某个人，某人可以有多个地址，删掉人的时候相应的地址也没有用了，所以要一起删除，参User的Cascade设置
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Jan 28, 2016
  * @version 2.0
  *

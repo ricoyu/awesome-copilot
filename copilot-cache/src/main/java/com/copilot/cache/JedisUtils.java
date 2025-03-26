@@ -12,10 +12,8 @@ import com.copilot.cache.operations.JedisClusterOperations;
 import com.copilot.cache.operations.JedisOperations;
 import com.copilot.cache.status.HSet;
 import com.copilot.cache.status.TTL;
-import com.copilot.cache.utils.ByteUtils;
-import com.copilot.cache.utils.KeyUtils;
 import com.copilot.cache.utils.UnMarshaller;
-import com.copilot.common.lang.concurrent.LoserThreadExecutor;
+import com.copilot.common.lang.concurrent.CopilotThreadExecutor;
 import com.copilot.common.lang.utils.IOUtils;
 import com.copilot.common.lang.utils.PrimitiveUtils;
 import com.copilot.json.jackson.JacksonUtils;
@@ -90,8 +88,8 @@ public final class JedisUtils {
 	
 	private static JedisOperations jedisOperations = JedisOperationFactory.create();
 	
-	private static final LoserThreadExecutor EXECUTOR =
-			new LoserThreadExecutor(Runtime.getRuntime().availableProcessors() + 1,
+	private static final CopilotThreadExecutor EXECUTOR =
+			new CopilotThreadExecutor(Runtime.getRuntime().availableProcessors() + 1,
 					500,
 					10, MINUTES);
 	
@@ -2885,7 +2883,7 @@ public final class JedisUtils {
 	/**
 	 * 阻塞非公平锁
 	 *
-	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "loser:nblk:%s:lock"
+	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "copilot:nblk:%s:lock"
 	 * @return
 	 */
 	public static Lock blockingLock(String key) {
@@ -2895,7 +2893,7 @@ public final class JedisUtils {
 	/**
 	 * 非阻塞非公平锁
 	 *
-	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "loser:nblk:%s:lock"
+	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "copilot:nblk:%s:lock"
 	 * @return
 	 */
 	public static Lock nonBlockingLock(String key) {

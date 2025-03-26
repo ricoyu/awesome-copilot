@@ -15,7 +15,7 @@ import java.time.LocalTime;
 import java.util.Date;
 
 /**
- * @author Loser
+ * @author Rico
  * @since May 29, 2016
  */
 public class ValueHandlerFactory {

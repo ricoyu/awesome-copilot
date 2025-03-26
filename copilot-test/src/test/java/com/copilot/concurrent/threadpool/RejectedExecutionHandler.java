@@ -2,5 +2,5 @@ package com.copilot.concurrent.threadpool;
 
 public interface RejectedExecutionHandler {
 	
-	void rejectedExecution(Runnable r, LoserThreadPoolExecutor executor);
+	void rejectedExecution(Runnable r, CopilotThreadPoolExecutor executor);
 }

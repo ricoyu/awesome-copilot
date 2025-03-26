@@ -6,7 +6,7 @@ import static java.util.concurrent.TimeUnit.*;
  * The following are the different command classes that encapsulate the above
  * classes and implement the Job interface.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 24, 2016
  * @version
  *

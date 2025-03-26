@@ -1,6 +1,6 @@
 package com.copilot.json.jsonpath.context;
 
-import com.copilot.json.jsonpath.mapper.LoserMappingProvider;
+import com.copilot.json.jsonpath.mapper.CopilotMappingProvider;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.EvaluationListener;
 import com.jayway.jsonpath.JsonPath;
@@ -113,7 +113,7 @@ public class JsonContext implements DocumentContext {
 
 	@Override
 	public <T> T read(String path, Type type) {
-		return ((LoserMappingProvider)configuration.mappingProvider()).map(read(path), type, configuration);
+		return ((CopilotMappingProvider)configuration.mappingProvider()).map(read(path), type, configuration);
 	}
 	
     @Override

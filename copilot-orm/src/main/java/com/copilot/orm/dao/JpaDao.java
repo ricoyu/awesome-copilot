@@ -11,7 +11,7 @@ import com.copilot.orm.exception.RawSQLQueryException;
 import com.copilot.orm.exception.SQLQueryException;
 import com.copilot.orm.transformer.ResultTransformerFactory;
 import com.copilot.orm.utils.HashUtils;
-import com.copilot.orm.utils.JacksonUtils;
+import com.copilot.orm.utils.JsonUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
@@ -68,7 +68,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 /**
  * 基于JPA 2.1封装的通用DAO
  *
- * @author Loser
+ * @author Rico Yu
  * @since Mar 6, 2016
  */
 @Repository
@@ -184,7 +184,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		try {
 			em().persist(entity);
 		} catch (Throwable e) {
-			String msg = MessageFormat.format("Entity: {0}", JacksonUtils.toPrettyJson(entity));
+			String msg = MessageFormat.format("Entity: {0}", JsonUtils.toPrettyJson(entity));
 			log.error(msg, e);
 			throw new PersistenceException(e);
 		}
@@ -218,7 +218,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		try {
 			return em().merge(entity);
 		} catch (Throwable e) {
-			String msg = format("Entity: {0}", JacksonUtils.toPrettyJson(entity));
+			String msg = format("Entity: {0}", JsonUtils.toPrettyJson(entity));
 			log.error(msg, e);
 			throw new PersistenceException(e);
 		}
@@ -241,7 +241,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 			try {
 				results.add(em().merge(entity));
 			} catch (Throwable e) {
-				String msg = format("Entity: {0}", JacksonUtils.toPrettyJson(entity));
+				String msg = format("Entity: {0}", JsonUtils.toPrettyJson(entity));
 				log.error(msg, e);
 				throw new PersistenceException(e);
 			}
@@ -261,7 +261,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 			try {
 				return em().merge(entity);
 			} catch (Throwable e) {
-				String msg = format("Entity: {0}", JacksonUtils.toPrettyJson(entity));
+				String msg = format("Entity: {0}", JsonUtils.toPrettyJson(entity));
 				log.error(msg, e);
 				throw new PersistenceException(e);
 			}
@@ -473,6 +473,11 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	}
 
 	@Override
+	public  CriteriaQueryBuilder findBy(Class entityClass) {
+		return new CriteriaQueryBuilder(entityManager, entityClass);
+	}
+
+	@Override
 	public <T> T findOne(Class<T> entityClass, String propertyName, Object value) {
 		List<T> resultList = null;
 		JPACriteriaQuery<T> jpaCriteriaQuery =
@@ -603,6 +608,11 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 					entityClass.getSimpleName(), propertyName, value));
 		}
 		return entity;
+	}
+
+	@Override
+	public CriteriaDeleteBuilder deleteBy(Class entityClass) {
+		return new CriteriaDeleteBuilder(entityManager, entityClass);
 	}
 
 	@Override
@@ -796,7 +806,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		} catch (Throwable e) {
 			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}!",
 					sql,
-					JacksonUtils.toJson(params));
+					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
@@ -972,7 +982,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		} catch (Throwable e) {
 			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}!",
 					sql,
-					JacksonUtils.toJson(params));
+					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
@@ -1284,7 +1294,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 			return (List<T>) query.getResultList();
 		} catch (Throwable e) {
 			String msg = format("Execute raw SQL query[{0}] with parameter[{1}] failed!", queryString,
-					JacksonUtils.toJson(params));
+					JsonUtils.toJson(params));
 			throw new RawSQLQueryException(msg, e);
 		}
 	}

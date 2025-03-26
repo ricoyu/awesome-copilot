@@ -1,6 +1,6 @@
 package com.copilot.concurrent.copyOnWriteArrayList;
 
-import com.copilot.common.lang.concurrent.LoserExecutors;
+import com.copilot.common.lang.concurrent.CopilotExecutors;
 import com.copilot.common.lang.concurrent.Policy;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class CopyOnWriteArrayListTest {
 		list.add("2");
 		list.add("3");
 		
-		ThreadPoolExecutor executor = LoserExecutors.of("copy-on-write-arraylist-")
+		ThreadPoolExecutor executor = CopilotExecutors.of("copy-on-write-arraylist-")
 				.corePoolSize(2)
 				.maxPoolSize(100)
 				.keepAliveTime(60, SECONDS)

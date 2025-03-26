@@ -1,13 +1,13 @@
 package com.copilot.aio.files;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 /**
  * @of
@@ -16,7 +16,7 @@ import java.nio.file.Paths;
  * method.
  * @on
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 13, 2016
  * @version
  *

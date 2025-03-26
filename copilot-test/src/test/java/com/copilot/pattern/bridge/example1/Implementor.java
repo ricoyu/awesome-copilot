@@ -3,7 +3,7 @@ package com.copilot.pattern.bridge.example1;
 /**
  * 实现类接口
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Jul 6, 2016
  * @version
  *

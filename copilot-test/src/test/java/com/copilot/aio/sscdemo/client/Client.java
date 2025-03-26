@@ -1,12 +1,12 @@
 package com.copilot.aio.sscdemo.client;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.ExecutionException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * To put this into perspective, here is what happens when the client starts running.
@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 public class Client {
 	private final static int PORT = 9090;
 	private final static String HOST = "192.168.1.7";
-//	private final static String HOST = "architect7.loserico.com";
+//	private final static String HOST = "architect7.copilot.com";
 
 	/*
 	 * main() method first attempts to open an asynchronous socket channel and connect

@@ -5,7 +5,7 @@ package com.copilot.pattern.command2;
  * the different concrete classes whose instances will be executed by the different
  * command objects.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 24, 2016
  * @version
  *

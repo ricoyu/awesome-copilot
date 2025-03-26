@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * The good examples are the plethora of methods added to java.util.Collection
  * interface: stream(), parallelStream(), forEach(), removeIf(), . . .
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Jul 10, 2016
  * @version
  *

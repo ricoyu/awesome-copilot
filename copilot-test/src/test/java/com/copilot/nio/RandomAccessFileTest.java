@@ -20,7 +20,7 @@ public class RandomAccessFileTest {
 	@SneakyThrows
 	public static void main(String[] args) {
 		RandomAccessFile randomAccessFile =
-				new RandomAccessFile(Paths.get("D:\\Learning\\awesome-loser\\loser-tests\\src\\test\\resources\\suricata-simple.yaml").toFile(), "rw");
+				new RandomAccessFile(Paths.get("D:\\Learning\\awesome-copilot\\copilot-tests\\src\\test\\resources\\suricata-simple.yaml").toFile(), "rw");
 		String s1 = randomAccessFile.readLine();
 		System.out.println(s1 + "L" + randomAccessFile.getFilePointer());
 		randomAccessFile.writeUTF("ens-33");

@@ -10,7 +10,7 @@ import java.nio.file.Paths;
  * @of
  * In the following code shows how to use Files.newInputStream(Path path, OpenOption... options) method.
  * @on
- * @author Loser
+ * @author Rico Yu
  * @since Aug 13, 2016
  * @version
  *

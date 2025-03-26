@@ -8,13 +8,13 @@
         </layout>
     </appender>
     
-    <logger name="com.loserico.search" level="INFO"/>
+    <logger name="com.copilot.search" level="INFO"/>
     
-    <logger name="com.loserico.networking.utils.HttpUtils" level="debug"/>
-    <logger name="com.loserico.search" level="debug"/>
-    <logger name="com.loserico.networking.builder.AbstractRequestBuilder" level="debug"/>
-    <logger name="com.loserico.networking.builder.JsonRequestBuilder" level="debug"/>
-    <logger name="com.loserico.networking.builder.FormRequestBuilder" level="debug"/>
+    <logger name="com.copilot.networking.utils.HttpUtils" level="debug"/>
+    <logger name="com.copilot.search" level="debug"/>
+    <logger name="com.copilot.networking.builder.AbstractRequestBuilder" level="debug"/>
+    <logger name="com.copilot.networking.builder.JsonRequestBuilder" level="debug"/>
+    <logger name="com.copilot.networking.builder.FormRequestBuilder" level="debug"/>
     <logger name="com.copilot.search.builder.query.BaseQueryBuilder" level="debug"/>
     <logger name="com.copilot.search.builder.ElasticQueryBuilder" level="debug"/>
     <logger name="com.copilot.search.builder.ElasticSuggestBuilder" level="debug"/>

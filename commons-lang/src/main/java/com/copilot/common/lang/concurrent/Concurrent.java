@@ -44,7 +44,7 @@ public final class Concurrent {
 	 */
 	private static final int NCPUS = Runtime.getRuntime().availableProcessors();
 	
-	private static final ThreadFactory defaultThreadFactory = new LoserThreadFactory();
+	private static final ThreadFactory defaultThreadFactory = new CopilotThreadFactory();
 	
 	/**
 	 * IO 密集型线程池, 比如执行多个数据库查询操作 <p/>

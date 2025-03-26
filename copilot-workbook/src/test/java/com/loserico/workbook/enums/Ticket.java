@@ -1,4 +1,4 @@
-package com.loserico.workbook.enums;
+package com.copilot.workbook.enums;
 
 /**
  * <p>

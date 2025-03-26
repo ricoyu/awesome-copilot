@@ -8,7 +8,7 @@ package com.copilot.pattern.singleton;
  * 
  * 从「先行发生原则」的角度理解的话, 就是对于一个 volatile 变量的写操作都先行发生于后面对这个变量的读操作(这里的"后面"是时间上的先后顺序)。
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  * @on

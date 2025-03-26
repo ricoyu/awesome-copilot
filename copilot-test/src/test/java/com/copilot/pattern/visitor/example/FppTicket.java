@@ -2,7 +2,7 @@ package com.copilot.pattern.visitor.example;
 
 /**
  * 违规停车的罚单
- * @author Loser
+ * @author Rico Yu
  * @since Jul 5, 2016
  * @version 
  *

@@ -1,9 +1,9 @@
 package com.copilot.pattern.command2;
 
-import static java.util.concurrent.TimeUnit.*;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The below is the ThreadPool class used to create pool of threads and allow a
@@ -18,7 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * interrupting all the worker threads only when the job queue is empty. The addJob
  * method is used to add jobs to the queues.
  * 
- * @author Loser
+ * @author  Rico Yu
  * @since Aug 24, 2016
  * @version
  *

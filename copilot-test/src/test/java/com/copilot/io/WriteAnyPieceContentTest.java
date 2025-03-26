@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class WriteAnyPieceContentTest {
 	
 	public static void main(String[] args) {
-		//String content = IOUtils.readFileAsString("D:\\Learning\\awesome-loser\\loser-tests\\src\\test\\resources\\suricata.yaml");
+		//String content = IOUtils.readFileAsString("D:\\Learning\\awesome-copilot\\copilot-tests\\src\\test\\resources\\suricata.yaml");
 		//t1();
 		t3();
 		//t2();
@@ -95,7 +95,7 @@ public class WriteAnyPieceContentTest {
 	}
 	
 	private static void t1() {
-		String content = IOUtils.readFileAsString("D:\\Learning\\awesome-loser\\loser-tests\\src\\test\\resources\\test.yml");
+		String content = IOUtils.readFileAsString("D:\\Learning\\awesome-copilot\\copilot-tests\\src\\test\\resources\\test.yml");
 		String regex = ".*(request-body-limit:\\s{1}([0-9a-zA-Z]+)).*";
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(content);

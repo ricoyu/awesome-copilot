@@ -76,10 +76,10 @@ public class MatchQueryTest {
 	@Test
 	public void testPainLess2() {
 		Map<String, List<Object>> resultMap = ElasticUtils.Query.matchQuery("kibana_sample_data_ecommerce")
-				.scriptField("loser_field", "'rico_' + doc['email'].value")
+				.scriptField("copilot_field", "'rico_' + doc['email'].value")
 				.sort("email:asc")
 				.queryForScriptFields();
-		resultMap.get("loser_field").forEach(System.out::println);
+		resultMap.get("copilot_field").forEach(System.out::println);
 	}
 	
 	@Test

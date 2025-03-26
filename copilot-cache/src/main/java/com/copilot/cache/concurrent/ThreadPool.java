@@ -45,7 +45,7 @@ public final class ThreadPool {
 	static final long spinForTimeoutThreshold = 1000L;
 	
 	private static ThreadFactory threadFactory = new ThreadFactoryBuilder()
-			.setNameFormat("loser-cache-线程-%d")
+			.setNameFormat("copilot-cache-线程-%d")
 			.setDaemon(true)
 			.build();
 	

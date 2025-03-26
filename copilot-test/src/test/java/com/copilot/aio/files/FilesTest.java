@@ -64,7 +64,7 @@ public class FilesTest {
 		Path copyFrom = Paths.get("tutorial/Java/JavaFX", "tutor.txt");
 		Path copyTo = Paths.get("tutorial/Java/Swing", "tutor.txt");
 
-		IOUtils.write(copyFrom, "Rico is a loser!");
+		IOUtils.write(copyFrom, "Rico is a copilot!");
 		IOUtils.copy(copyFrom, copyTo, REPLACE_EXISTING);
 		IOUtils.deleteDirectory("tutorial");
 	}

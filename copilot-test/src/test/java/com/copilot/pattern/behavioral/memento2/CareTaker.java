@@ -1,10 +1,10 @@
 package com.copilot.pattern.behavioral.memento2;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class is the care taker class used to store and provide the requested
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  * the clearSavepoints method which is used to clear all the savepoints and it
  * deletes all the saved memento objects.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 18, 2016
  * @version
  *

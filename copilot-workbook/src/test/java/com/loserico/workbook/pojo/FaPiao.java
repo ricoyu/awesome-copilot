@@ -1,4 +1,4 @@
-package com.loserico.workbook.pojo;
+package com.copilot.workbook.pojo;
 
 import com.copilot.workbook.annotation.Col;
 import lombok.Data;

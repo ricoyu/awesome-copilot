@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 /**
  * BigDecimal转int型
- * @author Loser
+ * @author Rico
  * @since May 27, 2016
  * @version 
  *

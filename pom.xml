@@ -21,6 +21,9 @@
         <module>copilot-networking</module>
         <module>copilot-search</module>
         <module>copilot-workbook</module>
+        <module>copilot-netty</module>
+        <module>copilot-security</module>
+        <module>commons-cloud</module>
         <module>copilot-test</module>
     </modules>
 
@@ -69,8 +72,6 @@
         <el.version>2.2</el.version>
         <jstl.version>1.2</jstl.version>
         <servlet.version>4.0.1</servlet.version>
-        <javax.inject.version>1</javax.inject.version>
-        <javax.annotation-api.version>1.2</javax.annotation-api.version>
 
         <hibernate-validator.version>6.2.0.Final</hibernate-validator.version>
         <javax.validation-api.version>2.0.0.Final</javax.validation-api.version>

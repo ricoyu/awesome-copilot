@@ -1,6 +1,6 @@
 package com.copilot.sentinel;
 
-import com.copilot.common.lang.concurrent.LoserExecutors;
+import com.copilot.common.lang.concurrent.CopilotExecutors;
 import com.copilot.common.lang.utils.DateUtils;
 import com.copilot.networking.utils.HttpUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class SentinelTest {
 	 */
 	@Test
 	public void testRelateRule() {
-		ThreadPoolExecutor executor = LoserExecutors.of("order-pool")
+		ThreadPoolExecutor executor = CopilotExecutors.of("order-pool")
 				.corePoolSize(8)
 				.maxPoolSize(18)
 				.build();
@@ -59,7 +59,7 @@ public class SentinelTest {
 	
 	@Test
 	public void testWarmUp() {
-		ThreadPoolExecutor executor = LoserExecutors.of("order-pool")
+		ThreadPoolExecutor executor = CopilotExecutors.of("order-pool")
 				.corePoolSize(10)
 				.maxPoolSize(18)
 				.prestartAllCoreThreads()
@@ -151,7 +151,7 @@ public class SentinelTest {
 	
 	@Test
 	public void testDegrade() {
-		ThreadPoolExecutor executor = LoserExecutors.of("DEGRADE")
+		ThreadPoolExecutor executor = CopilotExecutors.of("DEGRADE")
 				.corePoolSize(5)
 				.prestartAllCoreThreads()
 				.build();
@@ -176,7 +176,7 @@ public class SentinelTest {
 	@Test
 	public void testExceptionCounter() {
 		CountDownLatch countDownLatch = new CountDownLatch(50);
-		ThreadPoolExecutor executor = LoserExecutors.of("rico")
+		ThreadPoolExecutor executor = CopilotExecutors.of("rico")
 				.corePoolSize(10)
 				.prestartAllCoreThreads()
 				.build();

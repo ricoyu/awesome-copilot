@@ -10,13 +10,12 @@ import com.copilot.orm.exception.SQLCountQueryException;
 import com.copilot.orm.exception.SQLQueryException;
 import com.copilot.orm.transformer.ResultTransformerFactory;
 import com.copilot.orm.utils.HashUtils;
-import com.copilot.orm.utils.JacksonUtils;
+import com.copilot.orm.utils.JsonUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.runtime.RuntimeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -28,7 +27,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -132,20 +130,6 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		ARRAY_TYPE_MAP.put(ArrayTypes.DOUBLE_WRAPPER.getClassName(), ArrayTypes.DOUBLE_WRAPPER);
 		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT.getClassName(), ArrayTypes.FLOAT);
 		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT_WRAPPER.getClassName(), ArrayTypes.FLOAT_WRAPPER);
-
-		Properties properties = new Properties();
-		properties.setProperty("userdirective",
-				"com.loserico.orm.directive.IfNotNull," +
-						"com.loserico.orm.directive.IfNull," +
-						"com.loserico.orm.directive.Count," +
-						"com.loserico.orm.directive.Between," +
-						"com.loserico.orm.directive.OmitForCount," +
-						"com.loserico.orm.directive.IfPresent");
-		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
-				".Log4JLogChute");
-		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
-		//初始化运行时引擎
-		Velocity.init(properties);
 	}
 
 	public NativeSqlQueryBuilder(EntityManager entityManager) {
@@ -289,7 +273,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		} catch (Throwable e) {
 			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}!",
 					sql,
-					JacksonUtils.toJson(params));
+					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
@@ -406,7 +390,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		} catch (Throwable e) {
 			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}!",
 					sql,
-					JacksonUtils.toJson(params));
+					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
@@ -432,7 +416,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				page.setTotalCount(totalRecords);
 			} catch (Throwable e) {
 				String msg = format("Failed to get result count from query[{0}] with parameters[{1}]!", countSql,
-						JacksonUtils.toJson(params));
+						JsonUtils.toJson(params));
 				throw new SQLCountQueryException(msg, e);
 			}
 		}

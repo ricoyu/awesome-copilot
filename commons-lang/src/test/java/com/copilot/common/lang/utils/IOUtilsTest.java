@@ -45,7 +45,7 @@ public class IOUtilsTest {
 	
 	@Test
 	public void testReadFromFileSystem() {
-		String content = readFileAsString("D:\\Learning\\awesome-loser\\commons-lang\\application.yml");
+		String content = readFileAsString("D:\\Learning\\awesome-copilot\\commons-lang\\application.yml");
 		System.out.println(content);
 	}
 	

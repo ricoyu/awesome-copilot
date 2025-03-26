@@ -3,7 +3,7 @@ package com.copilot.pattern.bridge.example1;
 /**
  * 扩充抽象类或细化抽象类（RefinedAbstraction）
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Jul 6, 2016
  * @version
  *

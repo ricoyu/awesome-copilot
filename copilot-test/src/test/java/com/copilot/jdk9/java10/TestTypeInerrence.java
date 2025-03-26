@@ -10,7 +10,7 @@ public class TestTypeInerrence {
 
     @Test
     public void test() {
-	    var person = new Person("Loser", 18);
+	    var person = new Person("copilot", 18);
         System.out.println(person.name);
         var now = new Date();
         System.out.println(now);

@@ -16,7 +16,7 @@ import java.io.Serializable;
  * The following example shows how you can protect your class from getting
  * instantiated more than once.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

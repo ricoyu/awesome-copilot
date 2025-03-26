@@ -68,7 +68,7 @@ public final class ExcelUnmarshaller {
 
 	private Validator validator;
 
-	private com.loserico.workbook.unmarshal.iterator.RowIterator<Row> iterator = null;
+	private com.copilot.workbook.unmarshal.iterator.RowIterator<Row> iterator = null;
 	
 	@SuppressWarnings("unchecked")
 	private ExcelUnmarshaller(Builder builder) {

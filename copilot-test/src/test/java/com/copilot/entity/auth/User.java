@@ -33,7 +33,7 @@ import java.util.Set;
 /**
  * 代表一个用户 一个用户可以有多个地址、多种角色
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Jan 28, 2016
  * @version
  *

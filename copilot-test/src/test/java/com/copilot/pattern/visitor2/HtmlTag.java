@@ -11,7 +11,7 @@ import java.util.List;
  * concrete classes will inherit and will override the accept method of the Element
  * interface.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

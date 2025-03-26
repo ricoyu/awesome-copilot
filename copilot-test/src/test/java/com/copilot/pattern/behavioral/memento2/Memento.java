@@ -5,7 +5,7 @@ package com.copilot.pattern.behavioral.memento2;
  * caretaker. The class does not have any setter methods, it is only used to get
  * the state of the object.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 18, 2016
  * @version
  *

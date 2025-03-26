@@ -41,7 +41,7 @@ public interface SQLOperations {
 	/**
 	 * 返回单个对象，不存在则返回null
 	 *
-	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的loser-orm对这块更新支持了
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
 	 * @param paramName
 	 * @param paramValue
 	 * @param clazz
@@ -52,7 +52,7 @@ public interface SQLOperations {
 	/**
 	 * 没有分页和参数的命名SQL查询, 结果封装进clazz代表的对象中
 	 *
-	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的loser-orm对这块更新支持了
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
 	 * @param clazz
 	 * @return List<T>
 	 */
@@ -61,7 +61,7 @@ public interface SQLOperations {
 	/**
 	 * 不带分页的命名SQL查询, 一个参数。
 	 *
-	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的loser-orm对这块更新支持了
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
 	 * @param paramName
 	 * @param paramValue
 	 * @param clazz
@@ -72,7 +72,7 @@ public interface SQLOperations {
 	/**
 	 * 不带分页的命名SQL查询
 	 *
-	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的loser-orm对这块更新支持了
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
 	 * @param params
 	 * @param clazz
 	 * @return List<T>

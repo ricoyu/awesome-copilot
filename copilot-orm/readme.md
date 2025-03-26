@@ -25,6 +25,12 @@
 </dependency>
 
 <dependency>
+    <groupId>jakarta.xml.bind</groupId>
+    <artifactId>jakarta.xml.bind-api</artifactId>
+    <version>4.0.0</version>
+</dependency>
+
+<dependency>
     <groupId>org.glassfish.jaxb</groupId>
     <artifactId>jaxb-runtime</artifactId>
     <version>4.0.5</version> <!-- 请根据你的需求选择合适的版本 -->

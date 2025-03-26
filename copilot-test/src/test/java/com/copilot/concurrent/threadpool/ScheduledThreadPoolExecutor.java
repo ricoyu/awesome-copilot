@@ -25,11 +25,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * A {@link LoserThreadPoolExecutor} that can additionally schedule
+ * A {@link CopilotThreadPoolExecutor} that can additionally schedule
  * commands to run after a given delay, or to execute
  * periodically. This class is preferable to {@link java.util.Timer}
  * when multiple worker threads are needed, or when the additional
- * flexibility or capabilities of {@link LoserThreadPoolExecutor} (which
+ * flexibility or capabilities of {@link CopilotThreadPoolExecutor} (which
  * this class extends) are required.
  *
  * <p>Delayed tasks execute no sooner than they are enabled, but
@@ -55,7 +55,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * those of subsequent ones.
  *
- * <p>While this class inherits from {@link LoserThreadPoolExecutor}, a few
+ * <p>While this class inherits from {@link CopilotThreadPoolExecutor}, a few
  * of the inherited tuning methods are not useful for it. In
  * particular, because it acts as a fixed-sized pool using
  * {@code corePoolSize} threads and an unbounded queue, adjustments
@@ -65,7 +65,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * without threads to handle tasks once they become eligible to run.
  *
  * <p><b>Extension notes:</b> This class overrides the
- * {@link LoserThreadPoolExecutor#execute(Runnable) execute} and
+ * {@link CopilotThreadPoolExecutor#execute(Runnable) execute} and
  * {@link AbstractExecutorService#submit(Runnable) submit}
  * methods to generate internal {@link ScheduledFuture} objects to
  * control per-task delays and scheduling.  To preserve
@@ -103,7 +103,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @author Doug Lea
  */
 public class ScheduledThreadPoolExecutor
-        extends LoserThreadPoolExecutor
+        extends CopilotThreadPoolExecutor
         implements ScheduledExecutorService {
 
     /*
@@ -608,7 +608,7 @@ public class ScheduledThreadPoolExecutor
      * {@link ScheduledFuture}, not the {@code command} itself.
      *
      * <p>A consequence of the use of {@code ScheduledFuture} objects is
-     * that {@link LoserThreadPoolExecutor#afterExecute afterExecute} is always
+     * that {@link CopilotThreadPoolExecutor#afterExecute afterExecute} is always
      * called with a null second {@code Throwable} argument, even if the
      * {@code command} terminated abruptly.  Instead, the {@code Throwable}
      * thrown by such a task can be obtained via {@link Future#get}.

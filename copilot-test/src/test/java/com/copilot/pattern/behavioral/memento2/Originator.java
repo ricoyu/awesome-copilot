@@ -7,7 +7,7 @@ package com.copilot.pattern.behavioral.memento2;
  * of a CareTaker. The CareTaker is used to save and retrieve the memento objects
  * which represent the state of the Originator object.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 18, 2016
  * @version
  *

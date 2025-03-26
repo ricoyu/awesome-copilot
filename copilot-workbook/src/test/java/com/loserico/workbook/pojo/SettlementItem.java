@@ -1,7 +1,7 @@
-package com.loserico.workbook.pojo;
+package com.copilot.workbook.pojo;
 
 import com.copilot.workbook.annotation.Col;
-import com.loserico.workbook.enums.Ticket;
+import com.copilot.workbook.enums.Ticket;
 import lombok.Data;
 import lombok.ToString;
 

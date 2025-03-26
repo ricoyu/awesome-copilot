@@ -1,10 +1,10 @@
-package com.loserico.workbook;
+package com.copilot.workbook;
 
 import com.copilot.common.lang.utils.IOUtils;
 import com.copilot.workbook.exception.ValidationException;
 import com.copilot.workbook.unmarshal.ExcelUnmarshaller;
-import com.loserico.workbook.pojo.FaPiao;
-import com.loserico.workbook.pojo.SettlementItem;
+import com.copilot.workbook.pojo.FaPiao;
+import com.copilot.workbook.pojo.SettlementItem;
 import org.junit.Test;
 
 import java.io.File;
@@ -28,7 +28,7 @@ public class ExcelUnmarshellTest {
 	
 	@Test
 	public void testUnmarshall11() throws Exception {
-		//		Class.forName("com.loserico.commons.utils.DateUtils");
+		//		Class.forName("com.copilot.commons.utils.DateUtils");
 		File file = IOUtils.readClasspathFileAsFile("excel/1005466.xlsx");
 		//		Workbook workbook = ExcelUtils.getWorkbook(IOUtils.readClasspathFileAsFile("excel/958395-one.csv"));
 		ExcelUnmarshaller unmarshaller = ExcelUnmarshaller.builder(file)

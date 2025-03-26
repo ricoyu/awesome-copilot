@@ -6,7 +6,7 @@ package com.copilot.pattern.visitor2;
  * This interface will be implemented by all the classes that need to allow visitors
  * to visit them.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

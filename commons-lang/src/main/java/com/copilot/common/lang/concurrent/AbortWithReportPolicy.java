@@ -79,7 +79,7 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 		} catch (Exception ex) {
 			log.error("RejectedPolicyWithReport rejectedExecution error", ex);
 		}
-		throw new RejectedExecutionException("Loser thread pool reached maximum pool size " + executor.getMaximumPoolSize() + ", so your task is rejected!");
+		throw new RejectedExecutionException("Copilot thread pool reached maximum pool size " + executor.getMaximumPoolSize() + ", so your task is rejected!");
 	}
 	
 	/**

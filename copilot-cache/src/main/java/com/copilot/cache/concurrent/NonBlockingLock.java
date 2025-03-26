@@ -3,7 +3,7 @@ package com.copilot.cache.concurrent;
 import com.copilot.cache.JedisUtils;
 import com.copilot.cache.exception.OperationNotSupportedException;
 import com.copilot.cache.utils.KeyUtils;
-import com.copilot.common.lang.concurrent.LoserThreadFactory;
+import com.copilot.common.lang.concurrent.CopilotThreadFactory;
 import com.copilot.common.lang.utils.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +44,12 @@ public class NonBlockingLock implements Lock{
 	/**
 	 * 锁的模板
 	 */
-	private static final String LOCK_FORMAT = "loser:nblk:%s:lock";
+	private static final String LOCK_FORMAT = "copilot:nblk:%s:lock";
 	
 	/**
 	 * 解锁channel模板
 	 */
-	private static final String NOTIFY_CHANNEL_FORMAT = "loser:blk:%s:lock:channel";
+	private static final String NOTIFY_CHANNEL_FORMAT = "copilot:blk:%s:lock:channel";
 	
 	/**
 	 * 解锁后在该channel上通知等待线程可以获取锁了
@@ -59,7 +59,7 @@ public class NonBlockingLock implements Lock{
 	/**
 	 * 这是commons-spring模块中的类
 	 */
-	private static final String TRANSACTION_EVENTS_CLASS_NAME = "com.loserico.common.spring.transaction.TransactionEvents";
+	private static final String TRANSACTION_EVENTS_CLASS_NAME = "com.copilot.common.spring.transaction.TransactionEvents";
 
 	private String key;
 
@@ -156,7 +156,7 @@ public class NonBlockingLock implements Lock{
 	 */
 	private void startWatchDog() {
 		if (watchDog == null) {
-			watchDog = new ScheduledThreadPoolExecutor(1, new LoserThreadFactory("Loser Cache key renewval watch dog"));
+			watchDog = new ScheduledThreadPoolExecutor(1, new CopilotThreadFactory("copilot Cache key renewval watch dog"));
 		}
 		watchDog.scheduleAtFixedRate(() -> {
 			//如果key已经过期了, 那么watchDog就不用再去刷新key过期时间了

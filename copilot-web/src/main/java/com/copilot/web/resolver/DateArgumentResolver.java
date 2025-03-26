@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 /**
  * 支持Controller方法参数各种日期格式绑定, 需要调用WebMvcConfigurer#addArgumentResolvers来添加
  * 
- * @author Loser
+ * @author Rico Yu
  * @since May 22, 2016
  * @version 
  *

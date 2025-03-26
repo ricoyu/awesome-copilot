@@ -5,7 +5,7 @@ package com.copilot.pattern.visitor2;
  * add a css class visitor to all html tags and the other one will change the width
  * of the tag using the style attribute of the html tag.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

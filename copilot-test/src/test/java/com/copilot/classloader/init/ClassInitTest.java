@@ -12,7 +12,7 @@ public class ClassInitTest {
 //		A a = new A();
 		Class.forName("com.copilot.classloader.init.A");
 //		System.out.println(Thread.currentThread().getContextClassLoader());
-//		Thread.currentThread().getContextClassLoader().loadClass("com.loserico.classloader.init.A");
+//		Thread.currentThread().getContextClassLoader().loadClass("com.copilot.classloader.init.A");
 		
 		A.getName();
 	}

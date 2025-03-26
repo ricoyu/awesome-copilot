@@ -6,7 +6,7 @@ package com.copilot.pattern.command2;
  * requested. For example, the SmsJob class is used to send sms, its run method
  * calls the sendSms method of the Sms object in order to get the job done.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 24, 2016
  * @version
  *

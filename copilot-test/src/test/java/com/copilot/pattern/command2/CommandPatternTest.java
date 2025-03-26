@@ -21,7 +21,7 @@ package com.copilot.pattern.command2;
  * kind of jobs without changing the existing classes. The leads to more
  * flexibility, and maintainability and also reduce the chances of bugs in the code.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 24, 2016
  * @version
  *

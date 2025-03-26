@@ -66,10 +66,10 @@ public class ObjectMapperDecorator {
 	 * jackson.epoch.date=false
 	 */
 	private static final PropertyReader propertyReader = new PropertyReader("jackson");
-	private static Set<String> enumProperties = propertyReader.getStringAsSet("loser.jackson.enum.propertes");
-	private static boolean epochBased = propertyReader.getBoolean("loser.jackson.epochBased", false);
-	private static boolean ignorePropertiesCase = propertyReader.getBoolean("loser.jackson.ignore_case", false);
-	private static boolean failOnUnknownProperties = propertyReader.getBoolean("loser.jackson.fail.on.unknown.properties", false);
+	private static Set<String> enumProperties = propertyReader.getStringAsSet("copilot.jackson.enum.propertes");
+	private static boolean epochBased = propertyReader.getBoolean("copilot.jackson.epochBased", false);
+	private static boolean ignorePropertiesCase = propertyReader.getBoolean("copilot.jackson.ignore_case", false);
+	private static boolean failOnUnknownProperties = propertyReader.getBoolean("copilot.jackson.fail.on.unknown.properties", false);
 	
 	public ObjectMapper decorate(ObjectMapper objectMapper) {
 		if (epochBased) {

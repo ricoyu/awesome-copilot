@@ -2,7 +2,7 @@ package com.copilot.pattern.flyweight.demo;
 
 /**
  * flyweight’s context 
- * @author Loser
+ * @author Rico Yu
  * @since Jul 1, 2016
  * @version 
  *

@@ -1,6 +1,6 @@
 package com.copilot.networking;
 
-import com.copilot.common.lang.concurrent.LoserExecutors;
+import com.copilot.common.lang.concurrent.CopilotExecutors;
 import com.copilot.common.lang.utils.IOUtils;
 import com.copilot.json.jackson.JacksonUtils;
 import com.copilot.json.jsonpath.JsonPathUtils;
@@ -392,7 +392,7 @@ public class HttpUtilsTest {
 	@Test
 	public void testHelloSentinel() {
 		CountDownLatch countDownLatch = new CountDownLatch(100);
-		ThreadPoolExecutor pool = LoserExecutors.of("sentinel-pool")
+		ThreadPoolExecutor pool = CopilotExecutors.of("sentinel-pool")
 				.corePoolSize(8)
 				.maxPoolSize(12)
 				.prestartAllCoreThreads()

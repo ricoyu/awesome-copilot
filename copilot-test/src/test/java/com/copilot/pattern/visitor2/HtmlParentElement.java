@@ -11,7 +11,7 @@ import java.util.List;
  * argument. This will allow the visitor method to get all the public members of the
  * object, to add new operations on it.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

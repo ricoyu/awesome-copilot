@@ -5,7 +5,7 @@ package com.copilot.pattern.command2;
  * is executed by a thread. Our command’s execute method is the run method which
  * will be used to execute by a thread in order to get the work done.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 24, 2016
  * @version
  *

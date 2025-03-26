@@ -7,7 +7,7 @@ package com.copilot.pattern.singleton;
  * 
  * 为什么在同步块内还要再检验一次？因为可能会有多个线程一起进入同步块外的if, 如果在同步块内不进行二次检验的话就会生成多个实例了。
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  * @on

@@ -42,7 +42,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * An implementation of {@link ReadWriteLock} supporting similar
- * semantics to {@link LoserReentrantLock}.
+ * semantics to {@link CopilotReentrantLock}.
  * <p>This class has the following properties:
  *
  * <ul>
@@ -89,7 +89,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * <li><b>Reentrancy</b>
  *
  * <p>This lock allows both readers and writers to reacquire read or
- * write locks in the style of a {@link LoserReentrantLock}. Non-reentrant
+ * write locks in the style of a {@link CopilotReentrantLock}. Non-reentrant
  * readers are not allowed until all write locks held by the writing
  * thread have been released.
  *
@@ -113,7 +113,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * <p>The write lock provides a {@link Condition} implementation that
  * behaves in the same way, with respect to the write lock, as the
  * {@link Condition} implementation provided by
- * {@link LoserReentrantLock#newCondition} does for {@link LoserReentrantLock}.
+ * {@link CopilotReentrantLock#newCondition} does for {@link CopilotReentrantLock}.
  * This {@link Condition} can, of course, only be used with the write lock.
  *
  * <p>The read lock does not support a {@link Condition} and
@@ -252,7 +252,7 @@ public class ReentrantReadWriteLock
      * Synchronization implementation for ReentrantReadWriteLock.
      * Subclassed into fair and nonfair versions.
      */
-    abstract static class Sync extends LoserAbstractQueuedSynchronizer {
+    abstract static class Sync extends CopilotAbstractQueuedSynchronizer {
         private static final long serialVersionUID = 6317671515068378041L;
 
         /*
@@ -1378,9 +1378,9 @@ public class ReentrantReadWriteLock
     public boolean hasWaiters(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof LoserAbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof CopilotAbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.hasWaiters((LoserAbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.hasWaiters((CopilotAbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -1401,9 +1401,9 @@ public class ReentrantReadWriteLock
     public int getWaitQueueLength(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof LoserAbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof CopilotAbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitQueueLength((LoserAbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitQueueLength((CopilotAbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**
@@ -1426,9 +1426,9 @@ public class ReentrantReadWriteLock
     protected Collection<Thread> getWaitingThreads(Condition condition) {
         if (condition == null)
             throw new NullPointerException();
-        if (!(condition instanceof LoserAbstractQueuedSynchronizer.ConditionObject))
+        if (!(condition instanceof CopilotAbstractQueuedSynchronizer.ConditionObject))
             throw new IllegalArgumentException("not owner");
-        return sync.getWaitingThreads((LoserAbstractQueuedSynchronizer.ConditionObject)condition);
+        return sync.getWaitingThreads((CopilotAbstractQueuedSynchronizer.ConditionObject)condition);
     }
 
     /**

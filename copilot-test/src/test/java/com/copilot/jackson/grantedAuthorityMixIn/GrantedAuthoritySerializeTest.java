@@ -47,7 +47,7 @@ public class GrantedAuthoritySerializeTest {
 		
 		System.out.println(mapper.writeValueAsString(sysUserDetails));
 		
-		//String json = "{\"userId\":\"1\",\"username\":\"ricoyu\",\"password\":\"123456\",\"nickname\":\"三少爷\",\"authorities\":[{\"@class\":\"com.loserico.jackson.grantedAuthorityMixIn.SimpleGrantedAuthority\",\"authority\":\"ADMIN\"},{\"@class\":\"com.loserico.jackson.grantedAuthorityMixIn.SimpleGrantedAuthority\",\"authority\":\"USER\"}],\"permissions\":[\"resource2\",\"resource1\"],\"accountNonExpired\":true,\"accountNonLocked\":true,\"credentialsNonExpired\":true,\"enabled\":true}";
+		//String json = "{\"userId\":\"1\",\"username\":\"ricoyu\",\"password\":\"123456\",\"nickname\":\"三少爷\",\"authorities\":[{\"@class\":\"com.copilot.jackson.grantedAuthorityMixIn.SimpleGrantedAuthority\",\"authority\":\"ADMIN\"},{\"@class\":\"com.copilot.jackson.grantedAuthorityMixIn.SimpleGrantedAuthority\",\"authority\":\"USER\"}],\"permissions\":[\"resource2\",\"resource1\"],\"accountNonExpired\":true,\"accountNonLocked\":true,\"credentialsNonExpired\":true,\"enabled\":true}";
 		String json = "{\"userId\":\"1\",\"username\":\"admin\",\"password\":null,\"nickname\":\"管理员\",\"authorities\":[{\"@class\":\"org.springframework.security.core.authority.SimpleGrantedAuthority\",\"authority\":\"admin\",\"role\":\"admin\"}],\"permissions\":[\"/secure/resource1\",\"/secure/resource2\"],\"accountNonExpired\":true,\"accountNonLocked\":true,\"credentialsNonExpired\":true,\"enabled\":true}";
 		SysUserDetails userDetails = mapper.readValue(json, SysUserDetails.class);
 		System.out.println(userDetails.getNickname());

@@ -32,11 +32,11 @@ public class JedisPoolFactory implements PoolFactory {
 		
 		//Redis host, 默认localhost
 		String host = propertyReader.getString("redis.host", "localhost");
-		String overrideHost = System.getProperty("LOSER_REDIS_HOST");
+		String overrideHost = System.getProperty("COPILOT_REDIS_HOST");
 		if (overrideHost != null && !overrideHost.isEmpty()) {
 			host = overrideHost;
 		} else {
-			overrideHost = System.getenv("LOSER_REDIS_HOST");
+			overrideHost = System.getenv("COPILOT_REDIS_HOST");
 			if (overrideHost != null && !overrideHost.isEmpty()) {
 				host = overrideHost;
 			}
@@ -44,11 +44,11 @@ public class JedisPoolFactory implements PoolFactory {
 		
 		//Redis port, 默认6379
 		int port = propertyReader.getInt("redis.port", 6379);
-		String overridePort = System.getProperty("LOSER_REDIS_PORT");
+		String overridePort = System.getProperty("COPILOT_REDIS_PORT");
 		if (overridePort != null && !overridePort.isEmpty()) {
 			port = Integer.parseInt(overridePort);
 		} else {
-			overridePort = System.getenv("LOSER_REDIS_PORT");
+			overridePort = System.getenv("COPILOT_REDIS_PORT");
 			if (overridePort != null && !overridePort.isEmpty()) {
 				port = Integer.parseInt(overridePort);
 			}
@@ -56,7 +56,7 @@ public class JedisPoolFactory implements PoolFactory {
 		
 		//Redis 密码, 默认没有密码
 		String password = propertyReader.getString("redis.password");
-		String overridePassword = System.getProperty("LOSER_REDIS_PASSWORD");
+		String overridePassword = System.getProperty("COPILOT_REDIS_PASSWORD");
 		if (overridePassword != null && !overridePassword.isEmpty()) {
 			password = overridePassword;
 		}
@@ -85,7 +85,7 @@ public class JedisPoolFactory implements PoolFactory {
 					socketTimeout,
 					password,
 					db,
-					"loser-cache",
+					"COPILOT-cache",
 					false,
 					null,
 					null,
@@ -99,7 +99,7 @@ public class JedisPoolFactory implements PoolFactory {
 					socketTimeout,
 					null,
 					db,
-					"loser-cache",
+					"COPILOT-cache",
 					false,
 					null,
 					null,
@@ -117,7 +117,7 @@ public class JedisPoolFactory implements PoolFactory {
 				redisProperties.getSocketTimeout(),
 				redisProperties.getPassword(),
 				redisProperties.getDatabase(),
-				"loser-cache",
+				"COPILOT-cache",
 				false,
 				null,
 				null,

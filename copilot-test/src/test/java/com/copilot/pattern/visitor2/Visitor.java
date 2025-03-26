@@ -9,7 +9,7 @@ package com.copilot.pattern.visitor2;
  * getStartTag and the getEndTag as opposed to the example shown in the Composite
  * Design Pattern lesson.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *

@@ -29,7 +29,7 @@ package com.copilot.pattern.visitor2;
  * some javascript functions like onclick or some angularjs ng tags without
  * modifying the classes.
  * 
- * @author Loser
+ * @author Rico Yu
  * @since Aug 19, 2016
  * @version
  *
