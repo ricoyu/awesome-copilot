@@ -1,6 +1,6 @@
 package com.copilot.workbook.pojo;
 
-import com.copilot.workbook.annotation.Col;
+import com.awesomecopilot.workbook.annotation.Col;
 import com.copilot.workbook.enums.Ticket;
 import lombok.Data;
 import lombok.ToString;

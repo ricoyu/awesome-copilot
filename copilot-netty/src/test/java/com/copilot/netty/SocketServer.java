@@ -1,6 +1,6 @@
 package com.copilot.netty;
 
-import com.copilot.common.lang.utils.IOUtils;
+import com.awesomecopilot.common.lang.utils.IOUtils;
 
 import java.io.IOException;
 import java.net.ServerSocket;

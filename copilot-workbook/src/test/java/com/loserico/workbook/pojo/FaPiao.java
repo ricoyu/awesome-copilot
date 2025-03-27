@@ -1,6 +1,6 @@
 package com.copilot.workbook.pojo;
 
-import com.copilot.workbook.annotation.Col;
+import com.awesomecopilot.workbook.annotation.Col;
 import lombok.Data;
 
 import java.math.BigDecimal;

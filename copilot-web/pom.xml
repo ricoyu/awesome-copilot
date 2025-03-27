@@ -9,25 +9,25 @@
     <url>http://maven.apache.org</url>
 
     <parent>
-        <groupId>com.copilot</groupId>
+        <groupId>com.awesomecopilot</groupId>
         <artifactId>awesome-copilot</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>17.0.1</version>
+        <version>17.0.0</version>
     </parent>
 
     <dependencies>
         <dependency>
-            <groupId>com.copilot</groupId>
+            <groupId>com.awesomecopilot</groupId>
             <artifactId>commons-lang</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.copilot</groupId>
+            <groupId>com.awesomecopilot</groupId>
             <artifactId>copilot-validation</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.copilot</groupId>
+            <groupId>com.awesomecopilot</groupId>
             <artifactId>copilot-json</artifactId>
             <version>${project.parent.version}</version>
         </dependency>

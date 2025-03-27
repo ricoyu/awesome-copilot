@@ -1,6 +1,6 @@
 package com.copilot.netty.chat;
 
-import com.copilot.common.lang.utils.DateUtils;
+import com.awesomecopilot.common.lang.utils.DateUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;

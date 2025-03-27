@@ -1,6 +1,6 @@
 package com.copilot.nio;
 
-import com.copilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import org.junit.Test;
 
 import java.lang.management.ManagementFactory;

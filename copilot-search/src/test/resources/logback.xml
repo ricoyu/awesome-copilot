@@ -10,14 +10,14 @@
     
     <logger name="com.copilot.search" level="INFO"/>
     
-    <logger name="com.copilot.networking.utils.HttpUtils" level="debug"/>
+    <logger name="com.awesomecopilot.networking.utils.HttpUtils" level="debug"/>
     <logger name="com.copilot.search" level="debug"/>
-    <logger name="com.copilot.networking.builder.AbstractRequestBuilder" level="debug"/>
-    <logger name="com.copilot.networking.builder.JsonRequestBuilder" level="debug"/>
-    <logger name="com.copilot.networking.builder.FormRequestBuilder" level="debug"/>
-    <logger name="com.copilot.search.builder.query.BaseQueryBuilder" level="debug"/>
-    <logger name="com.copilot.search.builder.ElasticQueryBuilder" level="debug"/>
-    <logger name="com.copilot.search.builder.ElasticSuggestBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.networking.builder.AbstractRequestBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.networking.builder.JsonRequestBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.networking.builder.FormRequestBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.search.builder.query.BaseQueryBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.search.builder.ElasticQueryBuilder" level="debug"/>
+    <logger name="com.awesomecopilot.search.builder.ElasticSuggestBuilder" level="debug"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
