@@ -12,7 +12,6 @@ import com.awesomecopilot.networking.constants.HttpHeaders;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.http.HttpEntity;
@@ -46,6 +45,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
@@ -102,8 +103,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public abstract class AbstractRequestBuilder {
+
+	private static final Logger log = LoggerFactory.getLogger(AbstractRequestBuilder.class);
 	
 	public static final String DEFAULT_CHARSET = "UTF-8";
 	

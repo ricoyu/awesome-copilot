@@ -1,11 +1,13 @@
 package com.awesomecopilot.networking.builder;
 
+import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -23,8 +25,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class JsonRequestBuilder extends AbstractRequestBuilder {
+
+	private static final Logger log = LoggerFactory.getLogger(JsonRequestBuilder.class);
 	
 	public JsonRequestBuilder url(String url) {
 		super.url(url);
@@ -102,7 +105,18 @@ public class JsonRequestBuilder extends AbstractRequestBuilder {
 		this.jsonBody = json;
 		return this;
 	}
-	
+
+	/**
+	 * 设置提交的json数据, 适用POST请求
+	 *
+	 * @param body
+	 * @return JsonRequestBuilder
+	 */
+	public JsonRequestBuilder body(Object body) {
+		this.jsonBody = JacksonUtils.toJson(body);
+		return this;
+	}
+
 	/**
 	 * 设置返回结果类型
 	 *

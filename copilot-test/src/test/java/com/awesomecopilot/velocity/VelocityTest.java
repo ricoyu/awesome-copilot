@@ -14,7 +14,7 @@ public class VelocityTest {
 	@Test
 	public void testCreateCustomDirective() {
 		Properties properties = new Properties();
-		properties.setProperty("userdirective", "com.copilot.velocity.TruncateDirective");
+		properties.setProperty("userdirective", "com.awesomecopilot.velocity.TruncateDirective");
 		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.Log4JLogChute");
 		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
 		Velocity.init(properties); //初始化运行时引擎

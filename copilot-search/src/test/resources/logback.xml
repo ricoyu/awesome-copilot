@@ -8,10 +8,10 @@
         </layout>
     </appender>
     
-    <logger name="com.copilot.search" level="INFO"/>
+    <logger name="com.awesomecopilot.search" level="INFO"/>
     
     <logger name="com.awesomecopilot.networking.utils.HttpUtils" level="debug"/>
-    <logger name="com.copilot.search" level="debug"/>
+    <logger name="com.awesomecopilot.search" level="debug"/>
     <logger name="com.awesomecopilot.networking.builder.AbstractRequestBuilder" level="debug"/>
     <logger name="com.awesomecopilot.networking.builder.JsonRequestBuilder" level="debug"/>
     <logger name="com.awesomecopilot.networking.builder.FormRequestBuilder" level="debug"/>

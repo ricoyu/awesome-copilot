@@ -59,7 +59,7 @@ public class NonBlockingLock implements Lock{
 	/**
 	 * 这是commons-spring模块中的类
 	 */
-	private static final String TRANSACTION_EVENTS_CLASS_NAME = "com.copilot.common.spring.transaction.TransactionEvents";
+	private static final String TRANSACTION_EVENTS_CLASS_NAME = "com.awesomecopilot.common.spring.transaction.TransactionEvents";
 
 	private String key;
 

@@ -159,13 +159,13 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 
 		Properties properties = new Properties();
 		properties.setProperty("userdirective",
-				"com.copilot.orm.directive.IfNotNull," +
-						"com.copilot.orm.directive.IfNull," +
-						"com.copilot.orm.directive.Between," +
-						"com.copilot.orm.directive.LLike," +
-						"com.copilot.orm.directive.RLike," +
-						"com.copilot.orm.directive.Like," +
-						"com.copilot.orm.directive.IfPresent");
+				"com.awesomecopilot.orm.directive.IfNotNull," +
+						"com.awesomecopilot.orm.directive.IfNull," +
+						"com.awesomecopilot.orm.directive.Between," +
+						"com.awesomecopilot.orm.directive.LLike," +
+						"com.awesomecopilot.orm.directive.RLike," +
+						"com.awesomecopilot.orm.directive.Like," +
+						"com.awesomecopilot.orm.directive.IfPresent");
 		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
 				".Log4JLogChute");
 		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");

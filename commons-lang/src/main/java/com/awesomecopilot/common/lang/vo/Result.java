@@ -114,7 +114,7 @@ public class Result {
 	 * 判断调用是否成功
 	 * @return boolean
 	 */
-	public boolean success() {
+	public boolean isSuccess() {
 		return SUCCESS_CODE.equals(code);
 	}
 }

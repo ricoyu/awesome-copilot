@@ -63,7 +63,7 @@ public class DateUtilsTest {
 	@Test
 	public void testStartUpTimes() throws ClassNotFoundException {
 		long begin = System.nanoTime();
-		//Class.forName("com.copilot.common.lang.utils.DateUtils");
+		//Class.forName("com.awesomecopilot.common.lang.utils.DateUtils");
 		long end = System.nanoTime();
 		long duration = (end - begin) / 1000000;
 		assertTrue(duration >= 0);

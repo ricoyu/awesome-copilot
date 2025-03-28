@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -24,7 +23,6 @@ import java.time.LocalDateTime;
  * @version 1.0
  */
 @MappedSuperclass
-@Data
 public class BaseEntity implements Serializable {
 	
 	private static final long serialVersionUID = -7833247830642842225L;
@@ -33,21 +31,15 @@ public class BaseEntity implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "ID", updatable = false, unique = true, nullable = false)
 	private Long id;
-	
-	@Column(name = "CREATOR", length = 100, nullable = false)
-	private String creator;
-	
+
 	/**
 	 * 默认映射的数据库字段类型为TIMESTAMP
 	 */
 	@Column(name = "CREATE_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
 	private LocalDateTime createTime;
-	
-	@Column(name = "MODIFIER", length = 100, nullable = false)
-	private String modifier;
-	
-	@Column(name = "MODIFY_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
-	private LocalDateTime modifyTime;
+
+	@Column(name = "UPDATE_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
+	private LocalDateTime updateTime;
 	
 	/**
 	 * 在Entity被持久化之前做一些操作
@@ -56,12 +48,35 @@ public class BaseEntity implements Serializable {
 	protected void onPrePersist() {
 		LocalDateTime now = LocalDateTime.now();
 		setCreateTime(now);
-		setModifyTime(now);
+		setUpdateTime(now);
 	}
 	
 	@PreUpdate
 	protected void onPreUpdate() {
-		setModifyTime(LocalDateTime.now());
+		setUpdateTime(LocalDateTime.now());
 	}
-	
+
+	public LocalDateTime getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(LocalDateTime createTime) {
+		this.createTime = createTime;
+	}
+
+	public LocalDateTime getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(LocalDateTime updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }

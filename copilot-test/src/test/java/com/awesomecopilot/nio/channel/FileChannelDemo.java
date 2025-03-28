@@ -8,7 +8,7 @@ import java.nio.channels.FileChannel;
 public class FileChannelDemo {
 
     public static void main(String[] args) throws IOException {
-        try(RandomAccessFile file = new RandomAccessFile("D:\\Learning\\awesome-loser\\loser-tests\\outagain.txt", "r")){
+        try(RandomAccessFile file = new RandomAccessFile("D:\\Learning\\awesome-copilot\\loser-tests\\outagain.txt", "r")){
             FileChannel channel = file.getChannel();
             ByteBuffer buffer = ByteBuffer.allocate(64);
 

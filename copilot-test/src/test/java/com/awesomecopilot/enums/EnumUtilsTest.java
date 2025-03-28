@@ -10,8 +10,8 @@ public class EnumUtilsTest {
 
 	@Test
 	public void testEnumLookup() {
-		//		PaymentMode paymentMode = (PaymentMode)com.copilot.orm.utils.EnumUtils.lookupEnum(PaymentMode.class, "6");
-		//PaymentMode paymentMode = (PaymentMode)com.copilot.orm.utils.EnumUtils.lookupEnum(PaymentMode.class, value);
+		//		PaymentMode paymentMode = (PaymentMode)com.awesomecopilot.orm.utils.EnumUtils.lookupEnum(PaymentMode.class, "6");
+		//PaymentMode paymentMode = (PaymentMode)com.awesomecopilot.orm.utils.EnumUtils.lookupEnum(PaymentMode.class, value);
 		PaymentMode paymentMode = (PaymentMode) EnumUtils.lookupEnum(PaymentMode.class, "6", "code");
 		System.out.println(paymentMode);
 	}

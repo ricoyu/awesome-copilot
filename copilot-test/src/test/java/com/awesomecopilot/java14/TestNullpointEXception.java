@@ -5,7 +5,7 @@ public class TestNullpointEXception {
 	public static void main(String[] args) {
 		Person p = new Person();
 		/*
-		 * Exception in thread "main" java.lang.NullPointerException: Cannot invoke "com.copilot.java14.TestNullpointEXception$Cat.eat()"
+		 * Exception in thread "main" java.lang.NullPointerException: Cannot invoke "com.awesomecopilot.java14.TestNullpointEXception$Cat.eat()"
 		 * because "p.cat" is null
 		 */
 		p.cat.eat();

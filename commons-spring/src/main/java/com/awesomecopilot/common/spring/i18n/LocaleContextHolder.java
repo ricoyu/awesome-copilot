@@ -13,7 +13,7 @@ import java.util.TimeZone;
 
 /**
  * 这个类搭配:<p/>
- * <code>com.copilot.web.filter.LocaleConfigurerFilter<code>
+ * <code>com.awesomecopilot.web.filter.LocaleConfigurerFilter<code>
  * 可以获得MessageSource实例
  * <p>
  * Copyright: Copyright (c) 2019-10-14 13:53

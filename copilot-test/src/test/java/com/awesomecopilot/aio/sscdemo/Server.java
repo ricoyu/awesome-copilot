@@ -8,7 +8,7 @@ public class Server {
 	
 	private final static int PORT = 9090;
 	private final static String HOST = "192.168.1.7";
-//	private final static String HOST = "architect7.copilot.com";
+//	private final static String HOST = "architect7.awesomecopilot.com";
 
 	/*
 	 * main() method first attempts to open an asynchronous server socket channel and

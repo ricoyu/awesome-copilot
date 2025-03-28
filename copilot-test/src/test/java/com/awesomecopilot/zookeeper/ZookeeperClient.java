@@ -226,7 +226,7 @@ public class ZookeeperClient {
 	public String getStr(String path, boolean watch) {
 		try {
 			byte[] data = zk.getData(path, watch, new Stat());
-			//return com.copilot.cache.utils.UnMarshaller.toString(data);
+			//return com.awesomecopilot.cache.utils.UnMarshaller.toString(data);
 			return "";
 		} catch (KeeperException | InterruptedException e) {
 			if (e instanceof NoNodeException) {

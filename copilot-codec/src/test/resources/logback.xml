@@ -12,7 +12,7 @@
     </appender>
 
     <!-- 控制Mybatis的日志级别为DEBUG, 并且只输出到控制台 -->
-    <logger name="com.copilot.mybatis.sql.mapper" level="DEBUG"/>
+    <logger name="com.awesomecopilot.mybatis.sql.mapper" level="DEBUG"/>
     <logger name="org.apache.ibatis.io.DefaultVFS" level="error"/>
     <logger name="org.apache.ibatis.io.VFS" level="error"/>
     <logger name="org.apache.ibatis.io.JBoss6VFS" level="error"/>

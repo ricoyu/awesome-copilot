@@ -35,7 +35,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Client {
 	private final static int PORT = 9090;
 	private final static String HOST = "192.168.1.7";
-//	private final static String HOST = "architect7.copilot.com";
+//	private final static String HOST = "architect7.awesomecopilot.com";
 
 	/*
 	 * main() method first attempts to open an asynchronous socket channel and connect

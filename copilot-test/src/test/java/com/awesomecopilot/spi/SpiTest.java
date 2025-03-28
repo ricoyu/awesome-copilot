@@ -16,7 +16,7 @@ import java.util.ServiceLoader;
 public class SpiTest {
 	
 	/**
-	 * classpath下META-INF/services/com.copilot.spi.Behavial文件里面每行写一个实现类的全名即可
+	 * classpath下META-INF/services/com.awesomecopilot.spi.Behavial文件里面每行写一个实现类的全名即可
 	 * @param args
 	 */
 	public static void main(String[] args) {

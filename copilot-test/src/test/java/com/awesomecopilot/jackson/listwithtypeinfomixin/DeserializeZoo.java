@@ -21,8 +21,8 @@ public class DeserializeZoo {
 	 */
 	@SneakyThrows
 	public static void main(String[] args) {
-		//String json = "{\"name\":\"London Zoo\",\"city\":\"London\",\"animals\":[{\"@class\":\"com.copilot.jackson.listwithtypeinfo.Elephant\",\"name\":\"Manny\"},{\"@class\":\"com.copilot.jackson.listwithtypeinfo.Lion\",\"name\":\"Simba\"}]}";
-		String json = "{\"name\":\"London Zoo\",\"city\":\"London\",\"animals\":[{\"@class\":\"com.copilot.jackson.listwithtypeinfomixin.Elephant\",\"name\":\"Manny\"},{\"@class\":\"com.copilot.jackson.listwithtypeinfomixin.Lion\",\"name\":\"Simba\"}]}";
+		//String json = "{\"name\":\"London Zoo\",\"city\":\"London\",\"animals\":[{\"@class\":\"com.awesomecopilot.jackson.listwithtypeinfo.Elephant\",\"name\":\"Manny\"},{\"@class\":\"com.awesomecopilot.jackson.listwithtypeinfo.Lion\",\"name\":\"Simba\"}]}";
+		String json = "{\"name\":\"London Zoo\",\"city\":\"London\",\"animals\":[{\"@class\":\"com.awesomecopilot.jackson.listwithtypeinfomixin.Elephant\",\"name\":\"Manny\"},{\"@class\":\"com.awesomecopilot.jackson.listwithtypeinfomixin.Lion\",\"name\":\"Simba\"}]}";
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.addMixIn(Animal.class, AnimalMixIn.class);
 		mapper.addMixIn(Lion.class, LionMixIn.class);

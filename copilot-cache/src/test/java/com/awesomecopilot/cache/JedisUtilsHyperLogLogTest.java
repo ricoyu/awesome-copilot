@@ -20,19 +20,19 @@ public class JedisUtilsHyperLogLogTest {
 	public void test() {
 		JedisUtils.del("www.sexyuncle.com:{uv}");
 		JedisUtils.del("www.sexyuncle.com:{uv}");
-		JedisUtils.del("www.copilot.com:{uv}");
+		JedisUtils.del("www.awesomecopilot.com:{uv}");
 		JedisUtils.del("total:{uv}");
 		long result = JedisUtils.HyperLogLog.pfadd("www.sexyuncle.com:{uv}", "101", "102", "103");
 		assertEquals(1L, result);
 		System.out.println("result: "+result);
 		System.out.println(JedisUtils.HyperLogLog.pfcount("www.sexyuncle.com:{uv}"));
-		result = JedisUtils.HyperLogLog.pfadd("www.copilot.com:{uv}", "103", "104", "105");
+		result = JedisUtils.HyperLogLog.pfadd("www.awesomecopilot.com:{uv}", "103", "104", "105");
 		assertEquals(1, result);
 		System.out.println(result);
-		long count = JedisUtils.HyperLogLog.pfcount("www.copilot.com:{uv}");
+		long count = JedisUtils.HyperLogLog.pfcount("www.awesomecopilot.com:{uv}");
 		assertEquals(count, 3L);
 		System.out.println(count);
-		String mergeResult = JedisUtils.HyperLogLog.pfmerge("total:{uv}", "www.sexyuncle.com:{uv}", "www.copilot.com:{uv}");
+		String mergeResult = JedisUtils.HyperLogLog.pfmerge("total:{uv}", "www.sexyuncle.com:{uv}", "www.awesomecopilot.com:{uv}");
 		System.out.println(mergeResult);
 		Long pfcount = JedisUtils.HyperLogLog.pfcount("total:{uv}");
 		System.out.println("total:" + pfcount);

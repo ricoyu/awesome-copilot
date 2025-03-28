@@ -35,7 +35,7 @@ public class ObjectMapperFactory {
 					if (exists) {
 						try {
 							Class<?> achClass =
-									Class.forName("com.copilot.common.spring.context.ApplicationContextHolder");
+									Class.forName("com.awesomecopilot.common.spring.context.ApplicationContextHolder");
 							objectMapper = (ObjectMapper) ReflectionUtils.invokeStatic("getBean", achClass, ObjectMapper.class);
 						} catch (ClassNotFoundException e) {
 							log.warn("非Spring环境, 直接new一个ObjectMapper");
