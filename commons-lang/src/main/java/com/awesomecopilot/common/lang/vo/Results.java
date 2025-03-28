@@ -29,8 +29,12 @@ public class Results {
 	private Results() {
 	}
 
-	public static class Builder {
-		private final Result result = new Result();
+	/**
+	 * 泛型化是为了微服务之间调用时, data是POJO的情况可以反序列化成POJO, 即达到调用方拿到的result.data是正确的POJO类型而不是LinkedHashMap
+	 * @param <T>
+	 */
+	public static class Builder<T> {
+		private final Result<T> result = new Result<>();
 
 		/**
 		 * 请求接口状态码, 0代表成功, 非0代表失败
@@ -52,14 +56,9 @@ public class Results {
 		private String status;
 
 		/**
-		 * 调试消息
-		 */
-		//private Object debugMessage;
-
-		/**
 		 * 单个数据或集合类型对象
 		 */
-		private Object data;
+		private T data;
 
 		private Page page;
 
@@ -70,7 +69,7 @@ public class Results {
 		 * @param message 设置返回消息描述
 		 * @return
 		 */
-		public Builder status(String code, Object message) {
+		public Builder<T> status(String code, Object message) {
 			this.code = code;
 			if (!ErrorTypes.SUCCESS.code().equals(code)) {
 				this.status = "fail";
@@ -81,7 +80,7 @@ public class Results {
 			return this;
 		}
 
-		public Builder status(ErrorType errorType) {
+		public Builder<T> status(ErrorType errorType) {
 			if (errorType == ErrorTypes.SUCCESS) {
 				this.status = "success";
 				return this;
@@ -90,18 +89,19 @@ public class Results {
 			}
 		}
 
-		public Builder message(Object message) {
+		public Builder<T> message(Object message) {
 			this.message = message;
 			return this;
 		}
 
 		/**
 		 * 设置返回数据
+		 * 泛型化是为了微服务之间调用时, data是POJO的情况可以反序列化成POJO, 即达到调用方拿到的result.data是正确的POJO类型而不是LinkedHashMap
 		 *
-		 * @param data
+		 * @param data 返回的实际数据
 		 * @return Result
 		 */
-		public Result result(Object data) {
+		public Result<T> result(T data) {
 			this.data = data;
 			return build();
 		}
@@ -112,12 +112,12 @@ public class Results {
 		 * @param page
 		 * @return Builder
 		 */
-		public Builder page(Page page) {
+		public Builder<T> page(Page page) {
 			this.page = page;
 			return this;
 		}
 
-		public Result build() {
+		public Result<T> build() {
 			result.setMessage(message);
 			result.setCode(code);
 			result.setData(data);
@@ -132,8 +132,8 @@ public class Results {
 	 *
 	 * @return Builder
 	 */
-	public static Builder success() {
-		Builder builder = new Builder();
+	public static <T> Builder<T> success() {
+		Builder<T> builder = new Builder<>();
 		builder.status(ErrorTypes.SUCCESS);
 		return builder;
 	}
@@ -143,31 +143,19 @@ public class Results {
 	 *
 	 * @return Builder
 	 */
-	public static Builder fail() {
-		Builder builder = new Builder();
+	public static <T> Builder<T> fail() {
+		Builder<T> builder = new Builder<>();
 		builder.status(ErrorTypes.FAIL);
 		return builder;
 	}
 
-	/**
-	 * code设为"-1"
-	 *
-	 * @param message
-	 * @return
-	 */
-	public static Builder message(Object message) {
-		Builder builder = new Builder();
-		builder.message(message);
-		return builder;
-	}
-
-	public static Builder status(String code, Object message) {
-		Builder builder = new Builder();
+	public static <T> Builder<T> status(String code, Object message) {
+		Builder<T> builder = new Builder<>();
 		return builder.status(code, message);
 	}
 
-	public static Builder status(ErrorType errorType) {
-		Builder builder = new Builder();
+	public static <T> Builder<T> status(ErrorType errorType) {
+		Builder<T> builder = new Builder<>();
 		return builder.status(errorType.code(), errorType.message());
 	}
 

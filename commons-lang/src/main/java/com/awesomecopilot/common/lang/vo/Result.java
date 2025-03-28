@@ -7,6 +7,7 @@ import java.util.Map;
 
 /**
  * REST通用输出结果封装
+ * 泛型化是为了微服务之间调用时, data是POJO的情况可以反序列化成POJO, 即达到调用方拿到的result.data是正确的POJO类型而不是LinkedHashMap
  * <p>
  * Copyright: Copyright (c) 2020-08-17 16:54
  * <p>
@@ -16,7 +17,7 @@ import java.util.Map;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-public class Result {
+public class Result<T> {
 
 	/**
 	 * 调用成功的状态码
@@ -53,7 +54,7 @@ public class Result {
 	/**
 	 * 返回的数据
 	 */
-	private Object data;
+	private T data;
 	
 	/**
 	 * 分页对象, 如果没有分页, 这个字段不会输出到json串中
@@ -98,7 +99,7 @@ public class Result {
 		this.message = message;
 	}
 
-	public void setData(Object data) {
+	public void setData(T data) {
 		this.data = data;
 	}
 
