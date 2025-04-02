@@ -68,6 +68,39 @@ public final class PrimitiveUtils {
 		}
 		return null;
 	}
+
+
+	@SuppressWarnings("unchecked")
+	public static <T> T toPrimitive(Object data, Class<T> clazz) {
+		if (data == null) {
+			return null;
+		}
+		if (Byte.class.equals(clazz) || Byte.TYPE.equals(clazz)) {
+			return (T) Byte.valueOf(toString(data));
+		}
+		if (Integer.class.equals(clazz) || Integer.TYPE.equals(clazz)) {
+			return (T) Integer.valueOf(toString(data));
+		}
+		if (Long.class.equals(clazz) || Long.TYPE.equals(clazz)) {
+			return (T) Long.valueOf(toString(data));
+		}
+		if (Double.class.equals(clazz)) {
+			return (T) Double.valueOf(toString(data));
+		}
+		if (Float.class.equals(clazz) || Float.TYPE.equals(clazz)) {
+			return (T) Float.valueOf(toString(data));
+		}
+		if (Boolean.class.equals(clazz) || Boolean.TYPE.equals(clazz)) {
+			return (T) Boolean.valueOf(toString(data));
+		}
+		if (Short.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+			return (T) Short.valueOf(toString(data));
+		}
+		if (Character.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+			return (T) Character.valueOf(toString(data).charAt(0));
+		}
+		return null;
+	}
 	
 
 	/**

@@ -16,6 +16,11 @@ import com.awesomecopilot.common.lang.errors.ErrorTypes;
  * 情况3  status＝200 code!=0  弹框message给用户
  * </pre></blockquote>
  * <p>
+ * 泛型用法
+ * <pre> {@code
+ * Results.<StorageDTO>success().data(storageDTO)
+ * Results.<List<StorageDTO>>success().data(storageDTOs)
+ * }</pre>
  * Copyright: Copyright (c) 2019-10-14 15:54
  * <p>
  * Company: Sexy Uncle Inc.
@@ -101,9 +106,9 @@ public class Results {
 		 * @param data 返回的实际数据
 		 * @return Result
 		 */
-		public Result<T> result(T data) {
+		public Builder<T> data(T data) {
 			this.data = data;
-			return build();
+			return this;
 		}
 
 		/**

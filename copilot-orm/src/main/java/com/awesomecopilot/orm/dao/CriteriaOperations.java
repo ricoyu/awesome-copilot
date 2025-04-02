@@ -14,7 +14,7 @@ public interface CriteriaOperations {
 	 * @return CriteriaQueryBuilder
 	 * @param entityClass
 	 */
-	public CriteriaQueryBuilder findBy(Class entityClass);
+	public CriteriaQueryBuilder query(Class entityClass);
 
 	/**
 	 * 根据属性查找，返回一个对象，如果找到多个，取第一个

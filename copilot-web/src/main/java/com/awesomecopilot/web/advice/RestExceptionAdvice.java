@@ -39,11 +39,16 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.AUTHORITY_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.BAD_REQUEST;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.DEGRADE_EXCEPTION;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.FLOW_EXCEPTION;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.HOT_PARAM_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.INTERNAL_SERVER_ERROR;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.MAX_UPLOAD_SIZE_EXCEEDED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.METHOD_NOT_ALLOWED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.NOT_FOUND;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.SYSTEM_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.VALIDATION_FAIL;
 import static java.util.stream.Collectors.*;
 
@@ -62,16 +67,20 @@ import static java.util.stream.Collectors.*;
 public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(RestExceptionAdvice.class);
-	
+
 	private static final Pattern MESSAGE_TEMPLATE_PATTERN = Pattern.compile("\\{(.+)\\}");
-	
+
 	/**
 	 * 这个Pattern是用来提取上传文件超过限制时候, 错误消息里面包含的实际文件大小以及限制大小 <br/>
 	 * String的错误消息大概是这样的: <br/>
-	 * org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded; nested exception is java.lang.IllegalStateException: org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException: the request was rejected because its size (405491652) exceeds the configured maximum (104857600)
+	 * org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded; nested
+	 * exception is java.lang.IllegalStateException: org.apache.tomcat.util.http.fileupload.impl
+	 * .SizeLimitExceededException: the request was rejected because its size (405491652) exceeds the configured
+	 * maximum (104857600)
 	 */
-	private static final Pattern ACTUAL_SIZE_PATTERN = Pattern.compile(".*size\\s{1}\\((\\d+)\\).*maximum\\s{1}\\((\\d+)\\)$");
-	
+	private static final Pattern ACTUAL_SIZE_PATTERN =
+			Pattern.compile(".*size\\s{1}\\((\\d+)\\).*maximum\\s{1}\\((\\d+)\\)$");
+
 	@Override
 	@ResponseBody
 	protected ResponseEntity<Object> handleTypeMismatch(
@@ -79,7 +88,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		logger.info("Rest API ERROR happen", ex);
 		return super.handleTypeMismatch(ex, headers, status, request);
 	}
-	
+
 	/**
 	 * 表单提交数据校验错误, 或者提交的数据转换成目标数据类型时候出错
 	 */
@@ -94,7 +103,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(BAD_REQUEST.code(), errorMessage.getErrors()).build();
 		return new ResponseEntity(result, headers, HttpStatus.OK);
 	}*/
-	
+
 	/**
 	 * 处理验证相关的异常
 	 * 目前只处理了BindException
@@ -113,14 +122,14 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 			BindingResult bindingResult = bindException.getBindingResult();
 			ErrorMessage errorMessage = ValidationUtils.getErrorMessage(bindingResult);
 			List<String[]> msgs = errorMessage.getErrors();
-			
+
 			Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
 		Result result = Results.status(VALIDATION_FAIL.code(), e.getMessage()).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(
 			HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -129,7 +138,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(BAD_REQUEST).build();
 		return new ResponseEntity(result, headers, HttpStatus.OK);
 	}
-	
+
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(
 			MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
@@ -148,7 +157,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
 		return new ResponseEntity(result, headers, HttpStatus.OK);
 	}
-	
+
 	/**
 	 * 手工验证不通过时抛出
 	 *
@@ -174,7 +183,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@ExceptionHandler(UniqueConstraintViolationException.class)
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<Object> handleUniqueConstraintViolationException(UniqueConstraintViolationException e) {
@@ -182,7 +191,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(INTERNAL_SERVER_ERROR).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@ExceptionHandler(EntityNotFoundException.class)
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<Object> handleEntityNotFoundException(EntityNotFoundException e) {
@@ -190,16 +199,17 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(NOT_FOUND.code(), e.getMessage()).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@Override
 	protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
-			HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatusCode status,
+			WebRequest request) {
 		log.info("", ex);
 		headers.add("Content-Type", "application/json");
 		Result result = Results.status(METHOD_NOT_ALLOWED).build();
 		return new ResponseEntity(result, headers, HttpStatus.METHOD_NOT_ALLOWED);
 	}
-	
+
 	/**
 	 * 通用业务异常处理
 	 *
@@ -213,7 +223,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(e.getCode(), I18N.i18nMessage(e)).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@ExceptionHandler(LocalizedException.class)
 	@ResponseStatus(value = HttpStatus.OK)
 	public ResponseEntity<Object> handleLocalizedException(LocalizedException e) {
@@ -221,7 +231,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(e.getStatusCode(), e.getLocalizedMessage()).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@ExceptionHandler(ApplicationException.class)
 	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
 	@ResponseBody
@@ -232,9 +242,10 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 
 	/**
 	 * 上传文件是multipart/form-data类型, 所以这边@ResponseBody实际是不生效的, 需要通过Response手工返回REST结果
-	 * @param e the exception to handle
+	 *
+	 * @param e       the exception to handle
 	 * @param headers the headers to use for the response
-	 * @param status the status code to use for the response
+	 * @param status  the status code to use for the response
 	 * @param request the current request
 	 * @return
 	 */
@@ -247,7 +258,9 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 			Long actualSize = Long.parseLong(matcher.group(1));
 			Long LimitSize = Long.parseLong(matcher.group(2));
 			log.error("Max upload size exceeded! Actual {}, Limit {}", actualSize, LimitSize);
-			message = I18N.i18nMessage(MAX_UPLOAD_SIZE_EXCEEDED.msgTemplate(), new Long[]{actualSize, LimitSize}, MAX_UPLOAD_SIZE_EXCEEDED.message());
+			message =
+					I18N.i18nMessage(MAX_UPLOAD_SIZE_EXCEEDED.msgTemplate(), new Long[]{actualSize, LimitSize},
+							MAX_UPLOAD_SIZE_EXCEEDED.message());
 		} else {
 			message = I18N.i18nMessage(MAX_UPLOAD_SIZE_EXCEEDED.msgTemplate(), MAX_UPLOAD_SIZE_EXCEEDED.message());
 		}
@@ -256,13 +269,74 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		Result result = Results.status(MAX_UPLOAD_SIZE_EXCEEDED.code(), message).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
-	
+
 	@ExceptionHandler(Throwable.class)
 	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
 	@ResponseBody
-	public ResponseEntity<?> handleThrowable(Throwable e) throws Exception {
+	public ResponseEntity<?> handleThrowable(Throwable e) {
 		logger.error("Rest API ERROR happen", e);
+		ResponseEntity<?> responseEntity = handleSentinelException(e);
+		if (responseEntity != null) {
+			return responseEntity;
+		}
+		return findRealCause(e);
+	}
+
+	/**
+	 * 有时候, 业务代码抛出了某个比较有意义的异常, 但是由于系统组件比较多, 可能这个异常会被吃掉并包裹成另外一个异常, 比如RumtimeException
+	 * 导致返回的错误信息没有正确反应错误类型, 这里试图找到真正的的异常类型
+	 *
+	 * @param e
+	 * @return
+	 */
+	private ResponseEntity<?> findRealCause(Throwable e)  {
+		if (e.getCause() != null && e.getCause() instanceof BusinessException) {
+			return handleBusinessException((BusinessException) e.getCause());
+		}
+		if (e.getCause() != null && e.getCause() instanceof ValidationException) {
+			return handleValidationException((ValidationException) e.getCause());
+		}
+		if (e.getCause() != null && e.getCause() instanceof UniqueConstraintViolationException) {
+			return handleUniqueConstraintViolationException((UniqueConstraintViolationException) e.getCause());
+		}
+		if (e.getCause() != null && e.getCause() instanceof EntityNotFoundException) {
+			return handleEntityNotFoundException((EntityNotFoundException) e.getCause());
+		}
+		if (e.getCause() != null && e.getCause() instanceof LocalizedException) {
+			return handleLocalizedException((LocalizedException) e.getCause());
+		}
+		if (e.getCause() != null && e.getCause() instanceof ApplicationException) {
+			Result result = handleApplicationException((ApplicationException) e.getCause());
+			return new ResponseEntity(result, HttpStatus.OK);
+		}
+
 		Result result = Results.status(ErrorTypes.INTERNAL_SERVER_ERROR).build();
 		return new ResponseEntity(result, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	private ResponseEntity<?> handleSentinelException(Throwable e) {
+		if (e.getCause() == null) {
+			return null;
+		}
+		Throwable realCasue = e.getCause();
+
+		Result result = null;
+		if ("com.alibaba.csp.sentinel.slots.block.flow.FlowException".equalsIgnoreCase(realCasue.getClass().getName())) {
+			result = Results.fail().status(FLOW_EXCEPTION).build();
+		} else if ("com.alibaba.csp.sentinel.slots.block.degrade.DegradeException".equalsIgnoreCase(realCasue.getClass().getName())) {
+			result = Results.fail().status(DEGRADE_EXCEPTION).build();
+		} else if ("com.alibaba.csp.sentinel.slots.block.authority.AuthorityException".equalsIgnoreCase(realCasue.getClass().getName())) {
+			result = Results.fail().status(AUTHORITY_BLOCK_EXCEPTION).build();
+		} else if ("com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowException".equalsIgnoreCase(realCasue.getClass().getName())) {
+			result = Results.fail().status(HOT_PARAM_BLOCK_EXCEPTION).build();
+		} else if ("com.alibaba.csp.sentinel.slots.system.SystemBlockException".equalsIgnoreCase(realCasue.getClass().getName())) {
+			result = Results.fail().status(SYSTEM_BLOCK_EXCEPTION).build();
+		}
+
+		if (result == null) {
+			return null;
+		}
+
+		return new ResponseEntity(result, HttpStatus.OK);
 	}
 }

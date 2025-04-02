@@ -162,9 +162,6 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 				"com.awesomecopilot.orm.directive.IfNotNull," +
 						"com.awesomecopilot.orm.directive.IfNull," +
 						"com.awesomecopilot.orm.directive.Between," +
-						"com.awesomecopilot.orm.directive.LLike," +
-						"com.awesomecopilot.orm.directive.RLike," +
-						"com.awesomecopilot.orm.directive.Like," +
 						"com.awesomecopilot.orm.directive.IfPresent");
 		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
 				".Log4JLogChute");
@@ -473,8 +470,8 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	}
 
 	@Override
-	public  CriteriaQueryBuilder findBy(Class entityClass) {
-		return new CriteriaQueryBuilder(entityManager, entityClass);
+	public  CriteriaQueryBuilder query(Class entityClass) {
+		return new CriteriaQueryBuilder(entityManager, entityManagerFactory, entityClass);
 	}
 
 	@Override
@@ -697,7 +694,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	 * @param queryName
 	 * @param paramName
 	 * @param paramValue
-	 * @param clazz
+	 * @param clazz 这个指的是SQL查询结果集要封装进哪个POJO对象里面, 查询单列不要用这个
 	 * @return T
 	 */
 	@SuppressWarnings("rawtypes")

@@ -54,6 +54,41 @@ public final class PrimitiveUtils {
 
     @SuppressWarnings("unchecked")
     public static <T> T toPrimitive(byte[] data, Class<T> clazz) {
+        if (data == null || data.length ==0) {
+            return null;
+        }
+        if (Byte.class.equals(clazz) || Byte.TYPE.equals(clazz)) {
+            return (T) Byte.valueOf(toString(data));
+        }
+        if (Integer.class.equals(clazz) || Integer.TYPE.equals(clazz)) {
+            return (T) Integer.valueOf(toString(data));
+        }
+        if (Long.class.equals(clazz) || Long.TYPE.equals(clazz)) {
+            return (T) Long.valueOf(toString(data));
+        }
+        if (Double.class.equals(clazz)) {
+            return (T) Double.valueOf(toString(data));
+        }
+        if (Float.class.equals(clazz) || Float.TYPE.equals(clazz)) {
+            return (T) Float.valueOf(toString(data));
+        }
+        if (Boolean.class.equals(clazz) || Boolean.TYPE.equals(clazz)) {
+            return (T) Boolean.valueOf(toString(data));
+        }
+        if (Short.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+            return (T) Short.valueOf(toString(data));
+        }
+        if (Character.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+            return (T) Character.valueOf(toString(data).charAt(0));
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T toPrimitive(Object data, Class<T> clazz) {
+        if (data == null) {
+            return null;
+        }
         if (Byte.class.equals(clazz) || Byte.TYPE.equals(clazz)) {
             return (T) Byte.valueOf(toString(data));
         }
@@ -113,6 +148,38 @@ public final class PrimitiveUtils {
         return 0;
     }
 
+    /**
+     * 如果value是null，那么返回0
+     * 否则返回对应的int value
+     *
+     * @param value
+     * @return
+     */
+    public static BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof Integer) {
+            return BigDecimal.valueOf((Integer) value);
+        }
+        if (value instanceof Long) {
+            return BigDecimal.valueOf((Long) value);
+        }
+        if (value instanceof BigInteger) {
+            return BigDecimal.valueOf(((BigInteger) value).intValue());
+        }
+        if (value instanceof BigDecimal) {
+            return ((BigDecimal) value);
+        }
+        if (value instanceof Byte) {
+            return BigDecimal.valueOf(((Byte) value).intValue());
+        }
+        if (value instanceof String) {
+            return BigDecimal.valueOf(Integer.parseInt((String) value));
+        }
+        return BigDecimal.ZERO;
+    }
+
     public static int toInt(byte[] data) {
         if (data == null || data.length == 0) {
             return 0;
@@ -149,6 +216,9 @@ public final class PrimitiveUtils {
         }
         if (value instanceof Byte) {
             return ((Byte) value).toString();
+        }
+        if (value instanceof BigDecimal) {
+            return ((BigDecimal) value).toString();
         }
         if (value instanceof byte[]) {
             return new String((byte[]) value, UTF_8);

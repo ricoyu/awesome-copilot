@@ -359,37 +359,7 @@ group by ld.id
 
 ### SQL 中的LIKE用法
 
-```sql
-#if($creatorName)
-	and i.creator_name like :creatorName
-#end
-```
 
-Java 代码
-
-```java
-params.put("approverName", ifNotNull(invoiceSearchVO.getApproverName(), name -> concat("%", name, "%")));
-```
-
-**或者:**
-
-```java
-params.put("content", invoiceSearchVO.getContent());
-```
-
-```
-select * from poem where 1=1
-#if($author)
- and author = :author
-#end
-#if($content)
- and #like('content', $content) 
-#end
-```
-
-* #like('content', $content) 生成SQL: content like '%content值%'
-* #llike('content', $content) 生成SQL: content like '%content值'
-* #rlike('content', $content) 生成SQL: content like 'content值%'
 
 # 三 核心接口
 

@@ -60,22 +60,22 @@ public enum ErrorTypes implements ErrorType {
     INVALID_URI_ACCESS("40117", "template.invalid.uri.access", "访问的URI不合法"),
     TIMESTAMP_MISMATCH("40118", "template.timestamp.mismatch.error", "timestamp参数不匹配"),
 
-    //-------------------- 流控相关错误, 403 开头 --------------------------------------
     ACCESS_DENIED("4031", "template.access.denied", "你无权访问该资源"),
-    FLOW_EXCEPTION("4032", "template.flow.control", "已被流控"),
-    DEGRADE_EXCEPTION("4033", "template.flow.degrade", "已被熔断"),
-    HOT_PARAM_EXCEPTION("4034", "template.hot.param", "已被热点参数限流"),
-    SYSTEM_BLOCK_EXCEPTION("4035", "template.system.control", "已被系统规则限流"),
-    AUTHORITY_BLOCK_EXCEPTION("4036", "template.aunthority.control", "已被授权规则限流"),
-    HOT_PARAM_BLOCK_EXCEPTION("4037", "template.hotparam.control", "已被热点参数限流"),
+    //-------------------- 流控相关错误, 429 开头 --------------------------------------
+    TOO_MANY_REQUESTS("4291", "template.too.many.requests", "Too Many Requests"),
+    FLOW_EXCEPTION("4292", "template.flow.control", "已被流控"),
+    DEGRADE_EXCEPTION("4293", "template.flow.degrade", "已被熔断"),
+    HOT_PARAM_EXCEPTION("4294", "template.hot.param", "已被热点参数限流"),
+    SYSTEM_BLOCK_EXCEPTION("4295", "template.system.control", "已被系统规则限流"),
+    AUTHORITY_BLOCK_EXCEPTION("4296", "template.aunthority.control", "已被授权规则限流"),
+    HOT_PARAM_BLOCK_EXCEPTION("4297", "template.hotparam.control", "已被热点参数限流"),
 
     NOT_FOUND("4041", "template.not.found", "Not Found"),
     //网关层找不对目标service
     GATEWAY_NOT_FOUND_SERVICE("4042", "template.service.not.found", "Service Not Found"),
-    
-    METHOD_NOT_ALLOWED("4051", "template.method.notallowed", "Method not Allowed"),
-    
-    TOO_MANY_REQUESTS("4291", "template.too.many.requests", "Too Many Requests");
+
+    METHOD_NOT_ALLOWED("4051", "template.method.notallowed", "Method not Allowed");
+
 
     
     /**
