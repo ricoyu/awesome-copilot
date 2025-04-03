@@ -23,7 +23,7 @@ public enum ErrorTypes implements ErrorType {
     /**
      * 服务器内部错误
      */
-    INTERNAL_SERVER_ERROR("2","template.internal.server.error", "服务器内部错误"),
+    INTERNAL_SERVER_ERROR("5001","template.internal.server.error", "服务器内部错误"),
 
     //-------------------- 提交失败相关错误 400开头--------------------------------------
     /*
