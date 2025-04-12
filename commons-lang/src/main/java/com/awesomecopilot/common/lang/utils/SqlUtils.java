@@ -6,10 +6,12 @@ import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,103 +95,134 @@ public class SqlUtils {
 	}
 
 	/**
-	 * 给定任意的select语句, 动态按需添加deleted=0 and tenant_id=xxx的条件
-	 *
-	 * @param originalQuerySql
-	 * @return
+	 * 处理所有类型的SQL语句，动态添加deleted=0和tenant_id=xxx条件
 	 */
 	public static String addDeleteTenantIdCondition(String originalQuerySql) {
 		Long tenantId = ThreadContext.get("tenantId");
-		// 不同请求携带的租户ID可能不一样, 所以缓存key必须加上租户ID
 		String sqlCacheKey = originalQuerySql + (tenantId == null ? "" : tenantId.toString());
-		String deleteSql = deleteTenantCache.get(sqlCacheKey);
-		if (isNotEmpty(deleteSql)) {
+		String cachedSql = deleteTenantCache.get(sqlCacheKey);
+		if (isNotEmpty(cachedSql)) {
 			if (cache.size() > 1000) {
 				cache.clear();
 			}
-			return deleteSql;
+			return cachedSql;
 		}
+
 		try {
-			// 解析原始SQL查询
 			Statement statement = CCJSqlParserUtil.parse(originalQuerySql);
 
 			if (statement instanceof Select) {
-				Select selectStatement = (Select) statement;
-				SelectBody selectBody = selectStatement.getSelectBody();
-
-				if (selectBody instanceof PlainSelect) {
-					PlainSelect plainSelect = (PlainSelect) selectBody;
-
-					// 添加 deleted=0 条件
-					// 获取原始 WHERE 条件
-					String originalCondition = plainSelect.getWhere() != null
-							? plainSelect.getWhere().toString()
-							: ""; // 无 WHERE 时默认条件
-
-					String trimedSql = StringUtils.trimAll(originalCondition);
-					boolean alreadyContainDeleted = false; //原始SQL中是否已经包含deleted条件
-					boolean alreadyContainTenentId = false; //原始SQL中是否已经包含tenant_id条件
-					if (trimedSql.toLowerCase().contains("deleted=")) {
-						alreadyContainDeleted = true;
-					}
-					if (trimedSql.toLowerCase().contains("tenant_id=")) {
-						alreadyContainTenentId = true;
-					}
-
-					String newCondition = originalCondition;
-					//原始SQL不包含deleted条件, 则需要自动添加deleted=0条件
-					if (!alreadyContainDeleted && logicalDeleteEnabled) {
-						if (tenantId == null || alreadyContainTenentId) {
-							// 构建新条件：(originalCondition) AND deleted = 0
-							if (originalCondition.equals("")) {
-								newCondition += "deleted = 0";
-							} else {
-								newCondition = "(" + originalCondition + ") AND " + logicalDeleteField + " = 0";
-							}
-						} else {
-							if (originalCondition.equals("")) {
-								newCondition += (logicalDeleteField + " = 0 AND tenant_id = " + tenantId);
-							} else {
-								newCondition =
-										"(" + originalCondition + ") AND " + logicalDeleteField + " = 0 AND tenant_id" +
-												" " +
-												"= " + tenantId;
-							}
-						}
-					} else {
-						if (tenantId == null || alreadyContainTenentId) {
-							newCondition = originalCondition;
-						} else {
-							if (isNotBlank(originalCondition)) {
-								newCondition = "(" + originalCondition + ") AND tenant_id = " + tenantId;
-							} else {
-								newCondition = "tenant_id = " + tenantId;
-							}
-						}
-					}
-
-					// 替换 WHERE 子句
-					try {
-						if (isNotBlank(newCondition)) {
-							plainSelect.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
-						}
-					} catch (JSQLParserException e) {
-						// 如果无法正确处理原始查询，返回空字符串或抛出异常
-						throw new SqlParseException(plainSelect.toString());
-					}
-
-					String sqlWithDeletedTenantId = plainSelect.toString();
-					cache.put(sqlCacheKey, sqlWithDeletedTenantId);
-					return sqlWithDeletedTenantId;
-				}
+				return handleSelectStatement((Select) statement, sqlCacheKey, originalQuerySql);
+			} else if (statement instanceof Update) {
+				return handleUpdateStatement((Update) statement, sqlCacheKey, originalQuerySql);
+			} else if (statement instanceof Delete) {
+				return handleDeleteStatement((Delete) statement, sqlCacheKey, originalQuerySql);
+			} else {
+				throw new SqlParseException("Unsupported SQL statement type: " + statement.getClass().getSimpleName());
 			}
 		} catch (JSQLParserException e) {
-			log.error("", e);
+			log.error("SQL parse error", e);
 			throw new SqlParseException(originalQuerySql, e);
-			// 处理解析错误，根据需求返回空字符串或抛出异常
 		}
-		// 如果无法正确处理原始查询，返回空字符串或抛出异常
+	}
+
+	private static String handleSelectStatement(Select select, String sqlCacheKey, String originalQuerySql) {
+		SelectBody selectBody = select.getSelectBody();
+
+		if (selectBody instanceof PlainSelect) {
+			PlainSelect plainSelect = (PlainSelect) selectBody;
+			String newCondition =
+					buildNewCondition(plainSelect.getWhere() != null ? plainSelect.getWhere().toString() : "");
+
+			if (isNotBlank(newCondition)) {
+				try {
+					plainSelect.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
+				} catch (JSQLParserException e) {
+					throw new SqlParseException(plainSelect.toString());
+				}
+			}
+
+			String sqlWithDeletedTenantId = plainSelect.toString();
+			deleteTenantCache.put(sqlCacheKey, sqlWithDeletedTenantId);
+			return sqlWithDeletedTenantId;
+		}
 		throw new SqlParseException(originalQuerySql);
 	}
 
+	private static String handleUpdateStatement(Update update, String sqlCacheKey, String originalQuerySql) {
+		String originalCondition = update.getWhere() != null ? update.getWhere().toString() : "";
+		String newCondition = buildNewCondition(originalCondition);
+
+		if (isNotBlank(newCondition)) {
+			try {
+				update.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
+			} catch (JSQLParserException e) {
+				throw new SqlParseException(update.toString());
+			}
+		}
+
+		String sqlWithDeletedTenantId = update.toString();
+		deleteTenantCache.put(sqlCacheKey, sqlWithDeletedTenantId);
+		return sqlWithDeletedTenantId;
+	}
+
+	private static String handleDeleteStatement(Delete delete, String sqlCacheKey, String originalQuerySql) {
+		String originalCondition = delete.getWhere() != null ? delete.getWhere().toString() : "";
+		String newCondition = buildNewCondition(originalCondition);
+
+		if (isNotBlank(newCondition)) {
+			try {
+				delete.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
+			} catch (JSQLParserException e) {
+				throw new SqlParseException(delete.toString());
+			}
+		}
+
+		String sqlWithDeletedTenantId = delete.toString();
+		deleteTenantCache.put(sqlCacheKey, sqlWithDeletedTenantId);
+		return sqlWithDeletedTenantId;
+	}
+
+	private static String buildNewCondition(String originalCondition) {
+		Long tenantId = ThreadContext.get("tenantId");
+		String trimedSql = StringUtils.trimAll(originalCondition);
+		boolean alreadyContainDeleted = trimedSql.toLowerCase().contains("deleted=");
+		boolean alreadyContainTenentId = trimedSql.toLowerCase().contains("tenant_id=");
+
+		String newCondition = originalCondition;
+		boolean multicondition = false;
+		/*
+		 * 如果原始SQL只有一个条件, 就不需要在原始条件上套一个()了
+		 */
+		if (originalCondition.toLowerCase().contains(" and ") || originalCondition.toLowerCase().contains(" or ")) {
+			multicondition = true;
+		}
+
+		String parsedOriginalcondition = originalCondition;
+		if (multicondition) {
+			parsedOriginalcondition =  "(" + originalCondition + ")";
+		}
+
+		if (!alreadyContainDeleted && logicalDeleteEnabled) {
+			if (tenantId == null || alreadyContainTenentId) {
+				newCondition = originalCondition.equals("")
+						? "deleted = 0"
+						: parsedOriginalcondition +" AND " + logicalDeleteField + " = 0";
+			} else {
+				newCondition = originalCondition.equals("")
+						? (logicalDeleteField + " = 0 AND tenant_id = " + tenantId)
+						: parsedOriginalcondition + " AND " + logicalDeleteField + " = 0 AND tenant_id = " + tenantId;
+			}
+		} else {
+			if (tenantId == null || alreadyContainTenentId) {
+				newCondition = originalCondition;
+			} else {
+				newCondition = isNotBlank(originalCondition)
+						? "(" + originalCondition + ") AND tenant_id = " + tenantId
+						: "tenant_id = " + tenantId;
+			}
+		}
+
+		return newCondition;
+	}
 }
