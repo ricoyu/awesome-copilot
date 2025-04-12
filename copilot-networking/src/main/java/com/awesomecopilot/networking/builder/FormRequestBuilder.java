@@ -136,7 +136,7 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 	}
 	
 	/**
-	 * 设置请求参数
+	 * 设置请求参数, 这个参数是URL中的请求参数
 	 *
 	 * @param paramName
 	 * @param paramValue

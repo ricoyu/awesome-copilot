@@ -136,6 +136,11 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		this.entityManager = entityManager;
 	}
 
+	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory) {
+		this.entityManager = entityManager;
+		this.entityManagerFactory = entityManagerFactory;
+	}
+
 	public NativeSqlQueryBuilder(EntityManager entityManager, String logicalDeleteField) {
 		this.entityManager = entityManager;
 		this.logicalDeleteField = logicalDeleteField;

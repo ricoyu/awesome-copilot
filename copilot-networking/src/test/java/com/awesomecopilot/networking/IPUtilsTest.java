@@ -2,7 +2,6 @@ package com.awesomecopilot.networking;
 
 import com.awesomecopilot.networking.utils.IPUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.validator.routines.InetAddressValidator;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -23,7 +22,7 @@ import static org.junit.Assert.*;
 @Slf4j
 public class IPUtilsTest {
 	
-	private static final InetAddressValidator validator = InetAddressValidator.getInstance();
+	//private static final InetAddressValidator validator = InetAddressValidator.getInstance();
 	
 	@Test
 	public void testValidIpV4() {

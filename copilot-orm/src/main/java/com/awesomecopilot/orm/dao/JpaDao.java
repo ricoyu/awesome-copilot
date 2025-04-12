@@ -2,6 +2,7 @@ package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.common.lang.utils.SqlUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
 import com.awesomecopilot.orm.exception.EntityOperationException;
@@ -12,6 +13,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
@@ -110,6 +112,18 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	@PersistenceContext
 	protected EntityManager entityManager;
 
+	/**
+	 * 是否自动支持逻辑删除
+	 */
+	@Value("${copilot.orm.logicalDelete.enabled:true}")
+	private boolean logicalDeleteEnabled = false;
+
+	/**
+	 * 逻辑删除的字段名
+	 */
+	@Value("${copilot.orm.logicalDelete.field:deleted}")
+	private String logicalDeleteField = "deleted";
+
 	@Value("${hibernate.query.mode:loose}")
 	private String hibernateQueryMode = "loose";
 
@@ -162,12 +176,19 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 				"com.awesomecopilot.orm.directive.IfNotNull," +
 						"com.awesomecopilot.orm.directive.IfNull," +
 						"com.awesomecopilot.orm.directive.Between," +
+						"com.awesomecopilot.orm.directive.IfEqual," +
 						"com.awesomecopilot.orm.directive.IfPresent");
 		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
 				".Log4JLogChute");
 		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
 		//初始化运行时引擎
 		Velocity.init(properties);
+	}
+
+	@PostConstruct
+	public void initialize() {
+		SqlUtils.logicalDeleteEnabled = this.logicalDeleteEnabled;
+		SqlUtils.logicalDeleteField = this.logicalDeleteField;
 	}
 
 	/**
@@ -462,7 +483,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 
 	@Override
 	public SqlQueryBuilder query(String sqlOrQueryName) {
-		SqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager);
+		SqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager, entityManagerFactory);
 		ReflectionUtils.setField("sqlOrQueryName", sqlQueryBuilder, sqlOrQueryName);
 		ReflectionUtils.setField("hibernateQueryMode", sqlQueryBuilder, hibernateQueryMode);
 		ReflectionUtils.setField("enumLookupProperties", sqlQueryBuilder, enumLookupProperties);

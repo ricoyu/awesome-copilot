@@ -49,7 +49,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
 	
 	public static Object getBean(String beanName) {
 		if (applicationContext == null) {
-			log.warn("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
+			log.debug("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
 			return null;
 		}
 		return applicationContext.getBean(beanName);
@@ -57,7 +57,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
 	
 	public static <T> T getBean(String beanName, Class<T> clazz) {
 		if (applicationContext == null) {
-			log.warn("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
+			log.debug("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
 			return null;
 		}
 		return applicationContext.getBean(beanName, clazz);
@@ -65,7 +65,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
 	
 	public static <T> T getBean(Class<T> clazz) {
 		if (applicationContext == null) {
-			log.warn("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
+			log.debug("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
 			return null;
 		}
 		return applicationContext.getBean(clazz);
@@ -73,7 +73,7 @@ public class ApplicationContextHolder implements ApplicationContextAware {
 	
 	public static <T> List<T> getBeans(Class<T> clazz) {
 		if (applicationContext == null) {
-			log.warn("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
+			log.debug("applicationContext is null, consider add bean of ApplicationContextHolder type or add dependency copilot-spring-boot-starter");
 			return null;
 		}
 		Map<String, T> beansMap = applicationContext.getBeansOfType(clazz);

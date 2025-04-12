@@ -609,6 +609,9 @@ public abstract class AbstractRequestBuilder {
 					if (isBlank(result)) {
 						return null;
 					}
+					if (responseType == String.class) {
+						return (T) result;
+					}
 					return (T) JacksonUtils.toObject(result, responseType);
 				}
 				return (T) result;

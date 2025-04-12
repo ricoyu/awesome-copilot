@@ -1,5 +1,6 @@
 package com.awesomecopilot.common.lang.dto;
 
+import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION;
 import com.awesomecopilot.common.lang.vo.Page;
@@ -9,6 +10,17 @@ import java.util.stream.Stream;
 
 import static com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION.ASC;
 
+/**
+ * 接收分页查询时的DTO可以继承这个 PageDTO 以承载分页参数
+ * <p/>
+ * Copyright: Copyright (c) 2025-04-03 15:26
+ * <p/>
+ * Company: Sexy Uncle Inc.
+ * <p/>
+
+ * @author Rico Yu  ricoyu520@gmail.com
+ * @version 1.0
+ */
 public class PageDTO {
 
 	/**
@@ -26,10 +38,14 @@ public class PageDTO {
 	 */
 	private String order;
 
-	public Page toPage() {
-		Page page = new Page();
-		page.setPageNum(pageNum);
-		page.setPageSize(pageSize);
+	public Page getPage() {
+		Page page = ThreadContext.get("page");
+		if (page != null) {
+			return page;
+		}
+		Page page1 = new Page();
+		page1.setPageNum(pageNum);
+		page1.setPageSize(pageSize);
 		if (StringUtils.isNotEmpty(order)) {
 			String[] orderList = order.split(",");
 			Stream.of(orderList).forEach(o -> {
@@ -38,10 +54,11 @@ public class PageDTO {
 				OrderBean order = new OrderBean();
 				order.setOrderBy(arr[0]);
 				order.setDirection(direction);
-				page.getOrders().add(order);
+				page1.getOrders().add(order);
 			});
 		}
-		return page;
+		ThreadContext.put("page", page1);
+		return page1;
 	}
 
 

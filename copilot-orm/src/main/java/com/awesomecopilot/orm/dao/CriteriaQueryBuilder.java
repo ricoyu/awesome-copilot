@@ -4,6 +4,7 @@ import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.Orders;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
+import com.awesomecopilot.orm.vo.PageResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -132,6 +133,27 @@ public class CriteriaQueryBuilder {
 			jpaCriteriaQuery.setPage(page);
 		}
 		return (List<T>) jpaCriteriaQuery.list();
+	}
+
+	/**
+	 * 分页查询
+	 * @param pageNum
+	 * @param pageSize
+	 * @return PageResult<T>
+	 * @param <T>
+	 */
+	public <T> PageResult<T> findPage(int pageNum, int pageSize) {
+		Page page = new Page();
+		page.setPageNum(pageNum);
+		page.setPageSize(pageSize);
+		if (page != null) {
+			jpaCriteriaQuery.setPage(page);
+		}
+		List<T> data = jpaCriteriaQuery.list();
+		PageResult<T> pageResult = new PageResult<>();
+		pageResult.setData(data);
+		pageResult.setPage(page);
+		return pageResult;
 	}
 
 	/**

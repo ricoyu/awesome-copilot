@@ -2,6 +2,8 @@ package com.awesomecopilot.json;
 
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
+import com.awesomecopilot.common.lang.vo.Result;
+import com.awesomecopilot.common.lang.vo.Results;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -285,6 +287,30 @@ public class JacksonUtilsTest {
 		String str = IOUtils.readClassPathFileAsString("childTask.json");
 		boolean valid = JacksonUtils.isValidJson(str);
 		System.out.println(valid);
+	}
+
+	@Test
+	public void testSerialzieListStrInPojo() throws JsonProcessingException {
+		Spu spu = new Spu();
+		//spu.setBirthday(LocalDateTime.now());
+		spu.setName("test");
+		List<String> urls = new ArrayList<>();
+		urls.add("http://127.0.0.1:48080/admin-api/infra/file/4/get/d8c88ec4b865073945319d638f7159170b5dff988b9119642edcdb04eba7fe72.jpg");
+		spu.setPicUrils(urls);
+		Result<Spu> result = Results.<Spu>success().data(spu).build();
+		//String json = toJson(result);
+		ObjectMapper objectMapper = new ObjectMapper();
+		String json = objectMapper.writeValueAsString(result);
+		System.out.println(json);
+	}
+
+	@Data
+	class Spu {
+		private String name;
+
+		//private LocalDateTime birthday;
+
+		private List<String> picUrils;
 	}
 
 	@Test

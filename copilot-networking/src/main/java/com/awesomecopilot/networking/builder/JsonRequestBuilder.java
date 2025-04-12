@@ -27,6 +27,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class JsonRequestBuilder extends AbstractRequestBuilder {
 
+
+	/**
+	 * 提交的json数据
+	 */
+	private String jsonBody;
+
 	private static final Logger log = LoggerFactory.getLogger(JsonRequestBuilder.class);
 	
 	public JsonRequestBuilder url(String url) {
@@ -64,11 +70,6 @@ public class JsonRequestBuilder extends AbstractRequestBuilder {
 		super.method(method);
 		return this;
 	}
-	
-	/**
-	 * 提交的json数据
-	 */
-	private String jsonBody;
 	
 	/**
 	 * Basic Authentication

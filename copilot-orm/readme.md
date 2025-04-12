@@ -6,7 +6,7 @@
 <dependency>
     <groupId>com.copilot</groupId>
     <artifactId>copilot-orm</artifactId>
-    <version>17.0.1</version>
+    <version>17.0.0</version>
 </dependency>
 <dependency>
     <groupId>org.hibernate</groupId>
@@ -155,7 +155,28 @@ public class PersistentConfig {
 ### 1.5 BaseEntity 示例
 
 ```java
-@Data
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * 实体类的父类, 自己选择要不要继承 
+ * <p>
+ * Copyright: Copyright (c) 2019-10-31 15:36
+ * <p>
+ * Company: Sexy Uncle Inc.
+ * <p>
+ 
+ * @author Rico Yu  ricoyu520@gmail.com
+ * @version 1.0
+ */
 @MappedSuperclass
 public class BaseEntity implements Serializable {
 	
@@ -165,22 +186,15 @@ public class BaseEntity implements Serializable {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "ID", updatable = false, unique = true, nullable = false)
 	private Long id;
-	
-	@Column(name = "CREATOR", length = 100, nullable = false)
-	private String creator;
-	
-	/*
-	 * 默认映射的数据库字段类型为TIMESTAMP,改为DATETIME
+
+	/**
+	 * 默认映射的数据库字段类型为TIMESTAMP
 	 */
 	@Column(name = "CREATE_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
 	private LocalDateTime createTime;
-	
-	@Column(name = "MODIFIER", length = 100, nullable = false)
-	private String modifier;
-	
-	@Column(name = "MODIFY_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
-	private LocalDateTime modifyTime;
-	
+
+	@Column(name = "UPDATE_TIME", columnDefinition = "DATETIME", nullable = false, length = 19)
+	private LocalDateTime updateTime;
 	
 	/**
 	 * 在Entity被持久化之前做一些操作
@@ -189,114 +203,133 @@ public class BaseEntity implements Serializable {
 	protected void onPrePersist() {
 		LocalDateTime now = LocalDateTime.now();
 		setCreateTime(now);
-		setModifyTime(now);
-		String username = "getUsernameFromsomewhere";
+		setUpdateTime(now);
 	}
 	
 	@PreUpdate
 	protected void onPreUpdate() {
-		setModifyTime(LocalDateTime.now());
-		setModifier("System");
+		setUpdateTime(LocalDateTime.now());
 	}
-	
-	/**
-	 * entity之类是支持逻辑删除的
-	 */
-	@PreRemove
-	protected void preRemove() {
-		ReflectionUtils.setField("deleted", this, true);
+
+	public LocalDateTime getCreateTime() {
+		return createTime;
 	}
-	
+
+	public void setCreateTime(LocalDateTime createTime) {
+		this.createTime = createTime;
+	}
+
+	public LocalDateTime getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(LocalDateTime updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }
 ```
 
 
 
-# 二 SQL中动态语法介绍
+# 二 条件分支
 
-检查fullName不为null则输出and full_name=:fullName
+## 2.1 基于存在性判断
 
-```velocity
-#if($fullName)
-and full_name=:fullName
-#end
-```
+1. 检查fullName不为null则输出and full_name=:fullName
 
+   ```velocity
+   #if($fullName)
+   and full_name=:fullName
+   #end
+   ```
 
+2. 判断变量为null(检查params里面没有塞这个参数)
 
-检查为null可以简化成这样(检查params里面没有塞这个参数)
+   ```velocity
+   #if (!$variable)
+   
+   #end
+   ```
 
-```
-#if (!$variable)
+3. params(Map类型)包含key: roleId, role, 检查为null可以简化成这样(检查params里面有没有塞这个参数)
 
-#end
-```
+   ```velocity
+   #if (!$variable)
+   
+   #end
+   ```
 
-形成动态SQL经常会用到类似下面这种语法
+   
 
-```
-#if(判断条件)
-  .........
-#elseif(判断条件)
-  .........
-#else
-  .........
-#end
-```
+4. if语句完整结构
 
-如:
+   ```velocity
+   #if(判断条件)
+     .........
+   #elseif(判断条件)
+     .........
+   #else
+     .........
+   #end
+   ```
 
-```
-#if($centreId)
-    AND s.CENTRE_ID =:centreId
-#end
-```
+   ```velocity
+   #if($centreId)
+       AND s.CENTRE_ID =:centreId
+   #end
+   ```
 
-1. `$usedInclude == true`  表示传了这个参数并且值是true
-2. `$usedInclude == false` 表示传了这个参数并且值是false
+## 2.2 基于值判断
 
-## 2.1 SQL中集合类型参数介绍
+1. 判断传了这个参数并且值是true
 
-### Demo 1
+   ```velocity
+   $usedInclude == true
+   ```
 
-userIds是List
+2. 判断传了这个参数并且值是false
 
-```
-#if(!$userIds.isEmpty())
-	WHERE u.id IN (:userIds)
-#end
-```
+   ```velocity
+   $usedInclude == false
+   ```
 
-### Demo 2
+3. 当sortField等于"salesCount"
 
-params(Map类型)包含key: roleId, role
+   ```velocity
+   #if($sortField == "salesCount")
+       <!-- 当sortField等于"salesCount"时执行的代码 -->
+   #end
+   ```
 
-检查为null可以简化成这样(检查params里面有没有塞这个参数)
+4. 或者更严谨的写法（防止变量为null时出错）
 
-```
-#if (!$variable)
+   ```velocity
+   #if("$!sortField" == "salesCount")
+       <!-- 当sortField等于"salesCount"时执行的代码 -->
+   #end
+   ```
 
-#end
-```
+   
 
-也可以这样
+## 2.3 集合类型判断
 
-```
-SELECT 1 FROM ROLE WHERE deleted=0 and role=:role
-#if($null.isNotNull($roleId))
-	and id != :roleId
-#end
-```
+1. 判断集合不为空(userIds是List)
 
-还可以这样
+   ```velocity
+   #if(!$userIds.isEmpty())
+   	WHERE u.id IN (:userIds)
+   #end
+   ```
 
-```
-#if($null.isNull($beginDate) && $null.isNull($endDate))
-```
-
-
-
-### 2.2 SQL 中自定义的命令
+## 2.4 自定义的条件判断命令
 
 1. ifNull ifNotNull
 
@@ -336,6 +369,24 @@ SELECT 1 FROM ROLE WHERE deleted=0 and role=:role
        GROUP BY r.id
        #end
    ```
+
+3. ifEqual
+
+   ```velocity
+   select * from product_spu
+   where `status`=1
+   #if($keyword)
+       and name like :keyword
+   #end
+   #if($categoryIds)
+       and category_id in :categoryIds
+   #end
+   #if($!sortField == "salesCount")
+       ORDER BY (sales_count + virtual_sales_count) #ifEqual($sortAsc, true, "ASC", "DESC")
+   #end
+   ```
+
+   
 
 ### SQL 中的分页
 
@@ -597,38 +648,97 @@ public class MessageContent {
 
   ......
 
+
+
+# 四 类型转换
+
+1. @Convert注解
+
+   ```java
+   @Convert(converter = StringToListConverter.class)
+   private List<String> sliderPicUrls;
+   ```
+
+   遇到自动类型无法完成的类型转换时, 可以实现自己的jakarta.persistence.AttributeConverter, 然后指定的对应字段的@Convert注解上
+
+
+
 # 四 完整示例
 
 ## 4.1 分页查询
 
-### 4.1.1 Controller
+### 4.1.1 AppProductSpuController
 
 ```java
-/**
- * 分页查询员工表
- */
-@PostMapping("/list")
-public Result listEmployees(@RequestBody EmployeeQueryVO queryVO) {
-  List<Employee> employees = employeeService.listEmployees(queryVO);
-  return Results.success().result(employees);
+@GetMapping("/page")
+@Operation(summary = "获得商品 SPU 分页")
+@PermitAll
+public Result<List<AppProductSpuRespVO>> getSpuPage(@Valid AppProductSpuPageReqVO pageVO) {
+  List<ProductSpuVO> pageResult = productSpuService.getSpuPage(pageVO);
+  if (CollectionUtils.isEmpty(pageResult)) {
+    return Results.<List<AppProductSpuRespVO>>success().build();
+  }
+
+  // 拼接返回
+  pageResult.forEach(spu -> spu.setSalesCount(spu.getSalesCount() + spu.getVirtualSalesCount()));
+  List<AppProductSpuRespVO> results = pageResult.stream().map((spu) -> {
+    AppProductSpuRespVO appProductSpuRespVO = BeanUtils.copyProperties(spu, AppProductSpuRespVO.class);
+    List<String> sliderPicUrls = appProductSpuRespVO.getSliderPicUrls();
+    for (int i = 0; i < sliderPicUrls.size(); i++) {
+        String sliderPicUrl = sliderPicUrls.get(i);
+      sliderPicUrl = StringUtils.cleanQuotationMark(sliderPicUrl);
+      sliderPicUrls.set(i, sliderPicUrl);
+    }
+    return appProductSpuRespVO;
+  }).collect(toList());
+  Result<List<AppProductSpuRespVO>> result = Results.<List<AppProductSpuRespVO>>success()
+      .page(pageVO.getPage())
+      .data(results)
+      .build();
+  return result;
 }
 ```
 
 EmployeeQueryVO
 
 ```java
+@Schema(description = "用户 App - 商品 SPU 分页 Request VO")
 @Data
-public class EmployeeQueryVO {
-	
-	private String fullName;
-	
-	private Page page;
-	
-	private Double lowSalary;
-	
-	private Double highSalary;
-}
+@ToString(callSuper = true)
+public class AppProductSpuPageReqVO extends PageDTO {
 
+    public static final String SORT_FIELD_PRICE = "price";
+    public static final String SORT_FIELD_SALES_COUNT = "salesCount";
+    public static final String SORT_FIELD_CREATE_TIME = "createTime";
+
+    @Schema(description = "商品 SPU 编号数组", example = "1,3,5")
+    private List<Long> ids;
+
+    @Schema(description = "分类编号", example = "1")
+    private Long categoryId;
+
+    @Schema(description = "分类编号数组", example = "1,2,3")
+    private List<Long> categoryIds;
+
+    @Schema(description = "关键字", example = "好看")
+    private String keyword;
+
+    @Schema(description = "排序字段", example = "price") // 参见 AppProductSpuPageReqVO.SORT_FIELD_XXX 常量
+    private String sortField;
+
+    @Schema(description = "排序方式", example = "true")
+    private Boolean sortAsc;
+
+    @AssertTrue(message = "排序字段不合法")
+    @JsonIgnore
+    public boolean isSortFieldValid() {
+        if (StringUtils.isEmpty(sortField)) {
+            return true;
+        }
+        return equalsAny(sortField, SORT_FIELD_PRICE, SORT_FIELD_SALES_COUNT);
+    }
+
+}
 ```
 
 
@@ -654,24 +764,22 @@ Page对象是commons-lang提供的, 可以作为接收查询参数的Bean的属�
 {
   "pageNum":3,
   "pageSize": 20,
-  "sorts": ["-age", "salary" ]
+  "sorts": ["age:desc", "salary" ]
 }
 ```
 
-只要引入了copilot-spring-boot-web-starter, page对象会被回填到返回的Result对象里面, 即返回的JSON对象会包含一个page对象, 示例如下:
+
 
 ```
 {
   "code": "0",
   "status": "success",
   "page": {
-    "hasNextPage": true,
-    "hasPreviousPage": true,
-    "pageNum": 3,
-    "pageSize": 20,
-    "total": 4064001,
-    "totalPages": 203201
-  },
+        "pageNum": 1,
+        "pageSize": 10,
+        "total": 6,
+        "totalPages": 1
+    },
   "data": [
     ...
   ]
@@ -704,19 +812,27 @@ public class EmployeeService {
 分页语句以及排序子句都会自动生成, 你这边只需要写select以及查询条件即可
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>  
-<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd" >
-<hibernate-mapping>
-    <sql-query name="queryEmployees">
-        <![CDATA[
-            select * from employee where 1=1
-            #if($fullName)
-            and full_name=:fullName
-            #end
-            #between("salary", $lowSalary, $highSalary)
-    	]]>
-    </sql-query>
-</hibernate-mapping>
+<sql-query name="queryProductSpu">
+    <![CDATA[
+        select * from product_spu
+        where `status`=1
+        #if($keyword)
+            and name like :keyword
+        #end
+        #if(!$categoryIds.isEmpty())
+            and category_id in :categoryIds
+        #end
+        #if($!sortField == "salesCount")
+            ORDER BY (sales_count + virtual_sales_count) #ifEqual($sortAsc, true, "ASC", "DESC")
+        #elseif($!sortField == "price")
+            ORDER BY price #ifEqual($sortAsc, true, "ASC", "DESC")
+        #elseif($!sortField == "createTime")
+            ORDER BY create_time #ifEqual($sortAsc, true, "ASC", "DESC")
+        #else
+            ORDER BY `sort` desc, id desc
+        #end
+  ]]>
+</sql-query>
 ```
 
 
@@ -928,4 +1044,38 @@ entityOperations.commit();
 
 # 七 ORM 错误
 
-如果是多module项目, Entity实体类在一个module里面, 然后另一个module是一个SpringBoot应用, 在这里执行named-sql查询, xxx.hbm.xml也是放在这个module里面的, 那么正常的Ideadebug没问题, 但是用Jrebel debug会找不到named-sql, 必须把xxx.hbm.xml和实体类放到同一个module下
+如果是多module项目, Entity实体类在一个module里面, 然后另一个module是一个SpringBoot应用, 在这里执行named-sql查询, xxx.hbm.xml也是放在这个module里面的, 那么正常的Idea debug没问题, 但是用Jrebel debug会找不到named-sql, 必须把xxx.hbm.xml和实体类放到同一个module下
+
+
+
+# 八 自动添加 逻辑删除和租户ID 条件
+
+SpringBoot应用的application.yaml添加如下配置就可以实现自动添加deleted=0 and tenant_id=xxx的条件以支持逻辑删除和多租户
+
+请求头需要包含Tenant-Id, 然后引入TenantIdFilter(`copilot-spring-boot-web-starter`中已经自动配置), 该filter会把Tenant-Id请求头的值放到ThreadLocal里面, 解析SQL的时候自动检查ThreadLocal中包不包含tenantId这个变量, 包含的话就自动添加tenant_id=xxx的条件, 如果原始SQL已经写了tenant_id=xxx, 那么不会重复添加.
+
+SQLOperations 和 CriteriaOperations两个接口都支持
+
+1. 添加拦截器
+
+   ```yaml
+   spring:
+     jpa:
+       properties:
+         hibernate:
+           session_factory:
+             statement_inspector: com.awesomecopilot.cloud.product.config.DeletedTenantIdConditionInterceptor
+   ```
+
+2. 显式关闭逻辑删除功能
+
+   ```yaml
+   copilot:
+     orm:
+       logicalDelete:
+         enabled: false
+   ```
+
+   
+
+关闭以后只会检查租户ID的存在性来自动判断是否加入 tenant_id=xxx 条件

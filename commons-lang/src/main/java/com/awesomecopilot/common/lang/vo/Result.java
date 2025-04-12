@@ -71,7 +71,7 @@ public class Result<T> {
 		return this;
 	}
 
-	public Object getData() {
+	public T getData() {
 		return this.data;
 	}
 	public String getCode() {

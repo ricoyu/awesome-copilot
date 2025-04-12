@@ -109,6 +109,12 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	// 包含setter的名字，转成小写,并把前缀"set"去掉
 	private String[] tempPropertyNames = null;
 
+	//暂时存储一下resultClass中的字段, 不保证顺序
+	private Field[] tempFields = null;
+
+	//存储resultClass中的字段, 与alias保持顺序一致
+	private Field[] fields = null;
+
 	// 当自动类型转换失败后尝试找JPA2提供的基于注解的Converter,这个数组大部分的元素应该是空的
 	@SuppressWarnings("rawtypes")
 	private AttributeConverter[] tempAttributeConverters = null;
@@ -185,6 +191,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	protected void initializeTmp() {
 		Method[] methods = resultClass.getMethods();
 		Field[] fields = ReflectionUtils.getFields(resultClass);
+		tempFields = fields;
 		/*
 		 * 过滤掉Object对象中声明的方法
 		 */
@@ -308,6 +315,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 		if (!alias2MethodInitialized) {
 			logger.debug("{}还未初始化，开始匹配alias与bean中的setter", getClass().getSimpleName());
 			int length = aliases.length;
+			fields = new Field[length];
 			methods = new Method[length]; //Resultset中每一列对应的Method
 			methodHandles = new MethodHandle[length];
 			propertyNames = new String[length]; //对应的方法名
@@ -322,11 +330,16 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 				//根据alias匹配bean中的方法名
 				boolean found = false;
 				String alias = aliases[i].replaceAll("_", "").toLowerCase();
+				for (int j = 0; j < tempFields.length; j++) {
+				    Field field = tempFields[j];
+					if (field.getName().equalsIgnoreCase(alias)) {
+						fields[i] = field;
+					}
+				}
 				/*
 				 * 找对应的方法 
 				 * 注意methods、methodHandles、methodNames、parameterTypes、columnNames
 				 * 这几个数组在顺序上都是与aliases一一对应的,避免后面再去根据alias查找对应的setter
-				 * @on
 				 */
 				for (int j = 0; j < tempPropertyNames.length; j++) {
 					if (tempPropertyNames[j].equals(alias)) {
@@ -350,7 +363,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 					 * in loose mode, ignore this exception
 					 * @on
 					 */
-					logger.warn(message);
+					logger.debug(message);
 					/*
 					 * 因为要支持loose模式下不报错，找不到对应method情况下对应位置也要给一个null，不然顺序就错乱了
 					 */
@@ -552,7 +565,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 				 */
 				if (needCast) {
 					logger.debug("needCasts[{}]为true, 因此列[{}]需要做类型转换, 值为[{}],先确定采用哪个ValueHandler", i, aliases[i], value);
-					ValueHandlerFactory.ValueHandler valueHandler = ValueHandlerFactory.determineAppropriateHandler(parameterType);
+					ValueHandlerFactory.ValueHandler valueHandler = ValueHandlerFactory.determineAppropriateHandler(parameterType, fields[i]);
 					//可以通过valueHandler处理
 					if (valueHandler != null) {
 						logger.debug("找到对应的valuehandler[{}]，用valueHandler做类型转换", valueHandler.getClass().getName());
@@ -589,7 +602,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 							
 							methodHandle.invoke(result, transformed);
 						} else {
-							String message = format("没有办法处理类型为[{0}]，值为[{1}]到[{2}]的转换，抛出异常!",
+							String message = format("没有办法处理字段: {0}, 类型为: {1}，值为: {2} ,到目标类型: {3} 的转换，抛出异常!",
 									value.getClass().getName(),
 									value, parameterType);
 							logger.debug(message);

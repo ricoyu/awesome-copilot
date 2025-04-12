@@ -37,6 +37,7 @@ public enum ErrorTypes implements ErrorType {
     VALIDATION_FAIL("4002","template.bad.request", "数据校验失败"),
     DUPLICATE_SUBMISSION("4003", "duplicate.submit", "请勿重复提交"),
     MAX_UPLOAD_SIZE_EXCEEDED("4005", "max.uploadsize.exceeded", "超出最大上传文件大小限制"),
+    MISSING_TENANT_ID("4006", "missing.tenant.id", "请提供租户ID"),
 
     //-------------------- 授权相关错误, 401 开头 --------------------------------------
     TOKEN_MISSING("4011", "template.missing.token.error", "请提供Token"),

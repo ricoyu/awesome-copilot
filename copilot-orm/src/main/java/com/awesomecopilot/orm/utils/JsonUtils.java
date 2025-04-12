@@ -1,9 +1,11 @@
 package com.awesomecopilot.orm.utils;
 
+import com.awesomecopilot.orm.exception.JacksonException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
@@ -15,11 +17,15 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Jackson工具类
@@ -34,7 +40,7 @@ import static java.time.format.DateTimeFormatter.ofPattern;
  */
 public final class JsonUtils {
 
-	private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
+	private static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 	static {
@@ -71,7 +77,8 @@ public final class JsonUtils {
 		try {
 			json = mapper.writeValueAsString(object);
 		} catch (JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
+			throw new JacksonException(e);
 		}
 		return json;
 	}
@@ -84,8 +91,24 @@ public final class JsonUtils {
 		try {
 			json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
 		} catch (JsonProcessingException e) {
-			logger.error(e.getMessage(), e);
+			log.error(e.getMessage(), e);
+			throw new JacksonException(e);
 		}
 		return json;
+	}
+
+
+	public static <T> List<T> toList(String jsonArray, Class<T> clazz) {
+		if (isBlank(jsonArray)) {
+			return emptyList();
+		}
+		CollectionType javaType = mapper.getTypeFactory()
+				.constructCollectionType(List.class, clazz);
+		try {
+			return mapper.readValue(jsonArray, javaType);
+		} catch (IOException e) {
+			log.error("Parse json array \n{} \n to List of type {} failed", jsonArray, clazz, e);
+			throw new JacksonException(e);
+		}
 	}
 }
