@@ -60,6 +60,8 @@ public enum ErrorTypes implements ErrorType {
     TIMESTAMP_INVALID("40116", "template.timestamp.invalid.error", "timestamp参数必须是UNIX miliseconds"),
     INVALID_URI_ACCESS("40117", "template.invalid.uri.access", "访问的URI不合法"),
     TIMESTAMP_MISMATCH("40118", "template.timestamp.mismatch.error", "timestamp参数不匹配"),
+    SMS_CODE_NOT_FOUND("40119", "template.smscode.not.found", "验证码不存在"),
+    SMS_CODE_NOT_EXPIRED("40120", "template.smscode.expired", "验证码已过期"),
 
     ACCESS_DENIED("4031", "template.access.denied", "你无权访问该资源"),
     //-------------------- 流控相关错误, 429 开头 --------------------------------------

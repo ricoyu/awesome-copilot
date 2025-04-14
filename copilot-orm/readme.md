@@ -1050,11 +1050,13 @@ entityOperations.commit();
 
 # 八 自动添加 逻辑删除和租户ID 条件
 
-SpringBoot应用的application.yaml添加如下配置就可以实现自动添加deleted=0 and tenant_id=xxx的条件以支持逻辑删除和多租户
+默认就支持逻辑删除, 每条SQL后面都会自动加上deleted=0, 强制租户ID需要手工开启
 
 请求头需要包含Tenant-Id, 然后引入TenantIdFilter(`copilot-spring-boot-web-starter`中已经自动配置), 该filter会把Tenant-Id请求头的值放到ThreadLocal里面, 解析SQL的时候自动检查ThreadLocal中包不包含tenantId这个变量, 包含的话就自动添加tenant_id=xxx的条件, 如果原始SQL已经写了tenant_id=xxx, 那么不会重复添加.
 
 SQLOperations 和 CriteriaOperations两个接口都支持
+
+配置方法:
 
 1. 添加拦截器
 
@@ -1067,7 +1069,21 @@ SQLOperations 和 CriteriaOperations两个接口都支持
              statement_inspector: com.awesomecopilot.cloud.product.config.DeletedTenantIdConditionInterceptor
    ```
 
-2. 显式关闭逻辑删除功能
+2. application.yaml配置
+
+   ```yaml
+   copilot:
+     orm:
+       logicalDelete:
+         enabled: true
+     filter:
+       tenant:
+         mandatory: true
+         excludeUrls:
+           - /**
+   ```
+
+3. 显式关闭逻辑删除功能
 
    ```yaml
    copilot:
