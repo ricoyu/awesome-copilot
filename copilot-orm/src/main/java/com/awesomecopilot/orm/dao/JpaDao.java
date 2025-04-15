@@ -115,13 +115,13 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	/**
 	 * 是否自动支持逻辑删除
 	 */
-	@Value("${copilot.orm.logicalDelete.enabled:true}")
+	@Value("${copilot.orm.logical-delete.enabled:true}")
 	private boolean logicalDeleteEnabled = false;
 
 	/**
 	 * 逻辑删除的字段名
 	 */
-	@Value("${copilot.orm.logicalDelete.field:deleted}")
+	@Value("${copilot.orm.logical-delete.field:deleted}")
 	private String logicalDeleteField = "deleted";
 
 	@Value("${hibernate.query.mode:loose}")

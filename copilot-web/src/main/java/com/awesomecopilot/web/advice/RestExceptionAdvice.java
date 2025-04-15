@@ -4,6 +4,7 @@ import com.awesomecopilot.common.lang.errors.ErrorTypes;
 import com.awesomecopilot.common.lang.exception.ApplicationException;
 import com.awesomecopilot.common.lang.exception.BusinessException;
 import com.awesomecopilot.common.lang.exception.EntityNotFoundException;
+import com.awesomecopilot.common.lang.exception.ServiceException;
 import com.awesomecopilot.common.lang.vo.Result;
 import com.awesomecopilot.common.lang.vo.Results;
 import com.awesomecopilot.common.spring.i18n.I18N;
@@ -221,6 +222,19 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleBusinessException(BusinessException e) {
 		logger.error("", e);
 		Result result = Results.status(e.getCode(), I18N.i18nMessage(e)).build();
+		return new ResponseEntity(result, HttpStatus.OK);
+	}
+	/**
+	 * 通用业务异常处理
+	 *
+	 * @param e
+	 * @return
+	 */
+	@ExceptionHandler(ServiceException.class)
+	@ResponseStatus(value = HttpStatus.OK)
+	public ResponseEntity<Object> handleServiceException(ServiceException e) {
+		logger.error("", e);
+		Result result = Results.status(e.getCode(), e.getMessage()).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
 

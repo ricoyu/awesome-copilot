@@ -118,7 +118,7 @@ public class SqlUtils {
 			} else if (statement instanceof Delete) {
 				return handleDeleteStatement((Delete) statement, sqlCacheKey, originalQuerySql);
 			} else {
-				throw new SqlParseException("Unsupported SQL statement type: " + statement.getClass().getSimpleName());
+				return originalQuerySql;
 			}
 		} catch (JSQLParserException e) {
 			log.error("SQL parse error", e);

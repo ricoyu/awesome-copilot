@@ -1,5 +1,7 @@
 package com.awesomecopilot.common.lang.vo;
 
+import com.awesomecopilot.common.lang.exception.ServiceException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,5 +119,26 @@ public class Result<T> {
 	 */
 	public boolean isSuccess() {
 		return SUCCESS_CODE.equals(code);
+	}
+
+	/**
+	 * 判断是否有异常。如果有，则抛出 {@link ServiceException} 异常
+	 */
+	public void checkError() throws ServiceException {
+		if (isSuccess()) {
+			return;
+		}
+		// 业务异常
+		throw new ServiceException(code, (String) message);
+	}
+
+	/**
+	 * 判断是否有异常。如果有，则抛出 {@link ServiceException} 异常
+	 * 如果没有，则返回 {@link #data} 数据
+	 */
+	@JsonIgnore // 避免 jackson 序列化
+	public T getCheckedData() {
+		checkError();
+		return data;
 	}
 }

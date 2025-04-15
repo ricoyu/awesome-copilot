@@ -1338,6 +1338,7 @@ public final class JedisUtils {
 	}
 	
 	/**
+	 * 不会包含重复元素, 按照score升序排序
 	 * Redis Sorted Set 相关操作
 	 * <p>
 	 * Copyright: Copyright (c) 2018-07-27 21:28
