@@ -399,4 +399,33 @@ public class JedisUtilsTests {
 		String json = JacksonUtils.toJson(user);
 		JedisUtils.set("k1", json);
 	}
+
+	public static class HyperLoglogTest {
+
+		@Test
+		public void testPfAdd() {
+			Long pfadd = JedisUtils.HyperLogLog.pfadd("dummy-key", "123", "456", "789");
+			assertTrue(pfadd == 1);
+		}
+	}
+
+	public static class BitMapTest {
+
+		@Test
+		public void testSetBit() {
+			JedisUtils.del("rico");
+			Boolean result = JedisUtils.Bitmap.setbit("rico", 8, 1);
+			long count = JedisUtils.Bitmap.bitCount("rico", 0, 0);
+			assertEquals(0, count);
+			count = JedisUtils.Bitmap.bitCount("rico", 1, 1);
+			assertEquals(1, count);
+			result = JedisUtils.Bitmap.setbit("rico", 8, 0);
+			assertTrue(result);
+			result = JedisUtils.Bitmap.setbit("rico", 0, 1);
+			assertFalse(result);
+			JedisUtils.Bitmap.bitOr("dest", "rico");
+			count = JedisUtils.Bitmap.bitCount("dest", 0, 9);
+			assertEquals(count, 2);
+		}
+	}
 }
