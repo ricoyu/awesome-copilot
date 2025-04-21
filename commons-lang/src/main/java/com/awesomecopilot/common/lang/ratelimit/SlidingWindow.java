@@ -59,7 +59,14 @@ public class SlidingWindow implements RateLimiter {
 	private final long subWindowMillis;
 	
 	private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-	
+
+	/**
+	 *
+	 * @param timeWindow 时间窗口, 即对多长时间内的访问进行限流, 最终都会转换成毫秒进行时间窗口的切割
+	 * @param timeUnit 时间窗口的单位, 比如可以指定1分钟, 1小时等
+	 * @param precision 精度, 即要将timeWindow划分成多少个子窗口, 划得越多精度越高
+	 * @param limit 在指定的时间窗口内允许通过多少个请求
+	 */
 	public SlidingWindow(Long timeWindow, TimeUnit timeUnit, Integer precision, Long limit) {
 		Objects.requireNonNull(timeWindow, "timeWindows cannot be null!");
 		Objects.requireNonNull(timeUnit, "timeUnit cannot be null!");

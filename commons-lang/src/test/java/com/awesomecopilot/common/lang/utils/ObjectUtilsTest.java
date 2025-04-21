@@ -10,9 +10,9 @@ public class ObjectUtilsTest {
     public void testIsEqual() {
     	Integer i = new Integer(300);
         Integer j = new Integer(300);
-        assertTrue(ObjectUtils.equalTo(i, j));
+        assertTrue(ObjectUtils.equals(i, j));
 
         String s = "300";
-        assertFalse(ObjectUtils.equalTo(i, s));
+        assertFalse(ObjectUtils.equals(i, s));
     }
 }

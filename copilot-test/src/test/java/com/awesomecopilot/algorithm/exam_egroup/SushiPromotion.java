@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.exam_egroup;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -70,7 +70,7 @@ public class SushiPromotion {
 		//printTwice(prices);
 		//int[] result = calculatePromotionPrices(prices);
 		int[] result = calculatePromotionPrices2(prices);
-		Arrays.print(result);
+		ArrayUtils.print(result);
 	}
 
 	public static void printTwice(int[] prices) {

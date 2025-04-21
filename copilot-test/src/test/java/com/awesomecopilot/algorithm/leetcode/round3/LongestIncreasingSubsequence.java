@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode.round3;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -37,7 +37,7 @@ public class LongestIncreasingSubsequence {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数组元素: ");
 		String input = scanner.nextLine();
-		int[] nums = Arrays.parseOneDimensionArray(input);
+		int[] nums = ArrayUtils.parseOneDimensionArray(input);
 		System.out.println(lengthOfLIS(nums));
 	}
 

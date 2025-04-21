@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public final class ObjectUtils {
 
-	public static boolean nullSafeEquals(Object o1, Object o2) {
+	public static boolean equals(Object o1, Object o2) {
 		if (o1 == o2) {
 			return true;
 		}
@@ -52,28 +52,6 @@ public final class ObjectUtils {
 	}
 
 	/**
-	 * 判断两个对象是否相等, 如果是原子类型, 用原子值比较, 否则用Object.equals(obj2)
-	 * 都为null认为相等, 一个为null一个不为null认为不等
-	 *
-	 * @param obj1
-	 * @param obj2
-	 * @return
-	 */
-	public static boolean equalTo(Object obj1, Object obj2) {
-		if (obj1 == null && obj2 == null) {
-			return true;
-		}
-		if (obj1 == null) {
-			return false;
-		}
-		if (obj2 == null) {
-			return false;
-		}
-
-		return obj1.equals(obj2);
-	}
-
-	/**
 	 * Return a hash code for the given object; typically the value of
 	 * {@code Object#hashCode()}}. If the object is an array,
 	 * this method will delegate to any of the {@code Arrays.hashCode}
@@ -115,5 +93,10 @@ public final class ObjectUtils {
 			}
 		}
 		return obj.hashCode();
+	}
+
+	@SafeVarargs
+	public static <T> boolean equalsAny(T obj, T... array) {
+		return Arrays.asList(array).contains(obj);
 	}
 }

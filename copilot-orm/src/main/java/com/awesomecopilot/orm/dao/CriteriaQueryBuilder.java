@@ -110,6 +110,11 @@ public class CriteriaQueryBuilder {
 		return this;
 	}
 
+	/**
+	 * 返回一条数据, 如果查到多条数据，则返回第一条, 不会报错
+	 * @return T
+	 * @param <T>
+	 */
 	public <T> T findOne() {
 		List results = jpaCriteriaQuery.list();
 		if (results.isEmpty()) {

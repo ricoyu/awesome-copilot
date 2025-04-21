@@ -1,6 +1,6 @@
 package com.awesomecopilot.orm.utils;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -184,7 +184,7 @@ public final class QueryUtils {
 	 */
 	public static void param(Map<String, Object> params, String paramName, Long[] paramValues) {
 		if (paramValues != null && paramValues.length > 0) {
-			params.put(paramName, Arrays.nonNull(paramValues));
+			params.put(paramName, ArrayUtils.nonNull(paramValues));
 		}
 	}
 	

@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.exam_egroup;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +74,7 @@ public class JumpHouse {
 		System.out.print("请输入房子的总格数: ");
 		int count = scanner.nextInt();
 		int[] combination = findCombination(steps, count);
-		Arrays.print(combination);
+		ArrayUtils.print(combination);
 		scanner.close();
 	}
 

@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -61,10 +61,10 @@ public class MaxUncrossedLines {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入第一个数组: ");
 		String input1 = scanner.nextLine();
-		int[] nums1 = Arrays.parseOneDimensionArray(input1);
+		int[] nums1 = ArrayUtils.parseOneDimensionArray(input1);
 		System.out.print("请输入第二个数组: ");
 		String input2 = scanner.nextLine();
-		int[] nums2 = Arrays.parseOneDimensionArray(input2);
+		int[] nums2 = ArrayUtils.parseOneDimensionArray(input2);
 		System.out.println(maxUncrossedLines(nums1, nums2));
 	}
 

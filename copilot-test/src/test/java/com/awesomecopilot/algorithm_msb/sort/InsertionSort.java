@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm_msb.sort;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import org.junit.Test;
 
 public class InsertionSort {
@@ -37,7 +37,7 @@ public class InsertionSort {
         for (int i = 0; i < arrays.length; i++) {
             int[] arr = arrays[i];
             insertSort(arr);
-            Arrays.print(arr);
+            ArrayUtils.print(arr);
         }
     }
 }

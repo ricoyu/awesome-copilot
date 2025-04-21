@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -79,7 +79,7 @@ public class MergeSortedArrays {
 		}
 
 		merge(nums1, m, nums2, n);
-		Arrays.print(nums1);
+		ArrayUtils.print(nums1);
 	}
 
 	public static void merge(int[] nums1, int m, int[] nums2, int n) {

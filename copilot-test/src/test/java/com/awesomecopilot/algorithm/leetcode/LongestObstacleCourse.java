@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -79,8 +79,8 @@ public class LongestObstacleCourse {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字对: ");
 		String input = scanner.nextLine();
-		int[] obstacles = Arrays.parseOneDimensionArray(input);
-		Arrays.print(longestObstacleCourseAtEachPosition(obstacles));
+		int[] obstacles = ArrayUtils.parseOneDimensionArray(input);
+		ArrayUtils.print(longestObstacleCourseAtEachPosition(obstacles));
 	}
 
 	public static int[] longestObstacleCourseAtEachPosition(int[] obstacles) {

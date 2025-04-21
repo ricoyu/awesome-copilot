@@ -190,16 +190,18 @@ public class SqlUtils {
 		boolean alreadyContainTenentId = trimedSql.toLowerCase().contains("tenant_id=");
 
 		String newCondition = originalCondition;
-		boolean multicondition = false;
+		//表示原来的条件上是否需要加()括起来
+		boolean shouldQuoted = false;
 		/*
-		 * 如果原始SQL只有一个条件, 就不需要在原始条件上套一个()了
+		 * 如果原始SQL有多个条件, 并且包含 or, 就需要在原来的条件上套一个()括起来
+		 * 否则, 就不需要在原始条件上套一个()了
 		 */
-		if (originalCondition.toLowerCase().contains(" and ") || originalCondition.toLowerCase().contains(" or ")) {
-			multicondition = true;
+		if (originalCondition.toLowerCase().contains(" or ")) {
+			shouldQuoted = true;
 		}
 
 		String parsedOriginalcondition = originalCondition;
-		if (multicondition) {
+		if (shouldQuoted) {
 			parsedOriginalcondition =  "(" + originalCondition + ")";
 		}
 

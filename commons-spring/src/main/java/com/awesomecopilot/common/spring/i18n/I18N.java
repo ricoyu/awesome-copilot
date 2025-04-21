@@ -2,7 +2,7 @@ package com.awesomecopilot.common.spring.i18n;
 
 import com.awesomecopilot.common.lang.errors.ErrorType;
 import com.awesomecopilot.common.lang.exception.BusinessException;
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.CollectionUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
@@ -161,7 +161,7 @@ public final class I18N {
 	 * @return String
 	 */
 	public static String i18nMessage(String msgTemplate, List<?> args) {
-		return i18nMessage(msgTemplate, Arrays.asArray(args));
+		return i18nMessage(msgTemplate, ArrayUtils.asArray(args));
 	}
 	
 	
@@ -172,7 +172,7 @@ public final class I18N {
 	 * @return String
 	 */
 	public static String i18nMessage(String msgTemplate, List<?> args, String defaultMessage) {
-		return i18nMessage(msgTemplate, Arrays.asArray(args), defaultMessage);
+		return i18nMessage(msgTemplate, ArrayUtils.asArray(args), defaultMessage);
 	}
 	
 	/**

@@ -3,7 +3,7 @@ package com.awesomecopilot.algorithm.leetcode;
 import java.util.Arrays;
 import java.util.Scanner;
 
-import static com.awesomecopilot.common.lang.utils.Arrays.parseTwoDimensionArray;
+import static com.awesomecopilot.common.lang.utils.ArrayUtils.parseTwoDimensionArray;
 
 /**
  * 俄罗斯套娃信封问题

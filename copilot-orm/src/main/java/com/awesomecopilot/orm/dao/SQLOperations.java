@@ -39,6 +39,15 @@ public interface SQLOperations {
 	public <T> T findOne(String queryName, String paramName, Object paramValue);
 
 	/**
+	 * 跟带class参数的版本的差别就是结果集不封装到Bean里面
+	 * @param queryName
+	 * @param params
+	 * @return
+	 * @param <T>
+	 */
+	public <T> T findOne(String queryName, Map<String, Object> params);
+
+	/**
 	 * 返回单个对象，不存在则返回null
 	 *
 	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
@@ -48,6 +57,17 @@ public interface SQLOperations {
 	 * @return
 	 */
 	public <T> T findOne(String queryName, String paramName, Object paramValue, Class<T> clazz);
+
+	/**
+	 * 返回单个对象，不存在则返回null
+	 *
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的copilot-orm对这块更新支持了
+	 * @param queryName
+	 * @param params
+	 * @param clazz
+	 * @return
+	 */
+	public <T> T findOne(String queryName, Map<String, Object> params, Class<T> clazz);
 
 	/**
 	 * 没有分页和参数的命名SQL查询, 结果封装进clazz代表的对象中

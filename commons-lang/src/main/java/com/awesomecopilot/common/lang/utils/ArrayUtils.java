@@ -1,14 +1,15 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.functional.Matcher;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.Arrays.stream;
 
-public final class Arrays {
+public final class ArrayUtils {
 
 	@SuppressWarnings("unchecked")
 	public static final <T> T[] asArray(T... args) {
@@ -107,6 +108,46 @@ public final class Arrays {
 	}
 
 	/**
+	 * 返回数组中第一个匹配规则的值
+	 * @param <T>     数组元素类型
+	 * @param matcher 匹配接口，实现此接口自定义匹配规则
+	 * @param array   数组
+	 * @return 匹配元素，如果不存在匹配元素或数组为空，返回 {@code null}
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T firstMatch(Matcher<T> matcher, T... array) {
+		final int index = matchIndex(matcher, array);
+		if (index < 0) {
+			return null;
+		}
+
+		return array[index];
+	}
+
+	/**
+	 * 返回数组中第一个匹配规则的值的位置
+	 *
+	 * @param <T>               数组元素类型
+	 * @param matcher           匹配接口，实现此接口自定义匹配规则
+	 * @param array             数组
+	 * @return 匹配到元素的位置，-1表示未匹配到
+	 * @since 5.7.3
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> int matchIndex(Matcher<T> matcher, T... array) {
+		Assert.notNull(matcher, "Matcher must be not null !");
+		if (isNotEmpty(array)) {
+			for (int i = 0; i < array.length; i++) {
+				if (matcher.match(array[i])) {
+					return i;
+				}
+			}
+		}
+
+		return -1;
+	}
+
+	/**
 	 * 将一个字符串形式的一维数组转成int[]
 	 *
 	 * @param str
@@ -139,7 +180,7 @@ public final class Arrays {
 	public static int[][] parseTwoDimensionArray(String input) {
 		List<int[]> list = new ArrayList<>();
 		Pattern pattern = Pattern.compile("\\[(\\d+),(\\d+)\\]");
-		Matcher matcher = pattern.matcher(input.trim());
+		java.util.regex.Matcher matcher = pattern.matcher(input.trim());
 
 		while (matcher.find()) {
 			int first = Integer.parseInt(matcher.group(1));
@@ -175,5 +216,16 @@ public final class Arrays {
 		return java.util.Arrays.stream(arr)
 				.map(String::trim)
 				.toArray(String[]::new);
+	}
+
+	/**
+	 * 数组是否为非空
+	 *
+	 * @param <T>   数组元素类型
+	 * @param array 数组
+	 * @return 是否为非空
+	 */
+	public static <T> boolean isNotEmpty(T[] array) {
+		return (null != array && array.length != 0);
 	}
 }

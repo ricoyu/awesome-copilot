@@ -1,5 +1,7 @@
 package com.awesomecopilot.algorithm.leetcode;
 
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
+
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -49,7 +51,7 @@ public class MaxLengthPairChain {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字对: ");
 		String input = scanner.nextLine();
-		int[][] pairs = com.awesomecopilot.common.lang.utils.Arrays.parseTwoDimensionArray(input);
+		int[][] pairs = ArrayUtils.parseTwoDimensionArray(input);
 
 		System.out.println("最长数对链: " + findLongestChain(pairs));
 	}

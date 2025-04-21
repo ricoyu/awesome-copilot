@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.StringUtils;
 
 import java.util.Scanner;
@@ -60,7 +60,7 @@ public class RemoveDuplicatesFromSortedArray {
 		  nums[i] = Integer.parseInt(parts[i].trim());
 		}
 		System.out.println(removeDuplicates(nums));
-		Arrays.print(nums);
+		ArrayUtils.print(nums);
 	}
 
 	public static int removeDuplicates(int[] nums) {

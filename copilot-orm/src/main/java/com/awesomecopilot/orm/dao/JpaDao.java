@@ -739,6 +739,16 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		return results.get(0);
 	}
 
+	@Override
+	public <T> T findOne(String queryName, Map<String, Object> params, Class<T> clazz) {
+		List<T> results = findList(queryName, params, clazz);
+		if (results.isEmpty()) {
+			return null;
+		}
+
+		return results.get(0);
+	}
+
 
 	@Override
 	public <T> List<T> findList(String queryName, Class<T> clazz) {
@@ -941,6 +951,12 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		if (!isBlank(paramName)) {
 			params.put(paramName, paramValue);
 		}
+		List<?> results = query4RawList(queryName, params);
+		return results.isEmpty() ? null : (T)results.get(0);
+	}
+
+	@Override
+	public <T> T findOne(String queryName, Map<String, Object> params) {
 		List<?> results = query4RawList(queryName, params);
 		return results.isEmpty() ? null : (T)results.get(0);
 	}

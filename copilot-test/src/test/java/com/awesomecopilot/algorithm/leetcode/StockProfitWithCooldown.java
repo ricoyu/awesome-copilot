@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -59,7 +59,7 @@ public class StockProfitWithCooldown {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字对: ");
 		String input = scanner.nextLine();
-		int[] prices = Arrays.parseOneDimensionArray(input);
+		int[] prices = ArrayUtils.parseOneDimensionArray(input);
 		System.out.println(maxProfit(prices));
 	}
 

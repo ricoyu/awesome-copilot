@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.Scanner;
 
@@ -59,7 +59,7 @@ public class ElementRemover {
 		System.out.print("请输入值val: ");
 		int val = scanner.nextInt();
 		System.out.println(removeElement(nums, val));
-		Arrays.print(nums);
+		ArrayUtils.print(nums);
 	}
 
 	public static int removeElement(int[] nums, int val) {

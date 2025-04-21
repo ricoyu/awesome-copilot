@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +58,7 @@ public class LongestArithmeticEqualSubsequence {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字对: ");
 		String input = scanner.nextLine().trim();
-		int[] nums = Arrays.parseOneDimensionArray(input);
+		int[] nums = ArrayUtils.parseOneDimensionArray(input);
 		System.out.println(longestArithSeqLength(nums));
 	}
 

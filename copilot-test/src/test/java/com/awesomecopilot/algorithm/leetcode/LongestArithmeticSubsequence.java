@@ -1,6 +1,6 @@
 package com.awesomecopilot.algorithm.leetcode;
 
-import com.awesomecopilot.common.lang.utils.Arrays;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +53,7 @@ public class LongestArithmeticSubsequence {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字对: ");
 		String input = scanner.nextLine();
-		int[] arr = Arrays.parseOneDimensionArray(input);
+		int[] arr = ArrayUtils.parseOneDimensionArray(input);
 		System.out.print("请输入差值: ");
 		int difference = scanner.nextInt();
 		System.out.println(longestSubsequence(arr, difference));
