@@ -1,8 +1,5 @@
 package com.awesomecopilot.algorithm.hwod;
 
-import org.checkerframework.common.value.qual.IntRangeFromGTENegativeOne;
-import org.hibernate.validator.internal.constraintvalidators.bv.time.futureorpresent.FutureOrPresentValidatorForReadableInstant;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,6 +96,21 @@ import java.util.List;
  */
 public class ProcessorScheduler {
 
+	// 测试用例
+	public static void main(String[] args) {
+		ProcessorScheduler scheduler = new ProcessorScheduler();
+
+		// 测试用例1
+		int[] array1 = {0, 1, 4, 5, 6, 7};
+		int num1 = 1;
+		System.out.println(scheduler.scheduleProcessors(array1, num1)); // 输出 [[0], [1]]
+
+		// 测试用例2
+		int[] array2 = {0, 1, 4, 5, 6, 7};
+		int num2 = 4;
+		System.out.println(scheduler.scheduleProcessors(array2, num2)); // 输出 [[4, 5, 6, 7]]
+	}
+
 	/**
 	 * 根据亲和性调度原则选择处理器组合
 	 *
@@ -110,11 +122,11 @@ public class ProcessorScheduler {
 		List<List<Integer>> result = new ArrayList<>();
 
 		//1. 将处理器按链路分组
-		List<Integer> link0 = new ArrayList<>();
-		List<Integer> link1 = new ArrayList<>();
+		List<Integer> link0 = new ArrayList<>(); // 链路0-3
+		List<Integer> link1 = new ArrayList<>(); // 链路4-7
 
 		for (Integer processor : array) {
-			if (processor <= 3 && processor >= 0) {
+			if (processor >= 0 && processor <= 3) {
 				link0.add(processor);
 			} else if (processor >= 4 && processor <= 7) {
 				link1.add(processor);
@@ -137,9 +149,11 @@ public class ProcessorScheduler {
 		List<Integer> selectedLink = selectBestLink(link0, link1, num);
 
 		// 4. 生成所有可能的组合
-		if (selectedLink != null && selectedLink.size() > num) {
+		if (selectedLink != null && selectedLink.size() >= num) {
 			generateCombinations(selectedLink, num, 0, new ArrayList<>(), result);
 		}
+
+		return result;
 	}
 
 	/**
@@ -156,6 +170,12 @@ public class ProcessorScheduler {
 		if (current.size() == num) {
 			result.add(new ArrayList<>(current));
 			return;
+		}
+
+		for (int i = start; i < processors.size(); i++) {
+			current.add(processors.get(i));
+			generateCombinations(processors, num, i + 1, current, result);
+			current.remove(current.size() - 1);
 		}
 	}
 
@@ -226,3 +246,4 @@ public class ProcessorScheduler {
 
 		return null;
 	}
+}

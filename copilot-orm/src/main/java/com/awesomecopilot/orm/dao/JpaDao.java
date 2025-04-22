@@ -446,6 +446,32 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	}
 
 	@Override
+	public <T, PK extends Serializable> List<T> listByIds(Class<T> clazz, PK... ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		log.debug("Try to find " + clazz.getName() + " by ids " + ids);
+		try {
+			Session session = em().unwrap(Session.class);
+			return session.byMultipleIds(clazz).multiLoad(ids);
+		} catch (Throwable e) {
+			log.error("", e);
+			throw new EntityOperationException(e);
+		}
+	}
+
+	@Override
+	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, List<PK> ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		log.debug("Try to find " + entityClass.getName() + " by ids " + ids);
+		try {
+			Session session = em().unwrap(Session.class);
+			return session.byMultipleIds(entityClass).multiLoad(ids);
+		} catch (Throwable e) {
+			log.error("", e);
+			throw new EntityOperationException(e);
+		}
+	}
+
+	@Override
 	public <T, PK extends Serializable> T find(Class<T> clazz, PK id) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);

@@ -116,6 +116,26 @@ public interface EntityOperations {
 	 */	
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> entityClass, List<PK> ids);
 
+
+	/**
+	 * 跟Hibernate的get方法同语义，根据主键列表查找，返回bean本身，找不到则返回null
+	 *
+	 * @param entityClass
+	 * @param ids
+	 * @return
+	 */
+	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, PK... ids);
+
+
+	/**
+	 * 跟Hibernate的get方法同语义，根据主键列表查找，返回bean本身，找不到则返回null
+	 *
+	 * @param entityClass
+	 * @param ids
+	 * @return
+	 */
+	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, List<PK> ids);
+
 	/**
 	 * 根据主键查找，但不包括逻辑删除的(deleted=true)对象
 	 * 
