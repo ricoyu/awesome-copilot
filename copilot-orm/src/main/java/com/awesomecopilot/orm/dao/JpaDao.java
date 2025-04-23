@@ -64,6 +64,7 @@ import static java.text.MessageFormat.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -446,12 +447,14 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	}
 
 	@Override
-	public <T, PK extends Serializable> List<T> listByIds(Class<T> clazz, PK... ids) {
+	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, PK... ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
-		log.debug("Try to find " + clazz.getName() + " by ids " + ids);
+		log.debug("Try to find " + entityClass.getName() + " by ids " + ids);
 		try {
+			List<PK> distinctIds = asList(ids).stream().distinct().collect(toList());
 			Session session = em().unwrap(Session.class);
-			return session.byMultipleIds(clazz).multiLoad(ids);
+			List<T> entities = session.byMultipleIds(entityClass).multiLoad(distinctIds);
+			return entities.stream().filter(Objects::nonNull).collect(toList());
 		} catch (Throwable e) {
 			log.error("", e);
 			throw new EntityOperationException(e);
@@ -463,8 +466,10 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		Objects.requireNonNull(ids, "ids cannot be null");
 		log.debug("Try to find " + entityClass.getName() + " by ids " + ids);
 		try {
+			List<PK> distinctIds = ids.stream().distinct().collect(toList());
 			Session session = em().unwrap(Session.class);
-			return session.byMultipleIds(entityClass).multiLoad(ids);
+			List<T> entities = session.byMultipleIds(entityClass).multiLoad(distinctIds);
+			return entities.stream().filter(Objects::nonNull).collect(toList());
 		} catch (Throwable e) {
 			log.error("", e);
 			throw new EntityOperationException(e);
