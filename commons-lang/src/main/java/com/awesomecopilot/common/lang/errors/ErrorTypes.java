@@ -24,6 +24,14 @@ public enum ErrorTypes implements ErrorType {
      * 服务器内部错误
      */
     INTERNAL_SERVER_ERROR("5001","template.internal.server.error", "服务器内部错误"),
+    /**
+     * 连接
+     */
+    CONNECT_TIMEOUT("5003","connect.timeout", "连接超时"),
+    /**
+     * 读超时
+     */
+    READ_TIMEOUT("5004","read.timeout", "读取超时"),
 
     //-------------------- 提交失败相关错误 400开头--------------------------------------
     /*

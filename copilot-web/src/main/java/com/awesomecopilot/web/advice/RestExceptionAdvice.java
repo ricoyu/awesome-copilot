@@ -36,6 +36,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +50,7 @@ import static com.awesomecopilot.common.lang.errors.ErrorTypes.INTERNAL_SERVER_E
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.MAX_UPLOAD_SIZE_EXCEEDED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.METHOD_NOT_ALLOWED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.NOT_FOUND;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.READ_TIMEOUT;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.SYSTEM_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.VALIDATION_FAIL;
 import static java.util.stream.Collectors.*;
@@ -208,7 +210,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		log.info("", ex);
 		headers.add("Content-Type", "application/json");
 		Result result = Results.status(METHOD_NOT_ALLOWED).build();
-		return new ResponseEntity(result, headers, HttpStatus.METHOD_NOT_ALLOWED);
+		return new ResponseEntity(result, headers, HttpStatus.OK);
 	}
 
 	/**
@@ -247,7 +249,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 	}
 
 	@ExceptionHandler(ApplicationException.class)
-	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+	@ResponseStatus(value = HttpStatus.OK)
 	@ResponseBody
 	public Result handleApplicationException(ApplicationException e) {
 		logger.error("Rest API ERROR happen", e);
@@ -285,7 +287,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 	}
 
 	@ExceptionHandler(Throwable.class)
-	@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+	@ResponseStatus(value = HttpStatus.OK)
 	@ResponseBody
 	public ResponseEntity<?> handleThrowable(Throwable e) {
 		logger.error("Rest API ERROR happen", e);
@@ -323,9 +325,13 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 			Result result = handleApplicationException((ApplicationException) e.getCause());
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
+		if (e.getCause() != null && e.getCause() instanceof SocketTimeoutException) {
+			Result<Object> result = Results.fail().status(READ_TIMEOUT).build();
+			return new ResponseEntity(result, HttpStatus.OK);
+		}
 
 		Result result = Results.status(ErrorTypes.INTERNAL_SERVER_ERROR).build();
-		return new ResponseEntity(result, HttpStatus.INTERNAL_SERVER_ERROR);
+		return new ResponseEntity(result, HttpStatus.OK);
 	}
 
 	private ResponseEntity<?> handleSentinelException(Throwable e) {
