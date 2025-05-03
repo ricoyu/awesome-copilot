@@ -18,7 +18,11 @@ import com.awesomecopilot.web.exception.LocalizedException;
 import com.awesomecopilot.web.utils.MessageHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -41,17 +45,12 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.awesomecopilot.common.lang.errors.ErrorTypes.AUTHORITY_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.BAD_REQUEST;
-import static com.awesomecopilot.common.lang.errors.ErrorTypes.DEGRADE_EXCEPTION;
-import static com.awesomecopilot.common.lang.errors.ErrorTypes.FLOW_EXCEPTION;
-import static com.awesomecopilot.common.lang.errors.ErrorTypes.HOT_PARAM_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.INTERNAL_SERVER_ERROR;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.MAX_UPLOAD_SIZE_EXCEEDED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.METHOD_NOT_ALLOWED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.NOT_FOUND;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.READ_TIMEOUT;
-import static com.awesomecopilot.common.lang.errors.ErrorTypes.SYSTEM_BLOCK_EXCEPTION;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.VALIDATION_FAIL;
 import static java.util.stream.Collectors.*;
 
@@ -67,7 +66,7 @@ import static java.util.stream.Collectors.*;
  * @version 1.0
  */
 @RestControllerAdvice
-public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
+public class RestExceptionAdvice extends ResponseEntityExceptionHandler implements ApplicationContextAware {
 
 	private static final Logger log = LoggerFactory.getLogger(RestExceptionAdvice.class);
 
@@ -83,6 +82,13 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 	 */
 	private static final Pattern ACTUAL_SIZE_PATTERN =
 			Pattern.compile(".*size\\s{1}\\((\\d+)\\).*maximum\\s{1}\\((\\d+)\\)$");
+
+	/**
+	 * 标识微服务是否整合了阿里巴巴Sentinel
+	 */
+	private boolean sentinelExists;
+
+	private ApplicationContext applicationContext;
 
 	@Override
 	@ResponseBody
@@ -286,14 +292,35 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
 
+	/**
+	 * 如果这边加上handleThrowable, 那么copilot-spring-cloud-starter中配置的RestBlockExceptionHandler熔断规则处理将不生效 <p>
+	 * 所以这边判断有RestBlockExceptionHandler这个类存在就直接重新抛出异常, 导致的后果是如果应用抛出非业务异常, 比如RuntimeException, 那么返回的结果
+	 * 将是SpringMVC默认的返回结果
+	 * <pre>
+	 * {
+	 *     "timestamp": "2025-05-03 18:04:51",
+	 *     "status": 500,
+	 *     "error": "Internal Server Error",
+	 *     "path": "/portal/lb-restTemplate"
+	 * }
+	 * </pre>
+	 */
 	@ExceptionHandler(Throwable.class)
 	@ResponseStatus(value = HttpStatus.OK)
 	@ResponseBody
-	public ResponseEntity<?> handleThrowable(Throwable e) {
+	public ResponseEntity<?> handleThrowable(Throwable e) throws Throwable {
 		logger.error("Rest API ERROR happen", e);
-		ResponseEntity<?> responseEntity = handleSentinelException(e);
-		if (responseEntity != null) {
-			return responseEntity;
+		if (sentinelExists) {
+			throw e;
+		}
+		try {
+			Object restBlockExceptionHandler = applicationContext.getBean("restBlockExceptionHandler");
+			//Class<?> clazz = Class.forName("com.awesomecopilot.cloud.sentinel.RestBlockExceptionHandler");
+			sentinelExists = true;
+			log.debug("当前整合了Sentinel, 关闭Throwable异常处理, 否则RestBlockExceptionHandler熔断规则处理将不生效");
+			throw e;
+		} catch (NoSuchBeanDefinitionException e1) {
+			log.debug("当前没有整合Sentinel, 开启Throwable异常处理");
 		}
 		return findRealCause(e);
 	}
@@ -325,38 +352,23 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
 			Result result = handleApplicationException((ApplicationException) e.getCause());
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
+
+		/*
+		 * 下面这两个是非业务异常, 返回status code 500, 是为了微服务之间调用时调用方调接口直接报错;
+		 * 方便做熔断处理, 否则接口一直是正常返回, 熔断不了
+		 */
 		if (e.getCause() != null && e.getCause() instanceof SocketTimeoutException) {
 			Result<Object> result = Results.fail().status(READ_TIMEOUT).build();
-			return new ResponseEntity(result, HttpStatus.OK);
+			return new ResponseEntity(result, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		Result result = Results.status(ErrorTypes.INTERNAL_SERVER_ERROR).build();
-		return new ResponseEntity(result, HttpStatus.OK);
+		return new ResponseEntity(result, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
-	private ResponseEntity<?> handleSentinelException(Throwable e) {
-		if (e.getCause() == null) {
-			return null;
-		}
-		Throwable realCasue = e.getCause();
-
-		Result result = null;
-		if ("com.alibaba.csp.sentinel.slots.block.flow.FlowException".equalsIgnoreCase(realCasue.getClass().getName())) {
-			result = Results.fail().status(FLOW_EXCEPTION).build();
-		} else if ("com.alibaba.csp.sentinel.slots.block.degrade.DegradeException".equalsIgnoreCase(realCasue.getClass().getName())) {
-			result = Results.fail().status(DEGRADE_EXCEPTION).build();
-		} else if ("com.alibaba.csp.sentinel.slots.block.authority.AuthorityException".equalsIgnoreCase(realCasue.getClass().getName())) {
-			result = Results.fail().status(AUTHORITY_BLOCK_EXCEPTION).build();
-		} else if ("com.alibaba.csp.sentinel.slots.block.flow.param.ParamFlowException".equalsIgnoreCase(realCasue.getClass().getName())) {
-			result = Results.fail().status(HOT_PARAM_BLOCK_EXCEPTION).build();
-		} else if ("com.alibaba.csp.sentinel.slots.system.SystemBlockException".equalsIgnoreCase(realCasue.getClass().getName())) {
-			result = Results.fail().status(SYSTEM_BLOCK_EXCEPTION).build();
-		}
-
-		if (result == null) {
-			return null;
-		}
-
-		return new ResponseEntity(result, HttpStatus.OK);
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
+
 }
