@@ -106,16 +106,16 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 public abstract class AbstractRequestBuilder {
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractRequestBuilder.class);
-	
+
 	public static final String DEFAULT_CHARSET = "UTF-8";
-	
+
 	protected static PoolingHttpClientConnectionManager connectionManager;
-	
+
 	protected static SSLConnectionSocketFactory sslConnectionSocketFactory;
-	
+
 	static {
 		TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
-		
+
 		SSLContext sslContext = null;
 		try {
 			sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
@@ -124,12 +124,12 @@ public abstract class AbstractRequestBuilder {
 			throw new RuntimeException(e);
 		}
 		sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-		
+
 		Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
 				.register("https", sslConnectionSocketFactory)
 				.register("http", new PlainConnectionSocketFactory())
 				.build();
-		
+
 		connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
 		connectionManager.setMaxTotal(100);// 整个连接池最大连接数
 		/*
@@ -141,36 +141,36 @@ public abstract class AbstractRequestBuilder {
 		 */
 		connectionManager.setDefaultMaxPerRoute(20);
 	}
-	
-	
+
+
 	public static final Charset UTF8 = StandardCharsets.UTF_8;
-	
+
 	/**
 	 * 完整的URL, 比如 http://192.168.100.101:9200/rico/_mapping
 	 */
 	protected String url;
-	
+
 	/**
 	 * URL的协议部分, 默认 http
 	 */
 	protected Scheme scheme = Scheme.HTTP;
-	
+
 	/**
 	 * URL的端口部分, 默认 80
 	 */
 	protected int port = 80;
-	
+
 	/**
 	 * URL的主机名部分, 如 www.163.com, 192.168.100.101
 	 */
 	protected String host;
-	
+
 	/**
 	 * 请求的path部分, 如: /rico/_mapping<p>
 	 * 应该以/开头
 	 */
 	protected String path;
-	
+
 	/**
 	 * http.connection.timeout
 	 * <p>
@@ -179,7 +179,7 @@ public abstract class AbstractRequestBuilder {
 	 * 超时会抛出org.apache.http.conn.ConnectTimeoutException
 	 */
 	protected Long connectionTimeout;
-	
+
 	/**
 	 * http.socket.timeout
 	 * <p>
@@ -187,10 +187,11 @@ public abstract class AbstractRequestBuilder {
 	 * <p>
 	 * 超时会抛出 java.net.SocketTimeoutException
 	 * <p>
-	 * The time waiting for data – after establishing the connection; maximum time of inactivity between two data packets
+	 * The time waiting for data – after establishing the connection; maximum time of inactivity between two data
+	 * packets
 	 */
 	protected Long soTimeout;
-	
+
 	/**
 	 * 从连接池中获取连接的超时时间, 在高负载情况下比较有必要设置
 	 * <p>
@@ -199,12 +200,12 @@ public abstract class AbstractRequestBuilder {
 	 * The time to wait for a connection from the connection manager/pool
 	 */
 	protected Long connectionManagerTimeout;
-	
+
 	/**
 	 * 请求生命周期超时时间, 大致= connectionTimeout + soTimeout
 	 */
 	protected Long timeout;
-	
+
 	/**
 	 * 设置失败重试次数
 	 * <p>
@@ -217,33 +218,38 @@ public abstract class AbstractRequestBuilder {
 	 * </ul>
 	 */
 	protected Integer retries;
-	
+
 	/**
 	 * 如果接口是幂等的, 可以放心重试, 设为true, 否则设为false
 	 * true if it's OK to retry non-idempotent requests that have been sent
 	 */
 	protected boolean requestSentRetryEnabled = false;
-	
+
 	/**
 	 * 返回结果以byte[]形式返回
 	 */
 	protected boolean returnBytes;
-	
+
 	protected Map<String, Object> headers = new HashMap<>(12);
-	
+
 	protected BasicCookieStore cookieStore = new BasicCookieStore();
-	
+
 	protected Class responseType;
-	
+
 	protected HttpMethod method = HttpMethod.GET;
-	
+
 	protected MultiMap params = new MultiValueMap();
-	
+
+	/**
+	 * 用来处理添加多个同名的参数, 后端接口通过一个数组来接收参数
+	 */
+	protected List<NameValuePair> pairs = new ArrayList<NameValuePair>();
+
 	/**
 	 * HTTP请求报错时回调函数
 	 */
 	protected Consumer<Exception> errorCallback;
-	
+
 	/**
 	 * 通过连接池获取HttpClient
 	 *
@@ -273,13 +279,13 @@ public abstract class AbstractRequestBuilder {
 		if (retries != null) {
 			httpClientBuilder.setRetryHandler(new StandardHttpRequestRetryHandler(retries, requestSentRetryEnabled));
 		}
-		
+
 		CloseableHttpClient httpClient = httpClientBuilder.build();
-		
+
 		int leased = connectionManager.getTotalStats().getLeased();
 		int available = connectionManager.getTotalStats().getAvailable();
 		int total = leased + available;
-		
+
 		if (log.isDebugEnabled()) {
 			log.debug("HttpClient连接池\n" +
 							"最大连接数: {}\n" +
@@ -293,10 +299,10 @@ public abstract class AbstractRequestBuilder {
 					available,
 					connectionManager.getTotalStats().getPending());
 		}
-		
+
 		return httpClient;
 	}
-	
+
 	/**
 	 * 指定完整的URL, 如: http://192.168.100.101:9200/rico/_mapping<p>
 	 * 如果设置了URL, 就不需要设置scheme, host, port, path<p>
@@ -309,7 +315,7 @@ public abstract class AbstractRequestBuilder {
 		this.url = url;
 		return this;
 	}
-	
+
 	/**
 	 * 指定 URL的协议部分, 如 http<p>
 	 * 如果指定了完整的url就不需要指定scheme, 设置了也无效
@@ -321,7 +327,7 @@ public abstract class AbstractRequestBuilder {
 		this.scheme = scheme;
 		return this;
 	}
-	
+
 	/**
 	 * URL的主机名部分, 如 www.163.com, 192.168.100.101<p>
 	 * 如果指定了完整的url就不需要指定host, 设置了也无效<p>
@@ -340,7 +346,7 @@ public abstract class AbstractRequestBuilder {
 		this.host = host;
 		return this;
 	}
-	
+
 	/**
 	 * 设置端口号<p>
 	 * 如果指定了完整的url就不需要指定port, 设置了也无效
@@ -352,7 +358,7 @@ public abstract class AbstractRequestBuilder {
 		this.port = port;
 		return this;
 	}
-	
+
 	/**
 	 * 一个完整URL的path部分, 以/开头<p>
 	 * 如http://192.168.100.101:9200/rico/_mapping 的 /rico/_mapping<p>
@@ -369,7 +375,7 @@ public abstract class AbstractRequestBuilder {
 		this.path = path;
 		return this;
 	}
-	
+
 	/**
 	 * 设置 HTTP 请求方法
 	 *
@@ -380,14 +386,14 @@ public abstract class AbstractRequestBuilder {
 		this.method = method;
 		return this;
 	}
-	
+
 	protected AbstractRequestBuilder addHeader(String headerName, Object headerValue) {
 		notNull(headerName, "Header name cannot be null");
 		notNull(headerValue, "Header value cannot be null");
 		headers.put(headerName, headerValue);
 		return this;
 	}
-	
+
 	/**
 	 * 添加请求参数
 	 *
@@ -397,10 +403,17 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected AbstractRequestBuilder addParam(String paramName, Object paramValue) {
 		notNull(paramName, "paramName cannot be null!");
-		params.put(paramName, paramValue);
+		while (paramName.startsWith("&") || paramName.startsWith("?")) {
+			paramName = paramName.substring(1);
+		}
+		if (params.containsKey(paramName)) {
+			pairs.add(new BasicNameValuePair(paramName, paramValue.toString()));
+		} else {
+			params.put(paramName, paramValue);
+		}
 		return this;
 	}
-	
+
 	/**
 	 * Basic Authentication
 	 * 设置请求头: Authorization, 值为: "Basic XXXX" 形式
@@ -411,21 +424,21 @@ public abstract class AbstractRequestBuilder {
 	protected AbstractRequestBuilder basicAuth(String username, String password) {
 		notNull(username, "Username must not be null");
 		notNull(password, "Password must not be null");
-		
+
 		CharsetEncoder encoder = UTF8.newEncoder();
 		if (!encoder.canEncode(username) || !encoder.canEncode(password)) {
 			throw new IllegalArgumentException(
 					"Username or password contains characters that cannot be encoded to " + UTF8.displayName());
 		}
-		
+
 		String credentialsString = username + ":" + password;
 		byte[] encodedBytes = Base64.getEncoder().encode(credentialsString.getBytes(UTF8));
 		String encodedCredentials = new String(encodedBytes, UTF8);
 		headers.put(HttpHeaders.AUTHORIZATION, "Basic " + encodedCredentials);
-		
+
 		return this;
 	}
-	
+
 	/**
 	 * Bearer Token Authentication
 	 * 设置请求头: Authorization, 值为: "Bearer XXXX" 形式
@@ -437,12 +450,12 @@ public abstract class AbstractRequestBuilder {
 		headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 		return this;
 	}
-	
+
 	protected AbstractRequestBuilder onError(Consumer<Exception> errorCallback) {
 		this.errorCallback = errorCallback;
 		return this;
 	}
-	
+
 	/**
 	 * 添加Cookie
 	 *
@@ -451,9 +464,9 @@ public abstract class AbstractRequestBuilder {
 	 * @return CookieBuilder
 	 */
 	protected abstract AbstractRequestBuilder addCookie(String name, String value);
-	
+
 	protected abstract AbstractRequestBuilder addCookie(String name, String value, String domain, String path);
-	
+
 	/**
 	 * 将Map中的参数名/值对转成HTTPClient的NameValuePair
 	 *
@@ -462,15 +475,16 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected List<NameValuePair> toNameValuePairs(Map<String, Object> params) {
 		List<NameValuePair> pairs = new ArrayList<NameValuePair>();
-		for (Map.Entry<String, Object> param : params.entrySet()) {
+		for (Map.Entry<String, Object> entry : params.entrySet()) {
 			//如果一个参数有多个值, 把这多个值用,连接
-			List valueList = (ArrayList) param.getValue();
-			pairs.add(new BasicNameValuePair(param.getKey(), StringUtils.joinWith(",", valueList)));
+			List valueList = (ArrayList) entry.getValue();
+			pairs.add(new BasicNameValuePair(entry.getKey(), StringUtils.joinWith(",", valueList)));
 		}
-		
+		pairs.addAll(this.pairs);
+
 		return pairs;
 	}
-	
+
 	/**
 	 * 包装一个URL的各个部分, 以对象的形式返回
 	 *
@@ -480,16 +494,16 @@ public abstract class AbstractRequestBuilder {
 		if (isNotBlank(url)) {
 			return RegexUtils.teardown(url);
 		}
-		
+
 		UrlParts urlParts = new UrlParts();
 		urlParts.setScheme(scheme == null ? null : scheme.name().toLowerCase());
 		urlParts.setHost(host);
 		urlParts.setPort(port);
 		urlParts.setPath(path);
-		
+
 		return urlParts;
 	}
-	
+
 	/**
 	 * 构造HttpRequest对象, 同时设置请求头
 	 *
@@ -504,7 +518,7 @@ public abstract class AbstractRequestBuilder {
 			log.error("", e);
 			throw new IllegalArgumentException(e);
 		}
-		
+
 		HttpRequestBase request = null;
 		switch (method) {
 			case GET:
@@ -529,11 +543,11 @@ public abstract class AbstractRequestBuilder {
 				request = new HttpTrace(uri);
 				break;
 		}
-		
+
 		addHeader(request);
 		return request;
 	}
-	
+
 	/**
 	 * 通过HttpClient发送请求
 	 *
@@ -541,29 +555,29 @@ public abstract class AbstractRequestBuilder {
 	 */
 	public <T> T request() {
 		UrlParts urlParts = buildUrlParts();
-		
+
 		URIBuilder builder = new URIBuilder();
 		builder.setScheme(urlParts.getScheme());
 		builder.setHost(urlParts.getHost());
 		builder.setPort(urlParts.getPort());
 		builder.setPath(urlParts.getPath());
-		
+
 		/*
 		 * 把从URL里面解析出来的参数和显式设置的参数合并
 		 */
 		MultiMap multiMap = urlParts.paramMap();
 		params.putAll(multiMap);
-		
+
 		List<NameValuePair> pairs = toNameValuePairs(params);
 		builder.setParameters(pairs);
-		
+
 		try {
 			/*
 			 * 根据请求方法创建HttpGet, HttpPost等对象
 			 * 同时设置请求头
 			 */
 			HttpUriRequest httpRequest = buildHttpRequest(builder);
-			
+
 			/*
 			 * 钩子方法, 提供子类去实现
 			 */
@@ -576,9 +590,9 @@ public abstract class AbstractRequestBuilder {
 					addFormData((HttpEntityEnclosingRequestBase) httpRequest);
 				}
 			}
-			
+
 			CloseableHttpClient httpClient = buildHttpClient();
-			
+
 			/*
 			 * 如果设置了整个请求生命周期的超时时间, 超时后中断请求
 			 */
@@ -594,17 +608,17 @@ public abstract class AbstractRequestBuilder {
 				new Timer(true).schedule(task, timeout);
 			}
 			CloseableHttpResponse response = httpClient.execute(httpRequest);
-			
+
 			HttpEntity entity = response.getEntity();
 			if (entity != null) {
 				//表示结果要以byte[]数组形式返回
 				if (returnBytes) {
 					return (T) IOUtils.toByteArray(entity.getContent());
 				}
-				
+
 				String result = EntityUtils.toString(entity, "UTF-8");
 				response.close();
-				
+
 				if (responseType != null) {
 					if (isBlank(result)) {
 						return null;
@@ -624,12 +638,13 @@ public abstract class AbstractRequestBuilder {
 				throw new HttpRequestException(e);
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * 异步执行HTTP请求, 拿到结果后回调callback
+	 *
 	 * @param callback
 	 */
 	public void request(Consumer<Object> callback) {
@@ -639,7 +654,7 @@ public abstract class AbstractRequestBuilder {
 			callback.accept(result);
 		});
 	}
-	
+
 	/**
 	 * 为HTTP POST请求添加请求体
 	 *
@@ -647,7 +662,7 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected void addBody(HttpEntityEnclosingRequestBase request) {
 	}
-	
+
 	/**
 	 * 表单提交时设置表单对象
 	 *
@@ -655,7 +670,7 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected void addFormData(HttpEntityEnclosingRequestBase request) {
 	}
-	
+
 	private void addHeader(HttpRequestBase request) {
 		for (Entry<String, Object> entry : headers.entrySet()) {
 			Object value = entry.getValue();
@@ -670,5 +685,5 @@ public abstract class AbstractRequestBuilder {
 			request.addHeader(entry.getKey(), Transformers.convert(value, String.class));
 		}
 	}
-	
+
 }

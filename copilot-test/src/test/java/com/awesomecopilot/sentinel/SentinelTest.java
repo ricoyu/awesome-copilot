@@ -141,8 +141,13 @@ public class SentinelTest {
 	
 	@Test
 	public void testqueueWait() {
-		for (int j = 0; j < 1000; j++) {
-			String response = HttpUtils.get("http://localhost:8081/order/findOrderByUserId/1").request();
+		for (int j = 0; j < 1; j++) {
+			String response = HttpUtils.get("http://localhost:8087/trade/after-sale/page")
+					.addParam("pageNo", 1)
+					.addParam("&pageSize", 10)
+					.addParam("createTime", "2023-08-17 22:31:26")
+					.addParam("createTime", "2025-04-23 18:03:01")
+					.request();
 			log.info(DateUtils.format(new Date()));
 			log.info("Success");
 			

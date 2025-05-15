@@ -309,19 +309,6 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	@ResponseStatus(value = HttpStatus.OK)
 	@ResponseBody
 	public ResponseEntity<?> handleThrowable(Throwable e) throws Throwable {
-		logger.error("Rest API ERROR happen", e);
-		if (sentinelExists) {
-			throw e;
-		}
-		try {
-			Object restBlockExceptionHandler = applicationContext.getBean("restBlockExceptionHandler");
-			//Class<?> clazz = Class.forName("com.awesomecopilot.cloud.sentinel.RestBlockExceptionHandler");
-			sentinelExists = true;
-			log.debug("当前整合了Sentinel, 关闭Throwable异常处理, 否则RestBlockExceptionHandler熔断规则处理将不生效");
-			throw e;
-		} catch (NoSuchBeanDefinitionException e1) {
-			log.debug("当前没有整合Sentinel, 开启Throwable异常处理");
-		}
 		return findRealCause(e);
 	}
 
@@ -332,7 +319,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	 * @param e
 	 * @return
 	 */
-	private ResponseEntity<?> findRealCause(Throwable e)  {
+	private ResponseEntity<?> findRealCause(Throwable e) throws Throwable {
 		if (e.getCause() != null && e.getCause() instanceof BusinessException) {
 			return handleBusinessException((BusinessException) e.getCause());
 		}
@@ -353,6 +340,21 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
 
+		/*
+		 * 上面这些都属于已经被处理的业务异常
+		 */
+		logger.error("Rest API ERROR happen", e);
+		if (sentinelExists) {
+			throw e;
+		}
+		try {
+			Object restBlockExceptionHandler = applicationContext.getBean("restBlockExceptionHandler");
+			sentinelExists = true;
+			log.debug("当前整合了Sentinel, 关闭Throwable异常处理, 否则RestBlockExceptionHandler熔断规则处理将不生效");
+			throw e;
+		} catch (NoSuchBeanDefinitionException e1) {
+			log.debug("当前没有整合Sentinel, 开启Throwable异常处理");
+		}
 		/*
 		 * 下面这两个是非业务异常, 返回status code 500, 是为了微服务之间调用时调用方调接口直接报错;
 		 * 方便做熔断处理, 否则接口一直是正常返回, 熔断不了

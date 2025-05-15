@@ -19,4 +19,11 @@ public class CharacterTest {
 		String s = "<STX>123;12;MC001;0;ERRS;100000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000;<ETX>";
 		System.out.println(s.length());
 	}
+
+	@Test
+	public void testCharInt() {
+		int col = 2;
+		char resultCol = (char) ('A' + col);
+		System.out.print(resultCol);
+	}
 }

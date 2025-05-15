@@ -73,13 +73,16 @@ public enum ErrorTypes implements ErrorType {
 
     ACCESS_DENIED("4031", "template.access.denied", "你无权访问该资源"),
     //-------------------- 流控相关错误, 429 开头 --------------------------------------
-    TOO_MANY_REQUESTS("4291", "template.too.many.requests", "Too Many Requests"),
-    FLOW_EXCEPTION("4292", "template.flow.control", "已被流控"),
-    DEGRADE_EXCEPTION("4293", "template.flow.degrade", "已被熔断"),
-    HOT_PARAM_EXCEPTION("4294", "template.hot.param", "已被热点参数限流"),
-    SYSTEM_BLOCK_EXCEPTION("4295", "template.system.control", "已被系统规则限流"),
-    AUTHORITY_BLOCK_EXCEPTION("4296", "template.aunthority.control", "已被授权规则限流"),
-    HOT_PARAM_BLOCK_EXCEPTION("4297", "template.hotparam.control", "已被热点参数限流"),
+    TOO_MANY_REQUESTS("42900", "template.too.many.requests", "Too Many Requests"),
+    FLOW_EXCEPTION("42901", "template.flow.control", "已被流控"),
+    //Sentinel-Dashboard中这个叫熔断, 统一一下, 我这边也叫熔断, 不要用降级
+    DEGRADE_EXCEPTION("42902", "template.flow.degrade", "已被熔断"),
+    HOT_PARAM_EXCEPTION("42903", "template.hot.param", "已被热点参数限流"),
+    SYSTEM_BLOCK_EXCEPTION("42904", "template.system.control", "已被系统规则限流"),
+    AUTHORITY_BLOCK_EXCEPTION("42905", "template.aunthority.control", "已被授权规则限流"),
+    HOT_PARAM_BLOCK_EXCEPTION("42906", "template.hotparam.control", "已被热点参数限流"),
+    GATEWAY_FLOW_EXCEPTION("42907", "template.gateway.flow", "已被网关限流"),
+    GATEWAY_DEGRADE_EXCEPTION("42908", "template.gateway.degrade", "已被网关熔断"),
 
     NOT_FOUND("4041", "template.not.found", "Not Found"),
     //网关层找不对目标service
