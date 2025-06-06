@@ -45,12 +45,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.ACCESS_DENIED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.BAD_REQUEST;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.INTERNAL_SERVER_ERROR;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.MAX_UPLOAD_SIZE_EXCEEDED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.METHOD_NOT_ALLOWED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.NOT_FOUND;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.READ_TIMEOUT;
+import static com.awesomecopilot.common.lang.errors.ErrorTypes.TOKEN_EXPIRED;
 import static com.awesomecopilot.common.lang.errors.ErrorTypes.VALIDATION_FAIL;
 import static java.util.stream.Collectors.*;
 
@@ -339,6 +341,17 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 			Result result = handleApplicationException((ApplicationException) e.getCause());
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
+		/*
+		 * 下面这几个是Sa-Token支持
+		 */
+		if ("cn.dev33.satoken.exception.NotLoginException".equalsIgnoreCase(e.getClass().getName())) {
+			Result result = Results.fail().status(TOKEN_EXPIRED).build();
+			return new ResponseEntity(result, HttpStatus.OK);
+		}
+		if ("cn.dev33.satoken.exception.NotPermissionException".equalsIgnoreCase(e.getClass().getName())) {
+			Result result = Results.fail().status(ACCESS_DENIED).build();
+			return new ResponseEntity(result, HttpStatus.OK);
+		}
 
 		/*
 		 * 上面这些都属于已经被处理的业务异常
@@ -351,6 +364,10 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 			Object restBlockExceptionHandler = applicationContext.getBean("restBlockExceptionHandler");
 			sentinelExists = true;
 			log.debug("当前整合了Sentinel, 关闭Throwable异常处理, 否则RestBlockExceptionHandler熔断规则处理将不生效");
+			/*
+			 * 为了即保证sentinel熔断能够生效有保证异常能被处理返回REST结果, copilot-spring-cloud-starter那边添加了ExceptionFilter
+			 * copilot-spring-security6-starter那边添加了SecurityExceptionFilter用来处理这边的漏网之鱼
+			 */
 			throw e;
 		} catch (NoSuchBeanDefinitionException e1) {
 			log.debug("当前没有整合Sentinel, 开启Throwable异常处理");

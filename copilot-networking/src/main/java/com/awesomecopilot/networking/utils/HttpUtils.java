@@ -26,7 +26,10 @@ public final class HttpUtils {
 	
 	private static String EMPTY_STR = "";
 	private static String UTF_8 = "UTF-8";
-	
+
+	private HttpUtils() {
+
+	}
 	/**
 	 * 执行HTTP GET请求并返回结果, Content-Type默认application-json
 	 *

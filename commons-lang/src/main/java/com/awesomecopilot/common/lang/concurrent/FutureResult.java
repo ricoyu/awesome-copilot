@@ -47,7 +47,7 @@ public class FutureResult<T> implements Serializable {
 				return future.get();
 			}
 		} catch (Exception e) {
-			logger.error("msg", e);
+			logger.error(">>>>>> Error on FutureResult.get: ", e);
 			throw new AsyncExecutionException("", e);
 		}
 	}
@@ -61,7 +61,7 @@ public class FutureResult<T> implements Serializable {
 		try {
 			return future.get();
 		} catch (InterruptedException | ExecutionException e) {
-			logger.error("msg", e);
+			logger.error(">>>>>> Error on FutureResult.get: ", e);
 		}
 		return supplier.get();
 	}
@@ -76,7 +76,7 @@ public class FutureResult<T> implements Serializable {
 		try {
 			return future.get();
 		} catch (InterruptedException | ExecutionException e) {
-			logger.error("msg", e);
+			logger.error(">>>>>> Error on FutureResult.get: ", e);
 		}
 		return result;
 	}
@@ -91,7 +91,7 @@ public class FutureResult<T> implements Serializable {
 		T result = get();
 		if (result != null) {
 			consumer.accept(result);
-			logger.info("Consumed! {}", result);
+			logger.info("FutureResult Consumed! {}", result);
 		}
 		return result;
 	}

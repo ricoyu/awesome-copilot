@@ -1,0 +1,329 @@
+2025-06-05 10:33:27.616  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 10:33:27.622  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 10:33:27.622  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 10:33:27.622  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 10:33:27.622  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 10:33:27.623  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 10:33:27.623  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 10:33:29.341  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 16:38:16.570  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 16:38:16.573  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 16:38:16.573  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 16:38:16.574  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 16:38:16.574  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 16:38:16.574  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 16:38:16.574  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 16:38:17.774  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 16:38:18.642  INFO  [ ] --- [            main] com.awesomecopilot.search.ElasticUtils       :   L1199 - acknowledged: true
+2025-06-05 20:49:19.361  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:49:19.365  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:49:19.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:49:19.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:49:19.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:49:19.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:49:19.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:49:20.777  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:50:52.588  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:50:52.594  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:50:52.595  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:50:52.595  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:50:52.595  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:50:52.595  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:50:52.595  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:50:54.260  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:50:55.461  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"bool": {
+    "filter": [{"range": {"rating": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 4.5,
+      "boost": 1,
+      "to": null
+    }}}],
+    "adjust_pure_negative": true,
+    "should": [
+      {"term": {"category": {
+        "boost": 1,
+        "value": "笔记本"
+      }}},
+      {"term": {"tags": {
+        "boost": 1,
+        "value": "苹果"
+      }}}
+    ],
+    "must": [{"range": {"price": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 1000,
+      "boost": 1,
+      "to": 5000
+    }}}],
+    "boost": 1
+  }},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 20:53:30.453  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:53:30.458  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:53:30.458  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:53:30.459  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:53:30.459  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:53:30.459  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:53:30.459  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:53:31.930  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:53:32.803  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"bool": {
+    "filter": [{"range": {"rating": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 4.5,
+      "boost": 1,
+      "to": null
+    }}}],
+    "adjust_pure_negative": true,
+    "must_not": [{"term": {"tags": {
+      "boost": 1,
+      "value": "苹果"
+    }}}],
+    "should": [
+      {"term": {"category": {
+        "boost": 1,
+        "value": "笔记本"
+      }}},
+      {"term": {"category": {
+        "boost": 1,
+        "value": "手机"
+      }}}
+    ],
+    "must": [{"range": {"price": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 1000,
+      "boost": 1,
+      "to": 5000
+    }}}],
+    "boost": 1
+  }},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 20:54:01.642  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:54:01.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:54:01.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:54:01.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:54:01.648  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:54:01.648  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:54:01.648  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:54:03.073  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:54:03.910  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"bool": {
+    "filter": [{"range": {"rating": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 4.5,
+      "boost": 1,
+      "to": null
+    }}}],
+    "adjust_pure_negative": true,
+    "must_not": [{"term": {"tags": {
+      "boost": 1,
+      "value": "苹果"
+    }}}],
+    "should": [
+      {"term": {"category": {
+        "boost": 1,
+        "value": "笔记本"
+      }}},
+      {"term": {"category": {
+        "boost": 1,
+        "value": "手机"
+      }}}
+    ],
+    "must": [{"range": {"price": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 1000,
+      "boost": 1,
+      "to": 5000
+    }}}],
+    "boost": 1
+  }},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 20:55:36.541  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:55:36.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:55:36.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:55:36.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:55:36.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:55:36.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:55:36.547  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:55:37.949  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:55:38.771  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"bool": {
+    "filter": [{"range": {"rating": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 4.5,
+      "boost": 1,
+      "to": null
+    }}}],
+    "adjust_pure_negative": true,
+    "must_not": [{"term": {"tags": {
+      "boost": 1,
+      "value": "苹果"
+    }}}],
+    "should": [
+      {"term": {"category": {
+        "boost": 1,
+        "value": "笔记本"
+      }}},
+      {"term": {"category": {
+        "boost": 1,
+        "value": "手机"
+      }}}
+    ],
+    "must": [{"range": {"price": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 1000,
+      "boost": 1,
+      "to": 5000
+    }}}],
+    "boost": 1
+  }},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 20:58:33.366  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 20:58:33.371  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 20:58:33.371  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 20:58:33.371  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 20:58:33.372  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 20:58:33.372  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 20:58:33.372  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 20:58:34.832  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 20:58:35.688  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"bool": {
+    "filter": [{"range": {"rating": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 4.5,
+      "boost": 1,
+      "to": null
+    }}}],
+    "adjust_pure_negative": true,
+    "must_not": [{"term": {"tags": {
+      "boost": 1,
+      "value": "苹果"
+    }}}],
+    "should": [
+      {"term": {"category": {
+        "boost": 1,
+        "value": "笔记本"
+      }}},
+      {"term": {"category": {
+        "boost": 1,
+        "value": "手机"
+      }}}
+    ],
+    "must": [{"range": {"price": {
+      "include_lower": true,
+      "include_upper": true,
+      "from": 1000,
+      "boost": 1,
+      "to": 5000
+    }}}],
+    "boost": 1
+  }},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 21:04:53.865  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 21:04:53.869  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 21:04:53.869  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 21:04:53.869  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 21:04:53.870  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 21:04:53.870  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 21:04:53.870  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 21:04:55.307  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 21:04:56.205  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"match_phrase": {"description": {
+    "query": "旗舰手机",
+    "zero_terms_query": "NONE",
+    "boost": 1,
+    "slop": 2
+  }}},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 21:13:28.943  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 21:13:28.947  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 21:13:28.947  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 21:13:28.947  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 21:13:28.948  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 21:13:28.948  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 21:13:28.948  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 21:13:30.377  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 21:13:31.192  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"range": {"created_at": {
+    "include_lower": true,
+    "include_upper": true,
+    "from": "2023-12-01||-1y/y",
+    "boost": 1,
+    "to": "2023-12-01"
+  }}},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2025-06-05 21:14:06.268  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2025-06-05 21:14:06.273  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2025-06-05 21:14:06.273  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2025-06-05 21:14:06.273  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2025-06-05 21:14:06.273  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2025-06-05 21:14:06.274  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2025-06-05 21:14:06.274  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2025-06-05 21:14:07.735  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2025-06-05 21:14:08.569  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L715 - Query DSL:
+{
+  "query": {"range": {"created_at": {
+    "include_lower": true,
+    "include_upper": true,
+    "from": "2023-12-01||-1y/y",
+    "boost": 1,
+    "to": "2023-12-01"
+  }}},
+  "_source": {
+    "excludes": [],
+    "includes": ["_id"]
+  },
+  "track_total_hits": 2147483647
+}

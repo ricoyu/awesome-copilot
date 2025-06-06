@@ -3,6 +3,7 @@
 
 实现功能：支持多点/单点登录, 指定时间内token自动过期
 登录信息由5个map, 1个SET 1个ZSET 存储
+下面是5个map
   auth:token:username       field是token,    value是username
   auth:token:userdetails    field是token,    value是userdetails
   auth:token:authorities    field是token,    value是authorities

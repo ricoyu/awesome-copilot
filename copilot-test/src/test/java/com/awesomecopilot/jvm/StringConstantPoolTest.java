@@ -30,4 +30,11 @@ public class StringConstantPoolTest {
 		String bb = new String("ab");
 		assertThat(aa == bb).isFalse();
 	}
+
+	@Test
+	public void test3() {
+		String s1 = new String("ab");
+		String s2 = "ab";
+		assertThat(s1 == s2).isFalse();
+	}
 }

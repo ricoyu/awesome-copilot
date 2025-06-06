@@ -22,17 +22,18 @@ public class ElasticUtilsMatchQueryTest {
 	@Test
 	public void testMatch() {
 		List<Object> movies = ElasticUtils.Query.matchQuery("movies")
-				.query("title", "Matrix Reload")
+				.query("title", "King George")
 				.queryForList();
-		assertThat(movies.size() == 3);
+		assertThat(movies.size() == 10);
 	}
+
 	@Test
 	public void testMatchWithOperator() {
 		List<Object> movies = ElasticUtils.Query.matchQuery("movies")
-				.query("title", "Matrix Reload")
+				.query("title", "King George")
 				.operator(Operator.AND)
 				.queryForList();
-		assertThat(movies.size() == 0);
+		assertThat(movies.size() == 1);
 	}
 	
 	@Test

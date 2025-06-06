@@ -130,6 +130,11 @@ public class ElasticUriQueryBuilder {
 	}
 	
 	/**
+	 * <ul>关于参数q:
+	 *     <li/>你可以就写查询条件: 2012
+	 *     <li/>也可以写完成的查询: q=2012 或者 q=2012&df=title 等
+	 * </ul>
+	 *
 	 * 指定查询语句, 使用Query String Syntax<p>
 	 * 有多种查询语法
 	 * <ul>
@@ -145,8 +150,6 @@ public class ElasticUriQueryBuilder {
 	 * <li/>           GET movies/_search?q=title:(Beautiful %2BMind)   必须包含Mind, %2B是 + 号的转义字符
 	 * <li/>范围查询    GET movies/_search?q=year:>1980
 	 * </ul>
-	 * 你可以就写查询条件: 2012<p>
-	 * 也可以写完成的查询: q=2012 或者 q=2012&df=title 等<p>
 	 *
 	 * @param q
 	 * @return QueryStringQueryBuilder

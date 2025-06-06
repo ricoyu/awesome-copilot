@@ -33,7 +33,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * @version 1.0
  */
 public final class SearchHitsSupport {
-	
+
 	/**
 	 * 将SearchHit[]转成List
 	 *
@@ -44,37 +44,50 @@ public final class SearchHitsSupport {
 	 */
 	@SuppressWarnings({"unchecked"})
 	public static <T> List<T> toList(SearchHit[] hits, Class resultType) {
-		List<String> highResults = new ArrayList<>();
+		List<String> results = new ArrayList<>();
+		boolean isFetchFields = false;
 		for (int i = 0; i < hits.length; i++) {
 			SearchHit hit = hits[i];
 			Map<String, HighlightField> highlightFieldMap = hit.getHighlightFields();
 			Map<String, DocumentField> storedFields = hit.getFields();
-				Map<String, String> resultMap = new HashMap<>();
-				for(String field: storedFields.keySet()) {
-					resultMap.put(field, storedFields.get(field).getValue());
-				}
+			if (storedFields != null & !storedFields.isEmpty()) {
+				isFetchFields = true;
+			}
+			Map<String, String> resultMap = new HashMap<>();
+			for (String field : storedFields.keySet()) {
+				resultMap.put(field, storedFields.get(field).getValue());
+				results.add(JacksonUtils.toJson(resultMap));
+			}
 			if (highlightFieldMap != null && !highlightFieldMap.isEmpty()) {
+				isFetchFields = true;
 				for (String field : highlightFieldMap.keySet()) {
 					HighlightField highlightField = highlightFieldMap.get(field);
 					resultMap.put(field, Arrays.toString(highlightField.getFragments()));
-					highResults.add(JacksonUtils.toJson(resultMap));
-					return (List<T>) highResults;
+					results.add(JacksonUtils.toJson(resultMap));
 				}
 			}
-			String source = hit.getSourceAsString();
 		}
+
+		if (isFetchFields) {
+			return (List<T>) results;
+		}
+
 		if (resultType == null || resultType == String.class) {
 			return (List<T>) Arrays.stream(hits)
-					.map(SearchHit::getSourceAsString)
+					.map((hit) -> {
+						Map<String, Object> source = hit.getSourceAsMap();
+						source.put("id", hit.getId());
+						return JacksonUtils.toJson(source);
+					})
 					.collect(Collectors.toList());
 		}
-		
+
 		//pojo标注了@DocId
 		Field id = ElasticCacheUtils.idField(resultType);
 		boolean hasDocId = id != null;
 		//@DocId标注的字段是String类型
 		boolean isStringId = hasDocId && id.getType() == String.class;
-		
+
 		return Arrays.stream(hits)
 				.filter(Objects::nonNull)
 				.map((hit) -> {
@@ -91,7 +104,7 @@ public final class SearchHitsSupport {
 					if (isBlank(source)) {
 						return null;
 					}
-					
+
 					T obj = (T) JacksonUtils.toObject(source, resultType);
 					if (hasDocId) {
 						if (isStringId) {
@@ -100,11 +113,11 @@ public final class SearchHitsSupport {
 							ReflectionUtils.setField(id, obj, Transformers.convert(hit.getId(), id.getType()));
 						}
 					}
-					
+
 					return obj;
 				}).collect(Collectors.toList());
 	}
-	
+
 	/**
 	 * 将SearchHit[]转成List
 	 *
@@ -118,28 +131,28 @@ public final class SearchHitsSupport {
 		if (hits.length == 0) {
 			return null;
 		}
-		
+
 		if (resultType != null && resultType == Map.class) {
 			Map<String, Object> resultMap = hits[0].getSourceAsMap();
 			resultMap.put("_id", hits[0].getId());
 			return (T) resultMap;
 		}
-		
+
 		String source = hits[0].getSourceAsString();
 		if (resultType == null) {
 			return (T) source;
 		}
-		
+
 		if (isBlank(source)) {
 			return null;
 		}
-		
+
 		//pojo标注了@DocId
 		Field id = ElasticCacheUtils.idField(resultType);
 		boolean hasDocId = id != null;
 		//@DocId标注的字段是String类型
 		boolean isStringId = hasDocId && id.getType() == String.class;
-		
+
 		T obj = (T) JacksonUtils.toObject(source, resultType);
 		if (hasDocId) {
 			if (isStringId) {
@@ -148,10 +161,10 @@ public final class SearchHitsSupport {
 				ReflectionUtils.setField(id, obj, Transformers.convert(hits[0].getId(), id.getType()));
 			}
 		}
-		
+
 		return obj;
 	}
-	
+
 	/**
 	 * 从SearchHit[]中取script_fields, 并转成Map
 	 *
@@ -163,7 +176,7 @@ public final class SearchHitsSupport {
 		if (hits.length == 0) {
 			return Collections.emptyMap();
 		}
-		
+
 		Map<String, List<Object>> scriptFieldsMap = new HashMap<>();
 		for (int i = 0; i < hits.length; i++) {
 			SearchHit hit = hits[i];
@@ -175,13 +188,13 @@ public final class SearchHitsSupport {
 					List<Object> values = scriptFieldsMap.get(entry.getKey());
 					values.addAll(entry.getValue().getValues());
 				}
-				
+
 			}
 		}
-		
+
 		return scriptFieldsMap;
 	}
-	
+
 	/**
 	 * 拿本次的sort
 	 *
@@ -192,14 +205,15 @@ public final class SearchHitsSupport {
 		if (hits.length == 0) {
 			return new Object[0];
 		}
-		
+
 		SearchHit lastHit = hits[hits.length - 1];
 		//拿到本次的sort
 		return lastHit.getSortValues();
 	}
-	
+
 	/**
 	 * 总共命中多少条记录
+	 *
 	 * @param searchResponse
 	 * @return long
 	 */

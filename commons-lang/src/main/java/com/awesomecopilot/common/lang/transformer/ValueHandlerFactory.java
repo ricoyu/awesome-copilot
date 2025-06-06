@@ -527,7 +527,7 @@ public class ValueHandlerFactory {
 
 	@SuppressWarnings("rawtypes")
 	private static IllegalArgumentException unknownConversion(Object value, Class type) {
-		return new IllegalArgumentException("Unaware how to convert value [" + value + " : of type " + typeName(value)
+		return new IllegalArgumentException("Unaware how to convert value [" + value + "] : of type [" + typeName(value)
 				+ "] to requested type [" + type.getName() + "]");
 	}
 

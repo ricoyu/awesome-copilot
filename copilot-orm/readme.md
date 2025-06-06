@@ -2,6 +2,8 @@
 
 ### 1.1 Maven依赖
 
+接入的时候添加如下依赖
+
 ```xml
 <dependency>
     <groupId>com.copilot</groupId>
@@ -16,7 +18,7 @@
 <dependency>
     <groupId>org.hibernate</groupId>
     <artifactId>hibernate-core</artifactId>
-    <version>5.6.15.Final</version>
+    <version>6.5.2.Final</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -655,11 +657,15 @@ public class MessageContent {
 1. @Convert注解
 
    ```java
-   @Convert(converter = StringToListConverter.class)
+   @Convert(converter = StringListConverter.class)
    private List<String> sliderPicUrls;
    ```
 
    遇到自动类型无法完成的类型转换时, 可以实现自己的jakarta.persistence.AttributeConverter, 然后指定的对应字段的@Convert注解上
+   
+   * StringListConverter
+   
+     支持POJO属性是List<String>类型, 数据库字段是varchar类型, 值是'[item1,item2,item2]'这种形式互转
 
 
 

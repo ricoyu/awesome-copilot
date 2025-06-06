@@ -91,7 +91,9 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -114,6 +116,7 @@ import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 import org.elasticsearch.index.reindex.UpdateByQueryAction;
 import org.elasticsearch.index.reindex.UpdateByQueryRequestBuilder;
 import org.elasticsearch.indices.IndexTemplateMissingException;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
@@ -231,6 +234,29 @@ public final class ElasticUtils {
     }
 
     /**
+     * 返回索引的文档数量
+     * @param index
+     * @return 索引的文档数量
+     */
+    public static long docCount(String index) {
+        SearchRequest searchRequest = new SearchRequest(index);
+
+        // 4. 构建查询 - 匹配所有文档但只返回总数
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+        sourceBuilder.query(QueryBuilders.matchAllQuery());
+        sourceBuilder.size(0); // 不返回实际文档
+        searchRequest.source(sourceBuilder);
+
+        // 5. 执行查询
+        SearchResponse response = CLIENT.search(searchRequest).actionGet();
+
+        // 6. 获取文档总数
+        long totalHits = response.getHits().getTotalHits().value;
+        System.out.println("索引 " + index + " 中的文档总数: " + totalHits);
+        return totalHits;
+    }
+
+    /**
      * 创建一个新的文档, 返回新创建文档的ID
      * 使用/_create`端点是用来明确创建一个新的文档, 而不是更新它。如果指定的文档ID已经存在, 则会返回一个错误。
      * 对应REST API POST 方式
@@ -264,18 +290,6 @@ public final class ElasticUtils {
     }
 
     /**
-     * 创建一个新的文档, 返回新创建文档的ID, 使用/_create`端点是用来明确创建一个新的文档, 而不是更新它。如果指定的文档ID已经存在, 则会返回一个错误。
-     * 对应REST API POST 方式
-     *
-     * @param index 索引名
-     * @param doc   要保存的文档
-     * @return String 文档ID
-     */
-    public static String create(String index, String doc, int id) {
-        return create(index, doc, String.valueOf(id));
-    }
-
-    /**
      * 创建一个新的文档, 返回新创建文档的ID
      * 对应REST API POST 方式
      *
@@ -285,18 +299,6 @@ public final class ElasticUtils {
      */
     public static String index(String index, Object doc, int id) {
         return index(index, doc, String.valueOf(id));
-    }
-
-    /**
-     * 创建一个新的文档, 返回新创建文档的ID, 使用/_create`端点是用来明确创建一个新的文档, 而不是更新它。如果指定的文档ID已经存在, 则会返回一个错误。
-     * 对应REST API POST 方式
-     *
-     * @param index 索引名
-     * @param doc   要保存的文档
-     * @return String 文档ID
-     */
-    public static String create(String index, Object doc, int id) {
-        return create(index, doc, String.valueOf(id));
     }
 
     /**
@@ -316,6 +318,30 @@ public final class ElasticUtils {
                 .setSource(toJson(doc), XContentType.JSON)
                 .get();
         return response.getId();
+    }
+
+    /**
+     * 创建一个新的文档, 返回新创建文档的ID, 使用/_create`端点是用来明确创建一个新的文档, 而不是更新它。如果指定的文档ID已经存在, 则会返回一个错误。
+     * 对应REST API POST 方式
+     *
+     * @param index 索引名
+     * @param doc   要保存的文档
+     * @return String 文档ID
+     */
+    public static String create(String index, String doc, int id) {
+        return create(index, doc, String.valueOf(id));
+    }
+
+    /**
+     * 创建一个新的文档, 返回新创建文档的ID, 使用/_create`端点是用来明确创建一个新的文档, 而不是更新它。如果指定的文档ID已经存在, 则会返回一个错误。
+     * 对应REST API POST 方式
+     *
+     * @param index 索引名
+     * @param doc   要保存的文档
+     * @return String 文档ID
+     */
+    public static String create(String index, Object doc, int id) {
+        return create(index, doc, String.valueOf(id));
     }
 
     /**
@@ -1569,6 +1595,8 @@ public final class ElasticUtils {
 
         /**
          * 指定查询语句, 使用Query String Syntax<p>
+         * 你可以就写查询条件: 2012<p>
+         * 也可以写完成的查询: q=2012 或者 q=2012&df=title 等<p>
          * 有多种查询语法
          * <ul>
          * <li/>df查询                            GET movies/_search?q=2012&df=title
@@ -1579,12 +1607,10 @@ public final class ElasticUtils {
          * <li/>Pahrase Query(引号引起来的)        GET movies/_search?q=title:"Beautiful Mind"  表示Beautiful Mind要同时出现并且按照规定的顺序, 与下面的等价
          * <li/>                                  GET movies/_search?q=title:Beautiful AND Mind
          * <li/>分组                              GET movies/_search?q=title:(Beautiful Mind)
+         * <li/>范围查询                          GET movies/_search?q=year:>1980
          * <li/>包含Beautiful 不包含 Mind          GET movies/_search?q=title:(Beautiful NOT Mind)
          * <li/>必须包含Mind, %2B是 + 号的转义字符  GET movies/_search?q=title:(Beautiful %2BMind)
-         * <li/>范围查询                          GET movies/_search?q=year:>1980
          * </ul>
-         * 你可以就写查询条件: 2012<p>
-         * 也可以写完成的查询: q=2012 或者 q=2012&df=title 等<p>
          *
          * @param index
          * @return QueryStringQueryBuilder

@@ -19,7 +19,7 @@ import java.util.Scanner;
  * 二、输入描述 <p>
  * 第一行newspaper内容，包括1~N个字符，并且空格分开 <p>
  * <p>
- * 第二行anonymousLetter内容，包括1N个字符，并且空格分开。 <p>
+ * 第二行anonymousLetter内容，包括1~N个字符，并且空格分开。 <p>
  * <p>
  * newspaper和anonymousLetter的字符串中均为英文字母组成，且每个字母只能使用一次； <p>
  * <p>

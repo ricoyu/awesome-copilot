@@ -1,7 +1,7 @@
-package com.awesomecopilot.algorithm.hwod;
+package com.awesomecopilot.algorithm.hwod.round2;
 
 import java.util.Arrays;
-import java.util.Scanner;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -39,13 +39,8 @@ import java.util.Set;
  * 2、输出
  * bwwlm
  * </pre>
- * <ul>问题分析
- *     <li/>我们需要找到一个最长的密码，满足从它的末尾开始依次去掉一位后得到的每个子密码都存在于密码本中。
- *     <li/>
- *     <li/>
- * </ul>
  * <p/>
- * Copyright: Copyright (c) 2025-04-14 8:56
+ * Copyright: Copyright (c) 2025-05-22 9:23
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
@@ -56,38 +51,36 @@ import java.util.Set;
 public class LongestPasswordFinder {
 
 	public static void main(String[] args) {
-		Scanner scanner = new Scanner(System.in);
-		for (int i = 0; i < 3; i++) {
-			System.out.print("请输入密码本:");
-			String[] passwords = scanner.nextLine().split(" ");
-			System.out.println(findLongestPassword(passwords));
-		}
-		scanner.close();
+		String[] passwords = new String[]{"h", "he", "hel", "hell", "hello"};
+		System.out.println(findLongestValidPassword(passwords)); // 输出: hello
+
+		String[] passwords2 = {"b", "ereddred", "bw", "bww", "bwwl", "bwwlm", "bwwln"};
+		System.out.println(findLongestValidPassword(passwords2)); // 输出: bwwlm
 	}
 
-	public static String findLongestPassword(String[] passwords) {
-		Arrays.sort(passwords, (pass1, pass2) -> {
-			if (pass1.length() != pass2.length()) {
-				return Integer.compare(pass2.length(), pass1.length());
-			} else {
-				return pass1.compareTo(pass2);
-			}
+	public static String findLongestValidPassword(String[] passwords) {
+		Set<String> passwordSet = new HashSet<>(Arrays.asList(passwords));
+		Arrays.sort(passwords, (a, b) -> {
+			return b.length() - a.length();
 		});
-		Set<String> passwordSet = Set.of(passwords);
 
+		// 遍历排序后的密码
 		for (String password : passwords) {
-			boolean valid = true;
-			for (int i = 1; i < password.length() - 1; i++) {
-				String subPassword = password.substring(0, password.length() - i);
-				if (!passwordSet.contains(subPassword)) {
-					valid = false;
+			boolean isValid = true;
+			// 从密码的末尾开始依次去掉一位，检查所有子密码是否存在
+			for (int i = password.length() - 1; i >= 1; i--) {
+				String pass = password.substring(0, i);
+				if (!passwordSet.contains(pass)) {
+					isValid = false;
 					break;
 				}
 			}
-			if (valid) {
+			// 如果所有子密码都存在，返回当前密码
+			if (isValid) {
 				return password;
 			}
 		}
+		// 没有满足条件的密码，返回空字符串
 		return "";
 	}
 }

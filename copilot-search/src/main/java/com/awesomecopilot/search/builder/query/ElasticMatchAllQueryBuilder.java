@@ -70,7 +70,7 @@ public class ElasticMatchAllQueryBuilder extends BaseQueryBuilder {
 	 * sort格式: 字段1:asc,字段2:desc,字段3<p>
 	 * 其中字段3按升序排(ASC)<p>
 	 * <p>
-	 * 注意: text类型字段不能排序, 要用field
+	 * 注意: text类型字段不能排序, 最好在数字型和日期型字段上排序
 	 *
 	 * @param sort
 	 * @return ElasticMatchQueryBuilder

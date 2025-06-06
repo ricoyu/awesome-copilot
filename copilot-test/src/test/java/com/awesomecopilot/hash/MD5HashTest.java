@@ -1,13 +1,13 @@
 package com.awesomecopilot.hash;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import lombok.SneakyThrows;
-import org.junit.Test;
-
 import jakarta.xml.bind.DatatypeConverter;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.Test;
+
 import java.security.MessageDigest;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * <p>

@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.*;
 
 /**
@@ -51,5 +52,96 @@ public class ElasticUtilsBoolQueryTest {
 	
 	@Test
 	public void testBoolBoostingQuery() {
+	}
+
+	/**
+	 * 对应的Query DSL
+	 * <pre>
+	 * GET ecommerce/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {"range": {
+	 *           "price": {
+	 *             "gte": 1000,
+	 *             "lte": 5000
+	 *           }
+	 *         }}
+	 *       ],
+	 *       "should": [
+	 *         {"term": {
+	 *           "category": "手机"
+	 *         }},
+	 *         {
+	 *           "term": {
+	 *             "category":"笔记本"
+	 *           }
+	 *         }
+	 *       ],
+	 *       "must_not": [
+	 *         {"term": {
+	 *           "tags": "苹果"
+	 *         }}
+	 *       ],
+	 *       "filter": [
+	 *         {"range": {
+	 *           "rating": {
+	 *             "gte": 4.5
+	 *           }
+	 *         }}
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testComplexBoolQuery() {
+		List<Object> objects = ElasticUtils.Query.bool("ecommerce")
+				.range("price").gte(1000).lte(5000).must()
+				.term("category", "笔记本").should()
+				.term("category", "手机").should()
+				.term("tags", "苹果").mustNot()
+				.range("rating").gte(4.5).filter()
+				.queryForList();
+
+		objects.forEach(System.out::println);
+		assertThat(objects.size()).isEqualTo(1);
+	}
+
+	/**
+	 * <pre>
+	 * GET ecommerce/_search
+	 * {
+	 *   "query": {
+	 *     "match_phrase": {
+	 *       "description": {
+	 *         "query": "旗舰手机",
+	 *         "slop": 2
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testMatchPgrase() {
+		List<Object> ecommerces = ElasticUtils.Query.matchPhraseQuery("ecommerce")
+				.query("description", "旗舰手机")
+				.slop(2)
+				.queryForList();
+		ecommerces.forEach(System.out::println);
+		assertThat(ecommerces.size()).isEqualTo(2);
+	}
+	
+	@Test
+	public void testDateRagequery() {
+		List<String> ecommerces = ElasticUtils.Query.range("ecommerce")
+				.field("created_at").gte("2023-12-01||-1y/y").lte("2023-12-01")
+				.includeSources("_id")
+				.queryForList();
+		ecommerces.forEach(System.out::println);
+		assertThat(ecommerces.size()).isEqualTo(4);
 	}
 }

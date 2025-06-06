@@ -29,6 +29,17 @@ public class RequestBodyQueryTest {
 				.queryForList();
 		assertThat(movies.size() == 9743);
 	}
+
+	@Test
+	public void testMatchAllPage() {
+		List<Movie> movies = ElasticUtils.Query.matchAllQuery("movies", "404index")
+				.from(0)
+				.size(10000)
+				.resultType(Movie.class)
+				.queryForList();
+
+		assertThat(movies.size() == 9743);
+	}
 	
 	@Test
 	public void testMatchAnd() {

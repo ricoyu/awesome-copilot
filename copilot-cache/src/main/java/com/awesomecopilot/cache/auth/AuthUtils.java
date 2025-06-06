@@ -82,7 +82,11 @@ public final class AuthUtils {
 	 * 用户异地登录时踢掉前一个登录时发布的频道, 即单点登录下线通知
 	 */
 	public static final String AUTH_SINGLE_SIGNON_CHANNEL = "auth:single:signon:channel";
-	
+
+	/**
+	 * 这是一个哈希的key, field是token, fieldvalue是UsernamePasswordAuthenticationToken序列化之后的JSON串
+	 */
+	public static final String TOKEN_AUTHENTICATION = "token:authentication";
 	/**
 	 * 是否自动刷新token
 	 * <p>
@@ -112,7 +116,26 @@ public final class AuthUtils {
 	 *     "token": "asdasdasdasddfgsd"  登录的token
 	 * }
 	 * </pre>
-	 * 
+	 *
+	 * 会在Redis中创建5个map
+	 * <pre>
+	 *   auth:token:username       field是token,    value是username
+	 *   auth:token:userdetails    field是token,    value是userdetails
+	 *   auth:token:authorities    field是token,    value是authorities
+	 *   auth:token:login:info     field是token,    value是额外的登录信息, 如设备号、手机操作系统, IP地址等等。使用场景如app登出提示
+	 *   auth:token:ttl            field是token,    value是token过期时间, refresh token的时候取这个值作为新的过期时间
+	 * </pre>
+	 * <pre>
+	 * 每个用户1个SET, 这边key中间部分是实际的用户名
+	 *   auth:admin:token      存admin用户对应的token, 如果可以多地登录, 那么SET里面就会有多个token
+	 *   auth:operator:token   存operator用户对应的token
+	 * </pre>
+	 *
+	 * <pre>
+	 * 1个zset
+	 *   auth:token:ttl:zset       放token和token到期timestamp, zset类型, score是timestamp
+	 * </pre>
+	 *
 	 * @param username       用户名
 	 * @param token          token
 	 * @param expires        过期时间
@@ -177,7 +200,7 @@ public final class AuthUtils {
 	
 	/**
 	 * 执行登出操作 返回true表示登出成功 返回false表示该token不存在或者已经登出<p>
-	 * 登出成功会发布一条消息到AUTH_LOGOUT_CHANNEL
+	 * 登出成功会发布一条消息到auth:logout:channel
 	 * <pre>
 	 * {
 	 *     "username": "rico",           退出登录的用户名
@@ -194,6 +217,8 @@ public final class AuthUtils {
 				0,
 				"logout",
 				token);
+		//登出后再清理一下token:authentication这个哈希
+		JedisUtils.HASH.hdel(TOKEN_AUTHENTICATION, token);
 		return toBoolean(result);
 	}
 	
@@ -269,7 +294,7 @@ public final class AuthUtils {
 		String authorities = JedisUtils.HASH.hget(AUTH_TOKEN_AUTHORITIES_HASH, token);
 		return JacksonUtils.toList(authorities, clazz);
 	}
-	
+
 	/**
 	 * 返回登录时提供的loginInfo
 	 *

@@ -5,7 +5,8 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -45,8 +46,9 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ServletUtils {
+
+	private static final Logger log = LoggerFactory.getLogger(ServletUtils.class);
 	
 	private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
 	
@@ -78,18 +80,30 @@ public final class ServletUtils {
 	 * @param header
 	 * @return String
 	 */
+	public static String getHeader(String header) {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		return request.getHeader(header);
+	}
+
+	/**
+	 * 获取请求头
+	 *
+	 * @param header
+	 * @return String
+	 */
 	public static String getHeader(HttpServletRequest request, String header) {
 		return request.getHeader(header);
 	}
-	
+
 	/**
 	 * 将所有的请求头放到Map里面返回
 	 *
-	 * @param request
 	 * @return Map<String, Object>
 	 */
-	public static Map<String, Object> getRequestHeadInfo(HttpServletRequest request) {
-		
+	public static Map<String, Object> getRequestHeadInfo() {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 		Map<String, Object> map = new HashMap<String, Object>();
 		
 		Enumeration headerNames = request.getHeaderNames();
@@ -101,7 +115,27 @@ public final class ServletUtils {
 		
 		return map;
 	}
-	
+
+	/**
+	 * 将所有的请求头放到Map里面返回
+	 *
+	 * @param request
+	 * @return Map<String, Object>
+	 */
+	public static Map<String, Object> getRequestHeadInfo(HttpServletRequest request) {
+
+		Map<String, Object> map = new HashMap<String, Object>();
+
+		Enumeration headerNames = request.getHeaderNames();
+		while (headerNames.hasMoreElements()) {
+			String key = (String) headerNames.nextElement();
+			String value = request.getHeader(key);
+			map.put(key, value);
+		}
+
+		return map;
+	}
+
 	/**
 	 * 获取Content-Type请求头
 	 *
@@ -117,10 +151,34 @@ public final class ServletUtils {
 	 * @param header
 	 * @param value
 	 */
+	public static void setHeader(String header, String value) {
+		HttpServletResponse response =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+		response.setHeader(header, value);
+	}
+
+	/**
+	 * 添加请求头
+	 *
+	 * @param header
+	 * @param value
+	 */
 	public static void setHeader(HttpServletResponse response, String header, String value) {
 		response.setHeader(header, value);
 	}
-	
+
+	/**
+	 * 设置日期类型的请求头
+	 *
+	 * @param header
+	 * @param date
+	 */
+	public static void setDateHeader(String header, long date) {
+		HttpServletResponse response =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+		response.setDateHeader(header, date);
+	}
+
 	/**
 	 * 设置日期类型的请求头
 	 *
@@ -130,7 +188,19 @@ public final class ServletUtils {
 	public static void setDateHeader(HttpServletResponse response, String header, long date) {
 		response.setDateHeader(header, date);
 	}
-	
+
+	/**
+	 * 设置int类型请求头
+	 *
+	 * @param header
+	 * @param value
+	 */
+	public static void setIntHeader(String header, int value) {
+		HttpServletResponse response =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+		response.setIntHeader(header, value);
+	}
+
 	/**
 	 * 设置int类型请求头
 	 *
@@ -140,17 +210,29 @@ public final class ServletUtils {
 	public static void setIntHeader(HttpServletResponse response, String header, int value) {
 		response.setIntHeader(header, value);
 	}
-	
+
+	/**
+	 * 设置Content-Type请求头
+	 *
+	 * @param contentTypeValue
+	 */
+	public static void setContentType(String contentTypeValue) {
+		Assert.notNull(contentTypeValue, "contentTypeValue 不能为null");
+		HttpServletResponse response =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+		setHeader(response, "Content-Type", contentTypeValue);
+	}
+
 	/**
 	 * 设置Content-Type请求头
 	 *
 	 * @param contentType
 	 */
-	public static void contentType(HttpServletResponse response, String contentType) {
+	public static void setContentType(HttpServletResponse response, String contentType) {
 		Assert.notNull(contentType, "contentType 不能为null");
 		setHeader(response, "Content-Type", contentType);
 	}
-	
+
 	/**
 	 * 添加Cookie
 	 *
@@ -182,6 +264,33 @@ public final class ServletUtils {
 	/**
 	 * 获取Cookie的值, 并用UTF-8编码做UrlDecode
 	 *
+	 * @param cookie
+	 * @return String
+	 */
+	public static String getCookie(String cookie) {
+		if (isBlank(cookie)) {
+			return null;
+		}
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (Cookie c : cookies) {
+				if (cookie.equalsIgnoreCase(c.getName())) {
+					String value = c.getValue();
+					if (!isBlank(value)) {
+						return urlDecode(value);
+					}
+				}
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * 获取Cookie的值, 并用UTF-8编码做UrlDecode
+	 *
 	 * @param request
 	 * @param cookie
 	 * @return String
@@ -201,10 +310,29 @@ public final class ServletUtils {
 				}
 			}
 		}
-		
+
 		return null;
 	}
-	
+
+	public static void removeRootCookies(String key) {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		HttpServletResponse response =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
+		Cookie[] cookies = request.getCookies();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				if (cookie.getName().equals(key)) {
+					cookie.setValue(null);
+					cookie.setMaxAge(0);
+					cookie.setPath("/");
+					response.addCookie(cookie);
+					break;
+				}
+			}
+		}
+	}
+
 	public static void removeRootCookies(HttpServletRequest request, HttpServletResponse response, String key) {
 		Cookie[] cookies = request.getCookies();
 		if (cookies != null) {
@@ -219,7 +347,19 @@ public final class ServletUtils {
 			}
 		}
 	}
-	
+
+	/**
+	 * 获取请求的URL
+	 * http://localhost:8080/pic_code
+	 *
+	 * @return String
+	 */
+	public static String requestUrl() {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		return request.getRequestURL().toString();
+	}
+
 	/**
 	 * 获取请求的URL
 	 * http://localhost:8080/pic_code
@@ -229,7 +369,7 @@ public final class ServletUtils {
 	public static String requestUrl(HttpServletRequest request) {
 		return request.getRequestURL().toString();
 	}
-	
+
 	/**
 	 * 取X-Requested-With请求头, 判断值是否为XMLHttpRequest, 是的话认为是AJAX请求
 	 * 或者返回类型是application/json也认为是AJAX请求
@@ -373,6 +513,17 @@ public final class ServletUtils {
 	/**
 	 * 获取请求的URI
 	 *
+	 * @return String
+	 */
+	public static String requestPath() {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		return requestPath(request);
+	}
+
+	/**
+	 * 获取请求的URI
+	 *
 	 * @param request
 	 * @return String
 	 */
@@ -380,7 +531,7 @@ public final class ServletUtils {
 		HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 		return requestPath(httpServletRequest);
 	}
-	
+
 	/**
 	 * 获取请求的URI
 	 *
