@@ -1,4 +1,4 @@
-package com.awesomecopilot.search.builder;
+package com.awesomecopilot.search.builder.query;
 
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import lombok.extern.slf4j.Slf4j;

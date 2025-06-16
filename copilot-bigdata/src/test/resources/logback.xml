@@ -12,9 +12,9 @@
     <!-- 滚动文件输出，按日期和大小滚动 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- 如果application.yml中没有配置logging.file.path, 那么默认输出在工作目录下的logs目录-->
-        <file>logs/copilot-search.log</file>
+        <file>logs/hdfs.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/copilot-search.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>logs/hdfs.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>64MB</maxFileSize> <!-- 每个日志文件大小限制为64MB -->
             <maxHistory>7</maxHistory> <!-- 保留7天的日志文件 -->
         </rollingPolicy>
@@ -26,13 +26,13 @@
     <!-- 滚动文件输出，按日期和大小滚动 -->
     <appender name="ERROR_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- 如果application.yml中没有配置logging.file.path, 那么默认输出在工作目录下的logs目录-->
-        <file>logs/copilot-search-error.log</file>
+        <file>logs/error.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <!--设置日志级别,过滤掉info日志,只输入error日志-->
             <level>ERROR</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/copilot-search-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <fileNamePattern>logs/error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>64MB</maxFileSize> <!-- 每个日志文件大小限制为64MB -->
             <maxHistory>7</maxHistory> <!-- 保留7天的日志文件 -->
         </rollingPolicy>
@@ -43,8 +43,6 @@
 
     <!-- 控制Mybatis的日志级别为DEBUG, 并且只输出到控制台 -->
     <logger name="com.loserico.mybatis.sql.mapper" level="DEBUG"/>
-    <logger name="com.awesomecopilot.search.builder.query.BaseQueryBuilder" level="DEBUG"/>
-    <logger name="com.awesomecopilot.search.builder.agg.AbstractAggregationBuilder" level="DEBUG"/>
     <logger name="org.apache.ibatis.io.DefaultVFS" level="error"/>
     <logger name="org.apache.ibatis.io.VFS" level="error"/>
     <logger name="org.apache.ibatis.io.JBoss6VFS" level="error"/>

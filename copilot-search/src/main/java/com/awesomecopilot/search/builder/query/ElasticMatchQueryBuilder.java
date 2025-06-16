@@ -3,7 +3,9 @@ package com.awesomecopilot.search.builder.query;
 import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
+import org.elasticsearch.index.query.ConstantScoreQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
@@ -25,6 +27,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @version 1.0
  */
 public class ElasticMatchQueryBuilder extends BaseQueryBuilder implements MatchQuery, BoolMatchQuery {
+
+	/**
+	 * 嵌套查询的字段
+	 */
+	private String nestedPath;
 	
 	/**
 	 * 如果要查询的title值是 "Last Christmas", 那么默认搜索title包含last或者christmas
@@ -49,6 +56,17 @@ public class ElasticMatchQueryBuilder extends BaseQueryBuilder implements MatchQ
 	}
 	
 	/**
+	 * 设置嵌套查询字段
+	 *
+	 * @param path
+	 * @return ElasticMatchQueryBuilder
+	 */
+	public ElasticMatchQueryBuilder nestedPath(String path) {
+		this.nestedPath = path;
+		return this;
+	}
+
+	/**
 	 * 设置查询字段, 值
 	 *
 	 * @param field
@@ -61,7 +79,7 @@ public class ElasticMatchQueryBuilder extends BaseQueryBuilder implements MatchQ
 		this.value = value;
 		return this;
 	}
-	
+
 	/**
 	 * 如果要查询的title值是 "Last Christmas", 那么默认搜索title包含last或者christmas<p>
 	 * 如果要提高查询的精准度, 只想查到同时包含"Last Christmas"的title, 可以设置operator为AND<p>
@@ -352,12 +370,23 @@ public class ElasticMatchQueryBuilder extends BaseQueryBuilder implements MatchQ
 			}
 			
 			matchQueryBuilder.boost(boost);
+
+			if (isNotBlank(nestedPath)) {
+				return QueryBuilders.nestedQuery(nestedPath, matchQueryBuilder, ScoreMode.Avg);
+			}
 			return matchQueryBuilder;
 		}
 		
 		MatchAllQueryBuilder matchAllQueryBuilder = new MatchAllQueryBuilder();
 		if (constantScore) {
-			return QueryBuilders.constantScoreQuery(matchAllQueryBuilder);
+			ConstantScoreQueryBuilder constantScoreQueryBuilder =
+					QueryBuilders.constantScoreQuery(matchAllQueryBuilder);
+			if (isNotBlank(nestedPath)) {
+				return QueryBuilders.nestedQuery(nestedPath, constantScoreQueryBuilder, ScoreMode.Avg);
+			}
+		}
+		if (isNotBlank(nestedPath)) {
+			return QueryBuilders.nestedQuery(nestedPath, matchAllQueryBuilder, ScoreMode.Avg);
 		}
 		return matchAllQueryBuilder;
 	}

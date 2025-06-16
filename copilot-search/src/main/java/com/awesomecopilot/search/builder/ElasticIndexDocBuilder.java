@@ -1,4 +1,4 @@
-package com.awesomecopilot.search;
+package com.awesomecopilot.search.builder;
 
 import com.awesomecopilot.search.cache.ElasticCacheUtils;
 import org.elasticsearch.action.index.IndexRequestBuilder;

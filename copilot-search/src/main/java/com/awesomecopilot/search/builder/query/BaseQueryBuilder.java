@@ -55,24 +55,24 @@ import static org.elasticsearch.common.lucene.search.function.CombineFunction.MU
  */
 @Slf4j
 public abstract class BaseQueryBuilder implements BoolQuery {
-	
+
 	private ElasticBoolQueryBuilder boolQueryBuilder;
-	
+
 	/**
 	 * 要查询的索引
 	 */
 	protected String[] indices;
-	
+
 	/**
 	 * 要查询的字段
 	 */
 	protected String field;
-	
+
 	/**
 	 * 支持简单的字段高亮显示
 	 */
 	protected String highlightField;
-	
+
 	/**
 	 * 对应_source不存储, 每个字段单独设置store=true时,
 	 * Search时提供的stored_fields参数
@@ -82,58 +82,58 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 * 要查询的值
 	 */
 	protected Object value;
-	
+
 	/**
 	 * 是否要获取_source
 	 */
 	protected boolean fetchSource = true;
-	
+
 	/**
 	 * 设置 _source 属性, 即指定要返回哪些字段, 而不是返回整个_source
 	 */
 	protected String[] includeSource;
-	
+
 	/**
 	 * 指定查询要排除哪些字段
 	 */
 	protected String[] excludeSource;
-	
+
 	/**
 	 * 分页相关, 起始位置
 	 */
 	protected Integer from;
-	
+
 	/**
 	 * 分页相关, 每页大小
 	 */
 	protected Integer size;
-	
+
 	/**
 	 * 排序 ASC DESC
 	 */
 	protected List<SortOrder> sortOrders = new ArrayList<>();
-	
+
 	/**
 	 * 提升或者降低查询的权重
 	 */
 	protected float boost = 1f;
-	
+
 	/**
 	 * 查询返回的结果类型
 	 */
 	protected Class resultType;
-	
+
 	/**
 	 * 脚本字段查询
 	 */
 	protected Map<String, String> scriptFields = new HashMap<>();
-	
+
 	/**
 	 * 是否要将Query转为constant_scre query, 以避免算分, 提高查询性能
 	 * 适用于有时候我们根本不关心 TF/IDF, 只想知道一个词是否在某个字段中出现过。
 	 */
 	protected boolean constantScore = false;
-	
+
 	/**
 	 * Elasticsearch 默认会以文档的相关度算分进行排序<br/>
 	 * 可以通过指定一个或多个字段进行排序<br/>
@@ -150,9 +150,9 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 * </ul>
 	 */
 	protected ScoreFunctionBuilder scoreFunctionBuilder;
-	
+
 	protected CombineFunction boostMode = MULTIPLY;
-	
+
 	/**
 	 * 避免深度分页的性能问题, 可以实时获取下一页文档信息<p>
 	 * 第一步搜索需要指定sort, 并且保证值是唯一的(可以通过加入_id保证唯一性)<p>
@@ -160,17 +160,17 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 * 这个就是查询得到的最后一个文档的sort值
 	 */
 	protected Object[] searchAfter;
-	
+
 	/**
 	 * Scroll查询的时间窗口
 	 */
 	protected Long scrollWindow;
-	
+
 	/**
 	 * Scroll查询的时间窗口单位
 	 */
 	protected TimeUnit timeUnit;
-	
+
 	/**
 	 * 上一次查询拿到的scrollId
 	 */
@@ -179,18 +179,18 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 * 是否强制刷新
 	 */
 	protected Boolean refresh;
-	
+
 	public BaseQueryBuilder(String... indices) {
 		notNull(indices, "indices cannot be null!");
 		this.indices = indices;
 	}
-	
+
 	public BaseQueryBuilder(String field, Object value) {
 		notNull(field, "field cannot be null!");
 		this.field = field;
 		this.value = value;
 	}
-	
+
 	/**
 	 * 添加基于字段的排序, 默认升序
 	 *
@@ -205,11 +205,11 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		} else {
 			sortOrder = sortOrderBuilder.desc();
 		}
-		
+
 		sortOrders.add(sortOrder);
 		return this;
 	}
-	
+
 	/*	*//**
 	 * 添加排序规则<p>
 	 * sort格式: 字段1:asc,字段2:desc,字段3<p>
@@ -270,7 +270,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		
 		return this;
 	}*/
-	
+
 	/**
 	 * 控制返回自己想要的字段, 而不是整个_source
 	 *
@@ -282,7 +282,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.includeSource = sources;
 		return this;
 	}
-	
+
 	/**
 	 * 控制返回自己想要的字段, 而不是整个_source
 	 *
@@ -293,7 +293,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.includeSource = fields;
 		return this;
 	}
-	
+
 	/**
 	 * 控制要排除哪些返回的字段, 而不是整个_source
 	 *
@@ -305,7 +305,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.excludeSource = sources;
 		return this;
 	}
-	
+
 	/**
 	 * 控制要排除哪些返回的字段, 而不是整个_source
 	 *
@@ -316,7 +316,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.excludeSource = fields;
 		return this;
 	}
-	
+
 	/**
 	 * 设置高亮显示某个字段
 	 *
@@ -327,7 +327,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.highlightField = highlightField;
 		return this;
 	}
-	
+
 	/**
 	 * 对应_source不存储, 每个字段单独设置store=true时,
 	 * Search时提供的stored_fields参数
@@ -339,7 +339,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.storedFields = storedFields;
 		return this;
 	}
-	
+
 	/**
 	 * 脚本字段查询
 	 *
@@ -351,9 +351,9 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.scriptFields.put(fieldName, script);
 		return this;
 	}
-	
+
 	protected abstract QueryBuilder builder();
-	
+
 	/**
 	 * 执行查询
 	 *
@@ -362,14 +362,14 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 */
 	public <T> List<T> queryForList() {
 		SearchHit[] hits = searchHits();
-		
+
 		if (hits.length == 0) {
 			return Collections.emptyList();
 		}
-		
+
 		return SearchHitsSupport.toList(hits, resultType);
 	}
-	
+
 	/**
 	 * 执行查询并返回script_fields指定的字段
 	 *
@@ -377,14 +377,14 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 */
 	public Map<String, List<Object>> queryForScriptFields() {
 		SearchHit[] hits = searchHits();
-		
+
 		if (hits.length == 0) {
 			return Collections.emptyMap();
 		}
-		
+
 		return SearchHitsSupport.toScriptFieldsMap(hits);
 	}
-	
+
 	/**
 	 * 执行Search After分页查询<p>
 	 * 需要带上上一次查询拿到的最后一个文档的sort值进行查询<p>
@@ -443,16 +443,16 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		SearchResponse response = searchResponse();
 		Long total = response.getHits().getTotalHits().value;
 		SearchHit[] hits = response.getHits().getHits();
-		
+
 		if (hits.length == 0) {
 			return ElasticPage.emptyResult();
 		}
-		
+
 		//拿到本次的sort
 		Object[] sortValues = SearchHitsSupport.sortValues(hits);
 		//本次查询得到结果集
 		List<T> results = SearchHitsSupport.toList(hits, resultType);
-		
+
 		ElasticPage<T> elasticPage = ElasticPage.<T>builder()
 				.results(results)
 				.sort(sortValues)
@@ -466,7 +466,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		elasticPage.setTotalCount(total.intValue());
 		return elasticPage;
 	}
-	
+
 	/**
 	 * Scroll API
 	 * 在第一次调用的时候传入一个Scroll存活的时间
@@ -480,16 +480,16 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		SearchResponse response = searchResponse();
 		Long total = response.getHits().getTotalHits().value;
 		SearchHit[] hits = response.getHits().getHits();
-		
+
 		if (hits.length == 0) {
 			return ElasticScroll.emptyResult();
 		}
-		
+
 		//拿到本次的scroll
 		String scrollId = response.getScrollId();
 		//本次查询得到结果集
 		List<T> results = SearchHitsSupport.toList(hits, resultType);
-		
+
 		ElasticScroll<T> elasticScroll = ElasticScroll.<T>builder()
 				.results(results)
 				.scrollId(scrollId)
@@ -503,7 +503,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		elasticScroll.setTotalCount(total.intValue());
 		return elasticScroll;
 	}
-	
+
 	/**
 	 * 执行查询, 返回一条记录
 	 *
@@ -512,26 +512,26 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 */
 	public <T> T queryForOne() {
 		SearchHit[] hits = searchHits();
-		
+
 		if (hits.length == 0) {
 			return null;
 		}
-		
+
 		SearchHit hit = hits[0];
-		
+
 		if (resultType != null && resultType == Map.class) {
 			Map<String, Object> resultMap = hit.getSourceAsMap();
 			resultMap.put("_id", hit.getId());
 			return (T) resultMap;
 		}
-		
+
 		String source = hit.getSourceAsString();
-		
+
 		//如果没有source, 就不用管是否要封装成POJO了
 		if (source == null) {
 			return null;
 		}
-		
+
 		//如果要封装成POJO对象
 		if (ReflectionUtils.isPojo(resultType)) {
 			//pojo标注了@DocId
@@ -549,10 +549,10 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 			}
 			return obj;
 		}
-		
+
 		return (T) source;
 	}
-	
+
 	/**
 	 * 执行查询, 返回一个文档ID
 	 *
@@ -560,15 +560,15 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 */
 	public String queryForId() {
 		SearchHit[] hits = searchHits();
-		
+
 		if (hits.length == 0) {
 			return null;
 		}
-		
+
 		SearchHit hit = hits[0];
 		return hit.getId();
 	}
-	
+
 	/**
 	 * 执行查询, 返回文档ID列表
 	 *
@@ -576,19 +576,19 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	 */
 	public List<String> queryForIds() {
 		SearchHit[] hits = searchHits();
-		
+
 		if (hits.length == 0) {
 			return Collections.emptyList();
 		}
-		
+
 		List<String> ids = new ArrayList<>();
 		for (int i = 0; i < hits.length; i++) {
 			ids.add(hits[i].getId());
 		}
-		
+
 		return ids;
 	}
-	
+
 	/**
 	 * 返回查询到的记录数, 查询不会真正返回文档
 	 *
@@ -601,44 +601,46 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 				.setQuery(builder())
 				.setSize(0) //count 不需要真正返回数据
 				.setFetchSource(false);
-		
+
 		SearchResponse response = builder.get();
 		TotalHits totalHits = response.getHits().getTotalHits();
 		if (totalHits == null) {
 			return 0L;
 		}
-		
+
 		return totalHits.value;
 	}
-	
+
 	/**
 	 * 根据查询条件来删除
 	 *
 	 * @return long 删除的文档数量
 	 */
 	public long delete() {
-		DeleteByQueryRequestBuilder deleteByQueryRequestBuilder = new DeleteByQueryRequestBuilder(ElasticUtils.CLIENT, DeleteByQueryAction.INSTANCE)
-				.filter(builder())
-				.source(indices);
-		
+		DeleteByQueryRequestBuilder deleteByQueryRequestBuilder =
+				new DeleteByQueryRequestBuilder(ElasticUtils.CLIENT, DeleteByQueryAction.INSTANCE)
+						.filter(builder())
+						.source(indices);
+
 		DeleteByQueryRequest deleteByQueryRequest = new DeleteByQueryRequest(indices);
 		deleteByQueryRequest.setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN); //要搜索的index不存在时不报错
 		deleteByQueryRequest.setQuery(builder());
 		if (refresh != null && refresh.booleanValue()) {
 			deleteByQueryRequest.setRefresh(true);
 		}
-		
+
 		BulkByScrollResponse bulkByScrollResponse = null;
 		try {
-			bulkByScrollResponse = ElasticUtils.CLIENT.execute(DeleteByQueryAction.INSTANCE, deleteByQueryRequest).get();
+			bulkByScrollResponse =
+					ElasticUtils.CLIENT.execute(DeleteByQueryAction.INSTANCE, deleteByQueryRequest).get();
 		} catch (Exception e) {
 			log.error("", e);
 			throw new DocumentDeleteException(e);
 		}
-		
+
 		return bulkByScrollResponse.getDeleted();
 	}
-	
+
 	/**
 	 * 作为查询的公共部分抽取出来
 	 *
@@ -649,7 +651,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		SearchHits searchHits = response.getHits();
 		return searchHits.getHits();
 	}
-	
+
 	private SearchResponse searchResponse() {
 		if (isNotBlank(scrollId)) {
 			SearchScrollRequestBuilder searchRequestBuilder =
@@ -658,7 +660,8 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		} else {
 			SearchRequestBuilder searchRequestBuilder = ElasticUtils.CLIENT.prepareSearch(indices)
 					.setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN) //要搜索的index不存在时不报错
-					.setTrackTotalHits(true) //查询返回的totalHits默认最大值是10000, 如果查到的数据超过10000, 那么拿到的totalHits就不准了, 加上这个配置解决这个问题
+					.setTrackTotalHits(true) //查询返回的totalHits默认最大值是10000, 如果查到的数据超过10000, 那么拿到的totalHits就不准了,
+					// 加上这个配置解决这个问题
 					.setQuery(builder());
 			if (scrollWindow != null) {
 				searchRequestBuilder.setScroll(new TimeValue(timeUnit.toMillis(scrollWindow)));
@@ -672,13 +675,13 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 				highlightBuilder.field(field);
 				searchRequestBuilder.highlighter(highlightBuilder);
 			}
-			
+
 			if (this.storedFields != null) {
 				searchRequestBuilder.storedFields(this.storedFields);
 			}
 			//logDsl(searchRequestBuilder);
 			sortOrders.forEach(sortOrder -> sortOrder.addTo(searchRequestBuilder));
-			
+
 			/*
 			 * Search After 避免深度分页, 如果用search after, 不需要指定from了
 			 */
@@ -690,17 +693,17 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 					searchRequestBuilder.setFrom(firstResult);
 				}
 			}
-			
+
 			if (size != null) {
 				searchRequestBuilder.setSize(size);
 			}
-			
+
 			if (includeSource != null && includeSource.length > 0 || excludeSource != null && excludeSource.length > 0) {
 				searchRequestBuilder.setFetchSource(includeSource, excludeSource);
 			} else {
 				searchRequestBuilder.setFetchSource(fetchSource);
 			}
-			
+
 			if (!scriptFields.isEmpty()) {
 				for (Map.Entry<String, String> entry : scriptFields.entrySet()) {
 					searchRequestBuilder.addScriptField(entry.getKey(), new Script(entry.getValue()));
@@ -712,44 +715,52 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 				searchRequestBuilder.setFetchSource(false);
 			}
 			if (log.isDebugEnabled()) {
-				log.debug("Query DSL:\n{}", new JSONObject(searchRequestBuilder.toString()).toString(2));
+				String json = searchRequestBuilder.toString();
+				if (json.contains("geo_distance")) {
+					/*
+					 * geo_distance查询这边JSON会有两个distance字段, 导致new JSONObject(json)抛异常
+					 */
+					log.debug("Query DSL:\n{}", searchRequestBuilder);
+				} else {
+					log.debug("Query DSL:\n{}", new JSONObject(json).toString(2));
+				}
 			}
 			return searchRequestBuilder.get();
 		}
-		
+
 	}
-	
+
 	protected static void notNull(Object obj, String msg) {
 		if (obj == null) {
 			throw new IllegalArgumentException(msg);
 		}
 	}
-	
-	
+
+
 	@Override
 	public ElasticBoolQueryBuilder must() {
 		boolQueryBuilder.must(builder());
 		return boolQueryBuilder;
 	}
-	
+
 	@Override
 	public ElasticBoolQueryBuilder mustNot() {
 		boolQueryBuilder.mustNot(builder());
 		return boolQueryBuilder;
 	}
-	
+
 	@Override
 	public ElasticBoolQueryBuilder should() {
 		boolQueryBuilder.should(builder());
 		return boolQueryBuilder;
 	}
-	
+
 	@Override
 	public ElasticBoolQueryBuilder filter() {
 		boolQueryBuilder.filter(builder());
 		return boolQueryBuilder;
 	}
-	
+
 	/**
 	 * Scroll APIA
 	 *
@@ -762,7 +773,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.timeUnit = timeUnit;
 		return this;
 	}
-	
+
 	/**
 	 * Scroll APIA
 	 *
@@ -773,14 +784,14 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 		this.scrollId = scrollId;
 		return this;
 	}
-	
-	
+
+
 	protected void logDsl(SearchRequestBuilder builder) {
 		if (log.isDebugEnabled()) {
 			log.debug("Aggregation DSL:\n{}", new JSONObject(builder.toString()).toString(2));
 		}
 	}
-	
+
 	/**
 	 * 客户端API传入的from是指页码, 从1开始 <br/>
 	 * ES中分页时, from是指从第几条数据开始, 第一条是0 <br/>
@@ -794,7 +805,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 			int pageSize = size == null ? 10 : size;
 			return (from - 1) * pageSize;
 		}
-		
+
 		return null;
 	}
 }

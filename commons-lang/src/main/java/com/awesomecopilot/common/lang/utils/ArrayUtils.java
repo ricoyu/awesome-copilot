@@ -3,9 +3,10 @@ package com.awesomecopilot.common.lang.utils;
 import com.awesomecopilot.common.lang.functional.Matcher;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
@@ -32,6 +33,17 @@ public final class ArrayUtils {
 				.sorted()
 				.distinct()
 				.toArray();
+	}
+
+	/**
+	 * 数组转List
+	 * @param nums
+	 * @return
+	 */
+	public static List<Integer> toList(int[] nums) {
+		return Arrays.stream(nums)
+				.boxed()
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -172,23 +184,47 @@ public final class ArrayUtils {
 	}
 
 	/**
-	 * 将一个字符串形式的二维数组转成int[][]
+	 * 将一个字符串形式的二维数组[[1 ,4],[4,5]]转成int[][]
 	 *
 	 * @param input
 	 * @return
 	 */
 	public static int[][] parseTwoDimensionArray(String input) {
-		List<int[]> list = new ArrayList<>();
-		Pattern pattern = Pattern.compile("\\[(\\d+),(\\d+)\\]");
-		java.util.regex.Matcher matcher = pattern.matcher(input.trim());
+		// 去除字符串两端的方括号
+		String trimmed = input.substring(1, input.length() - 1);
 
-		while (matcher.find()) {
-			int first = Integer.parseInt(matcher.group(1));
-			int second = Integer.parseInt(matcher.group(2));
-			list.add(new int[]{first, second});
+		// 特殊情况处理：空数组
+		if (trimmed.isEmpty()) {
+			return new int[0][];
 		}
 
-		return list.toArray(new int[0][]);
+		// 分割外层数组元素
+		String[] outerElements = trimmed.split(",(?=\\[)");
+
+		List<int[]> resultList = new ArrayList<>();
+
+		for (String element : outerElements) {
+			// 去除每个元素两端的方括号
+			String innerTrimmed = element.substring(1, element.length() - 1);
+
+			// 分割内层数组元素
+			String[] innerElements = innerTrimmed.split(",");
+
+			int[] innerArray = new int[innerElements.length];
+			for (int i = 0; i < innerElements.length; i++) {
+				innerArray[i] = Integer.parseInt(innerElements[i].trim());
+			}
+
+			resultList.add(innerArray);
+		}
+
+		// 转换为二维数组
+		int[][] result = new int[resultList.size()][];
+		for (int i = 0; i < resultList.size(); i++) {
+			result[i] = resultList.get(i);
+		}
+
+		return result;
 	}
 
 	/**

@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.bucket.histogram.InternalDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.InternalHistogram;
+import org.elasticsearch.search.aggregations.bucket.nested.InternalNested;
 import org.elasticsearch.search.aggregations.bucket.range.InternalRange;
 import org.elasticsearch.search.aggregations.bucket.range.InternalRange.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.LongTerms;
@@ -37,35 +39,35 @@ import java.util.Map;
  */
 @Slf4j
 public final class AggResultSupport {
-	
+
 	private static final int PRINT_LOG_LIMIT = 100;
-	
+
 	public static Map<String, Object> compositeResult(Aggregations aggregations) {
 		Map<String, Object> resultMap = new HashMap<>();
-		
+
 		if (aggregations == null) {
 			return resultMap;
 		}
-		
+
 		for (Aggregation aggregation : aggregations) {
 			if (aggregation instanceof InternalMax) {
 				Double value = ((InternalMax) aggregation).getValue();
 				String name = aggregation.getName();
 				resultMap.put(name, value);
 			}
-			
+
 			if (aggregation instanceof InternalMin) {
 				Double value = ((InternalMin) aggregation).getValue();
 				String name = aggregation.getName();
 				resultMap.put(name, value);
 			}
-			
+
 			if (aggregation instanceof InternalAvg) {
 				Double value = ((InternalAvg) aggregation).getValue();
 				String name = aggregation.getName();
 				resultMap.put(name, value);
 			}
-			
+
 			if (aggregation instanceof LongTerms) {
 				String name = aggregation.getName();
 				List<LongTerms.Bucket> buckets = ((LongTerms) aggregation).getBuckets();
@@ -82,7 +84,7 @@ public final class AggResultSupport {
 				}
 				resultMap.put(name, value);
 			}
-			
+
 			if (aggregation instanceof StringTerms) {
 				String name = aggregation.getName();
 				List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
@@ -96,10 +98,10 @@ public final class AggResultSupport {
 				resultMap.put(name, value);
 			}
 		}
-		
+
 		return resultMap;
 	}
-	
+
 	public static <T> List<Map<String, T>> termsResult(Aggregations aggregations) {
 		List<Map<String, T>> aggResults = new ArrayList<>();
 		if (aggregations == null) {
@@ -111,8 +113,9 @@ public final class AggResultSupport {
 				continue;
 			}
 			//TODO 直接强转((StringTerms) aggregation)是有问题的, 有些可能是LongTerms等
-			List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
-			
+			bucketsResult(aggregation, aggResults);
+			/*List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
+
 			for (StringTerms.Bucket bucket : buckets) {
 				Map<String, T> result = new HashMap<>();
 				String key = bucket.getKeyAsString();
@@ -125,12 +128,12 @@ public final class AggResultSupport {
 					result.put(subAgg.getName(), aggResult(subAgg));
 				}
 				aggResults.add(result);
-			}
+			}*/
 		}
-		
+
 		return aggResults;
 	}
-	
+
 	public static Map<String, Object> termsResult(InternalStats aggregation) {
 		Map<String, Object> aggResults = new HashMap<>();
 		aggResults.put("count", aggregation.getCount());
@@ -138,15 +141,15 @@ public final class AggResultSupport {
 		aggResults.put("max", aggregation.getMax());
 		aggResults.put("avg", aggregation.getAvg());
 		aggResults.put("sum", aggregation.getSum());
-		
+
 		return aggResults;
 	}
-	
+
 	public static <T> List<Map<String, T>> termsResult(Aggregation aggregation) {
 		List<Map<String, T>> aggResults = new ArrayList<>();
 		//TODO 直接强转((StringTerms) aggregation)是有问题的, 有些可能是LongTerms等
 		List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
-		
+
 		for (StringTerms.Bucket bucket : buckets) {
 			Map<String, T> result = new HashMap<>();
 			String key = bucket.getKeyAsString();
@@ -160,10 +163,10 @@ public final class AggResultSupport {
 			}
 			aggResults.add(result);
 		}
-		
+
 		return aggResults;
 	}
-	
+
 	/**
 	 * 返回terms聚合总的桶数量
 	 *
@@ -179,13 +182,13 @@ public final class AggResultSupport {
 				log.warn("聚合的字段是一个未映射的字段, 比如enabled=false");
 				continue;
 			}
-			
+
 			return ((StringTerms) aggregation).getBuckets().size();
 		}
-		
+
 		return 0;
 	}
-	
+
 	public static Map<String, Object> histogramResult(Aggregations aggregations) {
 		Map<String, Object> aggResults = new HashMap<>();
 		if (aggregations == null) {
@@ -202,10 +205,10 @@ public final class AggResultSupport {
 			}
 			aggResults.put(aggregation.getName(), result);
 		}
-		
+
 		return aggResults;
 	}
-	
+
 	public static Map<String, Object> dateHistogramResult(Aggregations aggregations) {
 		Map<String, Object> aggResults = new HashMap<>();
 		if (aggregations == null) {
@@ -219,7 +222,7 @@ public final class AggResultSupport {
 				long docCount = bucket.getDocCount();
 				log.debug("Bucket: {}, Doc Count: {}", key, docCount);
 				result.put(key, docCount);
-				
+
 				Aggregations subAggs = bucket.getAggregations();
 				for (Aggregation subAgg : subAggs) {
 					result.put(subAgg.getName(), aggResult(subAgg));
@@ -227,10 +230,10 @@ public final class AggResultSupport {
 			}
 			aggResults.put(aggregation.getName(), result);
 		}
-		
+
 		return aggResults;
 	}
-	
+
 	public static Map<String, Object> rangeResult(Aggregations aggregations) {
 		Map<String, Object> aggResults = new HashMap<>();
 		if (aggregations == null) {
@@ -254,12 +257,12 @@ public final class AggResultSupport {
 						.build();
 				rangeAggResults.add(rangeAggResult);
 			}
-			
+
 			aggResults.put(name, rangeAggResults);
 		}
 		return aggResults;
 	}
-	
+
 	private static <T> T aggResult(Aggregation aggregation) {
 		if (aggregation instanceof InternalHistogram) {
 			return (T) aggResult((InternalHistogram) aggregation);
@@ -282,16 +285,16 @@ public final class AggResultSupport {
 		if (aggregation instanceof InternalStats) {
 			return (T) termsResult((InternalStats) aggregation);
 		}
-		if (aggregation instanceof  InternalMax) {
-			return (T)maxResult(aggregation);
+		if (aggregation instanceof InternalMax) {
+			return (T) maxResult(aggregation);
 		}
 		if (aggregation instanceof InternalMin) {
-			return (T)minResult(aggregation);
+			return (T) minResult(aggregation);
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * 负责处理Histogram结果
 	 *
@@ -309,7 +312,7 @@ public final class AggResultSupport {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * 负责处理DateHistogram结果
 	 *
@@ -326,7 +329,7 @@ public final class AggResultSupport {
 			log.debug("Bucket: {}, Doc Count: {}", key, docCount);
 			result.put(key, docCount);
 			results.add(result);
-			
+
 			//如果有子聚合, 则嵌套处理子聚合
 			Aggregations subAggs = bucket.getAggregations();
 			for (Aggregation subAgg : subAggs) {
@@ -335,7 +338,7 @@ public final class AggResultSupport {
 		}
 		return results;
 	}
-	
+
 	/**
 	 * 负责处理AVG结果
 	 *
@@ -345,8 +348,8 @@ public final class AggResultSupport {
 	private static Double aggResult(InternalAvg aggregation) {
 		return aggregation.getValue();
 	}
-	
-	
+
+
 	/**
 	 * 负责处理Sum结果
 	 *
@@ -356,7 +359,7 @@ public final class AggResultSupport {
 	private static Double aggResult(InternalSum aggregation) {
 		return aggregation.getValue();
 	}
-	
+
 	/**
 	 * 负责处理Top Hits聚合的结果
 	 *
@@ -367,7 +370,7 @@ public final class AggResultSupport {
 		SearchHits hits = aggregation.getHits();
 		return SearchHitsSupport.toList(hits.getHits(), Map.class);
 	}
-	
+
 	public static Double avgResult(Aggregations aggregations) {
 		if (aggregations == null) {
 			return null;
@@ -375,10 +378,10 @@ public final class AggResultSupport {
 		for (Aggregation aggregation : aggregations) {
 			return ((InternalAvg) aggregation).getValue();
 		}
-		
+
 		return null;
 	}
-	
+
 	public static Long cardinalityResult(Aggregations aggregations) {
 		if (aggregations == null) {
 			return null;
@@ -386,15 +389,15 @@ public final class AggResultSupport {
 		for (Aggregation aggregation : aggregations) {
 			return ((InternalCardinality) aggregation).getValue();
 		}
-		
+
 		return null;
 	}
-	
+
 	public static Double maxResult(Aggregation aggregation) {
 		if (aggregation == null) {
 			return null;
 		}
-		return  ((InternalMax) aggregation).getValue();
+		return ((InternalMax) aggregation).getValue();
 	}
 
 	public static Double maxResult(Aggregations aggregations) {
@@ -427,10 +430,10 @@ public final class AggResultSupport {
 					.name(name)
 					.build();
 		}
-		
+
 		return null;
 	}
-	
+
 	public static Double minResult(Aggregation aggregation) {
 		if (aggregation == null) {
 			return null;
@@ -456,7 +459,34 @@ public final class AggResultSupport {
 		for (Aggregation aggregation : aggregations) {
 			return ((InternalSum) aggregation).getValue();
 		}
-		
+
 		return null;
+	}
+
+	private static <T> void bucketsResult(Aggregation aggregation, List<Map<String, T>> aggResults) {
+		if (aggregation instanceof StringTerms) {
+			List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
+
+			for (StringTerms.Bucket bucket : buckets) {
+				Map<String, T> result = new HashMap<>();
+				String key = bucket.getKeyAsString();
+				Long docCount = bucket.getDocCount();
+				log.debug("Bucket: {}, Doc Count: {}", key, docCount);
+				result.put(key, (T) docCount);
+				//没有子聚合的话subAggs也不会为null, 可以放心使用
+				Aggregations subAggs = bucket.getAggregations();
+				for (Aggregation subAgg : subAggs) {
+					result.put(subAgg.getName(), aggResult(subAgg));
+				}
+				aggResults.add(result);
+			}
+			return;
+		}
+		if (aggregation instanceof InternalNested) {
+			InternalAggregations aggregations = ((InternalNested) aggregation).getAggregations();
+			for (Aggregation aggregation1 : aggregations) {
+				bucketsResult(aggregation1, aggResults);
+			}
+		}
 	}
 }

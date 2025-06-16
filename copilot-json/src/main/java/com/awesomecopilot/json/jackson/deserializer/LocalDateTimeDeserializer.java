@@ -1,5 +1,6 @@
 package com.awesomecopilot.json.jackson.deserializer;
 
+import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -11,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -94,13 +94,10 @@ public class LocalDateTimeDeserializer extends JSR310DateTimeDeserializerBase<Lo
 			}
 			
 			try {
-				if (string.contains("-") || string.contains(" ")) {
-					return parse(string);
-				}
-				return LocalDateTime.parse(string, _formatter);
-			} catch (DateTimeException e) {
-				throw new UnsupportedOperationException("Cannot update object of type "
-						+ LocalDateTime.class.getName() + " (by deserializer of type " + getClass().getName() + ")");
+				LocalDateTime localDateTime = DateUtils.toLocalDateTime(string);
+				return localDateTime;
+			} catch (Exception e) {
+				throw new UnsupportedOperationException("Cannot deserize value: ["+string+"] to type " + LocalDateTime.class.getName());
 			}
 		}
 		

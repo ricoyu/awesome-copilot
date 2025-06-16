@@ -10,11 +10,18 @@ import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.utils.HttpUtils;
-import com.awesomecopilot.search.builder.ElasticContextSuggestBuilder;
-import com.awesomecopilot.search.builder.ElasticMultiGetBuilder;
-import com.awesomecopilot.search.builder.ElasticQueryBuilder;
-import com.awesomecopilot.search.builder.ElasticSuggestBuilder;
-import com.awesomecopilot.search.builder.ElasticUpdateBuilder;
+import com.awesomecopilot.search.builder.ElasticIndexDocBuilder;
+import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
+import com.awesomecopilot.search.builder.bulk.ElasticBulkIndexBuilder;
+import com.awesomecopilot.search.builder.bulk.ElasticBulkUpdateBuilder;
+import com.awesomecopilot.search.builder.query.ElasticContextSuggestBuilder;
+import com.awesomecopilot.search.builder.query.ElasticGeoDistanceQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticMatchPhrasePrefixQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticMultiGetBuilder;
+import com.awesomecopilot.search.builder.query.ElasticPrefixQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticSuggestBuilder;
+import com.awesomecopilot.search.builder.query.ElasticUpdateBuilder;
 import com.awesomecopilot.search.builder.admin.ClusterSettingBuilder;
 import com.awesomecopilot.search.builder.admin.ElasticIndexBuilder;
 import com.awesomecopilot.search.builder.admin.ElasticIndexTemplateBuilder;
@@ -1700,6 +1707,28 @@ public final class ElasticUtils {
         }
 
         /**
+         * Match Phrase Query查的是一个短语, 比如查title="one love", 那么title是"the one love"可以搜到, "one I love"搜不到
+         * <p>
+         * 在query里面的查询词必须是按照顺序出现的, slop 1表示King George之间可以插入一个其他的单词
+         *
+         * @param indices
+         * @return
+         */
+        public static ElasticMatchPhrasePrefixQueryBuilder matchPhrasePrefixQuery(String... indices) {
+            return new ElasticMatchPhrasePrefixQueryBuilder(indices);
+        }
+
+        /**
+         * geo_distance查询
+         *
+         * @param indices
+         * @return ElasticExistsQueryBuilder
+         */
+        public static ElasticGeoDistanceQueryBuilder geoDistance(String... indices) {
+            return new ElasticGeoDistanceQueryBuilder(indices);
+        }
+
+        /**
          * exists Query
          *
          * @param indices
@@ -1707,6 +1736,16 @@ public final class ElasticUtils {
          */
         public static ElasticExistsQueryBuilder exists(String... indices) {
             return new ElasticExistsQueryBuilder(indices);
+        }
+
+        /**
+         * prefix Query
+         *
+         * @param indices
+         * @return ElasticPrefixQueryBuilder
+         */
+        public static ElasticPrefixQueryBuilder prefix(String... indices) {
+            return new ElasticPrefixQueryBuilder(indices);
         }
 
         /**

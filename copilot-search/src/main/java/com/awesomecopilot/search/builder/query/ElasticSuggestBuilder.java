@@ -1,4 +1,4 @@
-package com.awesomecopilot.search.builder;
+package com.awesomecopilot.search.builder.query;
 
 import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.SuggestMode;

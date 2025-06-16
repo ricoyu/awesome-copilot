@@ -7,7 +7,6 @@ import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
 import lombok.Data;
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -20,9 +19,9 @@ import static com.awesomecopilot.search.enums.BoolQueryType.FILTER;
 import static com.awesomecopilot.search.enums.BoolQueryType.MUST;
 import static com.awesomecopilot.search.enums.BoolQueryType.MUST_NOT;
 import static com.awesomecopilot.search.enums.BoolQueryType.SHOULD;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
+ * 嵌套查询
  * <p>
  * Copyright: (C), 2021-06-06 21:24
  * <p>
@@ -32,12 +31,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
-
-	/**
-	 * 嵌套查询的字段
-	 */
-	private String nestedPath;
+public class ElasticNestedQueryBuilder extends BaseQueryBuilder {
 
 	/**
 	 * 如果用户给定 5 个查询词项, 想查找只包含其中 4 个的文档, 该如何处理？<p>
@@ -50,53 +44,42 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * minimum_should_match: 6 就表示文本中这个字段少一个词项的也可以搜索到
 	 */
 	private Object minimumShouldMatch;
-	
+
 	private List<Node> queryBuilders = new ArrayList<>();
-	
+
 	@Data
 	private static class Node{
-		
+
 		private BoolQueryType type;
-		
+
 		private QueryBuilder builder;
-		
+
 		public Node(BoolQueryType type, QueryBuilder builder) {
 			this.type = type;
 			this.builder = builder;
 		}
 	}
-	
-	public ElasticBoolQueryBuilder(String... indices) {
+
+	public ElasticNestedQueryBuilder(String... indices) {
 		this.indices = indices;	
 	}
-
-	/**
-	 * 设置嵌套查询字段
-	 *
-	 * @param path
-	 * @return ElasticMatchQueryBuilder
-	 */
-	public ElasticBoolQueryBuilder nestedPath(String path) {
-		this.nestedPath = path;
-		return this;
-	}
-
-	public ElasticBoolQueryBuilder must(QueryBuilder queryBuilder) {
+	
+	public ElasticNestedQueryBuilder must(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(MUST, queryBuilder));
 		return this;
 	}
 	
-	public ElasticBoolQueryBuilder mustNot(QueryBuilder queryBuilder) {
+	public ElasticNestedQueryBuilder mustNot(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(MUST_NOT, queryBuilder));
 		return this;
 	}
 	
-	public ElasticBoolQueryBuilder should(QueryBuilder queryBuilder) {
+	public ElasticNestedQueryBuilder should(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(SHOULD, queryBuilder));
 		return this;
 	}
 	
-	public ElasticBoolQueryBuilder filter(QueryBuilder queryBuilder) {
+	public ElasticNestedQueryBuilder filter(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(FILTER, queryBuilder));
 		return this;
 	}
@@ -183,7 +166,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param minimumShouldMatch
 	 * @return ElasticMatchQueryBuilder
 	 */
-	public ElasticBoolQueryBuilder minimumShouldMatch(int minimumShouldMatch) {
+	public ElasticNestedQueryBuilder minimumShouldMatch(int minimumShouldMatch) {
 		this.minimumShouldMatch = minimumShouldMatch;
 		return this;
 	}
@@ -203,7 +186,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param minimumShouldMatch
 	 * @return ElasticMatchQueryBuilder
 	 */
-	public ElasticBoolQueryBuilder minimumShouldMatch(String minimumShouldMatch) {
+	public ElasticNestedQueryBuilder minimumShouldMatch(String minimumShouldMatch) {
 		this.minimumShouldMatch = minimumShouldMatch;
 		return this;
 	}
@@ -215,7 +198,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param size
 	 * @return ElasticMatchQueryBuilder
 	 */
-	public ElasticBoolQueryBuilder paging(Integer from, Integer size) {
+	public ElasticNestedQueryBuilder paging(Integer from, Integer size) {
 		this.from = from;
 		this.size = size;
 		return this;
@@ -229,7 +212,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param size
 	 * @return ElasticMatchQueryBuilder
 	 */
-		public ElasticBoolQueryBuilder size(int size) {
+		public ElasticNestedQueryBuilder size(int size) {
 		this.size = size;
 		return this;
 	}
@@ -244,7 +227,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param sort
 	 * @return QueryBuilder
 	 */
-	public ElasticBoolQueryBuilder sort(String sort) {
+	public ElasticNestedQueryBuilder sort(String sort) {
 		List<SortOrder> sortOrders = SortSupport.sort(sort);
 		this.sortOrders.addAll(sortOrders);
 		return this;
@@ -258,7 +241,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param direction
 	 * @return UriQueryBuilder
 	 */
-	public ElasticBoolQueryBuilder sort(String field, Direction direction) {
+	public ElasticNestedQueryBuilder sort(String field, Direction direction) {
 		notNull(field, "field cannot be null!");
 		notNull(direction, "direction cannot be null!");
 		return sort(field + ":" + direction);
@@ -275,7 +258,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param searchAfter
 	 * @return ElasticQueryBuilder
 	 */
-	public ElasticBoolQueryBuilder searchAfter(Object[] searchAfter) {
+	public ElasticNestedQueryBuilder searchAfter(Object[] searchAfter) {
 		this.searchAfter = searchAfter;
 		return this;
 	}
@@ -286,7 +269,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param fetchSource
 	 * @return QueryBuilder
 	 */
-	public ElasticBoolQueryBuilder fetchSource(boolean fetchSource) {
+	public ElasticNestedQueryBuilder fetchSource(boolean fetchSource) {
 		this.fetchSource = fetchSource;
 		return this;
 	}
@@ -297,7 +280,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticBoolQueryBuilder includeSources(String... fields) {
+	public ElasticNestedQueryBuilder includeSources(String... fields) {
 		this.includeSource = fields;
 		return this;
 	}
@@ -308,7 +291,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticBoolQueryBuilder includeSources(List<String> fields) {
+	public ElasticNestedQueryBuilder includeSources(List<String> fields) {
 		String[] sources = fields.stream().toArray(String[]::new);
 		this.includeSource = sources;
 		return this;
@@ -320,7 +303,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticBoolQueryBuilder excludeSources(List<String> fields) {
+	public ElasticNestedQueryBuilder excludeSources(List<String> fields) {
 		String[] sources = fields.stream().toArray(String[]::new);
 		this.excludeSource = sources;
 		return this;
@@ -332,7 +315,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticBoolQueryBuilder excludeSources(String... fields) {
+	public ElasticNestedQueryBuilder excludeSources(String... fields) {
 		this.excludeSource = fields;
 		return this;
 	}
@@ -343,12 +326,12 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	 * @param boost
 	 * @return QueryBuilder
 	 */
-	public ElasticBoolQueryBuilder boost(float boost) {
+	public ElasticNestedQueryBuilder boost(float boost) {
 		this.boost = boost;
 		return this;
 	}
 	
-	public ElasticBoolQueryBuilder resultType(Class resultType) {
+	public ElasticNestedQueryBuilder resultType(Class resultType) {
 		this.resultType = resultType;
 		return this;
 	}
@@ -375,9 +358,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 				continue;
 			}
 		}
-		if (isNotBlank(nestedPath)) {
-			return QueryBuilders.nestedQuery(nestedPath, boolQueryBuilder, ScoreMode.Avg);
-		}
+		
 		return boolQueryBuilder;
 	}
 }

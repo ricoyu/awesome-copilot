@@ -2,6 +2,7 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.search.ElasticUtils.Aggs;
+import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search.enums.CalendarInterval;
 import com.awesomecopilot.search.enums.FixedInterval;
@@ -392,5 +393,17 @@ public class ElasticAggsTest {
 				.subAggregation(SubAggregations.terms("weather", "DestWeather").size(5))
 				.get();
 		System.out.println(toPrettyJson(results));
+	}
+
+	@Test
+	public void testRangeAgg() {
+		Map<String, Object> resultMap = Aggs.range("products")
+				.of("price_ranges", "price")
+				.addUnboundedTo(100)
+				.addRange(100, 500)
+				.addUnboundedFrom(500)
+				.get();
+
+		System.out.println(toPrettyJson(resultMap));
 	}
 }

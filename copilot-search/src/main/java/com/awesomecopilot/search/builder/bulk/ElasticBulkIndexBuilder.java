@@ -1,4 +1,4 @@
-package com.awesomecopilot.search;
+package com.awesomecopilot.search.builder.bulk;
 
 import com.awesomecopilot.search.cache.ElasticCacheUtils;
 import com.awesomecopilot.search.support.BulkResult;

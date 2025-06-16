@@ -1,6 +1,5 @@
-package com.awesomecopilot.search.builder;
+package com.awesomecopilot.search.builder.query;
 
-import com.awesomecopilot.search.builder.query.BaseQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 
 /**

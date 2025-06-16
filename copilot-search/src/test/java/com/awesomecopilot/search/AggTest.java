@@ -1,6 +1,8 @@
 package com.awesomecopilot.search;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
+import com.awesomecopilot.search.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search.builder.agg.support.RangeAggResult;
 import com.awesomecopilot.search.builder.query.ElasticTermQueryBuilder;
@@ -9,6 +11,7 @@ import com.awesomecopilot.search.vo.ElasticPage;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.Aggregation;
@@ -18,6 +21,7 @@ import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filter.InternalFilter;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket;
 import org.junit.Test;
 
 import java.util.List;
@@ -64,11 +68,62 @@ public class AggTest {
 	public void testAggOnDestContry() {
 		List<Map<String, Object>> aggResults = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry")
+				.sort("count")
 				.get();
 		
 		System.out.println(toPrettyJson(aggResults));
 	}
 	
+	@Test
+	public void testFlightDest() {
+		List<Map<String, Object>> resultMap = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
+				.of("flight_dest", "DestCountry")
+				.subAggregation(SubAggregations.avg("average_price", "AvgTicketPrice"))
+				.subAggregation(SubAggregations.max("max_price", "AvgTicketPrice"))
+				.subAggregation(SubAggregations.min("min_price", "AvgTicketPrice"))
+				.get();
+
+		System.out.println(toPrettyJson(resultMap));
+	}
+
+	@Test
+	public void testFlightDest2() {
+		ElasticTermsAggregationBuilder termsAggregationBuilder = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
+				.of("flight_dest", "DestCountry")
+				.subAggregation(SubAggregations.avg("avg_price", "AvgTicketPrice"))
+				.subAggregation(SubAggregations.max("max_price", "AvgTicketPrice"))
+				.subAggregation(SubAggregations.min("min_price", "AvgTicketPrice"));
+
+		SearchResponse response = ElasticUtils.CLIENT.prepareSearch("kibana_sample_data_flights")
+				.setSize(0)
+				.addAggregation(termsAggregationBuilder.build())
+				.get();
+
+		Aggregations aggregations = response.getAggregations();
+		for (Aggregation aggregation : aggregations) {
+			System.out.println("Aggregation: " + aggregation.getName());
+			List<Bucket> buckets = ((StringTerms) aggregation).getBuckets();
+			for (Bucket bucket : buckets) {
+				String key = bucket.getKeyAsString();
+				long docCount = bucket.getDocCount();
+				System.out.println("Key: " + key + ", Doc Count: " + docCount);
+
+				Aggregations subAggs = bucket.getAggregations();
+				if (subAggs != null) {
+					for (Aggregation subAgg : subAggs) {
+						System.out.println(toJson(subAgg));
+						String name = subAgg.getName(); //max_price
+						String writeableName = ((NamedWriteable) subAgg).getWriteableName(); //max min 等聚合的类型
+						Object value = ReflectionUtils.getFieldValue(writeableName, subAgg);
+						if (writeableName.equals("avg")) {
+							value = ReflectionUtils.invokeMethod("getValue", subAgg);
+						}
+						System.out.println(writeableName + ":" + value);
+					}
+				}
+			}
+		}
+	}
 	@Test
 	public void testCardinalityAgg() {
 		Long count = ElasticUtils.Aggs.cardinality("employees")
@@ -202,8 +257,8 @@ public class AggTest {
 			List<? extends Aggregation> aggs = ReflectionUtils.getFieldValue("aggregations", agg);
 			for (Aggregation agg1 : aggs) {
 				StringTerms stringTerms = (StringTerms) agg1;
-				List<StringTerms.Bucket> buckets = stringTerms.getBuckets();
-				for (StringTerms.Bucket bucket : buckets) {
+				List<Bucket> buckets = stringTerms.getBuckets();
+				for (Bucket bucket : buckets) {
 					String key = bucket.getKeyAsString();
 					long docCount = bucket.getDocCount();
 				}

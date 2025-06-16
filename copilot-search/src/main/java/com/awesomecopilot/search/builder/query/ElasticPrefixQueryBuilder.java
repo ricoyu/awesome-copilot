@@ -4,20 +4,15 @@ import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
+import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
 
 import java.util.List;
 
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
 /**
- * Term Query: <p>
- * ES 不会对你输入的条件做任何的分词处理<p>
- * 但是文档在被加入索引的时候, desc字段又是被分词了的, 大写字母转成了小写
+ * Prefix Query: <p>
  * <p>
  * Copyright: (C), 2021-04-30 11:14
  * <p>
@@ -28,19 +23,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @version 1.0
  */
 @Slf4j
-public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements BoolTermQuery {
+public final class ElasticPrefixQueryBuilder extends BaseQueryBuilder {
 
-	/**
-	 * 嵌套查询的字段
-	 */
-	private String nestedPath;
-
-	/**
-	 * 提升或者降低查询的权重
-	 */
-	protected float boost = 1f;
-	
-	public ElasticTermQueryBuilder(String... indices) {
+	public ElasticPrefixQueryBuilder(String... indices) {
 		super(indices);
 	}
 	
@@ -48,22 +33,11 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 设置查询字段, 值
 	 * @param field
 	 * @param value
-	 * @return
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder query(String field, Object value) {
+	public ElasticPrefixQueryBuilder query(String field, String value) {
 		this.field = field;
 		this.value = value;
-		return this;
-	}
-
-	/**
-	 * 设置嵌套查询字段
-	 *
-	 * @param path
-	 * @return ElasticMatchQueryBuilder
-	 */
-	public ElasticTermQueryBuilder nestedPath(String path) {
-		this.nestedPath = path;
 		return this;
 	}
 	
@@ -72,9 +46,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 *
 	 * @param from
 	 * @param size
-	 * @return QueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder paging(Integer from, Integer size) {
+	public ElasticPrefixQueryBuilder paging(Integer from, Integer size) {
 		this.from = from;
 		this.size = size;
 		return this;
@@ -86,7 +60,7 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * @param from 从第几页开始
 	 * @return ElasticMatchQueryBuilder
 	 */
-	public ElasticTermQueryBuilder from(int from) {
+	public ElasticPrefixQueryBuilder from(int from) {
 		this.from = from;
 		return this;
 	}
@@ -97,9 +71,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 深度分页时推荐用Search After
 	 *
 	 * @param size
-	 * @return ElasticQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder size(int size) {
+	public ElasticPrefixQueryBuilder size(int size) {
 		this.size = size;
 		return this;
 	}
@@ -108,9 +82,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 添加基于字段的排序, 默认升序
 	 *
 	 * @param direction
-	 * @return ElasticQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder scoreSort(Direction direction) {
+	public ElasticPrefixQueryBuilder scoreSort(Direction direction) {
 		super.scoreSort(direction);
 		return this;
 	}
@@ -124,9 +98,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 注意设置了searchAfter就不要设置from了, 只要指定size以及排序就可以了
 	 *
 	 * @param searchAfter
-	 * @return ElasticQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder searchAfter(Object[] searchAfter) {
+	public ElasticPrefixQueryBuilder searchAfter(Object[] searchAfter) {
 		this.searchAfter = searchAfter;
 		return this;
 	}
@@ -135,9 +109,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 是否要获取_source
 	 *
 	 * @param fetchSource
-	 * @return QueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder fetchSource(boolean fetchSource) {
+	public ElasticPrefixQueryBuilder fetchSource(boolean fetchSource) {
 		this.fetchSource = fetchSource;
 		return this;
 	}
@@ -146,9 +120,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 提升或者降低查询的权重
 	 *
 	 * @param boost
-	 * @return QueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder boost(float boost) {
+	public ElasticPrefixQueryBuilder boost(float boost) {
 		this.boost = boost;
 		return this;
 	}
@@ -165,13 +139,13 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * @param boostMode
 	 * @return
 	 */
-	public ElasticTermQueryBuilder boostMode(CombineFunction boostMode) {
+	public ElasticPrefixQueryBuilder boostMode(CombineFunction boostMode) {
 		notNull(boostMode, "boostMode cannot be null!");
 		this.boostMode = boostMode;
 		return this;
 	}
 	
-	public ElasticTermQueryBuilder resultType(Class resultType) {
+	public ElasticPrefixQueryBuilder resultType(Class resultType) {
 		this.resultType = resultType;
 		return this;
 	}
@@ -180,9 +154,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 是否要将Query转为constant_scre query, 以避免算分, 提高查询性能
 	 *
 	 * @param constantScore
-	 * @return ElasticQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder constantScore(boolean constantScore) {
+	public ElasticPrefixQueryBuilder constantScore(boolean constantScore) {
 		this.constantScore = constantScore;
 		return this;
 	}
@@ -190,9 +164,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	/**
 	 * 控制返回自己想要的字段, 而不是整个_source
 	 * @param fields
-	 * @return QueryStringBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder includeSources(String... fields) {
+	public ElasticPrefixQueryBuilder includeSources(String... fields) {
 		this.includeSource = fields;
 		return this;
 	}
@@ -200,9 +174,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	/**
 	 * 控制要排除哪些返回的字段, 而不是整个_source
 	 * @param fields
-	 * @return QueryStringBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder excludeSources(String... fields) {
+	public ElasticPrefixQueryBuilder excludeSources(String... fields) {
 		this.excludeSource = fields;
 		return this;
 	}
@@ -211,9 +185,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 控制返回自己想要的字段, 而不是整个_source
 	 *
 	 * @param fields
-	 * @return ElasticTermQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder includeSources(List<String> fields) {
+	public ElasticPrefixQueryBuilder includeSources(List<String> fields) {
 		String[] sources = fields.stream().toArray(String[]::new);
 		this.includeSource = sources;
 		return this;
@@ -223,9 +197,9 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 控制要排除哪些返回的字段, 而不是整个_source
 	 *
 	 * @param fields
-	 * @return ElasticTermQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder excludeSources(List<String> fields) {
+	public ElasticPrefixQueryBuilder excludeSources(List<String> fields) {
 		String[] sources = fields.stream().toArray(String[]::new);
 		this.excludeSource = sources;
 		return this;
@@ -239,29 +213,26 @@ public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements B
 	 * 注意: text类型字段不能排序, 要用field
 	 *
 	 * @param sort
-	 * @return ElasticTermQueryBuilder
+	 * @return ElasticTermsQueryBuilder
 	 */
-	public ElasticTermQueryBuilder sort(String sort) {
+	public ElasticPrefixQueryBuilder sort(String sort) {
 		List<SortOrder> sortOrders = SortSupport.sort(sort);
 		this.sortOrders.addAll(sortOrders);
 		return this;
 	}
 	
-	public ElasticTermQueryBuilder refresh(boolean refresh) {
+	public ElasticPrefixQueryBuilder refresh(boolean refresh) {
 		this.refresh = refresh;
 		return this;
 	}
 	
 	@Override
 	protected QueryBuilder builder() {
-		TermQueryBuilder termQueryBuilder = new TermQueryBuilder(field, value);
+		PrefixQueryBuilder prefixQueryBuilder = new PrefixQueryBuilder(field, value== null ? "" : value.toString());
 		if (constantScore) {
-			return QueryBuilders.constantScoreQuery(termQueryBuilder);
+			return QueryBuilders.constantScoreQuery(prefixQueryBuilder);
 		}
-		termQueryBuilder.boost(boost);
-		if (isNotBlank(nestedPath)) {
-			return QueryBuilders.nestedQuery(nestedPath, termQueryBuilder, ScoreMode.Avg);
-		}
-		return termQueryBuilder;
+		
+		return prefixQueryBuilder;
 	}
 }

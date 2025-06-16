@@ -15,12 +15,15 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Terms 聚合, 这是 Bucket Aggregation
@@ -35,7 +38,16 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder implements TermAggregationBuilder, SubAggregatable, Compositable {
-	
+
+	/**
+	 * 嵌套聚合名称
+	 */
+	private String nestedAggName;
+	/**
+	 * 嵌套查询的字段
+	 */
+	private String nestedPath;
+
 	/**
 	 * 这个是限制返回桶的数量, 如果总共有10个桶, 但是size设为5, 那么聚合结果中只会返回前5个桶
 	 */
@@ -109,6 +121,17 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		this.shardSize = shardSize;
 		return this;
 	}
+
+	/**
+	 * 设置嵌套聚合字段
+	 * @param nestedPath
+	 * @return
+	 */
+	public ElasticTermsAggregationBuilder nestedPath(String nestedAggName, String nestedPath) {
+		this.nestedAggName = nestedAggName;
+		this.nestedPath = nestedPath;
+		return this;
+	}
 	
 	/**
 	 * 聚合返回的结果中是否要包含总命中数
@@ -124,6 +147,11 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	@Override
 	public AggregationBuilder build() {
 		TermsAggregationBuilder aggregationBuilder = AggregationBuilders.terms(name).field(field);
+		NestedAggregationBuilder nestedAggregationBuilder = null;
+		if (isNotBlank(nestedPath)) {
+			nestedAggregationBuilder = AggregationBuilders.nested(nestedAggName, nestedPath)
+					.subAggregation(aggregationBuilder);
+		}
 		if (size != null) {
 			aggregationBuilder.size(size);
 		}
@@ -138,6 +166,10 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 				aggregationBuilder.order(sortOrders.stream().map(SortOrder::toBucketOrder).collect(Collectors.toList()));
 			}
 		}
+
+		if (nestedAggregationBuilder != null) {
+			return nestedAggregationBuilder;
+		}
 		return aggregationBuilder;
 	}
 	
@@ -148,15 +180,15 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	}
 	
 	public <T> List<Map<String, T>> get() {
-		TermsAggregationBuilder arrregationBuilder = (TermsAggregationBuilder) build();
+		AggregationBuilder arrregationBuilder = build();
 		
 		SearchRequestBuilder searchRequestBuilder = searchRequestBuilder();
 		
-		SearchRequestBuilder builder = searchRequestBuilder
+		searchRequestBuilder
 				.addAggregation(arrregationBuilder)
 				.setSize(0);
-		logDsl(builder);
-		SearchResponse searchResponse = builder.get();
+		logDsl(searchRequestBuilder);
+		SearchResponse searchResponse = searchRequestBuilder.get();
 		addTotalHitsToThreadLocal(searchResponse);
 		Aggregations aggregations = searchResponse.getAggregations();
 		

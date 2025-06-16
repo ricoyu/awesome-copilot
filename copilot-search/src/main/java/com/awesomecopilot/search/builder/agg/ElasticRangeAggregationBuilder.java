@@ -115,7 +115,7 @@ public class ElasticRangeAggregationBuilder extends AbstractAggregationBuilder i
 	private ElasticRangeAggregationBuilder(String[] indices) {
 		this.indices = indices;
 	}
-	
+
 	public static ElasticRangeAggregationBuilder instance(String... indices) {
 		if (indices == null || indices.length == 0) {
 			throw new IllegalArgumentException("indices cannot be null!");
