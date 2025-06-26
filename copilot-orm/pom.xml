@@ -32,7 +32,7 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
             <version>5.6.15.Final</version>
@@ -45,15 +45,15 @@
                     <groupId>org.hibernate.common</groupId>
                     <artifactId>hibernate-commons-annotations</artifactId>
                 </exclusion>
-                <!-- 不能排除, 排除启动会报错: Caused by: java.lang.NoClassDefFoundError: org/jboss/logging/Logger-->
-                <!--<exclusion>
+                &lt;!&ndash; 不能排除, 排除启动会报错: Caused by: java.lang.NoClassDefFoundError: org/jboss/logging/Logger&ndash;&gt;
+                &lt;!&ndash;<exclusion>
                     <groupId>org.jboss.logging</groupId>
                     <artifactId>jboss-logging</artifactId>
-                </exclusion>-->
+                </exclusion>&ndash;&gt;
             </exclusions>
-        </dependency>
+        </dependency>-->
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <version>6.5.2.Final</version>
             <exclusions>

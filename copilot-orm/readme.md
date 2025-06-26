@@ -1,3 +1,5 @@
+
+
 ## 一 配置
 
 ### 1.1 Maven依赖
@@ -11,14 +13,14 @@
     <version>17.0.0</version>
 </dependency>
 <dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-entitymanager</artifactId>
-    <version>5.6.15.Final</version>
-</dependency>
-<dependency>
-    <groupId>org.hibernate</groupId>
+    <groupId>org.hibernate.orm</groupId>
     <artifactId>hibernate-core</artifactId>
     <version>6.5.2.Final</version>
+</dependency>
+<dependency>
+    <groupId>javax.xml.bind</groupId>
+    <artifactId>jaxb-api</artifactId>
+    <version>2.3.1</version>
 </dependency>
 <dependency>
     <groupId>org.springframework.boot</groupId>
@@ -46,6 +48,18 @@
 ```
 
 引入spring-boot-starter-data-jpa是为了让SpringBoot自动装配EntityManager
+
+在 Hibernate 6.x 中, hibernate-entitymanager 模块已经被整合到 hibernate-core 中, 不再作为单独的依赖提供。
+
+如果你使用的是 Hibernate 6.5.2.Final，你只需要:
+
+1. **`hibernate-core`** (包含 JPA 实现)
+
+现在hibernate的groupId改为 `org.hibernate.orm`
+
+* 这是 Hibernate 6.0 及更高版本使用的规范 groupId
+* 代表了 Hibernate 项目的官方组织方式
+* 是 Hibernate 团队推荐的现代用法
 
 ### 1.2 application.yml
 
