@@ -78,7 +78,7 @@ import java.util.function.Function;
  * @see Map
  * @since 1.2
  */
-public class HashMap<K, V> extends AbstractMap<K, V>
+public class CopilotHashMap<K, V> extends AbstractMap<K, V>
 		implements Map<K, V>, Cloneable, Serializable {
 	
 	private static final long serialVersionUID = 362498820763181265L;
@@ -420,7 +420,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	 * @throws IllegalArgumentException if the initial capacity is negative
 	 *                                  or the load factor is nonpositive
 	 */
-	public HashMap(int initialCapacity, float loadFactor) {
+	public CopilotHashMap(int initialCapacity, float loadFactor) {
 		if (initialCapacity < 0) {
 			throw new IllegalArgumentException("Illegal initial capacity: " +
 					initialCapacity);
@@ -443,7 +443,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	 * @param initialCapacity the initial capacity.
 	 * @throws IllegalArgumentException if the initial capacity is negative.
 	 */
-	public HashMap(int initialCapacity) {
+	public CopilotHashMap(int initialCapacity) {
 		this(initialCapacity, DEFAULT_LOAD_FACTOR);
 	}
 	
@@ -451,7 +451,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	 * Constructs an empty <tt>HashMap</tt> with the default initial capacity
 	 * (16) and the default load factor (0.75).
 	 */
-	public HashMap() {
+	public CopilotHashMap() {
 		this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
 	}
 	
@@ -464,7 +464,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	 * @param m the map whose mappings are to be placed in this map
 	 * @throws NullPointerException if the specified map is null
 	 */
-	public HashMap(Map<? extends K, ? extends V> m) {
+	public CopilotHashMap(Map<? extends K, ? extends V> m) {
 		this.loadFactor = DEFAULT_LOAD_FACTOR;
 		putMapEntries(m, false);
 	}
@@ -997,7 +997,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final void clear() {
-			HashMap.this.clear();
+			CopilotHashMap.this.clear();
 		}
 		
 		public final Iterator<K> iterator() {
@@ -1013,7 +1013,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final Spliterator<K> spliterator() {
-			return new KeySpliterator<>(HashMap.this, 0, -1, 0, 0);
+			return new KeySpliterator<>(CopilotHashMap.this, 0, -1, 0, 0);
 		}
 		
 		public final void forEach(Consumer<? super K> action) {
@@ -1065,7 +1065,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final void clear() {
-			HashMap.this.clear();
+			CopilotHashMap.this.clear();
 		}
 		
 		public final Iterator<V> iterator() {
@@ -1077,7 +1077,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final Spliterator<V> spliterator() {
-			return new ValueSpliterator<>(HashMap.this, 0, -1, 0, 0);
+			return new ValueSpliterator<>(CopilotHashMap.this, 0, -1, 0, 0);
 		}
 		
 		public final void forEach(Consumer<? super V> action) {
@@ -1126,7 +1126,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final void clear() {
-			HashMap.this.clear();
+			CopilotHashMap.this.clear();
 		}
 		
 		public final Iterator<Map.Entry<K, V>> iterator() {
@@ -1154,7 +1154,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		}
 		
 		public final Spliterator<Map.Entry<K, V>> spliterator() {
-			return new EntrySpliterator<>(HashMap.this, 0, -1, 0, 0);
+			return new EntrySpliterator<>(CopilotHashMap.this, 0, -1, 0, 0);
 		}
 		
 		public final void forEach(Consumer<? super Map.Entry<K, V>> action) {
@@ -1475,9 +1475,9 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	@SuppressWarnings("unchecked")
 	@Override
 	public Object clone() {
-		HashMap<K, V> result;
+		CopilotHashMap<K, V> result;
 		try {
-			result = (HashMap<K, V>) super.clone();
+			result = (CopilotHashMap<K, V>) super.clone();
 		} catch (CloneNotSupportedException e) {
 			// this shouldn't happen, since we are Cloneable
 			throw new InternalError(e);
@@ -1653,16 +1653,16 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	// spliterators
 	
 	static class HashMapSpliterator<K, V> {
-		final HashMap<K, V> map;
+		final CopilotHashMap<K, V> map;
 		Node<K, V> current;          // current node
 		int index;                  // current index, modified on advance/split
 		int fence;                  // one past last index
 		int est;                    // size estimate
 		int expectedModCount;       // for comodification checks
 		
-		HashMapSpliterator(HashMap<K, V> m, int origin,
-						   int fence, int est,
-						   int expectedModCount) {
+		HashMapSpliterator(CopilotHashMap<K, V> m, int origin,
+		                   int fence, int est,
+		                   int expectedModCount) {
 			this.map = m;
 			this.index = origin;
 			this.fence = fence;
@@ -1673,7 +1673,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		final int getFence() { // initialize fence and size on first use
 			int hi;
 			if ((hi = fence) < 0) {
-				HashMap<K, V> m = map;
+				CopilotHashMap<K, V> m = map;
 				est = m.size;
 				expectedModCount = m.modCount;
 				Node<K, V>[] tab = m.table;
@@ -1691,8 +1691,8 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	static final class KeySpliterator<K, V>
 			extends HashMapSpliterator<K, V>
 			implements Spliterator<K> {
-		KeySpliterator(HashMap<K, V> m, int origin, int fence, int est,
-					   int expectedModCount) {
+		KeySpliterator(CopilotHashMap<K, V> m, int origin, int fence, int est,
+		               int expectedModCount) {
 			super(m, origin, fence, est, expectedModCount);
 		}
 		
@@ -1708,7 +1708,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 			if (action == null) {
 				throw new NullPointerException();
 			}
-			HashMap<K, V> m = map;
+			CopilotHashMap<K, V> m = map;
 			Node<K, V>[] tab = m.table;
 			if ((hi = fence) < 0) {
 				mc = expectedModCount = m.modCount;
@@ -1767,8 +1767,8 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	static final class ValueSpliterator<K, V>
 			extends HashMapSpliterator<K, V>
 			implements Spliterator<V> {
-		ValueSpliterator(HashMap<K, V> m, int origin, int fence, int est,
-						 int expectedModCount) {
+		ValueSpliterator(CopilotHashMap<K, V> m, int origin, int fence, int est,
+		                 int expectedModCount) {
 			super(m, origin, fence, est, expectedModCount);
 		}
 		
@@ -1784,7 +1784,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 			if (action == null) {
 				throw new NullPointerException();
 			}
-			HashMap<K, V> m = map;
+			CopilotHashMap<K, V> m = map;
 			Node<K, V>[] tab = m.table;
 			if ((hi = fence) < 0) {
 				mc = expectedModCount = m.modCount;
@@ -1842,8 +1842,8 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 	static final class EntrySpliterator<K, V>
 			extends HashMapSpliterator<K, V>
 			implements Spliterator<Map.Entry<K, V>> {
-		EntrySpliterator(HashMap<K, V> m, int origin, int fence, int est,
-						 int expectedModCount) {
+		EntrySpliterator(CopilotHashMap<K, V> m, int origin, int fence, int est,
+		                 int expectedModCount) {
 			super(m, origin, fence, est, expectedModCount);
 		}
 		
@@ -1859,7 +1859,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 			if (action == null) {
 				throw new NullPointerException();
 			}
-			HashMap<K, V> m = map;
+			CopilotHashMap<K, V> m = map;
 			Node<K, V>[] tab = m.table;
 			if ((hi = fence) < 0) {
 				mc = expectedModCount = m.modCount;
@@ -2151,7 +2151,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		 * Returns a list of non-TreeNodes replacing those linked from
 		 * this node.
 		 */
-		final Node<K, V> untreeify(HashMap<K, V> map) {
+		final Node<K, V> untreeify(CopilotHashMap<K, V> map) {
 			Node<K, V> hd = null, tl = null;
 			for (Node<K, V> q = this; q != null; q = q.next) {
 				Node<K, V> p = map.replacementNode(q, null);
@@ -2168,8 +2168,8 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		/**
 		 * Tree version of putVal.
 		 */
-		final TreeNode<K, V> putTreeVal(HashMap<K, V> map, Node<K, V>[] tab,
-										int h, K k, V v) {
+		final TreeNode<K, V> putTreeVal(CopilotHashMap<K, V> map, Node<K, V>[] tab,
+		                                int h, K k, V v) {
 			Class<?> kc = null;
 			boolean searched = false;
 			TreeNode<K, V> root = (parent != null) ? root() : this;
@@ -2228,8 +2228,8 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		 * the bin is converted back to a plain bin. (The test triggers
 		 * somewhere between 2 and 6 nodes, depending on tree structure).
 		 */
-		final void removeTreeNode(HashMap<K, V> map, Node<K, V>[] tab,
-								  boolean movable) {
+		final void removeTreeNode(CopilotHashMap<K, V> map, Node<K, V>[] tab,
+		                          boolean movable) {
 			int n;
 			if (tab == null || (n = tab.length) == 0) {
 				return;
@@ -2353,7 +2353,7 @@ public class HashMap<K, V> extends AbstractMap<K, V>
 		 * @param index the index of the table being split
 		 * @param bit   the bit of hash to split on
 		 */
-		final void split(HashMap<K, V> map, Node<K, V>[] tab, int index, int bit) {
+		final void split(CopilotHashMap<K, V> map, Node<K, V>[] tab, int index, int bit) {
 			TreeNode<K, V> b = this;
 			// Relink into lo and hi lists, preserving order
 			TreeNode<K, V> loHead = null, loTail = null;

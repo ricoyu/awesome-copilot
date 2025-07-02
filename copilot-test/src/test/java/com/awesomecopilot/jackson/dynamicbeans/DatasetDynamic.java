@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.awesomecopilot.map.HashMap;
+import com.awesomecopilot.map.CopilotHashMap;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class DatasetDynamic {
 	
 	private String album_title;
 	
-	private Map<String, Object> otherProperties = new HashMap<>();
+	private Map<String, Object> otherProperties = new CopilotHashMap<>();
 	
 	@JsonCreator
 	public DatasetDynamic(@JsonProperty("album_id") String album_id, @JsonProperty("album_title") String album_title) {

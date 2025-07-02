@@ -37,7 +37,7 @@
 
         <hibernate.version>6.5.2.Final</hibernate.version>
 
-        <mysql-connector-java.version>5.1.48</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
 
         <slf4j.version>1.7.21</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
@@ -261,9 +261,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-connector-java.version}</version>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>8.2.0</version>
             </dependency>
 
             <dependency>

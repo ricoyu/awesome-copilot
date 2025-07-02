@@ -53,7 +53,7 @@ import java.util.function.Consumer;
  * the invocation.)
  *
  * <p>This implementation spares its clients from the unspecified, generally
- * chaotic ordering provided by {@link HashMap} (and {@link Hashtable}),
+ * chaotic ordering provided by {@link CopilotHashMap} (and {@link Hashtable}),
  * without incurring the increased cost associated with {@link TreeMap}.  It
  * can be used to produce a copy of a map that has the same order as the
  * original, regardless of the original map's implementation:
@@ -165,13 +165,13 @@ import java.util.function.Consumer;
  * @see     Object#hashCode()
  * @see     Collection
  * @see     Map
- * @see     HashMap
+ * @see     CopilotHashMap
  * @see     TreeMap
  * @see     Hashtable
  * @since   1.4
  */
 public class LinkedHashMap<K,V>
-    extends HashMap<K,V>
+    extends CopilotHashMap<K,V>
     implements Map<K,V>
 {
 
@@ -199,7 +199,7 @@ public class LinkedHashMap<K,V>
     /**
      * HashMap.Node subclass for normal LinkedHashMap entries.
      */
-    static class Entry<K,V> extends HashMap.Node<K,V> {
+    static class Entry<K,V> extends CopilotHashMap.Node<K,V> {
         Entry<K,V> before, after;
         Entry(int hash, K key, V value, Node<K,V> next) {
             super(hash, key, value, next);

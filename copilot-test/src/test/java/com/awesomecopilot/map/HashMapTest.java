@@ -13,7 +13,7 @@ package com.awesomecopilot.map;
 public class HashMapTest {
 	
 	public static void main(String[] args) {
-		HashMap hashMap = new HashMap();
+		CopilotHashMap hashMap = new CopilotHashMap();
 		for (int i = 0; i < 17; i++) {
 			hashMap.put("k"+i, "v"+i);
 		}

@@ -1,6 +1,6 @@
 package com.awesomecopilot.xml;
 
-import com.awesomecopilot.map.HashMap;
+import com.awesomecopilot.map.CopilotHashMap;
 
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -21,7 +21,7 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class EmployeeMap {
 	
-	private Map<Integer, Employee> employees = new HashMap<>();
+	private Map<Integer, Employee> employees = new CopilotHashMap<>();
 	
 	public Map<Integer, Employee> getEmployees() {
 		return employees;

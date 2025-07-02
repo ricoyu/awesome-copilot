@@ -123,6 +123,7 @@ public class TianJiHorseRacing {
 				dfs(a, b, visited, path);
 				path.remove(path.size() - 1);
 				visited[i] = false;
+				
 			}
 		}
 	}
