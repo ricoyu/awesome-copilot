@@ -13,19 +13,19 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
-import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaDelete;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import javax.annotation.PostConstruct;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityNotFoundException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -493,8 +493,8 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
-		jakarta.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
-		jakarta.persistence.criteria.Predicate deletedPredicate = criteriaBuilder.equal(root.get("deleted"), false);
+		javax.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
+		javax.persistence.criteria.Predicate deletedPredicate = criteriaBuilder.equal(root.get("deleted"), false);
 		criteriaQuery.select(root)
 				.where(idPredicate, deletedPredicate)
 				.distinct(true);
@@ -557,7 +557,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
-		jakarta.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
+		javax.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
 		criteriaQuery.select(root)
 				.where(idPredicate)
 				.distinct(true);
@@ -689,7 +689,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		subquery.select(subRootEntity);
 
 		Path<?> attributePath = subRootEntity.get(propertyName);
-		jakarta.persistence.criteria.Predicate predicate = criteriaBuilder.equal(attributePath,
+		javax.persistence.criteria.Predicate predicate = criteriaBuilder.equal(attributePath,
 				criteriaBuilder.literal(value));
 		subquery.where(predicate);
 		query.where(criteriaBuilder.exists(subquery));

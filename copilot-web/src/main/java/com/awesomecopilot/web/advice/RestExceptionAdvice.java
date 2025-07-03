@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
@@ -95,7 +94,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	@Override
 	@ResponseBody
 	protected ResponseEntity<Object> handleTypeMismatch(
-			TypeMismatchException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			TypeMismatchException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 		logger.info("Rest API ERROR happen", ex);
 		return super.handleTypeMismatch(ex, headers, status, request);
 	}
@@ -106,7 +105,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	@SuppressWarnings("rawtypes")
 /*	@Override
 	public ResponseEntity<Object> handleBindException(
-			BindException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			BindException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 		logger.info("Rest API ERROR happen", ex);
 		headers.add("Content-Type", "application/json");
 		ErrorMessage errorMessage = ValidationUtils.getErrorMessage(ex.getBindingResult());
@@ -143,7 +142,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(
-			HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 		logger.info("Rest API ERROR happen", ex);
 		headers.add("Content-Type", "application/json");
 		Result result = Results.status(BAD_REQUEST).build();
@@ -152,7 +151,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 
 	@Override
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(
-			MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 		logger.info("Rest API ERROR happen", ex);
 		ErrorMessage errorMessage = ValidationUtils.getErrorMessage(ex.getBindingResult());
 		List<String[]> msgs = errorMessage.getErrors()
@@ -213,7 +212,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 
 	@Override
 	protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
-			HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatusCode status,
+			HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatus status,
 			WebRequest request) {
 		log.info("", ex);
 		headers.add("Content-Type", "application/json");
@@ -274,7 +273,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	 * @return
 	 */
 	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
-			MaxUploadSizeExceededException e, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+			MaxUploadSizeExceededException e, HttpHeaders headers, HttpStatus status, WebRequest request) {
 
 		Matcher matcher = ACTUAL_SIZE_PATTERN.matcher(e.getMessage());
 		String message;

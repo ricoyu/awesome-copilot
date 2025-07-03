@@ -12,7 +12,7 @@
         <groupId>com.awesomecopilot</groupId>
         <artifactId>awesome-copilot</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>17.0.0</version>
+        <version>17.0.0-jdk8</version>
     </parent>
 
     <dependencies>
@@ -31,13 +31,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.csp</groupId>
-            <artifactId>sentinel-core</artifactId>
-            <version>1.8.6</version>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.awesomecopilot</groupId>
@@ -49,11 +44,6 @@
             <artifactId>copilot-json</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <!--<dependency>
-            <groupId>com.alibaba.csp</groupId>
-            <artifactId>sentinel-spring-webmvc-adapter</artifactId>
-            <version>1.8.8</version>
-        </dependency>-->
         <dependency>
             <groupId>com.alibaba.csp</groupId>
             <artifactId>sentinel-spring-webmvc-6x-adapter</artifactId>

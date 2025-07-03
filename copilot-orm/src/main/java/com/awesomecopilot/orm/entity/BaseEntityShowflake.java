@@ -1,14 +1,13 @@
 package com.awesomecopilot.orm.entity;
 
-import com.awesomecopilot.orm.generator.CopilotSnowflakeIdGenerator;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import org.hibernate.annotations.GenericGenerator;
 
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -27,10 +26,13 @@ import java.time.LocalDateTime;
 public class BaseEntityShowflake implements Serializable {
 	
 	private static final long serialVersionUID = -7833247830642842225L;
-	
+
 	@Id
 	@GeneratedValue(generator = "snowflake-id")
-	@GenericGenerator(name = "snowflake-id", type = CopilotSnowflakeIdGenerator.class)
+	@GenericGenerator(
+			name = "snowflake-id",
+			strategy = "com.awesomecopilot.orm.generator.CopilotSnowflakeIdGenerator"
+	)
 	private Long id;
 
 	/**

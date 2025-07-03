@@ -2,6 +2,7 @@ package com.awesomecopilot.common.lang.io;
 
 import com.awesomecopilot.common.lang.utils.Assert;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -61,9 +62,13 @@ public interface Resource extends InputStreamSource {
 			return new byte[0];
 		}
 
-		try (in) {
-			return in.readAllBytes();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] buffer = new byte[4096]; // 4KB buffer, 可以根据需要调整大小
+		int bytesRead;
+		while ((bytesRead = in.read(buffer)) != -1) {
+			out.write(buffer, 0, bytesRead);
 		}
+		return out.toByteArray();
 	}
 
 	default String copyToString(Reader in) throws IOException {

@@ -232,9 +232,9 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 	 */
 	@Override
 	public boolean equals(Object other) {
-		return (this == other || (other instanceof ClassPathResource that &&
-				this.absolutePath.equals(that.absolutePath) &&
-				ObjectUtils.equals(getClassLoader(), that.getClassLoader())));
+		return (this == other || (other instanceof ClassPathResource &&
+				this.absolutePath.equals(((ClassPathResource)other).absolutePath) &&
+				ObjectUtils.equals(getClassLoader(), ((ClassPathResource)other).getClassLoader())));
 	}
 
 	/**

@@ -1,8 +1,9 @@
 package com.awesomecopilot.web.http;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.apache.commons.lang3.StringEscapeUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;

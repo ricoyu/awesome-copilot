@@ -315,101 +315,100 @@ public class JacksonUtilsTest {
 
 	@Test
 	public void testIterateJsonNode() {
-		String json = """
-					[
-						{
-							"title": "报销公司",
-							"name": "TextInput",
-							"icon": "el-icon-edit",
-							"value": "",
-							"valueType": "String",
-							"props": {
-								"required": true,
-								"enablePrint": true
-							},
-							"id": "field3496769157119"
-						},
-						{
-							"title": "收款账户",
-							"name": "TextInput",
-							"icon": "el-icon-edit",
-							"value": "",
-							"valueType": "String",
-							"props": {
-								"required": true,
-								"enablePrint": true
-							},
-							"id": "field6116787836602"
-						},
-						{
-							"title": "报销金额",
-							"name": "AmountInput",
-							"icon": "iconfont icon-zhufangbutiezhanghu",
-							"value": "",
-							"valueType": "Number",
-							"props": {
-								"required": true,
-								"enablePrint": true,
-								"showChinese": true
-							},
-							"id": "field8719569158600"
-						},
-						{
-							"title": "报销类别",
-							"name": "TextInput",
-							"icon": "el-icon-edit",
-							"value": "",
-							"valueType": "String",
-							"props": {
-								"required": true,
-								"enablePrint": true
-							},
-							"id": "field3186687824078"
-						},
-						{
-							"title": "费用明细",
-							"name": "TextareaInput",
-							"icon": "el-icon-more-outline",
-							"value": "",
-							"valueType": "String",
-							"props": {
-								"required": false,
-								"enablePrint": true
-							},
-							"id": "field6147987854253"
-						},
-						{
-							"title": "上传图片",
-							"name": "ImageUpload",
-							"icon": "el-icon-picture-outline",
-							"value": [],
-							"valueType": "Array",
-							"props": {
-								"required": false,
-								"enablePrint": true,
-								"maxSize": 5,
-								"maxNumber": 10,
-								"enableZip": true
-							},
-							"id": "field7382887862503"
-						},
-						{
-							"title": "上传附件",
-							"name": "FileUpload",
-							"icon": "el-icon-folder-opened",
-							"value": [],
-							"valueType": "Array",
-							"props": {
-								"required": false,
-								"enablePrint": true,
-								"onlyRead": false,
-								"maxSize": 100,
-								"maxNumber": 10,
-								"fileTypes": []
-							},
-							"id": "field9884487863703"
-						}
-					]""";
+		String json = "[\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"报销公司\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"TextInput\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-edit\",\n" +
+				"\t\t\t\t\t\t\t\"value\": \"\",\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"String\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field3496769157119\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"收款账户\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"TextInput\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-edit\",\n" +
+				"\t\t\t\t\t\t\t\"value\": \"\",\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"String\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field6116787836602\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"报销金额\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"AmountInput\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"iconfont icon-zhufangbutiezhanghu\",\n" +
+				"\t\t\t\t\t\t\t\"value\": \"\",\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"Number\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"showChinese\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field8719569158600\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"报销类别\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"TextInput\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-edit\",\n" +
+				"\t\t\t\t\t\t\t\"value\": \"\",\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"String\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field3186687824078\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"费用明细\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"TextareaInput\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-more-outline\",\n" +
+				"\t\t\t\t\t\t\t\"value\": \"\",\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"String\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": false,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field6147987854253\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"上传图片\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"ImageUpload\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-picture-outline\",\n" +
+				"\t\t\t\t\t\t\t\"value\": [],\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"Array\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": false,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"maxSize\": 5,\n" +
+				"\t\t\t\t\t\t\t\t\"maxNumber\": 10,\n" +
+				"\t\t\t\t\t\t\t\t\"enableZip\": true\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field7382887862503\"\n" +
+				"\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t{\n" +
+				"\t\t\t\t\t\t\t\"title\": \"上传附件\",\n" +
+				"\t\t\t\t\t\t\t\"name\": \"FileUpload\",\n" +
+				"\t\t\t\t\t\t\t\"icon\": \"el-icon-folder-opened\",\n" +
+				"\t\t\t\t\t\t\t\"value\": [],\n" +
+				"\t\t\t\t\t\t\t\"valueType\": \"Array\",\n" +
+				"\t\t\t\t\t\t\t\"props\": {\n" +
+				"\t\t\t\t\t\t\t\t\"required\": false,\n" +
+				"\t\t\t\t\t\t\t\t\"enablePrint\": true,\n" +
+				"\t\t\t\t\t\t\t\t\"onlyRead\": false,\n" +
+				"\t\t\t\t\t\t\t\t\"maxSize\": 100,\n" +
+				"\t\t\t\t\t\t\t\t\"maxNumber\": 10,\n" +
+				"\t\t\t\t\t\t\t\t\"fileTypes\": []\n" +
+				"\t\t\t\t\t\t\t},\n" +
+				"\t\t\t\t\t\t\t\"id\": \"field9884487863703\"\n" +
+				"\t\t\t\t\t\t}\n" +
+				"\t\t\t\t\t]";
 		JsonNode jsonNode = JacksonUtils.readTree(json);
 		jsonNode.forEach(node -> {
 			JsonNode title = node.get("title");

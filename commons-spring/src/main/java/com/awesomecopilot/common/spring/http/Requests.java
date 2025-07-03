@@ -2,7 +2,6 @@ package com.awesomecopilot.common.spring.http;
 
 import com.awesomecopilot.common.spring.context.ApplicationContextHolder;
 import com.awesomecopilot.common.spring.utils.ServletUtils;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +12,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.Map;
@@ -99,7 +99,7 @@ public final class Requests {
 	 * @return T
 	 */
 	public static <T> T transmit(HttpServletRequest request, String destAddress, Class responseType,
-								 Map<String, String> additionalHeaders, Map<String, String> additionalParameters) {
+	                             Map<String, String> additionalHeaders, Map<String, String> additionalParameters) {
 		// 从request拿出所有的请求头, 构造HttpHeaders, 一起转发过去
 		HttpHeaders headers = new HttpHeaders();
 		Enumeration<String> headerNames = request.getHeaderNames();

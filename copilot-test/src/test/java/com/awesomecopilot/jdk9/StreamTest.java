@@ -1,21 +1,7 @@
 package com.awesomecopilot.jdk9;
 
-import org.junit.Test;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 public class StreamTest {
-
+/*
     @Test
     public void testTakeWhile() {
         List<Integer> list = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
@@ -79,5 +65,5 @@ public class StreamTest {
     public void testReadOnlyList() {
         List<String> list= List.of("TOM","Jerry","Mark","Ben");
         System.out.println(list);
-    }
+    }*/
 }

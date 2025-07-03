@@ -2,8 +2,8 @@ package com.awesomecopilot.orm.converter;
 
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
-import jakarta.persistence.AttributeConverter;
 
+import javax.persistence.AttributeConverter;
 import java.util.Arrays;
 import java.util.List;
 

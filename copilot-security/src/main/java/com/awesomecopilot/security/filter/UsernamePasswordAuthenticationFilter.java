@@ -5,13 +5,14 @@ import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.spring.utils.ServletUtils;
 import com.awesomecopilot.security.constants.CopilotSecurityConstants;
 import com.awesomecopilot.security.vo.LoginRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toObject;
 import static org.apache.commons.lang3.StringUtils.isBlank;

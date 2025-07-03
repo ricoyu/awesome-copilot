@@ -170,7 +170,10 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	@Override
 	public String getContentAsString(Charset charset) throws IOException {
 		try {
-			return Files.readString(this.filePath, charset);
+			// 读取文件所有字节，然后转换为字符串
+			byte[] fileBytes = Files.readAllBytes(this.filePath);
+			String content = new String(fileBytes, charset);
+			return content;
 		}
 		catch (NoSuchFileException ex) {
 			throw new FileNotFoundException(ex.getMessage());
@@ -355,7 +358,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 	 */
 	@Override
 	public boolean equals(@Nullable Object other) {
-		return (this == other || (other instanceof FileSystemResource that && this.path.equals(that.path)));
+		return (this == other || (other instanceof FileSystemResource && this.path.equals(((FileSystemResource)other).path)));
 	}
 
 	/**

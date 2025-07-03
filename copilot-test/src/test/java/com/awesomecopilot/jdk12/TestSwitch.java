@@ -1,9 +1,7 @@
 package com.awesomecopilot.jdk12;
 
-import org.junit.Test;
-
 public class TestSwitch {
-
+/*
 	@Test
 	public void test() {
 		var month = Month.JANUARY;
@@ -33,20 +31,21 @@ public class TestSwitch {
 		};
 		System.out.println(season);
 	}
-}
+}*/
 
 
-enum Month {
-	JANUARY,
-	FEBRUARY,
-	MARCH,
-	APRIL,
-	MAY,
-	JUNE,
-	JULY,
-	AUGUST,
-	SEPTEMBER,
-	OCTOBER,
-	NOVEMBER,
-	DECEMBER;
+	enum Month {
+		JANUARY,
+		FEBRUARY,
+		MARCH,
+		APRIL,
+		MAY,
+		JUNE,
+		JULY,
+		AUGUST,
+		SEPTEMBER,
+		OCTOBER,
+		NOVEMBER,
+		DECEMBER;
+	}
 }

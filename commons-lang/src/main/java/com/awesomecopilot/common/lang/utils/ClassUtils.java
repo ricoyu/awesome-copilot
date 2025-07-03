@@ -8,6 +8,7 @@ import java.io.Closeable;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -168,7 +169,7 @@ public abstract class ClassUtils {
 		Class<?>[] javaLanguageInterfaceArray = {Serializable.class, Externalizable.class,
 				Closeable.class, AutoCloseable.class, Cloneable.class, Comparable.class};
 		registerCommonClasses(javaLanguageInterfaceArray);
-		javaLanguageInterfaces = Set.of(javaLanguageInterfaceArray);
+		javaLanguageInterfaces = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(javaLanguageInterfaceArray)));
 	}
 
 
@@ -268,21 +269,24 @@ public abstract class ClassUtils {
 		if (name.endsWith(ARRAY_SUFFIX)) {
 			String elementClassName = name.substring(0, name.length() - ARRAY_SUFFIX.length());
 			Class<?> elementClass = forName(elementClassName, classLoader);
-			return elementClass.arrayType();
+			// ✅ 替换 arrayType() 调用
+			return Array.newInstance(elementClass, 0).getClass();
 		}
 
 		// "[Ljava.lang.String;" style arrays
 		if (name.startsWith(NON_PRIMITIVE_ARRAY_PREFIX) && name.endsWith(";")) {
 			String elementName = name.substring(NON_PRIMITIVE_ARRAY_PREFIX.length(), name.length() - 1);
 			Class<?> elementClass = forName(elementName, classLoader);
-			return elementClass.arrayType();
+			// ✅ 替换 arrayType() 调用
+			return Array.newInstance(elementClass, 0).getClass();
 		}
 
 		// "[[I" or "[[Ljava.lang.String;" style arrays
 		if (name.startsWith(INTERNAL_ARRAY_PREFIX)) {
 			String elementName = name.substring(INTERNAL_ARRAY_PREFIX.length());
 			Class<?> elementClass = forName(elementName, classLoader);
-			return elementClass.arrayType();
+			// ✅ 替换 arrayType() 调用
+			return Array.newInstance(elementClass, 0).getClass();
 		}
 
 		ClassLoader clToUse = classLoader;
@@ -512,7 +516,7 @@ public abstract class ClassUtils {
 	 */
 	public static boolean isPrimitiveArray(Class<?> clazz) {
 		Assert.notNull(clazz, "Class must not be null");
-		return (clazz.isArray() && clazz.componentType().isPrimitive());
+		return (clazz.isArray() && clazz.getComponentType().isPrimitive());
 	}
 
 	/**
@@ -523,7 +527,7 @@ public abstract class ClassUtils {
 	 */
 	public static boolean isPrimitiveWrapperArray(Class<?> clazz) {
 		Assert.notNull(clazz, "Class must not be null");
-		return (clazz.isArray() && isPrimitiveWrapper(clazz.componentType()));
+		return (clazz.isArray() && isPrimitiveWrapper(clazz.getComponentType()));
 	}
 
 	/**

@@ -56,7 +56,7 @@ public class WordBreak {
 
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
-		Pattern pattern = Pattern.compile("\"(.+)\s");
+		Pattern pattern = Pattern.compile("\"(.+)\\s");
 		List<String> wordDict = new ArrayList<>();
 		for (int i = 0; i < 2; i++) {
 			System.out.print("请输入字符串s: ");

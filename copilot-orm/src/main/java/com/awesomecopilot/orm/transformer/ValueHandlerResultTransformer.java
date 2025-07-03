@@ -6,14 +6,14 @@ import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.orm.exception.AliasLengthNotMatchException;
 import com.awesomecopilot.orm.exception.ApplicationException;
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Convert;
 import org.hibernate.HibernateException;
 import org.hibernate.PropertyNotFoundException;
 import org.hibernate.transform.ResultTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.AttributeConverter;
+import javax.persistence.Convert;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -476,7 +476,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 
 	@Override
 	public List transformList(List resultList) {
-		return ResultTransformer.super.transformList(resultList);
+		return resultList;
 	}
 
 	/*

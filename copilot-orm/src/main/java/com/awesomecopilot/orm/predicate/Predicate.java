@@ -1,9 +1,9 @@
 package com.awesomecopilot.orm.predicate;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Root;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Root;
 
 public interface Predicate {
 
-	public jakarta.persistence.criteria.Predicate toPredicate(CriteriaBuilder criteriaBuilder, Root root);
+	public javax.persistence.criteria.Predicate toPredicate(CriteriaBuilder criteriaBuilder, Root root);
 }

@@ -20,30 +20,20 @@ public class SqlPatternTest {
 
 	public static void main(String[] args) {
 
-		String sql = """
-				SELECT name, age FROM users;
-				""";
+		String sql = "SELECT name, age FROM users;";
 		isSQLStatement(sql);
 
-		sql = """
-				SELECT username, (SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) AS order_count FROM users;
-				""";
+		sql = "SELECT username, (SELECT COUNT(*) FROM orders WHERE orders.user_id = users.id) AS order_count FROM users;";
 
 		isSQLStatement(sql);
 
-		sql = """
-				SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE product_id = 5);
-				""";
+		sql = "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE product_id = 5);";
 		isSQLStatement(sql);
 
-		sql = """
-				UPDATE users SET name = 'John' WHERE id = 1;
-				""";
+		sql = "UPDATE users SET name = 'John' WHERE id = 1;";
 		isSQLStatement(sql);
 
-		sql= """
-				This is a text containing the word select but not an SQL command.
-				""";
+		sql= "This is a text containing the word select but not an SQL command.";
 		isSQLStatement(sql);
 	}
 

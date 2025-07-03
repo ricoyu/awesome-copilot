@@ -1293,7 +1293,18 @@ public abstract class StringUtils {
 	}
 
 	public static boolean hasText(String str) {
-		return (str != null && !str.isBlank());
+		if (str == null || str.isEmpty()) {
+			return false;
+		}
+
+		// 检查是否全部是空白字符
+		int length = str.length();
+		for (int i = 0; i < length; i++) {
+			if (!Character.isWhitespace(str.charAt(i))) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static boolean hasLength(String str) {
@@ -1306,6 +1317,10 @@ public abstract class StringUtils {
 			return str;
 		}
 		return changeFirstCharacterCase(str, false);
+	}
+
+	public static String capitalize(String str) {
+		return changeFirstCharacterCase(str, true);
 	}
 
 	private static String changeFirstCharacterCase(String str, boolean capitalize) {

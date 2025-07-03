@@ -1,6 +1,8 @@
 package com.awesomecopilot.algorithm.hwod;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -73,7 +75,8 @@ public class LongestPasswordFinder {
 				return pass1.compareTo(pass2);
 			}
 		});
-		Set<String> passwordSet = Set.of(passwords);
+		Set<String> passwordSet = new HashSet<>();
+		Collections.addAll(passwordSet, passwords);
 
 		for (String password : passwords) {
 			boolean valid = true;

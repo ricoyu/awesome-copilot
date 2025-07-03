@@ -1,7 +1,8 @@
 package com.awesomecopilot.jdbc;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlXAConnection;
-import com.mysql.jdbc.jdbc2.optional.MysqlXid;
+import com.mysql.cj.jdbc.JdbcConnection;
+import com.mysql.cj.jdbc.MysqlXAConnection;
+import com.mysql.cj.jdbc.MysqlXid;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,11 +64,11 @@ public class TransactionTest {
 	public void testXaTransaction() throws SQLException, XAException {
 		//打印XA语句, 用于调试
 		boolean logXaCommand = true;
-		XAConnection xaConn1 = new MysqlXAConnection((com.mysql.jdbc.Connection) connection, logXaCommand);
+		XAConnection xaConn1 = new MysqlXAConnection((JdbcConnection) connection, logXaCommand);
 		//拿到XA的资源管理器
 		XAResource rm1 = xaConn1.getXAResource();
 		
-		XAConnection xaConn2 = new MysqlXAConnection((com.mysql.jdbc.Connection) connection2, logXaCommand);
+		XAConnection xaConn2 = new MysqlXAConnection((JdbcConnection) connection2, logXaCommand);
 		XAResource rm2 = xaConn2.getXAResource();
 		
 		//AP请求TM执行一个分布式事务, TM生成全局事务id

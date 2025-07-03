@@ -71,8 +71,8 @@ public abstract class VfsUtils {
 		}
 		catch (InvocationTargetException ex) {
 			Throwable targetEx = ex.getTargetException();
-			if (targetEx instanceof IOException ioException) {
-				throw ioException;
+			if (targetEx instanceof IOException) {
+				throw (IOException)targetEx;
 			}
 			ReflectionUtils.handleInvocationTargetException(ex);
 		}

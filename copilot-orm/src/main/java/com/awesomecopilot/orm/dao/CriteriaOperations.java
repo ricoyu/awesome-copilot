@@ -1,7 +1,6 @@
 package com.awesomecopilot.orm.dao;
 
-import jakarta.persistence.EntityNotFoundException;
-
+import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;

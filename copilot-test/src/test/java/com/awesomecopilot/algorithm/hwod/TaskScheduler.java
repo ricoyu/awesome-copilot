@@ -1,6 +1,8 @@
 package com.awesomecopilot.algorithm.hwod;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
@@ -113,7 +115,7 @@ public class TaskScheduler {
 
 		// 枚举使用了多少个 taskA，其余的用 taskB
 		for (int i = 0; i <= nums; i++) {
-		    int countA = i;
+			int countA = i;
 			int countB = nums - i;
 
 			// 计算当前组合的总时长
@@ -121,8 +123,9 @@ public class TaskScheduler {
 			durations.add(duration);
 		}
 
-		// 转换为列表并排序
-		List<Integer> result = durations.stream().sorted().toList();
+		// 转换为列表并排序（Java 8 方式）
+		List<Integer> result = new ArrayList<>(durations);
+		Collections.sort(result);
 		return result;
 	}
 }

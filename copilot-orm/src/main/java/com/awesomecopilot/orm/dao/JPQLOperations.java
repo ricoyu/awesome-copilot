@@ -1,6 +1,6 @@
 package com.awesomecopilot.orm.dao;
 
-import jakarta.persistence.Query;
+import javax.persistence.Query;
 
 import java.util.List;
 import java.util.Map;

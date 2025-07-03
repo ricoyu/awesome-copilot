@@ -5,13 +5,13 @@ import com.awesomecopilot.common.lang.vo.Orders;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
 import com.awesomecopilot.orm.vo.PageResult;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.criteria.CriteriaBuilder;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;

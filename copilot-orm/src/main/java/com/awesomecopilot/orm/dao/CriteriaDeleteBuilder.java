@@ -1,14 +1,14 @@
 package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.orm.predicate.Predicates;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaDelete;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +60,7 @@ public class CriteriaDeleteBuilder {
 	}
 
 	public int execute() {
-		delete.where(conditions.toArray(new jakarta.persistence.criteria.Predicate[0]));
+		delete.where(conditions.toArray(new javax.persistence.criteria.Predicate[0]));
 		return this.em().createQuery(delete).executeUpdate();
 	}
 

@@ -85,15 +85,15 @@ public class ReorderDeque {
 			String type = parts[0];
 
 			switch (type) {
-				case "head" -> {
+				case "head": {
 					int x = Integer.parseInt(parts[2]);
 					deque.addFirst(x);
 				}
-				case "tail" -> {
+				case "tail": {
 					int x = Integer.parseInt(parts[2]);
 					deque.addLast(x);
 				}
-				case "remove" -> {
+				case "remove": {
 					while (!deque.isEmpty() && deque.peek() != target) {
 						tempStack.push(deque.removeFirst());
 						adjustments++;

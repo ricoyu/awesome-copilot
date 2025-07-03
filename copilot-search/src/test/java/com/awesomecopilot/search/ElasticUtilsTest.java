@@ -114,14 +114,12 @@ public class ElasticUtilsTest {
 	@Test
 	public void testCreateEndpoint() {
 		ElasticUtils.delete("product", 1);
-		String id = ElasticUtils.create("product", """
-				            {
-					"name": "Coffee Maker",
-					"brand": "Good Coffee",
-					"price": 99.99,
-					"in_stock": 15
-				}
-				""", 1);
+		String id = ElasticUtils.create("product", "{\n" +
+				"\t\t\t\t\t\"name\": \"Coffee Maker\",\n" +
+				"\t\t\t\t\t\"brand\": \"Good Coffee\",\n" +
+				"\t\t\t\t\t\"price\": 99.99,\n" +
+				"\t\t\t\t\t\"in_stock\": 15\n" +
+				"\t\t\t\t}", 1);
 		try {
 			SECONDS.sleep(1);
 		} catch (InterruptedException e) {
@@ -135,19 +133,15 @@ public class ElasticUtilsTest {
 	@Test
 	public void testCreateThenUpdate() {
 		ElasticUtils.Admin.deleteIndex("users");
-		String id = ElasticUtils.create("users", """
-				{
-				  "name": "onebird",
-				  "interests": "reading"
-				}
-				""", 1);
+		String id = ElasticUtils.create("users", "{\n" +
+				"\t\t\t\t  \"name\": \"onebird\",\n" +
+				"\t\t\t\t  \"interests\": \"reading\"\n" +
+				"\t\t\t\t}", 1);
 
-		UpdateResult updateResult = ElasticUtils.update("users", id, """
-				{
-				  "name": "twobirds",
-				  "interests": ["reading", "music"]
-				}
-				""");
+		UpdateResult updateResult = ElasticUtils.update("users", id, "{\n" +
+				"\t\t\t\t  \"name\": \"twobirds\",\n" +
+				"\t\t\t\t  \"interests\": [\"reading\", \"music\"]\n" +
+				"\t\t\t\t}");
 
 		String doc = ElasticUtils.get("users", id);
 		System.out.println(doc);
@@ -184,12 +178,11 @@ public class ElasticUtilsTest {
 
 	@Test
 	public void testCreateWithIdThenFail() {
-		String doc = """
-				{
-				  "firstName": "Jack",
-				  "lastName": "Johnson",
-				  "tags":["guitar", "skateboard"]
-				}""";
+		String doc = "{\n" +
+				"\t\t\t\t  \"firstName\": \"Jack\",\n" +
+				"\t\t\t\t  \"lastName\": \"Johnson\",\n" +
+				"\t\t\t\t  \"tags\":[\"guitar\", \"skateboard\"]\n" +
+				"\t\t\t\t}";
 
 		String id = ElasticUtils.create("users", doc, 1);
 		System.out.println(id);
@@ -197,23 +190,21 @@ public class ElasticUtilsTest {
 
 	@Test
 	public void testAutoCreateDocId() {
-		String doc = """
-				{
-				  "user": "rico",
-				  "post_date": "2025-06-02 14:58",
-				  "message": "重新撸一遍Elasticsearch"
-				}""";
+		String doc = "{\n" +
+				"\t\t\t\t  \"user\": \"rico\",\n" +
+				"\t\t\t\t  \"post_date\": \"2025-06-02 14:58\",\n" +
+				"\t\t\t\t  \"message\": \"重新撸一遍Elasticsearch\"\n" +
+				"\t\t\t\t}";
 		String id = ElasticUtils.index("users").doc(doc).execute();
 		assertThat(id).isEqualTo("1");
 	}
 	@Test
 	public void testCreateWithId2() {
-		String doc = """
-				{
-				  "firstName": "rico",
-				  "lastName": "Yu",
-				  "tags":["guitar", "skateboard"]
-				}""";
+		String doc = "{\n" +
+				"\t\t\t\t  \"firstName\": \"rico\",\n" +
+				"\t\t\t\t  \"lastName\": \"Yu\",\n" +
+				"\t\t\t\t  \"tags\":[\"guitar\", \"skateboard\"]\n" +
+				"\t\t\t\t}";
 		String id = ElasticUtils.index("users").doc(doc).id(1).execute();
 		assertThat(id).isEqualTo("1");
 	}
@@ -243,12 +234,11 @@ public class ElasticUtilsTest {
 
 	@Test
 	public void testCreateOrUpdate() {
-		String doc = """
-				{
-				  "firstName": "Jack",
-				  "lastName": "Johnson",
-				  "tags":["guitar", "skateboard"]
-				}""";
+		String doc = "{\n" +
+				"\t\t\t\t  \"firstName\": \"Jack\",\n" +
+				"\t\t\t\t  \"lastName\": \"Johnson\",\n" +
+				"\t\t\t\t  \"tags\":[\"guitar\", \"skateboard\"]\n" +
+				"\t\t\t\t}";
 		String id = ElasticUtils.index("users", doc, 1);
 		System.out.println(id);
 	}

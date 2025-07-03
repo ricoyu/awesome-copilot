@@ -20,7 +20,7 @@ import java.io.Serializable;
 public class CopilotSnowflakeIdGenerator implements IdentifierGenerator {
 
 	/// / 根据实际情况配置workerId和datacenterId
-	private static final SnowflakeId snowflakeId = new SnowflakeId(1, 1);
+	private static final SnowflakeId snowflakeId = new SnowflakeId();
 
 	@Override
 	public Serializable generate(SharedSessionContractImplementor session, Object object) {

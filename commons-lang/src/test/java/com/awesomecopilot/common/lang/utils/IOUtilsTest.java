@@ -2,6 +2,8 @@ package com.awesomecopilot.common.lang.utils;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.awesomecopilot.common.lang.utils.IOUtils.DIR_SEPARATOR;
 import static com.awesomecopilot.common.lang.utils.IOUtils.merge;
@@ -22,6 +24,8 @@ import static org.junit.Assert.*;
  * @version 1.0
  */
 public class IOUtilsTest {
+
+	private static Logger log = LoggerFactory.getLogger(IOUtilsTest.class);
 	
 	@Test
 	public void testLineSeparator() {

@@ -36,15 +36,4 @@ public class TryDemo {
         }
     }
 
-    //JAVA9 try语法升级
-    @Test
-    public void test3() throws FileNotFoundException {
-        InputStreamReader isr = new InputStreamReader(new FileInputStream("D:\\Dropbox\\doc\\cssksqn 穿梭时空三千年.txt"));
-        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("D:/aa.txt"));
-        try (isr; osw) {
-            isr.read();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

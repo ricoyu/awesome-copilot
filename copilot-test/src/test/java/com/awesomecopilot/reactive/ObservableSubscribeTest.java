@@ -1,11 +1,12 @@
 package com.awesomecopilot.reactive;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.Test;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 import rx.Subscriber;
 import rx.Subscription;
+
+import javax.servlet.http.HttpServletResponse;
 
 public class ObservableSubscribeTest {
 

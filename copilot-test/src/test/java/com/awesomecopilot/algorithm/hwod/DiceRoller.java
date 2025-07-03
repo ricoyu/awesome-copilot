@@ -116,12 +116,12 @@ public class DiceRoller {
 	public void executeCommands(String commands) {
 		for (char op : commands.toCharArray()) {
 			switch (op) {
-				case 'L' -> leftRoll();
-				case 'R' -> rightRoll();
-				case 'F' -> forwardRoll();
-				case 'B' -> backwardRoll();
-				case 'A' -> anticlockwiseRotate();
-				case 'C' -> clockwiseRotate();
+				case 'L':  leftRoll();
+				case 'R': rightRoll();
+				case 'F': forwardRoll();
+				case 'B':  backwardRoll();
+				case 'A': anticlockwiseRotate();
+				case 'C': clockwiseRotate();
 			}
 		}
 		System.out.println(state[0] + " " + state[1] + " " + state[2] + " " + state[3] + " " + state[4] + " " + state[5]);

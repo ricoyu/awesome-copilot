@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -14,7 +15,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class UrlResource extends AbstractFileResolvingResource {
@@ -203,7 +203,8 @@ public class UrlResource extends AbstractFileResolvingResource {
 		}
 		catch (IOException ex) {
 			// Close the HTTP connection (if applicable).
-			if (con instanceof HttpURLConnection httpConn) {
+			if (con instanceof HttpURLConnection) {
+				HttpURLConnection httpConn = (HttpURLConnection)con;
 				httpConn.disconnect();
 			}
 			throw ex;
@@ -295,7 +296,6 @@ public class UrlResource extends AbstractFileResolvingResource {
 	 * This implementation returns the URL-decoded name of the file that this URL
 	 * refers to.
 	 * @see java.net.URL#getPath()
-	 * @see java.net.URLDecoder#decode(String, java.nio.charset.Charset)
 	 */
 	@Override
 	public String getFilename() {
@@ -308,7 +308,11 @@ public class UrlResource extends AbstractFileResolvingResource {
 		}
 		// Otherwise, process URL path
 		String filename = StringUtils.getFilename(StringUtils.cleanPath(this.url.getPath()));
-		return (filename != null ? URLDecoder.decode(filename, StandardCharsets.UTF_8) : null);
+		try {
+			return (filename != null ? URLDecoder.decode(filename, "UTF-8") : null);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -325,8 +329,8 @@ public class UrlResource extends AbstractFileResolvingResource {
 	 */
 	@Override
 	public boolean equals(Object other) {
-		return (this == other || (other instanceof UrlResource that &&
-				getCleanedUrl().equals(that.getCleanedUrl())));
+		return (this == other || (other instanceof UrlResource &&
+				getCleanedUrl().equals(((UrlResource)other).getCleanedUrl())));
 	}
 
 	/**
