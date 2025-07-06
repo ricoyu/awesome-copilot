@@ -71,7 +71,7 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	/**
 	 * 支持简单的字段高亮显示
 	 */
-	protected String highlightField;
+	protected List<String> highlightFields = new ArrayList<>();
 
 	/**
 	 * 对应_source不存储, 每个字段单独设置store=true时,
@@ -320,11 +320,14 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 	/**
 	 * 设置高亮显示某个字段
 	 *
-	 * @param highlightField
+	 * @param highlightFields
 	 * @return BaseQueryBuilder
 	 */
-	public BaseQueryBuilder highlightField(String highlightField) {
-		this.highlightField = highlightField;
+	public BaseQueryBuilder highlightFields(String... highlightFields) {
+		//将highlightFields 添加进List类型的 this.highlightFields
+		if (highlightFields != null && highlightFields.length> 0) {
+			Collections.addAll(this.highlightFields, highlightFields);
+		}
 		return this;
 	}
 
@@ -669,11 +672,13 @@ public abstract class BaseQueryBuilder implements BoolQuery {
 			if (this instanceof Highlightable) {
 				searchRequestBuilder.highlighter(((Highlightable) this).toHighlightBuilder());
 			}
-			if (highlightField != null) {
+			if (highlightFields.size() > 0) {
 				HighlightBuilder highlightBuilder = new HighlightBuilder();
-				HighlightBuilder.Field field = new HighlightBuilder.Field(highlightField);
-				highlightBuilder.field(field);
-				searchRequestBuilder.highlighter(highlightBuilder);
+				for (String highlightField : highlightFields) {
+					HighlightBuilder.Field field = new HighlightBuilder.Field(highlightField);
+					highlightBuilder.field(highlightField);
+					searchRequestBuilder.highlighter(highlightBuilder);
+				}
 			}
 
 			if (this.storedFields != null) {

@@ -17,6 +17,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.awesomecopilot.common.lang.utils.DateUtils.toLocalDateTime;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -202,6 +203,12 @@ public class DateUtilsTest {
 		LocalDateTime end = LocalDateTime.of(2021, 7, 28, 10, 43, 2);
 		assertEquals(1627440060000L, DateUtils.toEpochMilis(begin).longValue());
 		assertEquals(1627440182000L, DateUtils.toEpochMilis(end).longValue());
+	}
+
+	@Test
+	public void testMillisToDate() {
+		LocalDateTime localDateTime = toLocalDateTime(1748753330966l);
+		System.out.println(localDateTime);
 	}
 
 	@Test

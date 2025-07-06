@@ -107,8 +107,8 @@ public class MatchQueryTest {
 	@Test
 	public void testMatchStoredFields() {
 		List<Object> books = ElasticUtils.Query.matchQuery("books")
-				.query("content", "searching")
-				.highlightField("content")
+				.query("title", "Mastering")
+				.highlightFields("title", "content")
 				.storedFields("title", "author", "public_date")
 				.queryForList();
 		books.forEach(System.out::println);
