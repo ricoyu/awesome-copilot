@@ -15,7 +15,19 @@
 <dependency>
     <groupId>org.hibernate.orm</groupId>
     <artifactId>hibernate-core</artifactId>
-    <version>6.5.2.Final</version>
+    <version>5.4.32.Final</version>
+</dependency>
+<!-- 看Maven的依赖关系, hibernate-entitymanager 5.6.15.Final对应的hibernate-core版本就是5.4.32.Final-->
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-entitymanager</artifactId>
+    <version>5.6.15.Final</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </exclusion>
+    </exclusions>
 </dependency>
 <dependency>
     <groupId>javax.xml.bind</groupId>
