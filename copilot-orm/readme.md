@@ -17,7 +17,8 @@
     <artifactId>hibernate-core</artifactId>
     <version>5.4.32.Final</version>
 </dependency>
-<!-- 看Maven的依赖关系, hibernate-entitymanager 5.6.15.Final对应的hibernate-core版本就是5.4.32.Final-->
+<!-- 看Maven的依赖关系, hibernate-entitymanager 5.6.15.Final对应的hibernate-core版本就是5.4.32.Final, 
+     spring-boot-starter-data-jpa 2.3.12.RELEASE对应的版本也是hibernate-core:5.4.32.Final-->
 <dependency>
     <groupId>org.hibernate</groupId>
     <artifactId>hibernate-entitymanager</artifactId>
