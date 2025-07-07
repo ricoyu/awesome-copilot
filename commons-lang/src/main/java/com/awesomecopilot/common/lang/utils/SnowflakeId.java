@@ -1,5 +1,9 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.resource.PropertyReader;
+import com.awesomecopilot.common.lang.resource.YamlOps;
+import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
+
 /**
  * Twitter_Snowflake<br>
  * SnowFlake的结构如下(每部分用-分开):<br>
@@ -103,21 +107,45 @@ public class SnowflakeId {
 	 * 12位序列, 毫秒内的计数, 12位的计数顺序号支持每个节点每毫秒(同一机器, 同一时间截)产生4096个ID序号, 加起来刚好64位, 为一个Long型。<p>
 	 * <p>
 	 * SnowFlake的优点是, 整体上按照时间自增排序, 并且整个分布式系统内不会产生ID碰撞(由数据中心ID和机器ID作区分), 并且效率较高, 经测试, SnowFlake每秒能够产生26万ID左右
-	 *
-	 * @param workerId     工作ID (0~31)
-	 * @param datacenterId 数据中心ID (0~31)
 	 */
-	public SnowflakeId(long workerId, long datacenterId) {
+	public SnowflakeId() {
+		long workerId = 1L, datacenterId = 1L;
+		PropertyReader propertyReader = new PropertyReader("application");
+		if (!propertyReader.resourceExists()) {
+			YamlOps yamlOps = YamlProfileReaders.instance("application");
+			if (yamlOps.exists()) {
+				workerId = yamlOps.getInt("snowflake.workerid", 1);
+				datacenterId = yamlOps.getInt("snowflake.datacenterid", 1);
+			}
+		} else {
+			workerId = propertyReader.getInt("snowflake.workerid", 1);
+			datacenterId = propertyReader.getInt("snowflake.datacenterid", 1);
+		}
 		if (workerId > maxWorkerId || workerId < 0) {
-			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0", maxWorkerId));
+			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",
+					maxWorkerId));
 		}
 		if (datacenterId > maxDatacenterId || datacenterId < 0) {
-			throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0", maxDatacenterId));
+			throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0",
+					maxDatacenterId));
 		}
 		this.workerId = workerId;
 		this.datacenterId = datacenterId;
 	}
-	
+
+	public SnowflakeId(long workerId, long datacenterId) {
+		if (workerId > maxWorkerId || workerId < 0) {
+			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",
+					maxWorkerId));
+		}
+		if (datacenterId > maxDatacenterId || datacenterId < 0) {
+			throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0",
+					maxDatacenterId));
+		}
+		this.workerId = workerId;
+		this.datacenterId = datacenterId;
+	}
+
 	/**
 	 * 获得下一个ID (该方法是线程安全的)
 	 *
