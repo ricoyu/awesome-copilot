@@ -16,26 +16,28 @@
     </parent>
 
     <dependencies>
-        <!-- JUnit 5 API -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.7.0</version>
-            <scope>test</scope>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
-        <!-- JUnit 5 Engine -->
+        <!-- 它提供了一组丰富的匹配器（Matchers），用于编写更直观、更易读的断言（Assertions）-->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.0</version>
-            <scope>test</scope>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
         </dependency>
-        <!-- JUnit 5 Params (optional, for parameterized tests) -->
+
+        <!-- Mockito 的主要作用是帮助开发者在单元测试中模拟依赖对象的行为，从而隔离被测代码，使测试更加专注和可控。 -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>5.7.0</version>
-            <scope>test</scope>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.awesomecopilot</groupId>

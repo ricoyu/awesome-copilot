@@ -2,7 +2,7 @@ package com.awesomecopilot.hash;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.security.MessageDigest;
