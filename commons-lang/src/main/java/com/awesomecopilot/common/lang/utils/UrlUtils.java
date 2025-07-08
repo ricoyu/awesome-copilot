@@ -1,6 +1,8 @@
 package com.awesomecopilot.common.lang.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -8,11 +10,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 
-@Slf4j
 public class UrlUtils {
 
     private static final String ENCODING = "UTF-8";
 
+    private static final Logger log = LoggerFactory.getLogger(UrlUtils.class);
     /**
      * 对完整URL中的URI部分进行编码，并返回包含编码后URI部分的完整URL
      *

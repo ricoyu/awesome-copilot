@@ -26,10 +26,9 @@ import static java.util.Arrays.asList;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class YamlReader implements YamlOps {
 	
-	private static final Logger logger = LoggerFactory.getLogger(PropertyReader.class);
+	private static final Logger log = LoggerFactory.getLogger(PropertyReader.class);
 	
 	private static final String WORKING_DIR = System.getProperty("user.dir");
 	
@@ -84,7 +83,7 @@ public class YamlReader implements YamlOps {
 				inputStream.close();
 			}
 		} catch (IOException e) {
-			logger.warn(e.getMessage());
+			log.warn(e.getMessage());
 		}
 		/*
 		 * 读取工作目录下的yml
@@ -96,7 +95,7 @@ public class YamlReader implements YamlOps {
 				inputStream.close();
 			}
 		} catch (IOException e) {
-			logger.warn(e.getMessage());
+			log.warn(e.getMessage());
 		}
 		/*
 		 * 读取工作目录config下的yml
@@ -108,7 +107,7 @@ public class YamlReader implements YamlOps {
 				inputStream.close();
 			}
 		} catch (IOException e) {
-			logger.warn(e.getMessage());
+			log.warn(e.getMessage());
 		}
 	}
 	

@@ -6,6 +6,8 @@ import com.awesomecopilot.common.lang.exception.NoDateFormatFoundException;
 import com.awesomecopilot.common.lang.exception.UnsupportedLocalDateFormatException;
 import com.awesomecopilot.common.lang.exception.UnsupportedLocalTimeFormatException;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
 import java.text.ParseException;
@@ -43,8 +45,9 @@ import static java.time.format.DateTimeFormatter.ofPattern;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class DateUtils {
+
+	private static final Logger log = LoggerFactory.getLogger(DateUtils.class);
 	
 	private static final Pattern MILLIS_PATTERN = Pattern.compile("\\d+");
 	

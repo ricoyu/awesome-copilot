@@ -1,6 +1,9 @@
 package com.awesomecopilot.common.lang.ratelimit;
 
+import com.awesomecopilot.common.lang.utils.ProtostuffUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Objects;
@@ -20,8 +23,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class SlidingWindow implements RateLimiter {
+	private static final Logger log = LoggerFactory.getLogger(SlidingWindow.class);
 	
 	/**
 	 * 访问计数器

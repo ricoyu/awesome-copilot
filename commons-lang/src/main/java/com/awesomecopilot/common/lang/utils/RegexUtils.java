@@ -2,6 +2,8 @@ package com.awesomecopilot.common.lang.utils;
 
 import com.awesomecopilot.common.lang.bean.UrlParts;
 import com.awesomecopilot.common.lang.transformer.Transformers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,7 +22,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * @version 1.0
  */
 public final class RegexUtils {
-	
+
+	private static final Logger log = LoggerFactory.getLogger(RegexUtils.class);
+
 	/**
 	 * 匹配{NotBlank.username}这种形式的字符串
 	 */

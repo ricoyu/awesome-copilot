@@ -1,10 +1,13 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.resource.PropertyReader;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,9 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ProtostuffUtils {
-	
+	private static final Logger log = LoggerFactory.getLogger(ProtostuffUtils.class);
 	/**
 	 * 缓存Schema
 	 */
