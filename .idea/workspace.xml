@@ -5,17 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f63ea425-9079-4fbf-bcf4-80f29af1aae0" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-security/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-security/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-security/src/test/java/com/awesomecopilot/security/BcryptPasswordEncoderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-security/src/test/java/com/awesomecopilot/security/BcryptPasswordEncoderTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/concurrent/completablefuture/SimpleUseCase1.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/concurrent/completablefuture/SimpleUseCase1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/hash/MD5HashTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/hash/MD5HashTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/StadiumSeating.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -36,6 +38,9 @@
   "associatedIndex": 1
 }]]></component>
   <component name="ProjectId" id="2zZYhPf9dgNcVuAsmBhAqtrbHew" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -94,7 +99,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1751940181032</updated>
-      <workItem from="1751940182127" duration="871000" />
+      <workItem from="1751940182127" duration="2666000" />
     </task>
     <servers />
   </component>
