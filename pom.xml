@@ -300,7 +300,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
+                <version>4.13.2</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -309,27 +309,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-
-            <!-- Junit5 -->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>5.7.0</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.7.0</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>5.7.0</version>
-                <scope>test</scope>
-            </dependency>
-
             <!-- 它提供了一组丰富的匹配器（Matchers），用于编写更直观、更易读的断言（Assertions）-->
             <dependency>
                 <groupId>org.hamcrest</groupId>
