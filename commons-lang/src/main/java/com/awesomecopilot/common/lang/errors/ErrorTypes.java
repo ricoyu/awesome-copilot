@@ -70,6 +70,7 @@ public enum ErrorTypes implements ErrorType {
     TIMESTAMP_MISMATCH("40118", "template.timestamp.mismatch.error", "timestamp参数不匹配"),
     SMS_CODE_NOT_FOUND("40119", "template.smscode.not.found", "验证码不存在"),
     SMS_CODE_NOT_EXPIRED("40120", "template.smscode.expired", "验证码已过期"),
+    API_SIGN_FAILED("40121", "template.apisign.failed", "接口签名验证失败"),
 
     ACCESS_DENIED("4031", "template.access.denied", "你无权访问该资源"),
     //-------------------- 流控相关错误, 429 开头 --------------------------------------
