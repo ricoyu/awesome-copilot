@@ -552,6 +552,19 @@ public final class ServletUtils {
 	/**
 	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
 	 *
+	 * @param matchPath 要匹配的URI, 支持ant path pattern
+	 * @return boolean
+	 */
+	public static boolean pathMatch(String matchPath) {
+		notNull(matchPath, "matchPath cannot be null");
+		HttpServletRequest request = request();
+		String path = requestPath(request);
+		return antPathMatcher.match(matchPath, path);
+	}
+
+	/**
+	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
+	 *
 	 * @param request
 	 * @param matchPath 要匹配的URI
 	 * @return boolean
@@ -561,7 +574,7 @@ public final class ServletUtils {
 		String path = requestPath(request);
 		return antPathMatcher.match(matchPath, path);
 	}
-	
+
 	/**
 	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
 	 *

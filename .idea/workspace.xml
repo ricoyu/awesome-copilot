@@ -5,10 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/GreedyMerchant.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/MaxMinBoardLength.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/TreasureBoxDestroyer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/SnowflakeId.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/SnowflakeId.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-spring/src/main/java/com/awesomecopilot/common/spring/utils/ServletUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-spring/src/main/java/com/awesomecopilot/common/spring/utils/ServletUtils.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
