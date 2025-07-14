@@ -5,7 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/MaxScoreGame.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/GreedyMerchant.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/MaxMinBoardLength.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/TreasureBoxDestroyer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/SnowflakeId.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/SnowflakeId.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,8 +49,11 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Application.GiftGrouping.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.GreedyMerchant.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.MaxMinBoardLength.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxScoreGame.executor&quot;: &quot;Debug&quot;,
     &quot;Application.ProjectScheduler.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.TreasureBoxDestroyer.executor&quot;: &quot;Debug&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
@@ -57,7 +63,7 @@
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;MavenSettings&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -70,13 +76,39 @@
       <recent name="com.awesomecopilot.orm.entity" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.MaxScoreGame">
+  <component name="RunManager" selected="Application.GreedyMerchant">
     <configuration name="GiftGrouping" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.GiftGrouping" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="GreedyMerchant" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.utils.GreedyMerchant" />
+      <module name="commons-lang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.common.lang.utils.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MaxMinBoardLength" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.utils.MaxMinBoardLength" />
+      <module name="commons-lang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.common.lang.utils.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -97,21 +129,8 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ProjectScheduler" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.ProjectScheduler" />
-      <module name="copilot-test" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="StadiumSeating" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.StadiumSeating" />
+    <configuration name="TreasureBoxDestroyer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.TreasureBoxDestroyer" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -125,10 +144,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.GreedyMerchant" />
+        <item itemvalue="Application.MaxMinBoardLength" />
+        <item itemvalue="Application.TreasureBoxDestroyer" />
         <item itemvalue="Application.MaxScoreGame" />
         <item itemvalue="Application.GiftGrouping" />
-        <item itemvalue="Application.ProjectScheduler" />
-        <item itemvalue="Application.StadiumSeating" />
       </list>
     </recent_temporary>
   </component>
@@ -150,6 +170,11 @@
       <workItem from="1752112092235" duration="3883000" />
       <workItem from="1752196045574" duration="2397000" />
       <workItem from="1752207631049" duration="40000" />
+      <workItem from="1752304285901" duration="589000" />
+      <workItem from="1752363957574" duration="1368000" />
+      <workItem from="1752451284332" duration="1124000" />
+      <workItem from="1752486434063" duration="527000" />
+      <workItem from="1752486977573" duration="947000" />
     </task>
     <servers />
   </component>
