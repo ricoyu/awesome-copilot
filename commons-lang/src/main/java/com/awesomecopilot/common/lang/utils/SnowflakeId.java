@@ -114,12 +114,12 @@ public class SnowflakeId {
 		if (!propertyReader.resourceExists()) {
 			YamlOps yamlOps = YamlProfileReaders.instance("application");
 			if (yamlOps.exists()) {
-				workerId = yamlOps.getInt("snowflake.workerid", 1);
-				datacenterId = yamlOps.getInt("snowflake.datacenterid", 1);
+				workerId = yamlOps.getInt("copilot.snowflake.worker-id", 1);
+				datacenterId = yamlOps.getInt("copilot.snowflake.datacenter-id", 1);
 			}
 		} else {
-			workerId = propertyReader.getInt("snowflake.workerid", 1);
-			datacenterId = propertyReader.getInt("snowflake.datacenterid", 1);
+			workerId = propertyReader.getInt("copilot.snowflake.worker-id", 1);
+			datacenterId = propertyReader.getInt("copilot.snowflake.datacenter-id", 1);
 		}
 		if (workerId > maxWorkerId || workerId < 0) {
 			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",
