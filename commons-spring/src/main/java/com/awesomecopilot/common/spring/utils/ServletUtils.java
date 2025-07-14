@@ -371,64 +371,6 @@ public final class ServletUtils {
 	}
 
 	/**
-	 * 获取请求的URI
-	 * /pic_code
-	 *
-	 * @return String
-	 */
-	public static String requestUri() {
-		HttpServletRequest request =
-				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-		return request.getRequestURI().toString();
-	}
-
-	/**
-	 * 获取请求的URI
-	 * /pic_code
-	 *
-	 * @return String
-	 */
-	public static String requestUri(HttpServletRequest request) {
-		return request.getRequestURI().toString();
-	}
-
-
-	/**
-	 *  判断当前请求的URL是否匹配指定的路径, 支持 * 通配符
-	 */
-	private boolean pathMatches(String pattern) {
-		String path = requestUri();
-		if (!pattern.startsWith("/")) {
-			pattern = "/" + pattern;
-		}
-		if (pattern.endsWith("**")) {
-			String basePattern = pattern.substring(0, pattern.length() - 2);
-			return path.startsWith(basePattern);
-		} else if (pattern.endsWith("*")) {
-			String basePattern = pattern.substring(0, pattern.length() - 2);
-			return path.startsWith(basePattern);
-		}
-		return path.equalsIgnoreCase(pattern);
-	}
-
-	/**
-	 * 简单的路径匹配方法，支持 * 通配符
-	 */
-	private boolean pathMatches(String path, String pattern) {
-		if (!pattern.startsWith("/")) {
-			pattern = "/" + pattern;
-		}
-		if (pattern.endsWith("**")) {
-			String basePattern = pattern.substring(0, pattern.length() - 2);
-			return path.startsWith(basePattern);
-		} else if (pattern.endsWith("*")) {
-			String basePattern = pattern.substring(0, pattern.length() - 2);
-			return path.startsWith(basePattern);
-		}
-		return path.equalsIgnoreCase(pattern);
-	}
-
-	/**
 	 * 取X-Requested-With请求头, 判断值是否为XMLHttpRequest, 是的话认为是AJAX请求
 	 * 或者返回类型是application/json也认为是AJAX请求
 	 *
@@ -610,6 +552,19 @@ public final class ServletUtils {
 	/**
 	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
 	 *
+	 * @param matchPath 要匹配的URI, 支持ant path pattern
+	 * @return boolean
+	 */
+	public static boolean pathMatch(String matchPath) {
+		notNull(matchPath, "matchPath cannot be null");
+		HttpServletRequest request = request();
+		String path = requestPath(request);
+		return antPathMatcher.match(matchPath, path);
+	}
+
+	/**
+	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
+	 *
 	 * @param request
 	 * @param matchPath 要匹配的URI
 	 * @return boolean
@@ -619,7 +574,7 @@ public final class ServletUtils {
 		String path = requestPath(request);
 		return antPathMatcher.match(matchPath, path);
 	}
-	
+
 	/**
 	 * 判断请求的URI是否与给定的matchPath匹配(以matchPath结尾)
 	 *
