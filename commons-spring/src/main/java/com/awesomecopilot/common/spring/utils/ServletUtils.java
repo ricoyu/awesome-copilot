@@ -392,6 +392,42 @@ public final class ServletUtils {
 		return request.getRequestURI().toString();
 	}
 
+
+	/**
+	 *  判断当前请求的URL是否匹配指定的路径, 支持 * 通配符
+	 */
+	private boolean pathMatches(String pattern) {
+		String path = requestUri();
+		if (!pattern.startsWith("/")) {
+			pattern = "/" + pattern;
+		}
+		if (pattern.endsWith("**")) {
+			String basePattern = pattern.substring(0, pattern.length() - 2);
+			return path.startsWith(basePattern);
+		} else if (pattern.endsWith("*")) {
+			String basePattern = pattern.substring(0, pattern.length() - 2);
+			return path.startsWith(basePattern);
+		}
+		return path.equalsIgnoreCase(pattern);
+	}
+
+	/**
+	 * 简单的路径匹配方法，支持 * 通配符
+	 */
+	private boolean pathMatches(String path, String pattern) {
+		if (!pattern.startsWith("/")) {
+			pattern = "/" + pattern;
+		}
+		if (pattern.endsWith("**")) {
+			String basePattern = pattern.substring(0, pattern.length() - 2);
+			return path.startsWith(basePattern);
+		} else if (pattern.endsWith("*")) {
+			String basePattern = pattern.substring(0, pattern.length() - 2);
+			return path.startsWith(basePattern);
+		}
+		return path.equalsIgnoreCase(pattern);
+	}
+
 	/**
 	 * 取X-Requested-With请求头, 判断值是否为XMLHttpRequest, 是的话认为是AJAX请求
 	 * 或者返回类型是application/json也认为是AJAX请求
