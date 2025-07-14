@@ -371,6 +371,28 @@ public final class ServletUtils {
 	}
 
 	/**
+	 * 获取请求的URI
+	 * /pic_code
+	 *
+	 * @return String
+	 */
+	public static String requestUri() {
+		HttpServletRequest request =
+				((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+		return request.getRequestURI().toString();
+	}
+
+	/**
+	 * 获取请求的URI
+	 * /pic_code
+	 *
+	 * @return String
+	 */
+	public static String requestUri(HttpServletRequest request) {
+		return request.getRequestURI().toString();
+	}
+
+	/**
 	 * 取X-Requested-With请求头, 判断值是否为XMLHttpRequest, 是的话认为是AJAX请求
 	 * 或者返回类型是application/json也认为是AJAX请求
 	 *
