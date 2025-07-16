@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
@@ -127,5 +128,14 @@ public class HashUtilsTest {
 	public void testRedisCrc16() {
 		String src = "name1";
 		System.out.println(HashUtils.crc16Hash(src) % 16284);
+	}
+
+	@Test
+	public void testSignature() {
+		long timestamp = System.currentTimeMillis();
+		String nonce = UUID.randomUUID().toString().replaceAll("-", "");
+		String message ="uri=/order/"+"&timestamp="+timestamp+"&nonce="+nonce;
+		String signature = HashUtils.sha256(message);
+		System.out.println(signature);
 	}
 }

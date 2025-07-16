@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f63ea425-9079-4fbf-bcf4-80f29af1aae0" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/errors/ErrorTypes.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/errors/ErrorTypes.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/GoldenTreasureBoxFinder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/TeamBalancer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/codec/HashUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/codec/HashUtilsTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,31 +52,50 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.StadiumSeating.executor&quot;: &quot;Debug&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;17.0.0-jdk8&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.import&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.GoldenTreasureBoxFinder.executor": "Debug",
+    "Application.StadiumSeating.executor": "Debug",
+    "Application.TeamBalancer.executor": "Debug",
+    "JUnit.HashUtilsTest.testSignature.executor": "Debug",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "17.0.0-jdk8",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "editor.preferences.import",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
+  <component name="ReactorSettings">
+    <option name="notificationShown" value="true" />
+  </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.awesomecopilot.orm.entity" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Application.GoldenTreasureBoxFinder">
+    <configuration name="GoldenTreasureBoxFinder" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.GoldenTreasureBoxFinder" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="StadiumSeating" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.StadiumSeating" />
       <module name="copilot-test" />
@@ -88,9 +109,40 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TeamBalancer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.TeamBalancer" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HashUtilsTest.testSignature" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.codec.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.awesomecopilot.codec" />
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.codec.HashUtilsTest" />
+      <option name="METHOD_NAME" value="testSignature" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.StadiumSeating" />
+        <item itemvalue="Application.GoldenTreasureBoxFinder" />
+        <item itemvalue="Application.TeamBalancer" />
+        <item itemvalue="JUnit.HashUtilsTest.testSignature" />
         <item itemvalue="Application.StadiumSeating" />
         <item itemvalue="Application.StadiumSeating" />
       </list>
@@ -112,10 +164,30 @@
       <option name="presentableId" value="Default" />
       <updated>1751940181032</updated>
       <workItem from="1751940182127" duration="2666000" />
+      <workItem from="1752498468893" duration="844000" />
+      <workItem from="1752542880232" duration="3534000" />
+      <workItem from="1752625791586" duration="708000" />
+      <workItem from="1752628855547" duration="3033000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/codec/HashUtilsTest.java</url>
+          <line>134</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/GoldenTreasureBoxFinder.java</url>
+          <line>50</line>
+          <option name="timeStamp" value="4" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
