@@ -824,6 +824,9 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		} else {//表示queryName是定义在xml中的查询语句名
 			query = em().createNamedQuery(queryName)
 					.unwrap(org.hibernate.query.Query.class);
+			/*
+			 * 今天(2025-07-18), 发现hibernate 5.4.32.Final下, SQL语句是放在sqlString属性里面的
+			 */
 			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
 			if (rawQuery == null) {
 				rawQuery = ReflectionUtils.getFieldValue("sqlString", query);
