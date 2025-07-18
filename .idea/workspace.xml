@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f63ea425-9079-4fbf-bcf4-80f29af1aae0" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" afterDir="false" />
-    </list>
+    <list default="true" id="f63ea425-9079-4fbf-bcf4-80f29af1aae0" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
