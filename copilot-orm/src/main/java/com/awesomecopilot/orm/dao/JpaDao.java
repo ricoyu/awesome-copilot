@@ -825,6 +825,9 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 			query = em().createNamedQuery(queryName)
 					.unwrap(org.hibernate.query.Query.class);
 			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
+			if (rawQuery == null) {
+				rawQuery = ReflectionUtils.getFieldValue("sqlString", query);
+			}
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
 
