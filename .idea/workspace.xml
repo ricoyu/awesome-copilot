@@ -5,37 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/LeakyBucketRateLimiter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowOld.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/TokenBucketRateLimiter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowConcurrentTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/entity/BaseEntitySimple.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/LongestValidSubstringFinder.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/HeightSorter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/LongestSubsequenceSum.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindow.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowRateLimiterBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowRateLimiterBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/CopilotThreadExecutorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/CopilotThreadExecutorTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/ExecutorsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/ExecutorsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/resource/YamlReaderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/resource/YamlReaderTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/DateUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/DateUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/GenericUtilsTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/GenericUtilsTests.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/IOUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/IOUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ObjectUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ObjectUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ProtostuffUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ProtostuffUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ReflectionUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ReflectionUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/UrlUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/UrlUtilsTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/XPathTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/XPathTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/readme.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaOperations.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaOperations.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/AttendanceAward.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/AttendanceAward.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +218,7 @@
       <workItem from="1753586633545" duration="7130000" />
       <workItem from="1753605103139" duration="451000" />
       <workItem from="1753605593115" duration="117000" />
-      <workItem from="1753606227551" duration="7904000" />
+      <workItem from="1753606227551" duration="8854000" />
     </task>
     <servers />
   </component>
@@ -265,7 +235,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java</url>
-          <line>552</line>
+          <line>564</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>

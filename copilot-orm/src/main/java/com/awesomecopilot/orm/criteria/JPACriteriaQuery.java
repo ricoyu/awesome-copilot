@@ -50,16 +50,28 @@ public class JPACriteriaQuery<T> implements Serializable {
 	// 查询条件
 	private Root<T> root;
 
+	/**
+	 * count查询要跟主查询分开, 不然会报错
+	 * java.lang.IllegalArgumentException: Already registered a copy: SqmBasicValuedSimplePath(com.awesomecopilot.tidb.copilot.entity.Employee(1225998227700).username)
+	 */
 	private Root<T> countRoot;
 
 	private List<Predicate> predicates;
 
+	/**
+	 * count查询要跟主查询分开, 不然会报错
+	 * java.lang.IllegalArgumentException: Already registered a copy: SqmBasicValuedSimplePath(com.awesomecopilot.tidb.copilot.entity.Employee(1225998227700).username)
+	 */
 	private List<Predicate> countPredicates;
 
 	private Map<String, Object> queryHints = new HashMap<>();
 
 	private CriteriaQuery<T> criteriaQuery;
 
+	/**
+	 * count查询要跟主查询分开, 不然会报错
+	 * java.lang.IllegalArgumentException: Already registered a copy: SqmBasicValuedSimplePath(com.awesomecopilot.tidb.copilot.entity.Employee(1225998227700).username)
+	 */
 	private CriteriaQuery<Long> countQuery;
 
 	private CriteriaBuilder criteriaBuilder;
