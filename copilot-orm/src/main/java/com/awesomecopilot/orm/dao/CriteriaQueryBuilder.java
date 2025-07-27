@@ -8,11 +8,17 @@ import com.awesomecopilot.orm.vo.PageResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -51,13 +57,21 @@ public class CriteriaQueryBuilder {
 	 * 如果propertyValue为null则查询propertyName为null的记录
 	 *
 	 * @param propertyName
-	 * @param propertyValue
 	 * @return CriteriaQueryBuilder
 	 */
-	public CriteriaQueryBuilder isNull(String propertyName, Object propertyValue) {
-		if (propertyValue == null) {
+	public CriteriaQueryBuilder isNull(String propertyName) {
 			jpaCriteriaQuery.isNull(propertyName);
-		}
+		return this;
+	}
+
+	/**
+	 * 如果propertyValue为null则查询propertyName为null的记录
+	 *
+	 * @param propertyName
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder isNotNull(String propertyName) {
+			jpaCriteriaQuery.isNotNull(propertyName);
 		return this;
 	}
 
@@ -73,6 +87,90 @@ public class CriteriaQueryBuilder {
 			return this;
 		} else {
 			jpaCriteriaQuery.eq(propertyName, propertyValue);
+		}
+		return this;
+	}
+
+	/**
+	 * 如果propertyValue为null则忽略这个notEq条件
+	 *
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder notEq(String propertyName, Object propertyValue) {
+		if (propertyValue == null) {
+			return this;
+		} else {
+			jpaCriteriaQuery.notEq(propertyName, propertyValue);
+		}
+		return this;
+	}
+
+	/**
+	 * 查询propertyName大于propertyValue
+	 * 如果propertyValue为null则忽略这个gt条件
+	 *
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder gt(String propertyName, Number propertyValue) {
+		if (propertyValue == null) {
+			return this;
+		} else {
+			jpaCriteriaQuery.gt(propertyName, propertyValue);
+		}
+		return this;
+	}
+
+	/**
+	 * 查询propertyName大于等于propertyValue
+	 * 如果propertyValue为null则忽略这个gte条件
+	 *
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder ge(String propertyName, Number propertyValue) {
+		if (propertyValue == null) {
+			return this;
+		} else {
+			jpaCriteriaQuery.ge(propertyName, propertyValue);
+		}
+		return this;
+	}
+
+	/**
+	 * 查询propertyName小于等于propertyValue
+	 * 如果propertyValue为null则忽略这个gte条件
+	 *
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder lt(String propertyName, Number propertyValue) {
+		if (propertyValue == null) {
+			return this;
+		} else {
+			jpaCriteriaQuery.lt(propertyName, propertyValue);
+		}
+		return this;
+	}
+
+	/**
+	 * 查询propertyName小于等于propertyValue
+	 * 如果propertyValue为null则忽略这个gte条件
+	 *
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder le(String propertyName, Number propertyValue) {
+		if (propertyValue == null) {
+			return this;
+		} else {
+			jpaCriteriaQuery.le(propertyName, propertyValue);
 		}
 		return this;
 	}
@@ -105,6 +203,22 @@ public class CriteriaQueryBuilder {
 			return this;
 		} else {
 			jpaCriteriaQuery.in(propertyName, values);
+		}
+		return this;
+	}
+	/**
+	 * SQL 中的 in
+	 *
+	 * @param propertyName
+	 * @param values
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder in(String propertyName, Object... values) {
+		List<Object> list = Arrays.asList(values);
+		if (list == null || list.isEmpty()) {
+			return this;
+		} else {
+			jpaCriteriaQuery.in(propertyName, list);
 		}
 		return this;
 	}

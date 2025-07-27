@@ -1,5 +1,6 @@
 package com.awesomecopilot.orm.dao;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.time.LocalDateTime;
@@ -111,4 +112,6 @@ public interface CriteriaOperations {
 	 * @return boolean
 	 */
 	public <T> boolean ifExists(Class<T> entityClass, String propertyName, Object value);
+
+	public EntityManager em();
 }

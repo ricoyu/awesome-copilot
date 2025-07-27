@@ -824,6 +824,9 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		} else {//表示queryName是定义在xml中的查询语句名
 			query = em().createNamedQuery(queryName)
 					.unwrap(org.hibernate.query.Query.class);
+			/*
+			 * 今天(2025-07-18), 发现hibernate 5.4.32.Final下, SQL语句是放在sqlString属性里面的
+			 */
 			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
 			if (rawQuery == null) {
 				rawQuery = ReflectionUtils.getFieldValue("sqlString", query);
@@ -878,7 +881,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		try {
 			resultList = query.getResultList();
 		} catch (Throwable e) {
-			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}!",
+			String msg = format("\nFailed to get resultlist from query\n{0}\n Parameters\n{1}",
 					sql,
 					JsonUtils.toJson(params));
 			log.error(msg, e);
@@ -1255,7 +1258,8 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	 *
 	 * @return EntityManager
 	 */
-	private EntityManager em() {
+	@Override
+	public EntityManager em() {
 		if (TransactionSynchronizationManager.isActualTransactionActive()) {
 			return entityManager;
 		} else {

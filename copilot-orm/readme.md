@@ -1112,6 +1112,5 @@ SQLOperations 和 CriteriaOperations两个接口都支持
          enabled: false
    ```
 
-   
 
 关闭以后只会检查租户ID的存在性来自动判断是否加入 tenant_id=xxx 条件

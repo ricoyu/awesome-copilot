@@ -50,11 +50,17 @@ public class JPACriteriaQuery<T> implements Serializable {
 	// 查询条件
 	private Root<T> root;
 
+	private Root<T> countRoot;
+
 	private List<Predicate> predicates;
+
+	private List<Predicate> countPredicates;
 
 	private Map<String, Object> queryHints = new HashMap<>();
 
 	private CriteriaQuery<T> criteriaQuery;
+
+	private CriteriaQuery<Long> countQuery;
 
 	private CriteriaBuilder criteriaBuilder;
 
@@ -75,8 +81,11 @@ public class JPACriteriaQuery<T> implements Serializable {
 		this.entityManager = entityManager;
 		this.criteriaBuilder = this.entityManager.getCriteriaBuilder();
 		this.criteriaQuery = criteriaBuilder.createQuery(this.clazz);
+		this.countQuery = criteriaBuilder.createQuery(Long.class);
 		this.root = criteriaQuery.from(this.clazz);
+		this.countRoot = countQuery.from(this.clazz);
 		this.predicates = new ArrayList<Predicate>();
+		this.countPredicates = new ArrayList<Predicate>();
 		this.orders = new ArrayList<Order>();
 	}
 
@@ -97,7 +106,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 相等
-	 * 
+	 *
 	 * @param propertyName
 	 * @param value
 	 * @return
@@ -107,172 +116,18 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return this;
 		}
 		this.predicates.add(criteriaBuilder.equal(root.get(propertyName), value));
-		return this;
-	}
-
-	public JPACriteriaQuery<T> or(List<String> propertyNames, Object value) {
-		if (isNullOrEmpty(value)) {
-			return this;
-		}
-		if ((propertyNames == null) || (propertyNames.size() == 0)) {
-			return this;
-		}
-		Predicate predicate = criteriaBuilder.or(criteriaBuilder.equal(root.get(propertyNames.get(0)), value));
-		for (int i = 1; i < propertyNames.size(); i++) {
-			predicate = criteriaBuilder.or(predicate, criteriaBuilder.equal(root.get(propertyNames.get(i)), value));
-		}
-		this.predicates.add(predicate);
-		return this;
-	}
-
-	/**
-	 * propertyName like %value%
-	 * 
-	 * @param propertyName
-	 * @param value
-	 * @return
-	 */
-	public JPACriteriaQuery<T> orLike(String propertyName, String value) {
-		List<String> values = new ArrayList<String>();
-		values.add(value);
-		return orLike(propertyName, values);
-	}
-
-	/**
-	 * (property1 like %value%) or (property2 like %value%) or ... 不区分大小写
-	 * 
-	 * @param propertyNames
-	 * @param value
-	 */
-	public JPACriteriaQuery<T> orLike(List<String> propertyNames, String value) {
-		return orLike(propertyNames, value, false);
-	}
-
-	/**
-	 * (property1 like %value%) or (property2 like %value%) or ...
-	 * 
-	 * @param propertyNames
-	 * @param value
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public JPACriteriaQuery<T> orLike(List<String> propertyNames, String value, boolean ignoreCase) {
-		if (StringUtils.isBlank(value) || (propertyNames.size() == 0)) {
-			return this;
-		}
-		if (value.indexOf("%") < 0) {
-			value = "%" + value.trim() + "%";
-		}
-
-		Expression expression = null;
-		if (ignoreCase) {
-			expression = criteriaBuilder.upper((Expression) root.get(propertyNames.get(0)));
-			value = value.toUpperCase();
-		} else {
-			expression = (Expression) root.get(propertyNames.get(0));
-		}
-		Predicate predicate = criteriaBuilder.or(criteriaBuilder.like(expression, value.toString()));
-		this.predicates.add(predicate);
-
-		if (propertyNames.size() > 1) {
-			for (int i = 1; i < propertyNames.size(); ++i) {
-				if (ignoreCase) {
-					expression = criteriaBuilder.upper((Expression) root.get(propertyNames.get(i)));
-				} else {
-					expression = (Expression) root.get(propertyNames.get(i));
-				}
-				predicate = criteriaBuilder.or(predicate, criteriaBuilder.like(expression, value));
-			}
-		}
-		this.predicates.add(predicate);
-		return this;
-	}
-
-	/**
-	 * (property like %value1%) or (property like %value2%) or ... 区分大小写
-	 * 
-	 * @param propertyName
-	 * @param values
-	 */
-	public JPACriteriaQuery<T> orLike(String propertyName, List<String> values) {
-		return orLike(propertyName, values, false);
-	}
-
-	/**
-	 * 
-	 * @param propertyName
-	 * @param values
-	 * @param ignoreCase 是否区分大小写
-	 * @return
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public JPACriteriaQuery<T> orLike(String propertyName, List<String> values, boolean ignoreCase) {
-		if (StringUtils.isBlank(propertyName) || values.size() == 0) {
-			return this;
-		}
-
-		Predicate predicate = null;
-
-		String value = values.get(0);
-		int subsequentIndex = 1;
-		if (StringUtils.isBlank(value)) {
-			//如果list中第一个元素为空值，则取后续第一个不为空的元素构造predicate
-			if (values.size() > 1) {
-				for (; subsequentIndex < values.size(); subsequentIndex++) {
-					String subsequentValue = values.get(subsequentIndex);
-					if (StringUtils.isNotBlank(subsequentValue)) {
-						if (subsequentValue.indexOf("%") < 0) {
-							subsequentValue = "%" + subsequentValue + "%";
-						}
-						Expression<String> expression = null;
-						if (ignoreCase) {
-							expression = criteriaBuilder.upper((Expression) root.get(propertyName));
-							subsequentValue = subsequentValue.toUpperCase();
-						} else {
-							expression = (Expression) root.get(propertyName);
-						}
-						predicate = criteriaBuilder.or(predicate, criteriaBuilder.like(expression, subsequentValue));
-						break;
-					}
-				}
-			}
-		} else {
-			if (value.indexOf("%") < 0) {
-				value = "%" + value + "%";
-			}
-			Expression expression = null;
-			if (ignoreCase) {
-				value = value.toUpperCase();
-				expression = criteriaBuilder.upper((Expression) root.get(propertyName));
-			} else {
-				expression = (Expression) root.get(propertyName);
-			}
-			predicate = criteriaBuilder.or(criteriaBuilder.like(expression, value));
-		}
-
-		if (predicate != null) {
-			if (values.size() > subsequentIndex) {
-				for (; subsequentIndex < values.size(); subsequentIndex++) {
-					Expression expression = null;
-					if (ignoreCase) {
-						expression = criteriaBuilder.upper((Expression) root.get(propertyName));
-					} else {
-						expression = (Expression) root.get(propertyName);
-					}
-					predicate = criteriaBuilder.or(predicate,
-							criteriaBuilder.like(expression, values.get(subsequentIndex)));
-				}
-			}
-		}
-		this.predicates.add(predicate);
+		this.countPredicates.add(criteriaBuilder.equal(countRoot.get(propertyName), value));
 		return this;
 	}
 
 	public void isNull(String propertyName) {
 		this.predicates.add(criteriaBuilder.isNull(root.get(propertyName)));
+		this.countPredicates.add(criteriaBuilder.isNull(countRoot.get(propertyName)));
 	}
 
 	public void isNotNull(String propertyName) {
 		this.predicates.add(criteriaBuilder.isNotNull(root.get(propertyName)));
+		this.countPredicates.add(criteriaBuilder.isNotNull(countRoot.get(propertyName)));
 	}
 
 	public void notEq(String propertyName, Object value) {
@@ -280,11 +135,12 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.notEqual(root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.notEqual(countRoot.get(propertyName), value));
 	}
 
 	/**
 	 * not in
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 值集合
 	 */
@@ -295,15 +151,19 @@ public class JPACriteriaQuery<T> implements Serializable {
 		}
 		Iterator<?> iterator = value.iterator();
 		In in = criteriaBuilder.in(root.get(propertyName));
+		In countIn = criteriaBuilder.in(countRoot.get(propertyName));
 		while (iterator.hasNext()) {
-			in.value(iterator.next());
+			Object next = iterator.next();
+			in.value(next);
+			countIn.value(next);
 		}
 		this.predicates.add(criteriaBuilder.not(in));
+		this.countPredicates.add(criteriaBuilder.not(countIn));
 	}
 
 	/**
 	 * 模糊匹配
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -316,11 +176,12 @@ public class JPACriteriaQuery<T> implements Serializable {
 			value = "%" + value + "%";
 		}
 		this.predicates.add(criteriaBuilder.like((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.like((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
 	 * 模糊匹配，不区分大小写
-	 * 
+	 *
 	 * @param propertyName
 	 * @param value
 	 */
@@ -337,7 +198,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 时间区间查询
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param begin 属性起始值
 	 * @param end 属性结束值
@@ -369,7 +230,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 小于等于
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -383,7 +244,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 小于
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -397,7 +258,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 大于等于
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -407,11 +268,12 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.ge((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.ge((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
 	 * 大于
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -422,10 +284,10 @@ public class JPACriteriaQuery<T> implements Serializable {
 		}
 		this.predicates.add(criteriaBuilder.gt((Expression) root.get(propertyName), value));
 	}
-	
+
 	/**
 	 * 大于等于
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param value 属性值
 	 */
@@ -439,7 +301,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * in
-	 * 
+	 *
 	 * @param propertyName 属性名称
 	 * @param values       值集合
 	 */
@@ -450,10 +312,14 @@ public class JPACriteriaQuery<T> implements Serializable {
 		}
 		Iterator<?> iterator = values.iterator();
 		In in = criteriaBuilder.in(root.get(propertyName));
+		In countIn = criteriaBuilder.in(countRoot.get(propertyName));
 		while (iterator.hasNext()) {
-			in.value(iterator.next());
+			Object next = iterator.next();
+			in.value(next);
+			countIn.value(next);
 		}
 		this.predicates.add(in);
+		this.countPredicates.add(countIn);
 		return this;
 	}
 
@@ -486,7 +352,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 创建查询条件
-	 * 
+	 *
 	 * @return JPA离线查询
 	 */
 	public CriteriaQuery<T> fillUpCriterias() {
@@ -502,7 +368,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 在已有排序基础上再加上当前排序
-	 * 
+	 *
 	 * @param orderBean
 	 */
 	public void addOrder(OrderBean orderBean) {
@@ -553,7 +419,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * JPA 2.1 JOIN FETCH
-	 * 
+	 *
 	 * @param attributeNames
 	 * @return Fetch<Z, X>
 	 */
@@ -572,17 +438,17 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 层级LEFT JOIN FETCH 如三个实体类 A B C
-	 * 
-	 * A中有属性Set<B> bSet, 
+	 *
+	 * A中有属性Set<B> bSet,
 	 * B中有Set<C> cSet
-	 * 
-	 * 想要一次取出A和A包含的所有B，还有B包含的所有C 则可以这样做： 
-	 * 
+	 *
+	 * 想要一次取出A和A包含的所有B，还有B包含的所有C 则可以这样做：
+	 *
 	 * 先JPACriteriaQuery jpaCriteriaQuery = JPACriteriaQuery.from(A.class, getEntityManager());
-	 * jpaCriteriaQuery.leftJoinFetch("bSet", "cSet").list(); 
-	 * 
+	 * jpaCriteriaQuery.leftJoinFetch("bSet", "cSet").list();
+	 *
 	 * JPA将发出类似语句:SELECT A.*,B.*,C.* FROM A LEFT OUT JOIN B LEFT OUT JOIN C 默认去除重复的A
-	 * 
+	 *
 	 * @on
 	 * @param attributeNames
 	 * @return
@@ -608,7 +474,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	/**
 	 * 先清空所有排序，再添加当前排序
-	 * 
+	 *
 	 * @param order
 	 */
 	public void setOrder(OrderBean order) {
@@ -655,6 +521,10 @@ public class JPACriteriaQuery<T> implements Serializable {
 		return root;
 	}
 
+	public Root<T> getRoot() {
+		return root;
+	}
+
 	public List<Predicate> getPredicates() {
 		return predicates;
 	}
@@ -686,8 +556,11 @@ public class JPACriteriaQuery<T> implements Serializable {
 					.setMaxResults(page.getMaxResults());
 
 			// 获取总记录数
-			CriteriaQuery<Long> countQuery = criteriaBuilder.createQuery(Long.class);
-			countQuery.select(criteriaBuilder.count(countQuery.from(this.clazz)));
+			countQuery.where(countPredicates.toArray(new Predicate[countPredicates.size()]));
+			// 6. 设置SELECT子句（COUNT）
+			countQuery.select(criteriaBuilder.count(countRoot));
+
+			// 7. 执行查询并返回结果
 			Long totalCount = entityManager.createQuery(countQuery).getSingleResult();
 			page.setTotalCount(totalCount.intValue());
 		}
