@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 令牌桶算法
  * <p>
  * Copyright: (C), 2022-11-18 15:23
  * <p>
@@ -26,14 +27,9 @@ public final class SlidingWindowRateLimiterBuilder {
 	private TimeUnit timeUnit;
 	
 	/**
-	 * 精度, 即要将timeWindow划分成多少个子窗口, 划得越多精度越高
-	 */
-	private int precision = 10;
-	
-	/**
 	 * 在指定的时间窗口内允许通过多少个请求
 	 */
-	private Long limit;
+	private int limit;
 	
 	/**
 	 * 时间窗口, 即对多长时间内的访问进行限流, 最终都会转换成毫秒进行时间窗口的切割
@@ -45,28 +41,18 @@ public final class SlidingWindowRateLimiterBuilder {
 		this.timeWindow = timeWindow;
 		this.timeUnit = timeUnit;
 	}
-	
-	/**
-	 * 精度, 即要将timeWindow划分成多少个子窗口, 划得越多精度越高
-	 * @param precision
-	 * @return SlidingWindowRateLimiterBuilder
-	 */
-	public SlidingWindowRateLimiterBuilder precision(Integer precision) {
-		Objects.requireNonNull(precision, "precision cannot be null!");
-		return this;
-	}
-	
+
 	/**
 	 * 在指定的时间窗口内允许通过多少个请求
 	 * @param limit
 	 * @return SlidingWindowRateLimiterBuilder
 	 */
-	public SlidingWindowRateLimiterBuilder limit(Long limit) {
+	public SlidingWindowRateLimiterBuilder limit(int limit) {
 		this.limit = limit;
 		return this;
 	}
 	
 	public SlidingWindow build() {
-		return new SlidingWindow(timeWindow, timeUnit, precision, limit);
+		return new SlidingWindow(timeWindow, timeUnit, limit);
 	}
 }

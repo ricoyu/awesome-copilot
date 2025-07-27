@@ -1,7 +1,7 @@
 package com.awesomecopilot.common.lang.utils;
 
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 

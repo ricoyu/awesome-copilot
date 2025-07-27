@@ -1,6 +1,6 @@
 package com.awesomecopilot.common.lang.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

@@ -1,8 +1,9 @@
 package com.awesomecopilot.common.lang.utils;
 
 import com.awesomecopilot.common.lang.constants.DateConstants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,11 +21,13 @@ import java.util.regex.Pattern;
 import static com.awesomecopilot.common.lang.utils.DateUtils.toLocalDateTime;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DateUtilsTest {
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		// 初始化操作，如果有需要的话
 	}

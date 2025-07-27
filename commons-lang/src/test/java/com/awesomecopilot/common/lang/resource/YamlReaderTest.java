@@ -1,14 +1,14 @@
 package com.awesomecopilot.common.lang.resource;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>

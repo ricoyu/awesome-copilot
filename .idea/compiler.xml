@@ -7,8 +7,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="copilot-bigdata" />
         <module name="copilot-validation" />
+        <module name="copilot-bigdata" />
         <module name="commons-spring" />
         <module name="copilot-networking" />
         <module name="copilot-json" />

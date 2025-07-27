@@ -1,7 +1,7 @@
 package com.awesomecopilot.common.lang.utils;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.awesomecopilot.common.lang.utils.IOUtils.DIR_SEPARATOR;
 import static com.awesomecopilot.common.lang.utils.IOUtils.merge;
@@ -9,7 +9,7 @@ import static com.awesomecopilot.common.lang.utils.IOUtils.readClassPathFileAsSt
 import static com.awesomecopilot.common.lang.utils.IOUtils.readFileAsBytes;
 import static com.awesomecopilot.common.lang.utils.IOUtils.readFileAsString;
 import static com.awesomecopilot.common.lang.utils.IOUtils.write;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>

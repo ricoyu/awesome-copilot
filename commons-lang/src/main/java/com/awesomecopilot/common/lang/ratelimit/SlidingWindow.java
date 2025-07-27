@@ -1,16 +1,7 @@
 package com.awesomecopilot.common.lang.ratelimit;
 
-import com.awesomecopilot.common.lang.utils.ProtostuffUtils;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 滑动时间窗口
@@ -24,99 +15,27 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version 1.0
  */
 public class SlidingWindow implements RateLimiter {
-	private static final Logger log = LoggerFactory.getLogger(SlidingWindow.class);
-	
-	/**
-	 * 访问计数器
-	 */
-	private final AtomicLong counter = new AtomicLong();
-	
-	/**
-	 * 存储每个子窗口的计数
-	 */
-	private LinkedList<Long> slots = new LinkedList<>();
-	
-	/**
-	 * 时间窗口, 即对多长时间内的访问进行限流, 最终都会转换成毫秒进行时间窗口的切割
-	 */
-	private Long timeWindow;
-	
-	/**
-	 * 时间窗口的单位, 比如可以指定1分钟, 1小时等
-	 */
-	private TimeUnit timeUnit;
-	
-	/**
-	 * 精度, 即要将timeWindow划分成多少个子窗口, 划得越多精度越高
-	 */
-	private int subWindowCount = 10;
-	
-	/**
-	 * 在指定的时间窗口内允许通过多少个请求
-	 */
-	private Long limit;
-	
-	/**
-	 * 设置了时间窗口timeWindow和要划分多少个子窗口precision后, 计算得出的每个子窗口的毫秒数
-	 */
-	private final long subWindowMillis;
-	
-	private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+	private final ConcurrentLinkedDeque<Long> requestTimestamps = new ConcurrentLinkedDeque<>();
+	private final long windowSizeMillis;  //多长时间内
+	private final int maxRequests;        //最多允许多少个请求
 
-	/**
-	 *
-	 * @param timeWindow 时间窗口, 即对多长时间内的访问进行限流, 最终都会转换成毫秒进行时间窗口的切割
-	 * @param timeUnit 时间窗口的单位, 比如可以指定1分钟, 1小时等
-	 * @param subWindowCount 精度, 即要将timeWindow划分成多少个子窗口, 划得越多精度越高
-	 * @param limit 在指定的时间窗口内允许通过多少个请求
-	 */
-	public SlidingWindow(Long timeWindow, TimeUnit timeUnit, Integer subWindowCount, Long limit) {
-		Objects.requireNonNull(timeWindow, "timeWindows cannot be null!");
-		Objects.requireNonNull(timeUnit, "timeUnit cannot be null!");
-		Objects.requireNonNull(subWindowCount, "subWindowCount cannot be null!");
-		Objects.requireNonNull(limit, "limit cannot be null!");
-		this.timeWindow = timeWindow;
-		this.timeUnit = timeUnit;
-		this.subWindowCount = subWindowCount;
-		this.limit = limit;
-		long timeWindowInMillis = timeUnit.toMillis(timeWindow);
-		subWindowMillis = timeWindowInMillis / subWindowCount;
-		scheduledExecutorService.scheduleAtFixedRate(() -> {
-			slots.add(counter.get());
-			//将子窗口限制在指定的数量内
-			if (slots.size() > subWindowCount) {
-				slots.removeFirst();
-			}
-			if (log.isDebugEnabled()) {
-				StringBuilder sb = new StringBuilder();
-				for (Long slot : slots) {
-					sb.append(slot).append("-");
-				}
-				sb.deleteCharAt(sb.length()-1);
-				if (log.isDebugEnabled()) {
-					log.debug("slots现在的结构: {}", sb.toString());
-					log.debug("counter现在的计数: {}", counter.get());
-				}
-			}
-		}, 0, subWindowMillis, TimeUnit.MILLISECONDS);
+	public SlidingWindow(long windowSize, TimeUnit timeUnit, int maxRequests) {
+		this.windowSizeMillis = timeUnit.toMillis(windowSize);
+		this.maxRequests = maxRequests;
 	}
-	
-	@Override
-	public boolean canPass() {
-		boolean canPass = false;
-		if (slots.size() == 0 || slots.size() == 1) {
-			canPass = counter.get() < limit;
-		} else {
-			/*
-			 * 注意这里要用counter.get(), 不能用slots.peekLast(), 因为定时器有可能还没有放计数放入最后一个slot里面
-			 */
-			canPass = (counter.get() - slots.peekFirst() < limit);
+
+	public synchronized boolean canPass() {
+		long currentTime = System.currentTimeMillis();
+		// 移除过期的请求记录
+		while (!requestTimestamps.isEmpty() &&
+				currentTime - requestTimestamps.peekFirst() > windowSizeMillis) {
+			requestTimestamps.pollFirst();
 		}
-		
-		if (canPass) {
-			counter.incrementAndGet();
+		// 检查当前窗口是否超限
+		if (requestTimestamps.size() < maxRequests) {
+			requestTimestamps.addLast(currentTime);
+			return true;
 		}
-		
-		return canPass;
+		return false;
 	}
 }

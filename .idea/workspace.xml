@@ -5,7 +5,37 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/LeakyBucketRateLimiter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowOld.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/TokenBucketRateLimiter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowConcurrentTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/entity/BaseEntitySimple.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/LongestValidSubstringFinder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/HeightSorter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/LongestSubsequenceSum.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindow.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowRateLimiterBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/SlidingWindowRateLimiterBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/CopilotThreadExecutorTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/CopilotThreadExecutorTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/ExecutorsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/concurrent/ExecutorsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/resource/YamlReaderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/resource/YamlReaderTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/DateUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/DateUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/GenericUtilsTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/GenericUtilsTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/IOUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/IOUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ObjectUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ObjectUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ProtostuffUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ProtostuffUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ReflectionUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/ReflectionUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/UrlUtilsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/UrlUtilsTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/XPathTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/test/java/com/awesomecopilot/common/lang/utils/XPathTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaOperations.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaOperations.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/JpaDao.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/AttendanceAward.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/exam_egroup/AttendanceAward.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,6 +61,9 @@
       </MavenGeneralSettings>
     </option>
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -49,11 +82,17 @@
     &quot;Application.FullBacktrack.executor&quot;: &quot;Debug&quot;,
     &quot;Application.GiftGrouping.executor&quot;: &quot;Debug&quot;,
     &quot;Application.GreedyMerchant.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.HeightSorter.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.LeakyBucketRateLimiter.executor&quot;: &quot;Run&quot;,
+    &quot;Application.LongestSubsequenceSum.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.LongestValidSubstringFinder.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxMinBoardLength.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxRewardByPermutingB.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxScoreGame.executor&quot;: &quot;Debug&quot;,
     &quot;Application.ProjectScheduler.executor&quot;: &quot;Debug&quot;,
     &quot;Application.TreasureBoxDestroyer.executor&quot;: &quot;Debug&quot;,
+    &quot;JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.SlidingWindowTest.testBasicRateLimiting.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
@@ -71,44 +110,22 @@
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
+  <component name="RebelAgentSelection">
+    <selection>jr</selection>
+  </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.awesomecopilot.orm.entity" />
+      <recent name="com.awesomecopilot.common.lang.ratelimit" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.EmployeeIdLengthCalculator">
-    <configuration name="EmployeeIdLengthCalculator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.EmployeeIdLengthCalculator" />
-      <module name="copilot-test" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="FullBacktrack" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.FullBacktrack" />
-      <module name="copilot-test" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="GreedyMerchant" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.utils.GreedyMerchant" />
+  <component name="RunManager" selected="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests">
+    <configuration name="LeakyBucketRateLimiter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.LeakyBucketRateLimiter" />
       <module name="commons-lang" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.common.lang.utils.*" />
+          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -116,21 +133,8 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="MaxMinBoardLength" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.utils.MaxMinBoardLength" />
-      <module name="commons-lang" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.common.lang.utils.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="MaxRewardByPermutingB" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.MaxRewardByPermutingB" />
+    <configuration name="LongestSubsequenceSum" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.LongestSubsequenceSum" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -138,28 +142,70 @@
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LongestValidSubstringFinder" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.exam_egroup.LongestValidSubstringFinder" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.exam_egroup.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SlidingWindowConcurrentTest.testConcurrentRequests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="commons-lang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.awesomecopilot.common.lang.ratelimit" />
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.SlidingWindowConcurrentTest" />
+      <option name="METHOD_NAME" value="testConcurrentRequests" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SlidingWindowTest.testBasicRateLimiting" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="commons-lang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.awesomecopilot.common.lang.ratelimit" />
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.SlidingWindowTest" />
+      <option name="METHOD_NAME" value="testBasicRateLimiting" />
+      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.EmployeeIdLengthCalculator" />
-        <item itemvalue="Application.FullBacktrack" />
-        <item itemvalue="Application.MaxRewardByPermutingB" />
-        <item itemvalue="Application.GreedyMerchant" />
-        <item itemvalue="Application.MaxMinBoardLength" />
+        <item itemvalue="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests" />
+        <item itemvalue="JUnit.SlidingWindowTest.testBasicRateLimiting" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
-        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-IU-251.25410.129" />
+        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.25659.59" />
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="" />
@@ -179,6 +225,30 @@
       <workItem from="1752710374530" duration="6364000" />
       <workItem from="1752798507747" duration="4958000" />
       <workItem from="1752815410757" duration="152000" />
+      <workItem from="1752912799137" duration="593000" />
+      <workItem from="1752971614430" duration="1895000" />
+      <workItem from="1753073645917" duration="956000" />
+      <workItem from="1753140925223" duration="6282000" />
+      <workItem from="1753231971130" duration="9614000" />
+      <workItem from="1753401730436" duration="6110000" />
+      <workItem from="1753490702117" duration="186000" />
+      <workItem from="1753491375659" duration="258000" />
+      <workItem from="1753491662739" duration="49000" />
+      <workItem from="1753491978302" duration="37000" />
+      <workItem from="1753492028419" duration="48000" />
+      <workItem from="1753492110109" duration="238000" />
+      <workItem from="1753492365687" duration="35000" />
+      <workItem from="1753492414299" duration="228000" />
+      <workItem from="1753492761540" duration="17000" />
+      <workItem from="1753492791271" duration="57000" />
+      <workItem from="1753492864636" duration="1333000" />
+      <workItem from="1753517532761" duration="1519000" />
+      <workItem from="1753528927203" duration="4289000" />
+      <workItem from="1753568762807" duration="3791000" />
+      <workItem from="1753586633545" duration="7130000" />
+      <workItem from="1753605103139" duration="451000" />
+      <workItem from="1753605593115" duration="117000" />
+      <workItem from="1753606227551" duration="7904000" />
     </task>
     <servers />
   </component>
@@ -192,6 +262,11 @@
           <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/FullBacktrack.java</url>
           <line>15</line>
           <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java</url>
+          <line>552</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
