@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinCostClimbingStairs2.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinCostClimbingStairs2.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,6 +59,7 @@
     &quot;Application.MaxMinBoardLength.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxRewardByPermutingB.executor&quot;: &quot;Debug&quot;,
     &quot;Application.MaxScoreGame.executor&quot;: &quot;Debug&quot;,
+    &quot;Application.MinCostClimbingStairs2.executor&quot;: &quot;Debug&quot;,
     &quot;Application.ProjectScheduler.executor&quot;: &quot;Debug&quot;,
     &quot;Application.TreasureBoxDestroyer.executor&quot;: &quot;Debug&quot;,
     &quot;JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor&quot;: &quot;Run&quot;,
@@ -89,20 +90,7 @@
       <recent name="com.awesomecopilot.common.lang.ratelimit" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests">
-    <configuration name="LeakyBucketRateLimiter" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.LeakyBucketRateLimiter" />
-      <module name="commons-lang" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Application.MinCostClimbingStairs2">
     <configuration name="LongestSubsequenceSum" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.LongestSubsequenceSum" />
       <module name="copilot-test" />
@@ -122,6 +110,19 @@
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="com.awesomecopilot.algorithm.exam_egroup.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MinCostClimbingStairs2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.MinCostClimbingStairs2" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -163,15 +164,18 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests" />
+        <item itemvalue="Application.MinCostClimbingStairs2" />
         <item itemvalue="JUnit.SlidingWindowTest.testBasicRateLimiting" />
+        <item itemvalue="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests" />
+        <item itemvalue="Application.LongestValidSubstringFinder" />
+        <item itemvalue="Application.LongestSubsequenceSum" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.25659.59" />
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
       </set>
     </attachedChunks>
   </component>
@@ -218,7 +222,19 @@
       <workItem from="1753586633545" duration="7130000" />
       <workItem from="1753605103139" duration="451000" />
       <workItem from="1753605593115" duration="117000" />
-      <workItem from="1753606227551" duration="8854000" />
+      <workItem from="1753606227551" duration="9997000" />
+      <workItem from="1753623042638" duration="43000" />
+      <workItem from="1753623095311" duration="511000" />
+      <workItem from="1753659796742" duration="539000" />
+      <workItem from="1753660349876" duration="78000" />
+      <workItem from="1753660635617" duration="62000" />
+      <workItem from="1753660739068" duration="30000" />
+      <workItem from="1753660783075" duration="149000" />
+      <workItem from="1753660943502" duration="30000" />
+      <workItem from="1753660990976" duration="94000" />
+      <workItem from="1753661097551" duration="405000" />
+      <workItem from="1753661518059" duration="23000" />
+      <workItem from="1753668447727" duration="1204000" />
     </task>
     <servers />
   </component>
@@ -235,7 +251,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java</url>
-          <line>564</line>
+          <line>492</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
