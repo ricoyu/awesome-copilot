@@ -244,6 +244,10 @@ public class CriteriaQueryBuilder {
 				jpaCriteriaQuery.between(propertyName, (Long) begin, (Long) end);
 				return this;
 			}
+			if ((begin instanceof Integer) && (end instanceof Integer)) {
+				jpaCriteriaQuery.between(propertyName, (Integer) begin, (Integer) end);
+				return this;
+			}
 			if ((begin instanceof LocalDateTime) && (end instanceof LocalDateTime)) {
 				jpaCriteriaQuery.between(propertyName, (LocalDateTime) begin, (LocalDateTime) end);
 				return this;
@@ -251,6 +255,32 @@ public class CriteriaQueryBuilder {
 			log.info("between(propertyName, values) 只支持java.util.Date, java.lang.Long, java.time.LocalDateTime类型");
 		}
 		return this;
+	}
+
+	/**
+	 * SQL 中的 between
+	 *
+	 * @param propertyName
+	 * @param start
+	 * @param end
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder between(String propertyName, Number start, Number end) {
+		Number[] range = {start, end};
+		return between(propertyName, range);
+	}
+
+	/**
+	 * SQL 中的 between
+	 *
+	 * @param propertyName
+	 * @param start
+	 * @param end
+	 * @return CriteriaQueryBuilder
+	 */
+	public CriteriaQueryBuilder between(String propertyName, LocalDateTime start, LocalDateTime end) {
+		LocalDateTime[] range = {start, end};
+		return between(propertyName, range);
 	}
 
 	/**

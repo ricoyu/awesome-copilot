@@ -206,6 +206,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 			value = "%" + value.toUpperCase() + "%";
 		}
 		this.predicates.add(criteriaBuilder.like(criteriaBuilder.upper((Expression) root.get(propertyName)), value));
+		this.countPredicates.add(criteriaBuilder.like(criteriaBuilder.upper((Expression) countRoot.get(propertyName)), value));
 	}
 
 	/**
@@ -219,6 +220,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 	public JPACriteriaQuery<T> between(String propertyName, Date begin, Date end) {
 		if (!isNullOrEmpty(begin) && !isNullOrEmpty(end)) {
 			this.predicates.add(criteriaBuilder.between((Expression) root.get(propertyName), begin, end));
+			this.countPredicates.add(criteriaBuilder.between((Expression) countRoot.get(propertyName), begin, end));
 		}
 
 		return this;
@@ -227,6 +229,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 	public JPACriteriaQuery<T> between(String propertyName, LocalDateTime begin, LocalDateTime end) {
 		if (!isNullOrEmpty(begin) && !isNullOrEmpty(end)) {
 			this.predicates.add(criteriaBuilder.between((Expression) root.get(propertyName), begin, end));
+			this.countPredicates.add(criteriaBuilder.between((Expression) countRoot.get(propertyName), begin, end));
 		}
 
 		return this;
@@ -235,6 +238,16 @@ public class JPACriteriaQuery<T> implements Serializable {
 	public JPACriteriaQuery<T> between(String propertyName, Long begin, Long end) {
 		if (!(isNullOrEmpty(begin)) && !(isNullOrEmpty(end))) {
 			this.predicates.add(criteriaBuilder.between((Expression) root.get(propertyName), begin, end));
+			this.countPredicates.add(criteriaBuilder.between((Expression) countRoot.get(propertyName), begin, end));
+		}
+
+		return this;
+	}
+
+	public JPACriteriaQuery<T> between(String propertyName, Integer begin, Integer end) {
+		if (!(isNullOrEmpty(begin)) && !(isNullOrEmpty(end))) {
+			this.predicates.add(criteriaBuilder.between((Expression) root.get(propertyName), begin, end));
+			this.countPredicates.add(criteriaBuilder.between((Expression) countRoot.get(propertyName), begin, end));
 		}
 
 		return this;
@@ -252,6 +265,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.le((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.le((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
@@ -266,6 +280,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.lt((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.lt((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
@@ -295,6 +310,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.gt((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.gt((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
@@ -309,6 +325,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 			return;
 		}
 		this.predicates.add(criteriaBuilder.ge((Expression) root.get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.ge((Expression) countRoot.get(propertyName), value));
 	}
 
 	/**
@@ -333,33 +350,6 @@ public class JPACriteriaQuery<T> implements Serializable {
 		this.predicates.add(in);
 		this.countPredicates.add(countIn);
 		return this;
-	}
-
-	public JPACriteriaQuery<T> addPredicate(com.awesomecopilot.orm.predicate.Predicate predicate) {
-		this.predicates.add(predicate.toPredicate(criteriaBuilder, root));
-		return this;
-	}
-
-	public JPACriteriaQuery<T> addPredicates(com.awesomecopilot.orm.predicate.Predicate... predicates) {
-		if (predicates != null && predicates.length > 0) {
-			for (int i = 0; i < predicates.length; i++) {
-				addPredicate(predicates[i]);
-			}
-		}
-		return this;
-	}
-
-	public JPACriteriaQuery<T> addPredicates(List<com.awesomecopilot.orm.predicate.Predicate> predicates) {
-		if (predicates != null && predicates.size() > 0) {
-			for (com.awesomecopilot.orm.predicate.Predicate predicate : predicates) {
-				addPredicate(predicate);
-			}
-		}
-		return this;
-	}
-
-	public void addCriterions(Predicate predicate) {
-		this.predicates.add(predicate);
 	}
 
 	/**
@@ -414,68 +404,6 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	public JPACriteriaQuery<T> addOrders(List<OrderBean> orders) {
 		orders.forEach(o -> addOrder(o));
-		return this;
-	}
-
-	public <Z, X> Join<Z, X> join(String attributeName) {
-		return join(attributeName, JoinType.INNER);
-	}
-
-	public <Z, X> Join<Z, X> leftJoin(String attributeName) {
-		return join(attributeName, JoinType.LEFT);
-	}
-
-	public <Z, X> Join<Z, X> join(String attributeName, JoinType joinType) {
-		return root.join(attributeName, joinType);
-	}
-
-	/**
-	 * JPA 2.1 JOIN FETCH
-	 *
-	 * @param attributeNames
-	 * @return Fetch<Z, X>
-	 */
-	public JPACriteriaQuery<T> joinFetch(String... attributeNames) {
-		Fetch<?, ?> fetch = null;
-		for (int i = 0; i < attributeNames.length; i++) {
-			String attributeName = attributeNames[i];
-			if (fetch == null) {
-				fetch = root.fetch(attributeName, JoinType.INNER);
-			} else {
-				fetch = fetch.fetch(attributeName, JoinType.INNER);
-			}
-		}
-		return this;
-	}
-
-	/**
-	 * 层级LEFT JOIN FETCH 如三个实体类 A B C
-	 *
-	 * A中有属性Set<B> bSet,
-	 * B中有Set<C> cSet
-	 *
-	 * 想要一次取出A和A包含的所有B，还有B包含的所有C 则可以这样做：
-	 *
-	 * 先JPACriteriaQuery jpaCriteriaQuery = JPACriteriaQuery.from(A.class, getEntityManager());
-	 * jpaCriteriaQuery.leftJoinFetch("bSet", "cSet").list();
-	 *
-	 * JPA将发出类似语句:SELECT A.*,B.*,C.* FROM A LEFT OUT JOIN B LEFT OUT JOIN C 默认去除重复的A
-	 *
-	 * @on
-	 * @param attributeNames
-	 * @return
-	 */
-	public JPACriteriaQuery<T> leftJoinFetch(String... attributeNames) {
-		Fetch<?, ?> fetch = null;
-		for (int i = 0; i < attributeNames.length; i++) {
-			String attributeName = attributeNames[i];
-			if (fetch == null) {
-				fetch = root.fetch(attributeName, JoinType.LEFT);
-			} else {
-				fetch = fetch.fetch(attributeName, JoinType.LEFT);
-			}
-		}
-		distinct(true);
 		return this;
 	}
 
