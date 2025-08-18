@@ -5,7 +5,49 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinCostClimbingStairs2.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinCostClimbingStairs2.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/constants/RocketMQ5DelayLevels.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/LeakyBucketRateLimiterOld.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-networking/src/main/java/com/awesomecopilot/networking/utils/ErrorUtils.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/BlockWallBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ArrayRotator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/DeleteAndEarn.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinimumASCIIDeleteSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/ClimbStairs.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/ElementRemover.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/HouseRobber.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/LongestPalindrome.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/MajorityElementFinder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/MinCostClimbingStairs2.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/MinFallingPathSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/MinPathSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/RemoveDuplicatesFromSortedArrayII.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/StockProfitCalculator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/UniquePaths.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round3/Fibonacci.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round3/TriangleMinPathSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round3/UniquePathsII.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/LeakyBucketRateLimiter.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/LeakyBucketRateLimiter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/TokenBucketRateLimiter.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/ratelimit/TokenBucketRateLimiter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/IOUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/utils/IOUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-networking/src/main/java/com/awesomecopilot/networking/builder/AbstractRequestBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-networking/src/main/java/com/awesomecopilot/networking/builder/AbstractRequestBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/VirtualIPv4Converter.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/hwod/VirtualIPv4Converter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ClimbStairs.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ElementRemover.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ElementRemover.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestPalindromeSubstring.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestPalindromeSubstring.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestPalindromicSubsequence.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestPalindromicSubsequence.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MajorityElementFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MajorityElementFinder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MaximalSquare.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MaximalSquare.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeSortedArrays.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeSortedArrays.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinFallingPathSum.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MinFallingPathSum.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveDuplicatesFromSortedArray.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveDuplicatesFromSortedArray.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveDuplicatesFromSortedArrayII.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveDuplicatesFromSortedArrayII.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/StockProfitCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/StockProfitCalculator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/StockTrading.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/StockTrading.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/SubsequenceCounter.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/SubsequenceCounter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/TriangleMinPathSum.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/TriangleMinPathSum.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/UniquePathsII.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/UniquePathsII.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/WordBreak.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/WordBreak.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,41 +85,57 @@
   </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="false" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.EmployeeIdLengthCalculator.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.FullBacktrack.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.GiftGrouping.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.GreedyMerchant.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.HeightSorter.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LeakyBucketRateLimiter.executor&quot;: &quot;Run&quot;,
-    &quot;Application.LongestSubsequenceSum.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestValidSubstringFinder.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxMinBoardLength.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxRewardByPermutingB.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxScoreGame.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MinCostClimbingStairs2.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.ProjectScheduler.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.TreasureBoxDestroyer.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.SlidingWindowTest.testBasicRateLimiting.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ArrayRotator.executor": "Debug",
+    "Application.BlockWallBuilder.executor": "Debug",
+    "Application.ClimbStairs.executor": "Run",
+    "Application.DeleteAndEarn.executor": "Debug",
+    "Application.ElementRemover.executor": "Debug",
+    "Application.EmployeeIdLengthCalculator.executor": "Debug",
+    "Application.Fibonacci.executor": "Debug",
+    "Application.FullBacktrack.executor": "Debug",
+    "Application.GiftGrouping.executor": "Debug",
+    "Application.GreedyMerchant.executor": "Debug",
+    "Application.HeightSorter.executor": "Debug",
+    "Application.HouseRobber.executor": "Debug",
+    "Application.LeakyBucketRateLimiter.executor": "Debug",
+    "Application.LongestPalindrome.executor": "Debug",
+    "Application.LongestSubsequenceSum.executor": "Debug",
+    "Application.LongestValidSubstringFinder.executor": "Debug",
+    "Application.MajorityElementFinder.executor": "Debug",
+    "Application.MaxMinBoardLength.executor": "Debug",
+    "Application.MaxRewardByPermutingB.executor": "Debug",
+    "Application.MaxScoreGame.executor": "Debug",
+    "Application.MinCostClimbingStairs2.executor": "Debug",
+    "Application.MinPathSum.executor": "Debug",
+    "Application.MinimumASCIIDeleteSum.executor": "Debug",
+    "Application.ProjectScheduler.executor": "Debug",
+    "Application.RemoveDuplicatesFromSortedArray.executor": "Debug",
+    "Application.RemoveDuplicatesFromSortedArrayII.executor": "Debug",
+    "Application.TreasureBoxDestroyer.executor": "Debug",
+    "Application.UniquePaths.executor": "Debug",
+    "Application.com.awesomecopilot.algorithm.leetcode.round2.MinCostClimbingStairs2.executor": "Debug",
+    "JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor": "Run",
+    "JUnit.SlidingWindowTest.testBasicRateLimiting.executor": "Run",
+    "JUnit.TimerTest.testScheduleWithDelayAndFixedPeriod.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
@@ -90,35 +148,9 @@
       <recent name="com.awesomecopilot.common.lang.ratelimit" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.MinCostClimbingStairs2">
-    <configuration name="LongestSubsequenceSum" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.hwod.LongestSubsequenceSum" />
-      <module name="copilot-test" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.algorithm.hwod.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="LongestValidSubstringFinder" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.exam_egroup.LongestValidSubstringFinder" />
-      <module name="copilot-test" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.algorithm.exam_egroup.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="MinCostClimbingStairs2" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.MinCostClimbingStairs2" />
+  <component name="RunManager" selected="Application.ArrayRotator">
+    <configuration name="ArrayRotator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.ArrayRotator" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -130,52 +162,72 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="SlidingWindowConcurrentTest.testConcurrentRequests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="commons-lang" />
+    <configuration name="MajorityElementFinder" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.round2.MajorityElementFinder" />
+      <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.round2.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <option name="PACKAGE_NAME" value="com.awesomecopilot.common.lang.ratelimit" />
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.SlidingWindowConcurrentTest" />
-      <option name="METHOD_NAME" value="testConcurrentRequests" />
-      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="SlidingWindowTest.testBasicRateLimiting" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="commons-lang" />
+    <configuration name="MinimumASCIIDeleteSum" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.MinimumASCIIDeleteSum" />
+      <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.common.lang.ratelimit.*" />
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <option name="PACKAGE_NAME" value="com.awesomecopilot.common.lang.ratelimit" />
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.common.lang.ratelimit.SlidingWindowTest" />
-      <option name="METHOD_NAME" value="testBasicRateLimiting" />
-      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RemoveDuplicatesFromSortedArray" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.RemoveDuplicatesFromSortedArray" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="RemoveDuplicatesFromSortedArrayII" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.round2.RemoveDuplicatesFromSortedArrayII" />
+      <module name="copilot-test" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.round2.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.MinCostClimbingStairs2" />
-        <item itemvalue="JUnit.SlidingWindowTest.testBasicRateLimiting" />
-        <item itemvalue="JUnit.SlidingWindowConcurrentTest.testConcurrentRequests" />
-        <item itemvalue="Application.LongestValidSubstringFinder" />
-        <item itemvalue="Application.LongestSubsequenceSum" />
+        <item itemvalue="Application.ArrayRotator" />
+        <item itemvalue="Application.MajorityElementFinder" />
+        <item itemvalue="Application.RemoveDuplicatesFromSortedArrayII" />
+        <item itemvalue="Application.RemoveDuplicatesFromSortedArray" />
+        <item itemvalue="Application.MinimumASCIIDeleteSum" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.25410.129" />
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.27812.49" />
       </set>
     </attachedChunks>
   </component>
@@ -234,12 +286,89 @@
       <workItem from="1753660990976" duration="94000" />
       <workItem from="1753661097551" duration="405000" />
       <workItem from="1753661518059" duration="23000" />
-      <workItem from="1753668447727" duration="1204000" />
+      <workItem from="1753668447727" duration="1261000" />
+      <workItem from="1753744463492" duration="1285000" />
+      <workItem from="1753747145853" duration="97000" />
+      <workItem from="1753747323486" duration="641000" />
+      <workItem from="1753832997072" duration="3009000" />
+      <workItem from="1753922310940" duration="23000" />
+      <workItem from="1753922354528" duration="2472000" />
+      <workItem from="1753934475475" duration="83000" />
+      <workItem from="1753935318745" duration="109000" />
+      <workItem from="1754006217672" duration="3286000" />
+      <workItem from="1754051232533" duration="69000" />
+      <workItem from="1754096912828" duration="3737000" />
+      <workItem from="1754106821976" duration="1745000" />
+      <workItem from="1754132137496" duration="1707000" />
+      <workItem from="1754180039835" duration="1058000" />
+      <workItem from="1754189135069" duration="632000" />
+      <workItem from="1754268117876" duration="2197000" />
+      <workItem from="1754315227568" duration="581000" />
+      <workItem from="1754315860478" duration="24000" />
+      <workItem from="1754315910736" duration="52000" />
+      <workItem from="1754315999278" duration="131000" />
+      <workItem from="1754356468133" duration="3597000" />
+      <workItem from="1754441141852" duration="3373000" />
+      <workItem from="1754526894660" duration="1921000" />
+      <workItem from="1754611910842" duration="5022000" />
+      <workItem from="1754699287230" duration="10000" />
+      <workItem from="1754699654474" duration="30000" />
+      <workItem from="1754700407704" duration="109000" />
+      <workItem from="1754711932330" duration="953000" />
+      <workItem from="1754728580836" duration="236000" />
+      <workItem from="1754743894440" duration="279000" />
+      <workItem from="1754791363662" duration="1106000" />
+      <workItem from="1754829074817" duration="277000" />
+      <workItem from="1754870671772" duration="3399000" />
+      <workItem from="1754876451811" duration="278000" />
+      <workItem from="1754899715398" duration="580000" />
+      <workItem from="1754900304420" duration="1196000" />
+      <workItem from="1754954948629" duration="4930000" />
+      <workItem from="1754960864839" duration="842000" />
+      <workItem from="1755047278116" duration="738000" />
+      <workItem from="1755048030960" duration="67000" />
+      <workItem from="1755048125628" duration="121000" />
+      <workItem from="1755048269411" duration="2548000" />
+      <workItem from="1755075911338" duration="142000" />
+      <workItem from="1755076401413" duration="201000" />
+      <workItem from="1755076638078" duration="243000" />
+      <workItem from="1755076892264" duration="113000" />
+      <workItem from="1755077080437" duration="29000" />
+      <workItem from="1755077123416" duration="2239000" />
+      <workItem from="1755128229751" duration="1307000" />
+      <workItem from="1755129550965" duration="1101000" />
+      <workItem from="1755131098049" duration="70000" />
+      <workItem from="1755131269268" duration="1337000" />
+      <workItem from="1755149302656" duration="45000" />
+      <workItem from="1755149357138" duration="1923000" />
+      <workItem from="1755215451109" duration="3931000" />
+      <workItem from="1755298074256" duration="2206000" />
+      <workItem from="1755312831668" duration="198000" />
+      <workItem from="1755313208712" duration="2427000" />
+      <workItem from="1755387425057" duration="1141000" />
+      <workItem from="1755394659823" duration="828000" />
+      <workItem from="1755475595145" duration="1097000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.springframework.security:spring-security-core" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-core" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.validation:jakarta.validation-api" />
+    <option featureType="dependencySupport" implementationName="java:io.projectreactor:reactor-core" />
+    <option featureType="dependencySupport" implementationName="java:javax.persistence:javax.persistence-api" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.data:spring-data-commons" />
+    <option featureType="dependencySupport" implementationName="java:org.hibernate.validator:hibernate-validator" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework:spring-webmvc" />
+    <option featureType="dependencySupport" implementationName="java:org.projectlombok:lombok" />
+    <option featureType="dependencySupport" implementationName="java:junit:junit" />
+    <option featureType="dependencySupport" implementationName="java:jakarta.persistence:jakarta.persistence-api" />
+    <option featureType="dependencySupport" implementationName="java:io.grpc:grpc-api" />
+    <option featureType="dependencySupport" implementationName="java:io.reactivex.rxjava3:rxjava" />
+    <option featureType="dependencySupport" implementationName="java:org.springframework.boot:spring-boot" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -251,10 +380,19 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/criteria/JPACriteriaQuery.java</url>
-          <line>492</line>
+          <line>384</line>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/MinCostClimbingStairs2.java</url>
+          <line>57</line>
+          <option name="timeStamp" value="3" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

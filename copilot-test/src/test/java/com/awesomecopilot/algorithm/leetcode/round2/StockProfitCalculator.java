@@ -1,5 +1,6 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -43,11 +44,11 @@ import java.util.Scanner;
  * <p>
  * 我们可以通过简单的一次遍历来实现这一策略，只需判断当前的价格是否比前一天高，如果是，就将差价加到总利润中。
  * 这种策略的时间复杂度为O(n)，其中n是价格数组的长度，空间复杂度为O(1)。
- * <p>
- * Copyright: Copyright (c) 2024-11-08 8:38
- * <p>
+ * <p/>
+ * Copyright: Copyright (c) 2025-08-18 8:14
+ * <p/>
  * Company: Sexy Uncle Inc.
- * <p>
+ * <p/>
 
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
@@ -56,31 +57,21 @@ public class StockProfitCalculator {
 
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
-		for(int i = 0; i < 2; i++) {
-			System.out.print("请输入股票价格: ");
-			String input = scanner.nextLine().trim();
-			String[] parts = input.split(",");
-			int[] prices = new int[parts.length];
-			for (int j = 0; j < parts.length; j++) {
-				prices[j] = Integer.parseInt(parts[j].trim());
-			}
-			System.out.println(maxProfit(prices));
-		}
+		System.out.print("请输入股票价格: ");
+		int[] nums = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
+		System.out.println(maxProfit(nums));
+		scanner.close();
 	}
 
-	public static int maxProfit(int[] prices) {
-		// 初始化利润为0
+	private static int maxProfit(int[] prices) {
 		int maxProfit = 0;
 
-		// 遍历价格数组，从第二天开始比较
-		for(int i = 1; i < prices.length; i++) {
-		  if (prices[i] > prices[i-1]) {
-			  // 如果第i天的价格比第i-1天高，则视为盈利机会
-			  maxProfit+= prices[i] - prices[i-1];
-		  }
+		for (int i = 1; i < prices.length; i++) {
+		    if (prices[i] > prices[i - 1]) {
+				maxProfit += prices[i] - prices[i - 1];
+		    }
 		}
 
-		// 返回计算出的最大利润
 		return maxProfit;
 	}
 }

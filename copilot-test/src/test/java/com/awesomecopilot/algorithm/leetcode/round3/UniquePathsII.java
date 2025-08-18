@@ -1,5 +1,6 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round3;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -32,10 +33,11 @@ import java.util.Scanner;
  *     <li/>填充dp表：对于其他位置，如果没有障碍物，其路径数等于它上方和左方两个格子的路径数之和。如果有障碍物，路径数为0。
  *     <li/>返回结果：dp[m-1][n-1]存储从起点到终点的路径数量
  * </ol>
- * Copyright: Copyright (c) 2024-10-25 10:41
- * <p>
+ * <p/>
+ * Copyright: Copyright (c) 2025-08-05 9:42
+ * <p/>
  * Company: Sexy Uncle Inc.
- * <p>
+ * <p/>
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
@@ -48,67 +50,43 @@ public class UniquePathsII {
 		int m = scanner.nextInt();
 		System.out.print("请输入列数: ");
 		int n = scanner.nextInt();
+		// 调用scanner.nextLine()是为了消耗掉前面输入行数和列数时剩下的换行符，
+		// 避免影响后续对矩阵数据的读取。
 		scanner.nextLine();
 		int[][] obstacleGrid = new int[m][n];
-		for(int i = 0; i < m; i++) {
-			System.out.print("请输入第"+(i+1)+"行数据: ");
-			String input = scanner.nextLine().trim();
-			String[] parts = input.split(",");
-			int[] row = new int[parts.length];
-			for (int j = 0; j < n; j++) {
-				row[j] = Integer.parseInt(parts[j].trim());
-			}
-			obstacleGrid[i] = row;
+		for (int i = 0; i < m; i++) {
+			System.out.print("请输入第" + (i + 1) + "行数据: ");
+			int[] arr = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
+			obstacleGrid[i] = arr;
 		}
-
-		System.out.println(uniquePathsWithObstacles(obstacleGrid));
 	}
 
-	/**
-	 * 计算从左上角到右下角的不同路径数量，考虑障碍物的存在
-	 * 
-	 * @param obstacleGrid 表示网格的二维数组，其中 1 表示障碍物，0 表示可通过
-	 * @return 到达右下角的不同路径数量
-	 */
 	public static int uniquePathsWithObstacles(int[][] obstacleGrid) {
 		int m = obstacleGrid.length;
 		int n = obstacleGrid[0].length;
-
-		// 如果起点或终点被阻塞，则直接返回0
+		// 检查起点或终点是否为障碍物，如果是则无法通行，直接返回0
 		if (obstacleGrid[0][0] == 1 || obstacleGrid[m - 1][n - 1] == 1) {
 			return 0;
 		}
-
-		// 创建dp数组，dp[i][j]表示从起点到位置(i,j)的路径数量
 		int[][] dp = new int[m][n];
-		
-		// 初始化起点
 		dp[0][0] = 1;
-
-		// 初始化第一列，只有当之前没有障碍物时，当前位置才可达
 		for (int i = 1; i < m; i++) {
-			// 如果当前位置是障碍物，则路径数为0；否则继承上方格子的路径数
 			dp[i][0] = obstacleGrid[i][0] == 1 ? 0 : dp[i - 1][0];
 		}
-
-		// 初始化第一行，同第一列的逻辑
 		for (int i = 1; i < n; i++) {
 			dp[0][i] = obstacleGrid[0][i] == 1 ? 0 : dp[0][i - 1];
 		}
 
-		// 计算dp数组中其他位置的路径数量
 		for (int i = 1; i < m; i++) {
-			for (int j = 1; j < n; j++) {
-				if (obstacleGrid[i][j] == 1) {
-					dp[i][j] = 0; // 障碍物位置的路径数为0
-				} else {
-					// 当前位置的路径数等于上方和左方位置路径数之和
-					dp[i][j] = dp[i - 1][j] + dp[i][j - 1];
-				}
-			}
+		    for (int j = 1; j < n; j++) {
+		        if (obstacleGrid[i][j] == 1) {
+					dp[i][j] = 0;
+		        } else {
+					dp[i][j] = dp[i-1][j] + dp[i][j-1];
+		        }
+		    }
 		}
 
-		// 返回到达右下角的路径数量
-		return dp[m - 1][n - 1];
+		return dp[m-1][n-1];
 	}
 }

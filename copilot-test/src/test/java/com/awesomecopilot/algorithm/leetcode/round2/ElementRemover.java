@@ -1,7 +1,8 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -34,11 +35,11 @@ import java.util.Scanner;
  *     <li/>最终慢指针的值就是不等于 val 的元素数量
  * </ol>
  * <p/>
- * Copyright: Copyright (c) 2024-11-02 15:56
+ * Copyright: Copyright (c) 2025-08-14 7:48
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
- *
+
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
@@ -47,35 +48,29 @@ public class ElementRemover {
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数组nums: ");
-		String input = scanner.nextLine().trim();
-		String[] parts = input.split(",");
-		int[] nums = new int[parts.length];
-		for(int i = 0; i < parts.length; i++) {
-		  nums[i] = Integer.parseInt(parts[i].trim());
-		}
-		System.out.print("请输入值val: ");
+		int[] nums = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
+		System.out.print("请输入整数val: ");
 		int val = scanner.nextInt();
 		System.out.println(removeElement(nums, val));
 		ArrayUtils.print(nums);
 	}
 
 	public static int removeElement(int[] nums, int val) {
-		// 新数组的长度，也是新数组最后一个元素的下一个位置
-		int insertPosition = 0;
-
-		// 遍历原数组
-		for (int current = 0; current < nums.length; current++) {
-			// 只处理不等于 val 的元素
-			if (nums[current] != val) {
-				// 将当前元素复制到 insertPosition 指定的位置
-				nums[insertPosition] = nums[current];
-				// 更新 insertPosition 为下一个可用位置
-				insertPosition++;
-			}
+		if (nums == null || nums.length == 0) {
+			return 0;
 		}
 
-		java.util.Arrays.fill(nums, insertPosition, nums.length, -1);
-		// 返回新数组的长度，即不含 val 的元素个数
-		return insertPosition;
+		// 慢指针i，指向处理后数组的最后一个有效元素
+		int slow = 0;
+		for (int fast = 0; fast < nums.length; fast++) {
+			// 当快指针指向的元素不等于val时, 将该元素复制到慢指针位置
+			if (nums[fast] != val) {
+				nums[slow] = nums[fast];
+				slow++;
+			}
+			// 当快指针指向的元素等于val时，不做任何操作，直接跳过
+		}
+		// 慢指针i的值就是不等于val的元素数量
+		return slow;
 	}
 }

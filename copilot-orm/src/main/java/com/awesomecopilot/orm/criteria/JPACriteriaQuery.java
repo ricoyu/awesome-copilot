@@ -132,22 +132,25 @@ public class JPACriteriaQuery<T> implements Serializable {
 		return this;
 	}
 
-	public void isNull(String propertyName) {
+	public JPACriteriaQuery<T> isNull(String propertyName) {
 		this.predicates.add(criteriaBuilder.isNull(root.get(propertyName)));
 		this.countPredicates.add(criteriaBuilder.isNull(countRoot.get(propertyName)));
+		return this;
 	}
 
-	public void isNotNull(String propertyName) {
+	public JPACriteriaQuery<T> isNotNull(String propertyName) {
 		this.predicates.add(criteriaBuilder.isNotNull(root.get(propertyName)));
 		this.countPredicates.add(criteriaBuilder.isNotNull(countRoot.get(propertyName)));
+		return this;
 	}
 
-	public void notEq(String propertyName, Object value) {
+	public JPACriteriaQuery<T> notEq(String propertyName, Object value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.notEqual(root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.notEqual(countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -157,9 +160,9 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 值集合
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void notIn(String propertyName, Collection<?> value) {
+	public JPACriteriaQuery<T> notIn(String propertyName, Collection<?> value) {
 		if ((value == null) || (value.size() == 0)) {
-			return;
+			return this;
 		}
 		Iterator<?> iterator = value.iterator();
 		In in = criteriaBuilder.in(root.get(propertyName));
@@ -171,6 +174,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 		}
 		this.predicates.add(criteriaBuilder.not(in));
 		this.countPredicates.add(criteriaBuilder.not(countIn));
+		return this;
 	}
 
 	/**
@@ -180,15 +184,16 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void like(String propertyName, String value) {
+	public JPACriteriaQuery<T> like(String propertyName, String value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		if (value.indexOf("%") < 0) {
 			value = "%" + value + "%";
 		}
 		this.predicates.add(criteriaBuilder.like((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.like((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -198,15 +203,16 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void ilike(String propertyName, String value) {
+	public JPACriteriaQuery<T> ilike(String propertyName, String value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		if (value.indexOf("%") < 0) {
 			value = "%" + value.toUpperCase() + "%";
 		}
 		this.predicates.add(criteriaBuilder.like(criteriaBuilder.upper((Expression) root.get(propertyName)), value));
 		this.countPredicates.add(criteriaBuilder.like(criteriaBuilder.upper((Expression) countRoot.get(propertyName)), value));
+		return this;
 	}
 
 	/**
@@ -260,12 +266,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void le(String propertyName, Number value) {
+	public JPACriteriaQuery<T> le(String propertyName, Number value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.le((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.le((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -275,12 +282,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void lt(String propertyName, Number value) {
+	public JPACriteriaQuery<T> lt(String propertyName, Number value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.lt((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.lt((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -290,12 +298,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void ge(String propertyName, Number value) {
+	public JPACriteriaQuery<T> ge(String propertyName, Number value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.ge((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.ge((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -305,12 +314,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void gt(String propertyName, Number value) {
+	public JPACriteriaQuery<T> gt(String propertyName, Number value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.gt((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.gt((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -320,12 +330,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @param value 属性值
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void gte(String propertyName, Number value) {
+	public JPACriteriaQuery<T> gte(String propertyName, Number value) {
 		if (isNullOrEmpty(value)) {
-			return;
+			return this;
 		}
 		this.predicates.add(criteriaBuilder.ge((Expression) root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.ge((Expression) countRoot.get(propertyName), value));
+		return this;
 	}
 
 	/**
@@ -373,14 +384,14 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 *
 	 * @param orderBean
 	 */
-	public void addOrder(OrderBean orderBean) {
+	public JPACriteriaQuery<T> addOrder(OrderBean orderBean) {
 		if (orderBean == null) {
 			logger.warn("orderBean is null, ignore order!");
-			return;
+			return this;
 		}
 		if (orderBean.getDirection() == null || orderBean.getOrderBy() == null) {
 			logger.warn("No order by property or order direction is set, ignore order!");
-			return;
+			return this;
 		}
 
 		if (this.orders == null)
@@ -391,6 +402,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 		} else if (orderBean.getDirection() == DIRECTION.DESC) {
 			this.orders.add(criteriaBuilder.desc(root.get(orderBean.getOrderBy())));
 		}
+		return this;
 	}
 
 	public JPACriteriaQuery<T> addOrders(OrderBean... orders) {
@@ -417,15 +429,16 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 *
 	 * @param order
 	 */
-	public void setOrder(OrderBean order) {
+	public JPACriteriaQuery<T> setOrder(OrderBean order) {
 		if (order == null) {
-			return;
+			return this;
 		}
-		this.orders = null;
+		this.orders = new ArrayList<>();
 		addOrder(order);
+		return this;
 	}
 
-	public Class<T> getModleClass() {
+	public Class<T> getModelClass() {
 		return this.clazz;
 	}
 
@@ -513,7 +526,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 		try {
 			return query.getResultList();
 		} catch (Throwable e) {
-			logger.error("msg", e);
+			logger.error("Error executing JPA criteria query for entity: " + clazz.getSimpleName(), e);
 			throw new JPACriteriaQueryException(e);
 		}
 	}

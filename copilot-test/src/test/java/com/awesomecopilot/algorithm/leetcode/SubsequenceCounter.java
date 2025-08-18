@@ -4,33 +4,25 @@ import java.util.Scanner;
 
 /**
  * 不同的子序列
- * <p/>
+ * <p>
  * 给你两个字符串 s 和 t ，统计并返回在 s 的 子序列 中 t 出现的个数，结果需要对 1^19 + 7 取模。
- * <p/>
+ * <p>
  * 示例 1：
- * <p/>
+ * <p>
  * 输入：s = "rabbbit", t = "rabbit" <br/>
  * 输出：3 <br/>
  * 解释：
  * 如下所示, 有 3 种可以从 s 中得到 "rabbit" 的方案。 <br/>
- * rabbbit <br/>
- * rabbbit <br/>
- * rabbbit <br/>
- * <p/>
+ * <image src="rabbit.png" />
+ * <p>
  * 示例 2：
- * <p/>
+ * <p>
  * 输入：s = "babgbag", t = "bag" <br/>
  * 输出：5 <br/>
  * 解释： <br/>
  * 如下所示, 有 5 种可以从 s 中得到 "bag" 的方案。  <br/>
- * babgbag <br/>
- * babgbag <br/>
- * babgbag <br/>
- * babgbag <br/>
- * babgbag <br/>
- * <p/>
- * 请用Java实现并给出详细的解题思路, Java代码中要加入详细的注释以解释清楚代码逻辑, 要给类取一个合理的类名
- * <p/>
+ * <image src="babg.png" />
+ * <p>
  * 定义动态规划数组：
  * <ul>
  *     <li/>创建一个二维数组 dp，其中 dp[i][j] 表示 s 的前 i 个字符中子序列 t 的前 j 个字符出现的次数。
@@ -45,9 +37,9 @@ import java.util.Scanner;
  * </ul>
  * 如果 s[i-1] != t[j-1]，那么 dp[i][j] = dp[i-1][j]，即当前字符不匹配时只能忽略 s[i-1]。
  * Copyright: Copyright (c) 2024-11-01 9:12
- * <p/>
+ * <p>
  * Company: Sexy Uncle Inc.
- * <p/>
+ * <p>
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0

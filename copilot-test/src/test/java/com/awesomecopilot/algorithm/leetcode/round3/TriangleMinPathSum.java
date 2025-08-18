@@ -1,4 +1,4 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,13 +38,12 @@ import java.util.Scanner;
  *     <li/>边界条件处理：每一行的开始和结束位置需要特殊处理，因为开始位置没有左上方的元素，结束位置没有正上方的元素。
  *     <li/>计算结果：最后一行中的最小值即为自顶向下的最小路径和。
  * </ol>
- * <p>
- * <p>
- * Copyright: Copyright (c) 2024-10-25 18:45
- * <p>
+ * <p/>
+ * Copyright: Copyright (c) 2025-08-06 9:25
+ * <p/>
  * Company: Sexy Uncle Inc.
- * <p>
- *
+ * <p/>
+
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
@@ -54,7 +53,7 @@ public class TriangleMinPathSum {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入三角形行数: ");
 		int m = scanner.nextInt();
-		scanner.nextLine(); // 消费掉输入行数后的换行符
+		scanner.nextLine();
 		List<List<Integer>> triangle = new ArrayList<>();
 		for (int i = 0; i < m; i++) {
 			List<Integer> row = new ArrayList<>();
@@ -68,32 +67,26 @@ public class TriangleMinPathSum {
 		System.out.println(minimumTotal(triangle));
 	}
 
-	public static int minimumTotal(List<List<Integer>> triangle) {
+	private static int minimumTotal(List<List<Integer>> triangle) {
 		int n = triangle.size();
-		// dp 数组，大小与三角形的行数相同
 		int[][] dp = new int[n][n];
-		// 初始化顶点
+		//初始化定点
 		dp[0][0] = triangle.get(0).get(0);
 
-		// 填充 dp 数组
 		for (int i = 1; i < n; i++) {
-			// 第一列
-			dp[i][0] = dp[i - 1][0] + triangle.get(i).get(0);
-			// 中间列
+			//填充第一列
+			dp[i][0] = dp[i-1][0] + triangle.get(i).get(0);
 			for (int j = 1; j < i; j++) {
-				dp[i][j] = Math.min(dp[i - 1][j - 1], dp[i - 1][j]) + triangle.get(i).get(j);
+				dp[i][j] = Math.min(dp[i-1][j], dp[i-1][j-1]) + triangle.get(i).get(j);
 			}
-			dp[i][i] = dp[i - 1][i - 1] + triangle.get(i).get(i); // 每行的最后一个元素
+			dp[i][i] = dp[i-1][i-1] + triangle.get(i).get(i);// 每行的最后一个元素
 		}
 
 		// 在最后一行中找到最小值
-		// 在最后一行中寻找最小路径和
-		int minPath = dp[n - 1][0]; // 初始化为最后一行的第一个元素
-		for (int j = 1; j < n; j++) {
-			// 遍历最后一行的其余元素，更新最小路径和
-			minPath = Math.min(minPath, dp[n - 1][j]);
+		int minPath = dp[n-1][0];
+		for (int i = 0; i < n; i++) {
+		    minPath = Math.min(minPath, dp[n-1][i]);
 		}
-
 		return minPath;
 	}
 }

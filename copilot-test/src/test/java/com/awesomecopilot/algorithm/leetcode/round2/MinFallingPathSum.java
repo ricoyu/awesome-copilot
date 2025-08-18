@@ -1,5 +1,6 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -31,10 +32,10 @@ import java.util.Scanner;
  *     <li/>最终结果为最后一行所有元素的最小路径和中的最小值
  * </ol>
  * <p>
- * Copyright: Copyright (c) 2024-10-27 12:08
- * <p>
+ * Copyright: Copyright (c) 2025-08-07 8:48
+ * <p/>
  * Company: Sexy Uncle Inc.
- * <p>
+ * <p/>
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
@@ -45,55 +46,50 @@ public class MinFallingPathSum {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入矩阵行列数: ");
 		int n = scanner.nextInt();
+
 		scanner.nextLine();
+
 		int[][] matrix = new int[n][n];
 		for (int i = 0; i < n; i++) {
 			System.out.print("请输入第" + (i + 1) + "行元素: ");
-			String input = scanner.nextLine().trim();
-			String[] parts = input.split(",");
-			int[] row = new int[n];
-			for (int j = 0; j < n; j++) {
-				row[j] = Integer.parseInt(parts[j].trim());
-				matrix[i] = row;
-			}
+			int[] row = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
+			matrix[i] = row;
 		}
 
-		System.out.println(minFallingPathSum(matrix));
+		System.out.println("最小下降路径和为: " + minFallingPathSum(matrix));
 	}
 
-	public static int minFallingPathSum(int[][] matrix) {
+	private static int minFallingPathSum(int[][] matrix) {
 		int n = matrix.length;
-
-		// 创建dp数组并初始化最后一行
 		int[][] dp = new int[n][n];
+		//初始化dp数组的第一行
 		for (int i = 0; i < n; i++) {
-			dp[n - 1][i] = matrix[n - 1][i];
+			dp[0][i] = matrix[0][i];
 		}
 
-		// 从倒数第二行开始向上计算每个元素的最小下降路径和
-		for (int i = n - 2; i >= 0; i--) {
-			for (int j = 0; j < n; j++) {
-				// 正下方元素
-				int min = dp[i + 1][j];
-				// 左下方元素
-				if (j > 0) {
-					min = Math.min(min, dp[i + 1][j - 1]);
+		// 从第二行开始计算每个位置的最小路径和
+		for (int row = 1; row < n; row++) {
+			for (int col = 0; col < n; col++) {
+				int minValue = dp[row - 1][col]; // 初始值设为正上方的路径和
+				// 如果不是第一列，考虑左上方的路径和
+				if (col > 0) {
+					minValue = Math.min(minValue, dp[row - 1][col - 1]);
 				}
-				// 右下方元素
-				if (j < n - 1) {
-					min = Math.min(min, dp[i + 1][j + 1]);
+				// 如果不是最后一列，考虑右上方的路径和
+				if (col < n - 1) {
+					minValue = Math.min(minValue, dp[row - 1][col + 1]);
 				}
-				// 更新当前位置的最小路径和
-				dp[i][j] = matrix[i][j] + min;
+				// 当前位置的最小路径和 = 上方最小路径和 + 当前值
+				dp[row][col] = minValue + matrix[row][col];
 			}
 		}
 
-		// 在dp数组的第一行找到最小值
-		int minSum = Integer.MAX_VALUE;
+		// 找到最后一行的最小路径和作为结果
+		int result = dp[n - 1][0];
 		for (int i = 0; i < n; i++) {
-			minSum = Math.min(minSum, dp[0][i]);
+			result = Math.min(result, dp[n - 1][i]);
 		}
 
-		return minSum;
+		return result;
 	}
 }

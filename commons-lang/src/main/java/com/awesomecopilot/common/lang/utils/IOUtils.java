@@ -64,6 +64,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.text.MessageFormat.format;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Objects.requireNonNull;
@@ -84,7 +85,7 @@ import static org.apache.commons.lang3.StringUtils.join;
  * @version 1.0
  */
 public class IOUtils {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(IOUtils.class);
 
 	public static final Charset GBK = Charset.forName("GBK");
@@ -105,32 +106,32 @@ public class IOUtils {
 	//String separator = FileSystems.getDefault().getSeparator();
 	// unix / , windows \
 	//String separator = File.separator;
-	
+
 	/**
 	 * The Windows directory separator character.
 	 */
 	//public static final char DIR_SEPARATOR_WINDOWS = '\\';
-	
+
 	public static final String CLASSPATH_PREFIX = "classpath*:";
-	
+
 	/**
 	 * The default buffer size ({@value}) to use in copy methods.
 	 */
 	public static final int DEFAULT_BUFFER_SIZE = 8192;
-	
+
 	public static final int MIN_BUFFER_SIZE = 1024;
-	
+
 	/**
 	 * Represents the end-of-file (or stream).
 	 */
 	public static final int EOF = -1;
-	
+
 	/**
 	 * 匹配文件名中不允许出现的字符
 	 */
 	public static final Pattern INVALID_FILENAME_PATTERN =
 			Pattern.compile("[`~!@#$%^&*()+=|{}':;',\\\\\\[\\].<>\\/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]");
-	
+
 	/**
 	 * 从InputStream读取字符串
 	 *
@@ -155,8 +156,8 @@ public class IOUtils {
 		}
 		return result.toString();
 	}
-	
-	
+
+
 	/**
 	 * 读取文件系统中的文件
 	 *
@@ -182,7 +183,7 @@ public class IOUtils {
 		}
 		return result.toString();
 	}
-	
+
 	/**
 	 * 读取文件系统中的文件
 	 *
@@ -193,7 +194,7 @@ public class IOUtils {
 		if (file == null) {
 			return null;
 		}
-		
+
 		boolean firstLine = true;
 		StringBuilder result = new StringBuilder();
 		try (Scanner scanner = new Scanner(file)) {
@@ -211,7 +212,7 @@ public class IOUtils {
 		}
 		return result.toString();
 	}
-	
+
 	/**
 	 * 读取classpath下文件内容,文件不存在则返回null PathMatchingResourcePatternResolver
 	 *
@@ -226,7 +227,7 @@ public class IOUtils {
 		}
 		return readFileAsString(in);
 	}
-	
+
 	/**
 	 * 读取classpath下指定文件夹下的文件内容,文件不存在则返回null PathMatchingResourcePatternResolver
 	 *
@@ -242,7 +243,7 @@ public class IOUtils {
 		}
 		return readFileAsString(in);
 	}
-	
+
 	public static String readFile(Path path, Charset charset) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		byte[] bytes = new byte[0];
@@ -252,10 +253,10 @@ public class IOUtils {
 			log.error("", e);
 			throw new RuntimeException(e);
 		}
-		
+
 		return new String(bytes, charset);
 	}
-	
+
 	/**
 	 * 读取文件为File对象
 	 *
@@ -268,7 +269,7 @@ public class IOUtils {
 		notNull(fileName, "fileName 不能为null!");
 		return Paths.get(dir, fileName).toFile();
 	}
-	
+
 	/**
 	 * 读取文件为File对象
 	 *
@@ -286,10 +287,10 @@ public class IOUtils {
 			}
 			return Paths.get(dir, fileName + suffix).toFile();
 		}
-		
+
 		return Paths.get(dir, fileName).toFile();
 	}
-	
+
 	/**
 	 * 读取文件为File对象
 	 *
@@ -300,7 +301,7 @@ public class IOUtils {
 		notNull(fullFilename, "fullFilename 不能为null!");
 		return Paths.get(fullFilename).toFile();
 	}
-	
+
 	public static String readFile(Path path) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		byte[] bytes = new byte[0];
@@ -310,10 +311,10 @@ public class IOUtils {
 			log.error("", e);
 			throw new RuntimeException(e);
 		}
-		
+
 		return new String(bytes, UTF_8);
 	}
-	
+
 	/**
 	 * 将文件读到byte[]中
 	 *
@@ -329,7 +330,7 @@ public class IOUtils {
 		}
 		return new byte[0];
 	}
-	
+
 	public static byte[] readFileAsBytes(Path path) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		try {
@@ -339,7 +340,7 @@ public class IOUtils {
 		}
 		return new byte[0];
 	}
-	
+
 	public static byte[] readFileAsBytes(File file) {
 		requireNonNull(file, "file 不能为null");
 		try {
@@ -349,7 +350,7 @@ public class IOUtils {
 		}
 		return new byte[0];
 	}
-	
+
 	/**
 	 * 从指定的offset开始读取指定的字节数
 	 *
@@ -370,14 +371,14 @@ public class IOUtils {
 			byte[] buffer = new byte[bytesToRead];
 			int len = 0;
 			while (-1 != (len = raf.read(buffer))) {
-				
+
 			}
 			return buffer;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 将多个块合并成一个文件
 	 *
@@ -404,7 +405,7 @@ public class IOUtils {
 			}
 		}
 	}
-	
+
 	/**
 	 * 将classpath的文件读到byte[]中, classpath中的文件只能通过InputStream操作, 不能通过File对象来操作
 	 * 因为打成jar包后, 是读不到jar包中classpath下的某个文件的, 记住一定要通过流来操作
@@ -416,8 +417,8 @@ public class IOUtils {
 		InputStream in = readClasspathFileAsInputStream(fileName);
 		return toByteArray(in);
 	}
-	
-	
+
+
 	public static File readInputStreamAsFile(InputStream in) throws IOException {
 		final File tempFile = File.createTempFile(RandomStringUtils.randomAlphanumeric(16), "tmp");
 		tempFile.deleteOnExit();
@@ -426,7 +427,7 @@ public class IOUtils {
 		}
 		return tempFile;
 	}
-	
+
 	/**
 	 * @param filePath
 	 * @return
@@ -435,7 +436,7 @@ public class IOUtils {
 	public static InputStream readFileAsStream(String filePath) throws IOException {
 		return Files.newInputStream(Paths.get(filePath), READ);
 	}
-	
+
 	/**
 	 * 读取classpath下某个文件夹下的某个文件，返回InputStream
 	 *
@@ -447,7 +448,7 @@ public class IOUtils {
 		if (isBlank(dir)) {
 			return readClasspathFileAsInputStream(fileName);
 		}
-		
+
 		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 		try {
 			if (!fileName.startsWith(DIR_SEPARATOR)) {
@@ -461,10 +462,10 @@ public class IOUtils {
 			log.warn(e.getMessage());
 			return null;
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * 读取classpath下某个文件，返回InputStream
 	 *
@@ -475,7 +476,7 @@ public class IOUtils {
 		if (isBlank(fileName)) {
 			return null;
 		}
-		
+
 		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 		if (fileName.startsWith("classpath")) {
 			Resource resource = resolver.getResource(fileName);
@@ -488,7 +489,7 @@ public class IOUtils {
 				}
 			}
 		}
-		
+
 		/*
 		 * 先读classpath根目录
 		 */
@@ -501,8 +502,9 @@ public class IOUtils {
 				return null;
 			}
 		}
-		
-		ClassLoader classLoader = firstNonNull(currentThread().getContextClassLoader(), IOUtils.class.getClassLoader());
+
+		ClassLoader classLoader = firstNonNull(currentThread().getContextClassLoader(),
+				IOUtils.class.getClassLoader());
 		URL url = classLoader.getResource(fileName);
 		if (url == null && !fileName.startsWith(DIR_SEPARATOR)) {
 			log.debug("Cannot find file {} under classpath", fileName);
@@ -516,7 +518,7 @@ public class IOUtils {
 				return null;
 			}
 		}
-		
+
 		try {
 			if (!fileName.startsWith(DIR_SEPARATOR)) {
 				fileName = CLASSPATH_PREFIX + DIR_SEPARATOR + "**" + DIR_SEPARATOR + fileName;
@@ -529,10 +531,10 @@ public class IOUtils {
 			log.warn(e.getMessage());
 			return null;
 		}
-		
+
 		return null;
 	}
-	
+
 	public static List<String> readLines(String filePath) {
 		List<String> lines = new ArrayList<String>();
 		File file = new File(filePath);
@@ -547,7 +549,7 @@ public class IOUtils {
 		}
 		return lines;
 	}
-	
+
 	public static List<String> readLines(InputStream in) {
 		List<String> lines = new ArrayList<String>();
 		try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
@@ -562,7 +564,7 @@ public class IOUtils {
 		}
 		return lines;
 	}
-	
+
 	/**
 	 * 持续从命令行读取数据并交给consumer, 收到exit或者quit退出
 	 *
@@ -570,7 +572,7 @@ public class IOUtils {
 	 */
 	public static void readCommandLine(Consumer<String> consumer) {
 		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));) {
-			
+
 			while (true) {
 				String command = bufferedReader.readLine();
 				if ("quit".equalsIgnoreCase(command) || "exit".equalsIgnoreCase(command)) {
@@ -581,9 +583,9 @@ public class IOUtils {
 		} catch (IOException e) {
 			throw new IORuntimeException(e);
 		}
-		
+
 	}
-	
+
 	/**
 	 * 从InputStream读取字符串
 	 *
@@ -593,7 +595,7 @@ public class IOUtils {
 	public static String readAsString(InputStream in) {
 		return readAsString(in, true);
 	}
-	
+
 	/**
 	 * 从InputStream读取字符串
 	 *
@@ -618,8 +620,8 @@ public class IOUtils {
 		}
 		return join(lines, System.lineSeparator());
 	}
-	
-	
+
+
 	/**
 	 * 读取classpath下某个文件, 返回File <p/>
 	 * 会先读classpath root, 找不到继续从classpath下的jar里面找, 可能会比较慢
@@ -635,8 +637,9 @@ public class IOUtils {
 		if (!files.isEmpty()) {
 			return files.get(0);
 		}
-		
-		ClassLoader classLoader = firstNonNull(currentThread().getContextClassLoader(), IOUtils.class.getClassLoader());
+
+		ClassLoader classLoader = firstNonNull(currentThread().getContextClassLoader(),
+				IOUtils.class.getClassLoader());
 		URL url = classLoader.getResource(fileName);
 		if (url == null && !fileName.startsWith(DIR_SEPARATOR)) {
 			log.debug("Cannot find file {} under classpath", fileName);
@@ -645,8 +648,8 @@ public class IOUtils {
 		if (url != null) {
 			return new File(url.getFile());
 		}
-		
-		
+
+
 		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 		Resource resource = resolver.getResource(fileName);
 		if (resource.exists()) {
@@ -657,7 +660,7 @@ public class IOUtils {
 				return null;
 			}
 		}
-		
+
 		try {
 			if (!fileName.startsWith(DIR_SEPARATOR)) {
 				fileName = CLASSPATH_PREFIX + DIR_SEPARATOR + "**" + DIR_SEPARATOR + fileName;
@@ -671,10 +674,10 @@ public class IOUtils {
 			log.warn(e.getMessage());
 			return null;
 		}
-		
+
 	}
-	
-	
+
+
 	/**
 	 * Write string data to file
 	 *
@@ -687,13 +690,13 @@ public class IOUtils {
 		Path path = Paths.get(filePath);
 		return write(path, data);
 	}
-	
+
 	public static boolean write(String filePath, String data, Charset charset) {
 		Objects.requireNonNull(filePath, "filePath cannot be null!");
 		Path path = Paths.get(filePath);
 		return write(path, data, charset);
 	}
-	
+
 	/**
 	 * Write string data to file
 	 *
@@ -705,7 +708,7 @@ public class IOUtils {
 		Objects.requireNonNull(path, "path cannot be null!");
 		return write(path, Optional.of(data).orElse("").getBytes(UTF_8), CREATE, APPEND);
 	}
-	
+
 	/**
 	 * 用指定的编码格式写文件
 	 *
@@ -718,18 +721,57 @@ public class IOUtils {
 		Objects.requireNonNull(path, "path cannot be null!");
 		return write(path, Optional.of(data).orElse("").getBytes(charset), CREATE, APPEND);
 	}
-	
-	public static boolean write(String filePath, byte[] data) {
+
+	/**
+	 * 这是追加写入
+	 *
+	 * @param filePath
+	 * @param data
+	 * @return
+	 */
+	public static boolean append(String filePath, byte[] data) {
 		Objects.requireNonNull(filePath, "filePath cannot be null!");
 		Path path = Paths.get(filePath);
 		return write(path, data);
 	}
-	
-	public static boolean write(Path path, byte[] data) {
+
+	/**
+	 * 这是覆盖原有文件, 如果要追加写, 使用append方法
+	 *
+	 * @param filePath
+	 * @param data
+	 * @return
+	 */
+	public static boolean write(String filePath, byte[] data) {
+		Objects.requireNonNull(filePath, "filePath cannot be null!");
+		Path path = Paths.get(filePath);
+		return write(path, data, CREATE, TRUNCATE_EXISTING);
+	}
+
+	/**
+	 * 这是追加写入
+	 *
+	 * @param path
+	 * @param data
+	 * @return
+	 */
+	public static boolean append(Path path, byte[] data) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		return write(path, data, CREATE, APPEND);
 	}
-	
+
+	/**
+	 * 这是覆盖原有文件, 如果要追加写, 使用append方法
+	 *
+	 * @param path
+	 * @param data
+	 * @return
+	 */
+	public static boolean write(Path path, byte[] data) {
+		Objects.requireNonNull(path, "path cannot be null!");
+		return write(path, data, CREATE, TRUNCATE_EXISTING);
+	}
+
 	/**
 	 * Write byte[] data to file
 	 *
@@ -749,7 +791,7 @@ public class IOUtils {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 将content写入临时文件
 	 *
@@ -766,7 +808,7 @@ public class IOUtils {
 		write(path, content, charset);
 		return path;
 	}
-	
+
 	/**
 	 * @param path
 	 * @return boolean
@@ -788,7 +830,7 @@ public class IOUtils {
 				});
 		return Files.exists(path.getParent(), NOFOLLOW_LINKS);
 	}
-	
+
 	public static boolean createDir(Path path) {
 		Optional.of(path)
 				.ifPresent(dir -> {
@@ -802,7 +844,7 @@ public class IOUtils {
 				});
 		return Files.exists(path, NOFOLLOW_LINKS);
 	}
-	
+
 	/**
 	 * Delete a file if exists
 	 *
@@ -818,7 +860,23 @@ public class IOUtils {
 		}
 		return true;
 	}
-	
+
+	/**
+	 * Delete a file if exists
+	 *
+	 * @param path
+	 * @return
+	 */
+	public static boolean deleteFile(String path) {
+		Objects.requireNonNull(path, "path cannot be null!");
+		try {
+			Files.deleteIfExists(Path.of(path));
+		} catch (IOException e) {
+			log.warn(format("Delete file {0} failed", path), e);
+		}
+		return true;
+	}
+
 	/**
 	 * Delete specified directory with its sub-dir and all of tis files
 	 *
@@ -829,12 +887,12 @@ public class IOUtils {
 		Path directory = Paths.get(path);
 		return deleteDirectory(directory);
 	}
-	
+
 	public static boolean deleteDirectory(File path) {
 		Path directory = path.toPath();
 		return deleteDirectory(directory);
 	}
-	
+
 	/**
 	 * Delete specified directory with its sub-dir
 	 *
@@ -853,7 +911,7 @@ public class IOUtils {
 					Files.delete(file);
 					return FileVisitResult.CONTINUE;
 				}
-				
+
 				@Override
 				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
 					Files.delete(dir);
@@ -866,7 +924,7 @@ public class IOUtils {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * 将source文件移动到targetFolder
 	 *
@@ -877,7 +935,7 @@ public class IOUtils {
 	public static void move(Path source, Path targetFolder) throws IOException {
 		move(source, targetFolder, null);
 	}
-	
+
 	/**
 	 * 将source文件移动到targetFolder,并重命名为renameTo
 	 *
@@ -890,7 +948,7 @@ public class IOUtils {
 		if (Files.notExists(source, NOFOLLOW_LINKS)) {
 			return;
 		}
-		
+
 		if (Files.notExists(targetFolder, NOFOLLOW_LINKS)) {
 			try {
 				Files.createDirectories(targetFolder);
@@ -914,8 +972,8 @@ public class IOUtils {
 			throw new IOException(msg, e);
 		}
 	}
-	
-	
+
+
 	/**
 	 * 获取根目录
 	 *
@@ -931,7 +989,7 @@ public class IOUtils {
 					return Paths.get(pathStr.toString());
 				}).orElseGet(() -> path.subpath(0, 1));
 	}
-	
+
 	/**
 	 * 将path代表的文件写入OutputStream
 	 *
@@ -956,8 +1014,8 @@ public class IOUtils {
 			out.write(buf, 0, len);
 		}
 	}*/
-	
-	
+
+
 	/**
 	 * Copy one file to another place
 	 */
@@ -973,7 +1031,7 @@ public class IOUtils {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 通过NIO方式拷贝数据，每读取一部分数据就立刻写入输出流
 	 *
@@ -984,33 +1042,33 @@ public class IOUtils {
 	public static void copyPositive(InputStream in, OutputStream out) throws IOException {
 		ReadableByteChannel inChannel = Channels.newChannel(in);
 		WritableByteChannel outChannel = Channels.newChannel(out);
-		
+
 		ByteBuffer buffer = ByteBuffer.allocate(8192);
 		int read;
-		
+
 		while ((read = inChannel.read(buffer)) > 0) {
 			buffer.rewind();
 			buffer.limit(read);
-			
+
 			while (read > 0) {
 				read -= outChannel.write(buffer);
 			}
-			
+
 			buffer.clear();
 		}
 	}
-	
+
 	public static void copyNegative(InputStream in, OutputStream out) throws IOException {
 		ReadableByteChannel inChannel = Channels.newChannel(in);
 		WritableByteChannel outChannel = Channels.newChannel(out);
-		
+
 		ByteBuffer buffer = ByteBuffer.allocate(8192);
 		while (inChannel.read(buffer) != -1) {
 			buffer.flip();
 			outChannel.write(buffer);
 			buffer.compact();
 		}
-		
+
 		buffer.flip();
 		while (buffer.hasRemaining()) {
 			outChannel.write(buffer);
@@ -1018,7 +1076,7 @@ public class IOUtils {
 		inChannel.close();
 		outChannel.close();
 	}
-	
+
 	/**
 	 * 将数据从 InputStream 拷贝到 OutputStream，最后两个都关闭
 	 *
@@ -1037,7 +1095,7 @@ public class IOUtils {
 			throw ex;
 		}
 	}
-	
+
 	/**
 	 * 保留文件的后缀，将文件名前缀替换为随机字符串+日期
 	 *
@@ -1054,7 +1112,7 @@ public class IOUtils {
 		String timeSuffix = LocalDateTime.now().format(ofPattern("yyyyMMddHHmmss"));
 		return String.join("", baseName, timeSuffix, suffix);
 	}
-	
+
 	public static void closeSilently(final Closeable closeable) {
 		try {
 			if (closeable != null) {
@@ -1064,19 +1122,19 @@ public class IOUtils {
 			log.warn(e.getMessage());
 		}
 	}
-	
+
 	public static BufferedReader toBufferedReader(InputStream in) {
 		return new BufferedReader(new InputStreamReader(in, UTF_8));
 	}
-	
+
 	public static BufferedReader toBufferedReader(InputStream in, Charset charset) {
 		return new BufferedReader(new InputStreamReader(in, charset));
 	}
-	
+
 	public static ByteArrayInputStream toByteArrayInputStream(File file) throws IOException {
 		return new ByteArrayInputStream(Files.readAllBytes(file.toPath()));
 	}
-	
+
 	/**
 	 * 在临时目录创建指定后缀的文件
 	 *
@@ -1090,7 +1148,7 @@ public class IOUtils {
 		}
 		return File.createTempFile(RandomStringUtils.randomAlphanumeric(16), suffix);
 	}
-	
+
 	/**
 	 * 在临时目录创建指定文件名和后缀的文件 java.io.tmpdir
 	 *
@@ -1107,7 +1165,7 @@ public class IOUtils {
 		String tempDir = System.getProperty("java.io.tmpdir");
 		return Paths.get(tempDir, fileName + suffix).toFile();
 	}
-	
+
 	/**
 	 * 获取文件大小 如果path代表一个目录，获取目录中所有文件大小之和
 	 *
@@ -1117,8 +1175,8 @@ public class IOUtils {
 	public static long length(Path path) {
 		return FileUtils.sizeOf(path.toFile());
 	}
-	
-	
+
+
 	/**
 	 * Gets the contents of an <code>InputStream</code> as a <code>byte[]</code>.
 	 * <p>
@@ -1142,7 +1200,7 @@ public class IOUtils {
 			log.warn(e.getMessage());
 			throw new IORuntimeException(e);
 		}
-		
+
 		//如果input已经结束, 或者发送的数据小于MIN_BUFFER_SIZE, 那么一次就读完了, 不需要再次读取
 		if (read == -1) {
 			return new byte[0];
@@ -1152,7 +1210,7 @@ public class IOUtils {
 			System.arraycopy(initialBuffer, 0, bytes, 0, read);
 			return bytes;
 		}
-		
+
 		//一次读不完, 那么多次读取, 累积放入ByteArrayOutputStream, 最后返回byte[]
 		try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 			output.write(initialBuffer, 0, initialBuffer.length);
@@ -1163,7 +1221,7 @@ public class IOUtils {
 			throw new IORuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 从channel中读取数据
 	 *
@@ -1174,7 +1232,7 @@ public class IOUtils {
 	public static byte[] toByteArray(final ByteChannel channel) throws IOException {
 		ByteBuffer buffer = ByteBuffer.allocate(MIN_BUFFER_SIZE);
 		int read = channel.read(buffer);
-		
+
 		//如果input已经结束, 不需要再次读取
 		if (read == -1) {
 			return new byte[0];
@@ -1183,12 +1241,12 @@ public class IOUtils {
 		if (buffer.hasRemaining()) {
 			return buffer.array();
 		}
-		
+
 		//一次读不完, 那么多次读取, 累积放入ByteArrayOutputStream, 最后返回byte[]
 		try (final ByteArrayOutputStream output = new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE * 4)) {
 			//先把上面第一次读取的放入output
 			output.write(buffer.array(), 0, buffer.capacity());
-			
+
 			//1024 bytes一次读不完, 那么一次分配大一点的buffer
 			buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
 			//只要读到了数据就往output里面写
@@ -1197,11 +1255,11 @@ public class IOUtils {
 				//清空buffer, 为继续写入buffer做准备
 				buffer.clear();
 			}
-			
+
 			return output.toByteArray();
 		}
 	}
-	
+
 	/**
 	 * Copies bytes from an <code>InputStream</code> to an
 	 * <code>OutputStream</code>.
@@ -1228,7 +1286,7 @@ public class IOUtils {
 		}
 		return (int) count;
 	}
-	
+
 	/**
 	 * Copies bytes from an <code>InputStream</code> to an <code>OutputStream</code> using an internal buffer of the
 	 * given size.
@@ -1248,7 +1306,7 @@ public class IOUtils {
 			throws IOException {
 		return copyLarge(input, output, new byte[bufferSize]);
 	}
-	
+
 	/**
 	 * Copies bytes from a large (over 2GB) <code>InputStream</code> to an
 	 * <code>OutputStream</code>.
@@ -1269,8 +1327,8 @@ public class IOUtils {
 			throws IOException {
 		return copy(input, output, DEFAULT_BUFFER_SIZE);
 	}
-	
-	
+
+
 	/**
 	 * Copies bytes from a large (over 2GB) <code>InputStream</code> to an
 	 * <code>OutputStream</code>.
@@ -1297,7 +1355,7 @@ public class IOUtils {
 		}
 		return count;
 	}
-	
+
 	/**
 	 * 列出指定目录下所有普通文件
 	 *
@@ -1318,7 +1376,7 @@ public class IOUtils {
 		}
 		return fileList;
 	}
-	
+
 	/**
 	 * 返回指定目录下所有普通文件对象
 	 *
@@ -1339,7 +1397,7 @@ public class IOUtils {
 		}
 		return fileList;
 	}
-	
+
 	/**
 	 * 从指定目录开始, 递归列出所有文件以及子目录下的文件
 	 *
@@ -1359,7 +1417,7 @@ public class IOUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 从指定目录开始, 递归列出所有文件以及子目录下的文件
 	 *
@@ -1379,7 +1437,7 @@ public class IOUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 列出classpath下指定目录及其子目录中的所有文件
 	 *
@@ -1405,7 +1463,7 @@ public class IOUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 列出classpath下指定目录及其子目录中的所有文件
 	 *
@@ -1433,7 +1491,7 @@ public class IOUtils {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * 返回文件的后缀, 包含前面的.号
 	 *
@@ -1444,11 +1502,11 @@ public class IOUtils {
 		if (file == null) {
 			return null;
 		}
-		
+
 		String fileName = file.getName();
 		return suffix(fileName);
 	}
-	
+
 	/**
 	 * 返回文件的后缀, 包含前面的.号
 	 *
@@ -1459,15 +1517,15 @@ public class IOUtils {
 		if (isBlank(fileName)) {
 			return null;
 		}
-		
+
 		int index = fileName.lastIndexOf(".");
 		if (index != -1) {
 			return fileName.substring(index);
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * 检查文件名是否出现了不允许出现的特殊字符
 	 *
@@ -1478,10 +1536,10 @@ public class IOUtils {
 		if (isBlank(filename)) {
 			return false;
 		}
-		
+
 		return INVALID_FILENAME_PATTERN.matcher(filename).matches();
 	}
-	
+
 	/**
 	 * 检查文件大小始否超过阈值
 	 *
@@ -1496,11 +1554,11 @@ public class IOUtils {
 		if (sizeUnit == null) {
 			return false;
 		}
-		
+
 		long limitBytes = sizeUnit.toBytes(size);
 		return data.length > limitBytes;
 	}
-	
+
 	/**
 	 * 检查文件大小始否超过阈值
 	 *
@@ -1514,7 +1572,7 @@ public class IOUtils {
 		if (!file.exists()) {
 			return false;
 		}
-		
+
 		byte[] data;
 		try {
 			data = Files.readAllBytes(file.toPath());
@@ -1526,11 +1584,11 @@ public class IOUtils {
 		if (sizeUnit == null) {
 			return false;
 		}
-		
+
 		long limitBytes = sizeUnit.toBytes(size);
 		return data.length > limitBytes;
 	}
-	
+
 	/**
 	 * 检查文件大小始否超过阈值
 	 *
@@ -1544,11 +1602,11 @@ public class IOUtils {
 		if (sizeUnit == null) {
 			return false;
 		}
-		
+
 		long limitBytes = sizeUnit.toBytes(size);
 		return fileSize > limitBytes;
 	}
-	
+
 	/**
 	 * 检查文件大小在给定的范围内
 	 *
@@ -1564,7 +1622,7 @@ public class IOUtils {
 		requireNonNull(data, "data cannot be null!");
 		return isBetweenLimitSize(data.length, lowerBound, lowerBoundUnit, upperBound, upperBoundUnit);
 	}
-	
+
 	/**
 	 * 检查文件大小始否超过阈值
 	 *
@@ -1581,7 +1639,7 @@ public class IOUtils {
 		if (!file.exists()) {
 			return false;
 		}
-		
+
 		byte[] data;
 		try {
 			data = Files.readAllBytes(file.toPath());
@@ -1589,10 +1647,10 @@ public class IOUtils {
 			log.error("", e);
 			throw new IORuntimeException(e);
 		}
-		
+
 		return isBetweenLimitSize(data.length, lowerBound, lowerBoundUnit, upperBound, upperBoundUnit);
 	}
-	
+
 	/**
 	 * 检查文件大小始否超过阈值
 	 *
@@ -1606,21 +1664,21 @@ public class IOUtils {
 	public static boolean isBetweenLimitSize(long fileSize, long lowerBound, String lowerBoundUnit, long upperBound,
 	                                         String upperBoundUnit) {
 		SizeUnit lowerBoundSizeUnit = SizeUnit.parse(lowerBoundUnit);
-		
+
 		long lowerBoundBytes = lowerBoundSizeUnit.toBytes(lowerBound);
 		if (fileSize < lowerBoundBytes) {
 			return false;
 		}
-		
+
 		SizeUnit upperBoundSizeUnit = SizeUnit.parse(upperBoundUnit);
 		long upperBoundBytes = lowerBoundSizeUnit.toBytes(upperBound);
 		if (fileSize > upperBoundBytes) {
 			return false;
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * 拷贝文件到临时目录下, 如果sourceFileName在磁盘上存在, 先读磁盘上; 如果在磁盘上不存在, 尝试读Jar文件中的
 	 *
@@ -1633,11 +1691,11 @@ public class IOUtils {
 		if (sourcePath.toFile().exists()) {
 			return fileCopy(sourcePath);
 		}
-		
+
 		InputStream inputStream = readClasspathFileAsInputStream(sourceFileName);
 		return fileCopy(inputStream, FilenameUtils.getExtension(sourceFileName));
 	}
-	
+
 	/**
 	 * 拷贝一个磁盘上的文件到临时目录下, classpath下的文件本方法不适用
 	 *
@@ -1657,7 +1715,7 @@ public class IOUtils {
 			throw new FileCopyException(e);
 		}
 	}
-	
+
 	/**
 	 * 拷贝一个InputStream代表的文件到临时目录下
 	 *
@@ -1676,7 +1734,7 @@ public class IOUtils {
 			throw new FileCopyException(e);
 		}
 	}
-	
+
 	/**
 	 * 返回文件名后缀 <pre> foo.txt --&gt; "txt" a/b/c.jpg --&gt; "jpg" a/b.txt/c
 	 * --&gt; "" a/b/c --&gt; "" </pre>
@@ -1687,7 +1745,7 @@ public class IOUtils {
 	public static String fileExtension(String filename) {
 		return FilenameUtils.getExtension(filename);
 	}
-	
+
 	/**
 	 * 从命令行不断读取用户输入
 	 *
@@ -1704,7 +1762,7 @@ public class IOUtils {
 			consumer.accept(input);
 		}
 	}
-	
+
 	/**
 	 * 从命令行读取一次用户输入
 	 *
@@ -1717,10 +1775,11 @@ public class IOUtils {
 		System.out.print(inputPrompt);
 		return sc.nextLine();
 	}
-	
+
 	/**
 	 * 另起一个线程读取用户输入, 输入exit退出
-	 * @param prompt 控制台打印的提示语
+	 *
+	 * @param prompt   控制台打印的提示语
 	 * @param consumer 用户的输入会传给这个consumer去消费
 	 */
 	public static void slientUserInput(String prompt, Consumer<String> consumer) {

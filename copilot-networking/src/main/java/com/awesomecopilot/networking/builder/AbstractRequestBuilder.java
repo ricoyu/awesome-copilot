@@ -5,6 +5,7 @@ import com.awesomecopilot.common.lang.concurrent.Concurrent;
 import com.awesomecopilot.common.lang.transformer.Transformers;
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
+import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.common.lang.utils.RegexUtils;
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
@@ -12,6 +13,7 @@ import com.awesomecopilot.networking.constants.HttpHeaders;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
+import com.awesomecopilot.networking.utils.ErrorUtils;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.http.HttpEntity;
@@ -41,6 +43,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
@@ -609,6 +612,16 @@ public abstract class AbstractRequestBuilder {
 			}
 			CloseableHttpResponse response = httpClient.execute(httpRequest);
 
+			/*
+			 * 拿response entity之前先检查一下status code, 实际测试下来如果是405错误,不会报任何异常, 只是拿到的entity是空
+			 */
+			BasicHttpResponse original = (BasicHttpResponse) ReflectionUtils.getFieldValue("original", response);
+			int statucCode =
+					original.getStatusLine().getStatusCode();
+			if (statucCode != 200) {
+				String reasonPhrase = ReflectionUtils.getFieldValue("reasonPhrase", original);
+				ErrorUtils.checkError(statucCode, reasonPhrase);
+			}
 			HttpEntity entity = response.getEntity();
 			if (entity != null) {
 				//表示结果要以byte[]数组形式返回

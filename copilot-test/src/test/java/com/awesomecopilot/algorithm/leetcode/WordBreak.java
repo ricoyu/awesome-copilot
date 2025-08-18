@@ -76,7 +76,7 @@ public class WordBreak {
 		// 将 wordDict 转换为 HashSet 以便于 O(1) 时间复杂度进行查找
 		Set<String> wordSet = new HashSet<>(wordDict);
 
-		//创建一个 dp 数组，长度为 s.length() + 1
+		//创建一个 dp 数组, 长度为 s.length() + 1
 		//dp[i] 表示 s 的前 i 个字符是否可以由字典中的单词拼接而成
 		boolean[] dp = new boolean[s.length() + 1];
 
@@ -85,7 +85,7 @@ public class WordBreak {
 
 		// 遍历字符串的每个字符
 		for (int i = 1; i <= s.length(); i++) {
-			// 对于每个 i，检查 j 从 0 到 i 的每个子串 s[j:i]
+			// 对于每个 i, 检查 j 从 0 到 i 的每个子串 s[j:i]
 			for (int j = 0; j < i; j++) {
 				// 如果 dp[j] 为 true，且 s[j:i] 在字典中
 				if (dp[j] && wordSet.contains(s.substring(j, i))) {

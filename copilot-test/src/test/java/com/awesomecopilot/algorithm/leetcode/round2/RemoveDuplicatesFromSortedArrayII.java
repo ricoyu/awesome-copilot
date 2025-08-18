@@ -1,7 +1,8 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -36,12 +37,12 @@ import java.util.Scanner;
  *     <li/>否则，复制nums[i]到nums[j]，然后j++。
  *     <li/>遍历完成后，j就是新数组的长度。
  * </ol>
- * <p>
- * Copyright: Copyright (c) 2024-11-04 8:52
- * <p>
+ * <p/>
+ * Copyright: Copyright (c) 2025-08-15 8:05
+ * <p/>
  * Company: Sexy Uncle Inc.
- * <p>
- *
+ * <p/>
+
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
@@ -49,38 +50,23 @@ public class RemoveDuplicatesFromSortedArrayII {
 
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
-		for (int j = 0; j < 2; j++) {
-			System.out.print("请输入数组nums: ");
-			String input = scanner.nextLine().trim();
-			String[] parts = input.split(",");
-			int[] nums = new int[parts.length];
-			for (int i = 0; i < parts.length; i++) {
-				nums[i] = Integer.parseInt(parts[i].trim());
-			}
-
-			System.out.println(removeDuplicates(nums));
-			ArrayUtils.print(nums);
-		}
+		System.out.print("请输入数组nums: ");
+		int[] nums = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
+		System.out.println(removeDuplicates(nums));
+		ArrayUtils.print(nums);
 	}
 
-	public static int removeDuplicates(int[] nums) {
-		// 若数组长度小于等于2，则无需修改，直接返回数组长度
-		if (nums.length <= 2) {
+	private static int removeDuplicates(int[] nums) {
+		if (nums.length <=2) {
 			return nums.length;
 		}
 
-		// 慢指针，表示新数组的有效长度
-		int slow = 2;
-
-		// 快指针从索引2开始，遍历整个数组
-		for (int fast = 2; fast < nums.length; fast++) {
-			// 判断当前元素是否超过出现两次
-			// 如果 nums[fast] != nums[slow - 2]，表示该元素最多只出现了两次，可以加入结果数组中
-			if (nums[fast] != nums[slow - 2]) {
-				// 将当前元素移动到j+1的位置，然后j++
-				nums[slow++] = nums[fast];
+		int j = 2;
+		for (int i = 2; i < nums.length; i++) {
+			if (nums[i] != nums[j - 2]) {
+				nums[j++] = nums[i];
 			}
 		}
-		return slow;
+		return j;
 	}
 }
