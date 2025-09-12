@@ -3,8 +3,8 @@ package com.awesomecopilot.validation.validation.annotation;
 import com.awesomecopilot.validation.enums.IPCategory;
 import com.awesomecopilot.validation.validation.IPValidator;
 
-import javax.validation.Constraint;
-import javax.validation.Payload;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

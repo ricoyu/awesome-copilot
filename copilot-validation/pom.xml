@@ -40,12 +40,13 @@
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <exclusions>
+            <!-- 不能排除, 排除启动会报错: Caused by: java.lang.NoClassDefFoundError: org/jboss/logging/Logger -->
+            <!--<exclusions>
                 <exclusion>
                     <groupId>org.jboss.logging</groupId>
                     <artifactId>jboss-logging</artifactId>
                 </exclusion>
-            </exclusions>
+            </exclusions>-->
         </dependency>
 
         <dependency>

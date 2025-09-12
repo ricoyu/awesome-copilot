@@ -1,9 +1,9 @@
 package com.awesomecopilot.validation.validation;
 
 import com.awesomecopilot.validation.validation.annotation.Past;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;

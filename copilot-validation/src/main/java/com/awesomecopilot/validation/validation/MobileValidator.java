@@ -2,8 +2,8 @@ package com.awesomecopilot.validation.validation;
 
 import com.awesomecopilot.validation.validation.annotation.Mobile;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

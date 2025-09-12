@@ -4,20 +4,20 @@ import java.util.Scanner;
 
 /**
  * 最长回文子串
- * <p/>
+ * <p>
  * 给你一个字符串 s，找到 s 中最长的 回文子串
- * <p/>
+ * <p>
  * 示例 1：
- * <p/>
+ * <p>
  * 输入：s = "babad" <br/>
  * 输出："bab" <br/>
  * 解释："aba" 同样是符合题意的答案。
- * <p/>
+ * <p>
  * 示例 2：
- * <p/>
+ * <p>
  * 输入：s = "cbbd" <br/>
  * 输出："bb" <br/>
- * <p/>
+ * <p>
  * 解题思路
  * <ol>
  *     <li/>回文字符串的定义：回文字符串是正着读和反着读都相同的字符串，例如 "aba" 或 "bb"。
@@ -26,11 +26,11 @@ import java.util.Scanner;
  *     <li/>动态规划的状态转移方程为：dp[i][j] = (s[i] == s[j]) && (j - i < 3 || dp[i + 1][j - 1])
  *     <li/>最后遍历 dp 数组，找到最长的回文子串。
  * </ol>
- * <p/>
+ * <p>
  * Copyright: Copyright (c) 2024-10-28 9:05
- * <p/>
+ * <p>
  * Company: Sexy Uncle Inc.
- * <p/>
+ * <p>
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0

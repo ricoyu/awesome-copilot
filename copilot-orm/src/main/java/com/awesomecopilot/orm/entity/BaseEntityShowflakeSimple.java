@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 /**
  * 实体类的父类, 自己选择要不要继承, 这个是采用雪花算法生成主键值的版本
- * 这个版本值包含一个id主键, CREATE_TIME, UPDATE_TIME 等都不包含
+ * 这个版本只包含一个id主键, CREATE_TIME, UPDATE_TIME 等都不包含
  * <p>
  * Copyright: Copyright (c) 2019-10-31 15:36
  * <p>

@@ -5,7 +5,7 @@ import com.awesomecopilot.workbook.enums.Ticket;
 import lombok.Data;
 import lombok.ToString;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

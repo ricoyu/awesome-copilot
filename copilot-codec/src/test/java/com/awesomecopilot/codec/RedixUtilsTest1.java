@@ -32,7 +32,9 @@ public class RedixUtilsTest1 {
 	
 	@Test
 	public void testHex2Int() {
-		System.out.println(RedixUtils.hex2Int("00 7b"));
+		//System.out.println(RedixUtils.hex2Int("00 7b"));
+		System.out.println(RedixUtils.hex2Int("81 80"));
+		System.out.println(RedixUtils.hex2BinaryStr("81 80"));
 	}
 	
 	@Test

@@ -360,7 +360,7 @@ public class CriteriaQueryBuilder {
 	/**
 	 * 分页查询
 	 *
-	 * @param pageNum
+	 * @param pageNum 页码从1开始计数
 	 * @param pageSize
 	 * @param <T>
 	 * @return PageResult<T>

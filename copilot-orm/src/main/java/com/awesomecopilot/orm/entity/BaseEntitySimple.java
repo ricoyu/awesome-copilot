@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 实体类的父类, 自己选择要不要继承 
+ * 实体类的父类, 只包含主键字段的版本
  * <p>
  * Copyright: Copyright (c) 2019-10-31 15:36
  * <p>

@@ -115,7 +115,7 @@ public class ElasticUtilsTest {
 	public void testCreateEndpoint() {
 		ElasticUtils.delete("product", 1);
 		String id = ElasticUtils.create("product", """
-				            {
+				{
 					"name": "Coffee Maker",
 					"brand": "Good Coffee",
 					"price": 99.99,

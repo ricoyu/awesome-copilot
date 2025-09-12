@@ -7,15 +7,15 @@ import com.awesomecopilot.common.spring.i18n.I18N;
 import com.awesomecopilot.validation.bean.ErrorMessage;
 import com.awesomecopilot.validation.exception.AbstractPropertyExistsException;
 import com.awesomecopilot.validation.exception.SimpleBindingResult;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.ValidatorFactory;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.ValidatorFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

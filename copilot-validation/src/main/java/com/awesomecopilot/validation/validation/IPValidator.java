@@ -5,8 +5,8 @@ import com.awesomecopilot.networking.utils.IPUtils;
 import com.awesomecopilot.validation.enums.IPCategory;
 import com.awesomecopilot.validation.validation.annotation.IP;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;

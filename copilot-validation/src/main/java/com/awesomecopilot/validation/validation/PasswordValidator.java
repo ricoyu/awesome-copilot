@@ -4,8 +4,8 @@ package com.awesomecopilot.validation.validation;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.validation.validation.annotation.Password;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 import static com.awesomecopilot.common.lang.utils.StringUtils.equalTo;
 import static java.util.Optional.ofNullable;

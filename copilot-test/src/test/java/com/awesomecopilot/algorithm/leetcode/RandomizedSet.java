@@ -8,23 +8,23 @@ import java.util.Random;
 
 /**
  * O(1) 时间插入、删除和获取随机元素
- * <p/>
+ * <p>
  * 实现RandomizedSet 类：
- * <p/>
+ * <p>
  * RandomizedSet() 初始化 RandomizedSet 对象 <br/>
  * bool insert(int val) 当元素 val 不存在时，向集合中插入该项，并返回 true ；否则，返回 false 。 <br/>
  * bool remove(int val) 当元素 val 存在时，从集合中移除该项，并返回 true ；否则，返回 false 。 <br/>
  * int getRandom() 随机返回现有集合中的一项（测试用例保证调用此方法时集合中至少存在一个元素）。每个元素应该有 相同的概率 被返回。 <br/>
  * 你必须实现类的所有函数，并满足每个函数的 平均 时间复杂度为 O(1) 。 <br/>
- * <p/>
+ * <p>
  * 示例：
- * <p/>
+ * <p>
  * 输入
  * ["RandomizedSet", "insert", "remove", "insert", "getRandom", "remove", "insert", "getRandom"] <br/>
  * [[], [1], [2], [2], [], [1], [2], []]
  * 输出
  * [null, true, false, true, 2, true, false, 2]
- * <p/>
+ * <p>
  * 解释
  * RandomizedSet randomizedSet = new RandomizedSet(); <br/>
  * randomizedSet.insert(1); // 向集合中插入 1 。返回 true 表示 1 被成功地插入。 <br/>
@@ -48,11 +48,11 @@ import java.util.Random;
  *          最后移除 ArrayList 末尾元素并从 HashMap 中删除目标元素。
  *     <li/>获取随机元素：直接从 ArrayList 中随机选取一个元素即可。
  * </ol>
- * <p/>
+ * <p>
  * Copyright: Copyright (c) 2024-11-11 8:55
- * <p/>
+ * <p>
  * Company: Sexy Uncle Inc.
- * <p/>
+ * <p>
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0

@@ -2,6 +2,7 @@ package com.awesomecopilot.workbook.utils;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.workbook.exception.ValidationException;
+import jakarta.validation.ConstraintViolation;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.springframework.validation.AbstractBindingResult;
 import org.springframework.validation.BindException;
@@ -9,7 +10,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
-import javax.validation.ConstraintViolation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
