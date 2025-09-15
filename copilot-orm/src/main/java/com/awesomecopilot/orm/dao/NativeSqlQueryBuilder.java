@@ -1,5 +1,6 @@
 package com.awesomecopilot.orm.dao;
 
+import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
@@ -425,7 +426,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				throw new SQLCountQueryException(msg, e);
 			}
 		}
-
+		/*
+		 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+		 */
+		ThreadContext.put("page", page);
 		return resultList;
 	}
 

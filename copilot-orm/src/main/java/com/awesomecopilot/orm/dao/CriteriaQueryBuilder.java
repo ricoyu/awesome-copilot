@@ -1,23 +1,18 @@
 package com.awesomecopilot.orm.dao;
 
+import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.Orders;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
-import com.awesomecopilot.orm.vo.PageResult;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -353,8 +348,13 @@ public class CriteriaQueryBuilder {
 	public <T> List<T> findPage(Page page) {
 		if (page != null) {
 			jpaCriteriaQuery.setPage(page);
+			/*
+			 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+			 */
+			ThreadContext.put("page", page);
 		}
-		return (List<T>) jpaCriteriaQuery.list();
+		List<T> data = (List<T>) jpaCriteriaQuery.list();
+		return data;
 	}
 
 	/**
@@ -363,20 +363,22 @@ public class CriteriaQueryBuilder {
 	 * @param pageNum 页码从1开始计数
 	 * @param pageSize
 	 * @param <T>
-	 * @return PageResult<T>
+	 * @return Result<T>
 	 */
-	public <T> PageResult<T> findPage(int pageNum, int pageSize) {
+	public <T> List<T> findPage(int pageNum, int pageSize) {
 		Page page = new Page();
 		page.setPageNum(pageNum);
 		page.setPageSize(pageSize);
+		/*
+		 * jpaCriteriaQuery.list()方法里面会更新总页数等分页属性
+		 * 这边放到ThreadContext里面是方便PageResultAspect将Page对象回填到最终返回的Result对象里面
+		 */
+		ThreadContext.put("page", page);
 		if (page != null) {
 			jpaCriteriaQuery.setPage(page);
 		}
 		List<T> data = jpaCriteriaQuery.list();
-		PageResult<T> pageResult = new PageResult<>();
-		pageResult.setData(data);
-		pageResult.setPage(page);
-		return pageResult;
+		return data;
 	}
 
 	/**

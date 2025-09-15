@@ -8,7 +8,6 @@ import com.awesomecopilot.common.lang.exception.ServiceException;
 import com.awesomecopilot.common.lang.vo.Result;
 import com.awesomecopilot.common.lang.vo.Results;
 import com.awesomecopilot.common.spring.i18n.I18N;
-import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.validation.bean.ErrorMessage;
 import com.awesomecopilot.validation.exception.GeneralValidationException;
 import com.awesomecopilot.validation.exception.UniqueConstraintViolationException;
@@ -133,8 +132,18 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 			BindingResult bindingResult = bindException.getBindingResult();
 			ErrorMessage errorMessage = ValidationUtils.getErrorMessage(bindingResult);
 			List<String[]> msgs = errorMessage.getErrors();
-
-			Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+			/*
+			 * 这边不要对msgs执行Jackson序列化, 如果这么做, 输出到前端的JSON串会对双引号转义, 看到的将会是类似这样:
+			 * <pre>
+			 * {
+			 *   "code": "4002",
+			 *   "status": "fail",
+			 *   "message": "[[\"endTime\",\"结束时间不能为空\"],[\"name\",\"场次名称不能超过200个字符\"],[\"startTime\",\"开始时间不能为空\"]]"
+			 * }
+			 * </pre>
+			 */
+			//Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+			Result result = Results.status(VALIDATION_FAIL.code(), msgs).build();
 			return new ResponseEntity(result, HttpStatus.OK);
 		}
 		Result result = Results.status(VALIDATION_FAIL.code(), e.getMessage()).build();
@@ -165,7 +174,18 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 					return errArray;
 				})
 				.collect(toList());
-		Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+		/*
+		 * 这边不要对msgs执行Jackson序列化, 如果这么做, 输出到前端的JSON串会对双引号转义, 看到的将会是类似这样:
+		 * <pre>
+		 * {
+		 *   "code": "4002",
+		 *   "status": "fail",
+		 *   "message": "[[\"endTime\",\"结束时间不能为空\"],[\"name\",\"场次名称不能超过200个字符\"],[\"startTime\",\"开始时间不能为空\"]]"
+		 * }
+		 * </pre>
+		 */
+		//Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+		Result result = Results.status(VALIDATION_FAIL.code(), msgs).build();
 		return new ResponseEntity(result, headers, HttpStatus.OK);
 	}
 
@@ -191,7 +211,18 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 					return errArray;
 				})
 				.collect(toList());
-		Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+		/*
+		 * 这边不要对msgs执行Jackson序列化, 如果这么做, 输出到前端的JSON串会对双引号转义, 看到的将会是类似这样:
+		 * <pre>
+		 * {
+		 *   "code": "4002",
+		 *   "status": "fail",
+		 *   "message": "[[\"endTime\",\"结束时间不能为空\"],[\"name\",\"场次名称不能超过200个字符\"],[\"startTime\",\"开始时间不能为空\"]]"
+		 * }
+		 * </pre>
+		 */
+		//Result result = Results.status(VALIDATION_FAIL.code(), JacksonUtils.toJson(msgs)).build();
+		Result result = Results.status(VALIDATION_FAIL.code(), msgs).build();
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
 

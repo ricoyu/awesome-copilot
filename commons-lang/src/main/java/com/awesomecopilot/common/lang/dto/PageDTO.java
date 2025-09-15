@@ -1,6 +1,5 @@
 package com.awesomecopilot.common.lang.dto;
 
-import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION;
 import com.awesomecopilot.common.lang.vo.Page;
@@ -39,18 +38,13 @@ public class PageDTO {
 	private String order;
 
 	/**
-	 * 首先根据PageDTO中的pageNum, pageSize, order初始化Page对象,
-	 * 然后放入ThreadContext中, 如果ThreadContext已经存在, 则直接从ThreadContext中取
+	 * 根据PageDTO中的pageNum, pageSize, order初始化Page对象
 	 * @return Page
 	 */
 	public Page getPage() {
-		Page page = ThreadContext.get("page");
-		if (page != null) {
-			return page;
-		}
-		Page page1 = new Page();
-		page1.setPageNum(pageNum);
-		page1.setPageSize(pageSize);
+		Page page = new Page();
+		page.setPageNum(pageNum);
+		page.setPageSize(pageSize);
 		if (StringUtils.isNotEmpty(order)) {
 			String[] orderList = order.split(",");
 			Stream.of(orderList).forEach(o -> {
@@ -59,11 +53,10 @@ public class PageDTO {
 				OrderBean order = new OrderBean();
 				order.setOrderBy(arr[0]);
 				order.setDirection(direction);
-				page1.getOrders().add(order);
+				page.getOrders().add(order);
 			});
 		}
-		ThreadContext.put("page", page1);
-		return page1;
+		return page;
 	}
 
 
