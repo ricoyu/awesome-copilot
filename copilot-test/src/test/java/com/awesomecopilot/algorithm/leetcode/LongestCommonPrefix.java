@@ -2,25 +2,28 @@ package com.awesomecopilot.algorithm.leetcode;
 
 import com.awesomecopilot.common.lang.utils.StringUtils;
 
-import java.util.Arrays;
 import java.util.Scanner;
 
 /**
  * 最长公共前缀
- *
- * 编写一个函数来查找字符串数组中的最长公共前缀。
+ * <p>
+ * 编写一个函数来查找字符串数组中的最长公共前缀。 <p>
  * 如果不存在公共前缀，返回空字符串 ""。
  *
+ * <pre>
  * 示例 1：
  *
  * 输入：strs = ["flower","flow","flight"]
  * 输出："fl"
+ * </pre>
  *
+ * <pre>
  * 示例 2：
  *
  * 输入：strs = ["dog","racecar","car"]
  * 输出：""
  * 解释：输入不存在公共前缀。
+ * </pre>
  *
  * <ul>解题思路
  *     <li/>若字符串数组为空，直接返回空字符串

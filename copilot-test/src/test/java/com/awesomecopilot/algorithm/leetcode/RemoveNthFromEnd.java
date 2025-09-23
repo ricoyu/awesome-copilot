@@ -7,7 +7,7 @@ package com.awesomecopilot.algorithm.leetcode;
  * <p/>
  * <pre>
  * 示例 1：
- *
+ * <image src="images/ListNode.png" ></image>
  * 输入：head = [1,2,3,4,5], n = 2
  * 输出：[1,2,3,5]
  * </pre>

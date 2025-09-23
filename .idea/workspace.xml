@@ -5,12 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/commons-spring/src/main/java/com/awesomecopilot/common/spring/aspect/PageResultAspect.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/dto/PageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/commons-lang/src/main/java/com/awesomecopilot/common/lang/dto/PageDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/CriteriaQueryBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/NativeSqlQueryBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/dao/NativeSqlQueryBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-orm/src/main/java/com/awesomecopilot/orm/vo/PageResult.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-web/src/main/java/com/awesomecopilot/web/advice/RestExceptionAdvice.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-web/src/main/java/com/awesomecopilot/web/advice/RestExceptionAdvice.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/FourSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeTwoSortedLists.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/PhoneNumberLetterCombinations.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RomanToIntegerConverter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ThreeSum.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ThreeSumClosest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ValidParentheses.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images/LIstNode.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images/phone.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/RemoveNthFromEnd.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestCommonPrefix.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestCommonPrefix.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveNthFromEnd.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveNthFromEnd.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,67 +62,73 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.ArrayRotator.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.BlockWallBuilder.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.ClimbStairs.executor&quot;: &quot;Run&quot;,
-    &quot;Application.DeleteAndEarn.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.ElementRemover.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.EmployeeIdLengthCalculator.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.Fibonacci.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.FullBacktrack.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.GiftGrouping.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.GreedyMerchant.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.HeightSorter.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.HouseRobber.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.IntegerReverser.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.JumpGame.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LeakyBucketRateLimiter.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestCommonPrefix.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestPalindrome.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestSubsequenceSum.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestSubstringWithoutRepeating.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.LongestValidSubstringFinder.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MajorityElementFinder.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxMinBoardLength.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxRewardByPermutingB.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxScoreGame.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MaxWaterContainer.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MedianOfTwoSortedArrays.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MinCostClimbingStairs2.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MinPathSum.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.MinimumASCIIDeleteSum.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.ProductOfArrayExceptSelf.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.ProjectScheduler.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.RemoveDuplicatesFromSortedArray.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.RemoveDuplicatesFromSortedArrayII.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.SqrtCalculator.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.TreasureBoxDestroyer.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.UniquePaths.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.com.awesomecopilot.algorithm.leetcode.round2.MinCostClimbingStairs2.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.ElasticUtilsTest.testCreateEndpoint.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.RedixUtilsTest1.testHex2Int.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.SlidingWindowTest.testBasicRateLimiting.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.TimerTest.testScheduleWithDelayAndFixedPeriod.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.UUIDTest.test.executor&quot;: &quot;Debug&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Learning/awesome-copilot/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.import&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.ArrayRotator.executor": "Debug",
+    "Application.BlockWallBuilder.executor": "Debug",
+    "Application.ClimbStairs.executor": "Run",
+    "Application.DeleteAndEarn.executor": "Debug",
+    "Application.ElementRemover.executor": "Debug",
+    "Application.EmployeeIdLengthCalculator.executor": "Debug",
+    "Application.Fibonacci.executor": "Debug",
+    "Application.FourSum.executor": "Debug",
+    "Application.FullBacktrack.executor": "Debug",
+    "Application.GiftGrouping.executor": "Debug",
+    "Application.GreedyMerchant.executor": "Debug",
+    "Application.HeightSorter.executor": "Debug",
+    "Application.HouseRobber.executor": "Debug",
+    "Application.IntegerReverser.executor": "Debug",
+    "Application.JumpGame.executor": "Debug",
+    "Application.LeakyBucketRateLimiter.executor": "Debug",
+    "Application.LongestCommonPrefix.executor": "Debug",
+    "Application.LongestPalindrome.executor": "Debug",
+    "Application.LongestSubsequenceSum.executor": "Debug",
+    "Application.LongestSubstringWithoutRepeating.executor": "Debug",
+    "Application.LongestValidSubstringFinder.executor": "Debug",
+    "Application.MajorityElementFinder.executor": "Debug",
+    "Application.MaxMinBoardLength.executor": "Debug",
+    "Application.MaxRewardByPermutingB.executor": "Debug",
+    "Application.MaxScoreGame.executor": "Debug",
+    "Application.MaxWaterContainer.executor": "Debug",
+    "Application.MedianOfTwoSortedArrays.executor": "Debug",
+    "Application.MergeTwoSortedLists.executor": "Debug",
+    "Application.MinCostClimbingStairs2.executor": "Debug",
+    "Application.MinPathSum.executor": "Debug",
+    "Application.MinimumASCIIDeleteSum.executor": "Debug",
+    "Application.PhoneNumberLetterCombinations.executor": "Debug",
+    "Application.ProductOfArrayExceptSelf.executor": "Debug",
+    "Application.ProjectScheduler.executor": "Debug",
+    "Application.RemoveDuplicatesFromSortedArray.executor": "Debug",
+    "Application.RemoveDuplicatesFromSortedArrayII.executor": "Debug",
+    "Application.RomanToIntegerConverter.executor": "Debug",
+    "Application.SqrtCalculator.executor": "Debug",
+    "Application.ThreeSumClosest.executor": "Debug",
+    "Application.TreasureBoxDestroyer.executor": "Debug",
+    "Application.UniquePaths.executor": "Debug",
+    "Application.ValidParentheses.executor": "Debug",
+    "Application.com.awesomecopilot.algorithm.leetcode.round2.MinCostClimbingStairs2.executor": "Debug",
+    "JUnit.ElasticUtilsTest.testCreateEndpoint.executor": "Debug",
+    "JUnit.RedixUtilsTest1.testHex2Int.executor": "Debug",
+    "JUnit.SlidingWindowConcurrentTest.testConcurrentRequests.executor": "Run",
+    "JUnit.SlidingWindowTest.testBasicRateLimiting.executor": "Run",
+    "JUnit.TimerTest.testScheduleWithDelayAndFixedPeriod.executor": "Run",
+    "JUnit.UUIDTest.test.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "D:/Learning/awesome-copilot/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="ReactorSettings">
     <option name="notificationShown" value="true" />
   </component>
@@ -133,9 +145,9 @@
       <recent name="com.awesomecopilot.common.lang.ratelimit" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.MaxWaterContainer">
-    <configuration name="IntegerReverser" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.IntegerReverser" />
+  <component name="RunManager" selected="Application.MergeTwoSortedLists">
+    <configuration name="FourSum" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.FourSum" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -147,8 +159,8 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="LongestCommonPrefix" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.LongestCommonPrefix" />
+    <configuration name="MergeTwoSortedLists" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.MergeTwoSortedLists" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -160,8 +172,8 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="MaxWaterContainer" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.MaxWaterContainer" />
+    <configuration name="PhoneNumberLetterCombinations" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.PhoneNumberLetterCombinations" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
@@ -173,45 +185,39 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="ElasticUtilsTest.testCreateEndpoint" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="copilot-search" />
+    <configuration name="ThreeSumClosest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.ThreeSumClosest" />
+      <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.search.*" />
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <option name="PACKAGE_NAME" value="com.awesomecopilot.search" />
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.search.ElasticUtilsTest" />
-      <option name="METHOD_NAME" value="testCreateEndpoint" />
-      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="UUIDTest.test" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="ValidParentheses" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.algorithm.leetcode.ValidParentheses" />
       <module name="copilot-test" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.awesomecopilot.*" />
+          <option name="PATTERN" value="com.awesomecopilot.algorithm.leetcode.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <option name="PACKAGE_NAME" value="com.awesomecopilot" />
-      <option name="MAIN_CLASS_NAME" value="com.awesomecopilot.UUIDTest" />
-      <option name="METHOD_NAME" value="test" />
-      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="JUnit.UUIDTest.test" />
-        <item itemvalue="JUnit.ElasticUtilsTest.testCreateEndpoint" />
-        <item itemvalue="Application.MaxWaterContainer" />
-        <item itemvalue="Application.LongestCommonPrefix" />
-        <item itemvalue="Application.IntegerReverser" />
+        <item itemvalue="Application.MergeTwoSortedLists" />
+        <item itemvalue="Application.ValidParentheses" />
+        <item itemvalue="Application.FourSum" />
+        <item itemvalue="Application.PhoneNumberLetterCombinations" />
+        <item itemvalue="Application.ThreeSumClosest" />
       </list>
     </recent_temporary>
   </component>
@@ -382,6 +388,20 @@
       <workItem from="1757684794174" duration="626000" />
       <workItem from="1757727244580" duration="6222000" />
       <workItem from="1757737836573" duration="1088000" />
+      <workItem from="1757894646580" duration="2544000" />
+      <workItem from="1757981632061" duration="4855000" />
+      <workItem from="1758068135173" duration="1925000" />
+      <workItem from="1758156906712" duration="2576000" />
+      <workItem from="1758159757455" duration="310000" />
+      <workItem from="1758170519811" duration="26000" />
+      <workItem from="1758244433802" duration="2963000" />
+      <workItem from="1758260434589" duration="1196000" />
+      <workItem from="1758333815117" duration="1611000" />
+      <workItem from="1758444903149" duration="133000" />
+      <workItem from="1758446235621" duration="172000" />
+      <workItem from="1758455737983" duration="392000" />
+      <workItem from="1758499737444" duration="812000" />
+      <workItem from="1758586182638" duration="1938000" />
     </task>
     <servers />
   </component>
@@ -445,13 +465,18 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestCommonPrefix.java</url>
-          <line>67</line>
+          <line>70</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-search/src/test/java/com/awesomecopilot/search/ElasticUtilsTest.java</url>
           <line>130</line>
           <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeTwoSortedLists.java</url>
+          <line>75</line>
+          <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
