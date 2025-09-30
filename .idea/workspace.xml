@@ -5,18 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9206d38e-ea75-40ff-9ae4-150a491428f5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/FourSum.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeTwoSortedLists.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/PhoneNumberLetterCombinations.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RomanToIntegerConverter.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ThreeSum.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ThreeSumClosest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ValidParentheses.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images/LIstNode.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/images/phone.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/round2/RemoveNthFromEnd.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestCommonPrefix.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/LongestCommonPrefix.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveNthFromEnd.java" beforeDir="false" afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/RemoveNthFromEnd.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/ParenthesesGenerator.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -125,7 +114,7 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.keymap",
+    "settings.editor.selected.configurable": "terminal",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -224,7 +213,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.28293.39" />
+        <option value="bundled-jdk-9823dce3aa75-fbdcb00ec9e3-intellij.indexing.shared.core-IU-251.26094.121" />
       </set>
     </attachedChunks>
   </component>
@@ -401,7 +390,12 @@
       <workItem from="1758446235621" duration="172000" />
       <workItem from="1758455737983" duration="392000" />
       <workItem from="1758499737444" duration="812000" />
-      <workItem from="1758586182638" duration="1938000" />
+      <workItem from="1758586182638" duration="2532000" />
+      <workItem from="1758615563817" duration="320000" />
+      <workItem from="1758674085731" duration="4640000" />
+      <workItem from="1758698512319" duration="304000" />
+      <workItem from="1759115897704" duration="3550000" />
+      <workItem from="1759190960785" duration="35000" />
     </task>
     <servers />
   </component>
@@ -475,7 +469,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/copilot-test/src/test/java/com/awesomecopilot/algorithm/leetcode/MergeTwoSortedLists.java</url>
-          <line>75</line>
+          <line>76</line>
           <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
