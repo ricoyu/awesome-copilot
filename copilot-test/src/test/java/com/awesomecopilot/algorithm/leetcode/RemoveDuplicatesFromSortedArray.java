@@ -69,18 +69,18 @@ public class RemoveDuplicatesFromSortedArray {
 			return 0;
 		}
 
-		// 初始化慢指针i
+		// 慢指针i，指向当前已经处理好的、不重复元素的最后一个位置
 		int i = 0;
 		for (int j = 1; j < nums.length; j++) {
 			// 当发现新的不重复元素时
 			if (nums[i] != nums[j]) {
 				// 移动慢指针，并更新其值为新的不重复元素
-				nums[i] = nums[j];
-				i++;
+				nums[++i] = nums[j];
+				//i++;
 			}
 		}
 
-		// 返回新的长度，慢指针位置+1即为不重复元素的个数
+		// 慢指针的索引加1就是唯一元素的个数
 		return i + 1;
 	}
 }

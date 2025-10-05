@@ -2,6 +2,7 @@ package com.awesomecopilot.algorithm.leetcode;
 
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
@@ -48,11 +49,7 @@ public class ElementRemover {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数组nums: ");
 		String input = scanner.nextLine().trim();
-		String[] parts = input.split(",");
-		int[] nums = new int[parts.length];
-		for(int i = 0; i < parts.length; i++) {
-		  nums[i] = Integer.parseInt(parts[i].trim());
-		}
+		int[] nums = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray() ;
 		System.out.print("请输入值val: ");
 		int val = scanner.nextInt();
 		System.out.println(removeElement(nums, val));
