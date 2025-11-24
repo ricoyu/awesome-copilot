@@ -182,7 +182,7 @@ public final class HashUtils {
 	 * @param bytes
 	 * @return String
 	 */
-	public static String md5Hex(byte[] bytes) {
+	public static String md5(byte[] bytes) {
 		return DigestUtils.md5Hex(bytes);
 	}
 	
@@ -193,7 +193,7 @@ public final class HashUtils {
 	 * @param source
 	 * @return String
 	 */
-	public static String md5Hex(String source) {
+	public static String md5(String source) {
 		return DigestUtils.md5Hex(source);
 	}
 	
@@ -204,7 +204,7 @@ public final class HashUtils {
 	 * @param file
 	 * @return String
 	 */
-	public static String md5Hex(File file) {
+	public static String md5(File file) {
 		Objects.requireNonNull(file, "file cannot be null!");
 		if (!file.exists()) {
 			return null;

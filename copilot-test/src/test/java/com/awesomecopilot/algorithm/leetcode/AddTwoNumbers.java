@@ -67,7 +67,24 @@ package com.awesomecopilot.algorithm.leetcode;
  */
 public class AddTwoNumbers {
 
-	public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+	public static void main(String[] args) {
+		ListNode l1 = new ListNode(0);
+		ListNode l1_2 = new ListNode(9);
+				l1.next = l1_2;
+
+		ListNode l2 = new ListNode(1);
+		ListNode l2_2 = new ListNode(1);
+				l2.next = l2_2;
+
+		ListNode node= addTwoNumbers(l1, l2);
+		while(node != null) {
+			System.out.print(node.val + " ");
+			node = node.next;
+		}
+
+	}
+
+	public static ListNode addTwoNumbers(ListNode l1, ListNode l2) {
 		// 使用哑结点简化链表操作，避免处理头节点为空的特殊情况
 		ListNode dummy = new ListNode(0);
 		ListNode current = dummy; // 当前节点指针，用于构建结果链表

@@ -73,7 +73,7 @@ public class HashUtilsTest {
 		//System.out.println(token);
 		//System.out.println(HashUtils.md5("BFPbEkNmW4cLpc17jp5S4fZOLJzd1Ea2Mv5M0KTQ2v87X96YRbjT609UNLgColmmrd6aFQXlXcFaqOzIvSbcRZ2xkpo1BIwOC8D"));
 		//System.out.println(HashUtils.md5("/api-centre/statistic/2017F?access-token=BFPbEkNmW4cLpc17jp5S4fZOLJzd1Ea2Mv5M0KTQ2v87X96YRbjT609UNLgColmmrd6aFQXlXcFaqOzIvSbcRZ2xkpo1BIwOC8D"));
-		System.out.println(HashUtils.md5Hex("d:/libdecrypt.so"));
+		System.out.println(HashUtils.md5("d:/libdecrypt.so"));
 	}
 	
 	@Test
@@ -81,7 +81,7 @@ public class HashUtilsTest {
 		String checksum = "bc611a61faa02d2b20aa659af7111bba";
 		String secretKey = "4b2ef0867a4af53076cdea03f210b18b";
 		long timestamp = DateUtils.toEpochMilis("2020-09-07 10:10:00");
-		String myChecksum = HashUtils.md5Hex(timestamp + secretKey);
+		String myChecksum = HashUtils.md5(timestamp + secretKey);
 		assertThat(checksum.equals(myChecksum)).isTrue();
 	}
 	
@@ -114,9 +114,9 @@ public class HashUtilsTest {
 		String filePath1 = "D:\\Work\\观安信息上海有限公司\\NTA资料\\测试流量包\\bug15560-测试流量包-pop3_fj.pcap";
 		String filePath2 = "D:\\Work\\观安信息上海有限公司\\NTA资料\\测试流量包\\s2-016漏洞插件-CVE-高危.pcap";
 		File file = Paths.get(filePath1).toFile();
-		String fileHash1 = HashUtils.md5Hex(file);
-		String fileHash2 = HashUtils.md5Hex(file);
-		String fileHash3 = HashUtils.md5Hex(Paths.get(filePath2).toFile());
+		String fileHash1 = HashUtils.md5(file);
+		String fileHash2 = HashUtils.md5(file);
+		String fileHash3 = HashUtils.md5(Paths.get(filePath2).toFile());
 		assertEquals(fileHash1, fileHash2);
 		assertNotEquals(fileHash2, fileHash3);
 		System.out.println(fileHash1);

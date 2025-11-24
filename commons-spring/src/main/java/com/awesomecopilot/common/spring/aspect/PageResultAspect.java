@@ -33,6 +33,9 @@ public class PageResultAspect {
 	}
 	
 	private void setPage(Object result, Object page) {
+		if (!(result instanceof Result)) {
+			return;
+		}
 		Result resultObj = (Result) result;
 		Page pageObj = (Page) page;
 		resultObj.setPage(pageObj);

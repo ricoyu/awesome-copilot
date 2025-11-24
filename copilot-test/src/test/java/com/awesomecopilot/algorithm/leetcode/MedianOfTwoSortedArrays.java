@@ -65,6 +65,7 @@ public class MedianOfTwoSortedArrays {
 
 		while (left <= right) {
 			// i 表示 nums1 中切分的位置
+			// i：表示在 nums1 中，分割点右侧的第一个元素索引（即 nums1 中前 i 个元素属于左半部分）
 			int i = (left + right) / 2;
 			// j 根据 i 推导出来，保证左半部分和右半部分元素数量尽可能相等
 			int j = (m + n + 1) / 2 - i;

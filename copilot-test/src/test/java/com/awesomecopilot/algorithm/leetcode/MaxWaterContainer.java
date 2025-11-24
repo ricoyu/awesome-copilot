@@ -13,7 +13,7 @@ import java.util.Scanner;
  * 返回容器可以储存的最大水量。
  * <p>
  * 示例1:
- * <image src="images/water.png"/>
+ * <image src="images/water.jpg" width=100px height=50px/>
  * <pre>
  * 输入：[1,8,6,2,5,4,8,3,7]
  * 输出：49

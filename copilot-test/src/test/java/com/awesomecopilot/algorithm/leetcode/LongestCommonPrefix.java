@@ -69,6 +69,7 @@ public class LongestCommonPrefix {
 		    strs[i] = StringUtils.cleanQuotationMark(strs[i]);
 		}
 		System.out.println(longestCommonPrefix(strs));
+		scanner.close();
 	}
 
 	private static String longestCommonPrefix(String[] strs) {

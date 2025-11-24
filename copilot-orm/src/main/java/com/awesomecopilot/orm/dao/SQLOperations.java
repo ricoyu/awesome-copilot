@@ -14,7 +14,9 @@ import java.util.Map;
 public interface SQLOperations {
 
 	/**
-	 * 执行一个原生SQL茶行行行, 可以直接传SQL语句或者是xml中的查询语句名
+	 * 分页入口在这 <p>
+	 * 执行一个原生SQL查询, 可以直接传SQL语句或者是xml中的查询语句名 <br/>
+	 * 通过返回的SqlQueryBuilder可以继续添加分页参数等等 <br/>
 	 * @param sqlOrQueryName
 	 * @return
 	 */

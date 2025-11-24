@@ -1,4 +1,4 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
 import java.util.HashSet;
 import java.util.Scanner;
@@ -41,7 +41,7 @@ import java.util.Set;
  *     <li/>在遍历过程中更新最大子串长度。
  * </ol>
  * <p/>
- * Copyright: Copyright (c) 2025-09-01 8:48
+ * Copyright: Copyright (c) 2025-10-16 9:59
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
@@ -56,29 +56,24 @@ public class LongestSubstringWithoutRepeating {
 		System.out.print("Enter string: ");
 		String s = scanner.nextLine().trim();
 		System.out.println(lengthOfLongestSubstring(s));
+
 	}
 
-	private static int lengthOfLongestSubstring(String s) {
+	public static int lengthOfLongestSubstring(String s) {
 		Set<Character> window = new HashSet<>();
-
-		// 左指针（窗口左边界）
 		int left = 0;
-		// 记录最长子串长度
+		int right = 0;
 		int maxLength = 0;
 
-		// 遍历字符串，right 表示窗口右边界
-		for (int right = 0; right < s.length(); right++) {
+		while (right < s.length()) {
 			char c = s.charAt(right);
 			while (window.contains(c)) {
-				// 移除窗口最左边的字符
 				window.remove(s.charAt(left));
 				left++;
 			}
 			window.add(c);
-
-			// 更新最大长度：当前窗口大小为 right - left + 1
-			// 加1是因为窗口边界是包含左右两个端点的闭区间，所以长度是 right - left + 1
-			maxLength = Math.max(maxLength, right - left + 1);
+			maxLength = Math.max(maxLength, right - left +1);
+			right++;
 		}
 
 		return maxLength;
