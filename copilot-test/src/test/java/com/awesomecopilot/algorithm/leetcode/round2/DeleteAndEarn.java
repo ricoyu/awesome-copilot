@@ -1,4 +1,4 @@
-package com.awesomecopilot.algorithm.leetcode;
+package com.awesomecopilot.algorithm.leetcode.round2;
 
 import java.util.Arrays;
 import java.util.Scanner;
@@ -48,6 +48,10 @@ import java.util.Scanner;
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
+ * Copyright: Copyright (c) 2025-11-27 16:23
+ * <p/>
+ * Company: Sexy Uncle Inc.
+ * <p/>
 
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
@@ -61,31 +65,8 @@ public class DeleteAndEarn {
 		System.out.println(deleteAndEarn(nums));
 	}
 
-	public static int deleteAndEarn(int[] nums) {
-		// 边界条件处理
-		if (nums == null || nums.length == 0) return 0;
+	private static int deleteAndEarn(int[] nums) {
+		return 0;
 
-		// 找出数组中的最大值，用来定义 earn 数组的大小
-		int max = Arrays.stream(nums).max().getAsInt();
-
-		// earn[i] 表示数字 i 总共能获得的点数（i 出现了多少次 * i）
-		int[] earn = new int[max + 1];
-		for (int num : nums) {
-			earn[num] += num;
-		}
-
-		// 动态规划数组 dp[i] 表示考虑前 i 个数字时，能获得的最大点数
-		int[] dp = new int[max + 1];
-		dp[0] = 0;
-		dp[1] = earn[1];
-
-		// 从2开始遍历，套用打家劫舍的状态转移公式
-		for (int i = 2; i <= max; i++) {
-			//dp[i - 1] 表示不选当前i个元素
-			// dp[i - 2] + earn[i] 表是选了当前i个元素, 但是不能选i-1和i+1, 所以dp[i] = dp[i - 2] + earn[i]
-		    dp[i] = Math.max(dp[i - 1], dp[i - 2] + earn[i]);
-		}
-
-		return dp[max];
 	}
 }

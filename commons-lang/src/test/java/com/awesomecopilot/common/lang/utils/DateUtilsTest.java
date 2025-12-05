@@ -1,7 +1,6 @@
 package com.awesomecopilot.common.lang.utils;
 
 import com.awesomecopilot.common.lang.constants.DateConstants;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.awesomecopilot.common.lang.utils.DateUtils.toLocalDateTime;
+import static java.text.MessageFormat.format;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -238,5 +238,45 @@ public class DateUtilsTest {
 		Date now = new Date();
 		String dateStr = DateUtils.format(now, DateConstants.FMT_RFC1123_FORMAT);
 		assertNotNull(dateStr);
+	}
+
+	@Test
+	public void test() {
+		String template = """
+				{
+				"核心线程数(corePoolSize)"        : %d,
+				"最大线程数(maximumPoolSize)"     : %d,
+				"当前线程数(poolSize)"            : %d,
+				"活跃线程数(activeCount)"         : %d,
+				"已完成任务数(completedTaskCount)": %d,
+				"总任务数(taskCount)"             : %d,
+				"当前队列大小(queue.size)"         : %d,
+				"队列剩余容量(queue.remaining)"    : %d,
+				"保持存活时间 (keepAliveTime)"     : %d秒,
+				"允许核心线程超时"                  : %d
+				}""";
+
+		String msg2 = String.format(template, 1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10);
+		System.out.print(msg2);
+		String msg = format(template, "1",
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10);
+		System.out.println(msg);
 	}
 }

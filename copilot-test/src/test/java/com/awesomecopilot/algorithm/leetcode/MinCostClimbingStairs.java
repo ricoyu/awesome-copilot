@@ -1,29 +1,31 @@
 package com.awesomecopilot.algorithm.leetcode;
 
+import java.util.Arrays;
 import java.util.Scanner;
 
 /**
- * 使用最小花费爬楼梯 <p/>
- *
+ * 使用最小花费爬楼梯
+ * <p>
  * 给你一个整数数组 cost ，其中 cost[i] 是从楼梯第 i 个台阶向上爬需要支付的费用。一旦你支付此费用，即可选择向上爬一个或者两个台阶。
- * <p/>
+ * <p>
  * 你可以选择从下标为 0 或下标为 1 的台阶开始爬楼梯。
- * <p/>
+ * <p>
  * 请你计算并返回达到楼梯顶部的最低花费。
- * <p/>
+ * <p>
  * 示例 1：
  * <br/>
  * 输入：cost = [10,15,20] <br/>
  * 输出：15 <br/>
- * 解释：最低花费是从 cost[1] 开始，然后走两步即可到阶梯顶，一共花费 15 。
- * <p/>
+ * 解释：最低花费是从 cost[1] 开始，然后走两步即可到阶梯顶，一共花费 15 。 <br/>
+ * 阶梯顶不是指20那阶, 而是20再网上一阶
+ * <p>
  * 示例 2：
  * <br/>
  * 输入：cost = [1,100,1,1,1,100,1,1,100,1] <br/>
  * 输出：6 <br/>
  * 解释：最低花费方式是从 cost[0] 开始，逐个经过那些 1 ，跳过 cost[3] ，一共花费 6 。
- * <p/>
- *
+ * <p>
+ * <p>
  * 你将从下标为 0 的台阶开始。
  *  <ul>
  *     <li/>- 支付 1 ，向上爬两个台阶，到达下标为 2 的台阶。
@@ -57,7 +59,7 @@ import java.util.Scanner;
  * <p/>
  * Company: Sexy Uncle Inc.
  * <p/>
-
+ *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
@@ -66,15 +68,11 @@ public class MinCostClimbingStairs {
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 		for (int i = 0; i < 3; i++) {
-			System.out.print("请输入第"+(i+1)+"个cost数组: ");
-			String input = scanner.nextLine().trim();
-			String[] parts = input.split(",");
-			int[] costs = new int[parts.length];
-			for (int j = 0; j < costs.length; j++) {
-				costs[j] = Integer.parseInt(parts[j].trim());
-			}
+			System.out.print("请输入第" + (i + 1) + "个cost数组: ");
+			int[] costs = Arrays.stream(scanner.nextLine().trim().split(",")).mapToInt(Integer::parseInt).toArray();
 			System.out.println(minCostClimbingStairs(costs));
 		}
+		scanner.close();
 	}
 
 	public static int minCostClimbingStairs(int[] cost) {
@@ -86,14 +84,14 @@ public class MinCostClimbingStairs {
 			return cost[0];
 		}
 		// dp 数组用于存储到达每个台阶的最小花费
-		int[] dp = new int[n+1];
+		int[] dp = new int[n + 1];
 
 		dp[0] = 0; //从台阶 0 开始，初始花费就是 cost[0]。
 		dp[1] = 0; //从台阶 1 开始，初始花费就是 cost[1]。
 
 		// 从第2个台阶开始计算到达每个台阶的最小花费
-		for(int i = 2; i <= n; i++) {
-		  dp[i] = Math.min(dp[i-1]+cost[i-1], dp[i-2]+cost[i-2]);
+		for (int i = 2; i <= n; i++) {
+			dp[i] = Math.min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2]);
 		}
 
 		return dp[n];

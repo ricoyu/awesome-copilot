@@ -6,7 +6,6 @@ import com.awesomecopilot.common.lang.utils.SqlUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
 import com.awesomecopilot.orm.exception.EntityOperationException;
-import com.awesomecopilot.orm.exception.JPQLException;
 import com.awesomecopilot.orm.exception.PersistenceException;
 import com.awesomecopilot.orm.exception.RawSQLQueryException;
 import com.awesomecopilot.orm.exception.SQLQueryException;
@@ -75,7 +74,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @since Mar 6, 2016
  */
 @Repository
-public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations,
+public class JpaDao implements SQLOperations, CriteriaOperations,
 		EntityOperations, InitializingBean {
 
 	private static Logger log = LoggerFactory.getLogger(JpaDao.class);
@@ -396,7 +395,7 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 	}
 
 	@Override
-	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, List<PK> ids) {
+	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, Collection<PK> ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		if (ids.size() == 0) {
 			return;
@@ -702,56 +701,6 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 		return results.get(0);
 	}
 
-	@Override
-	public <T> List<T> find(String jpql, Class<T> clazz) {
-		try {
-			return find(jpql, null, null, clazz);
-		} catch (Throwable e) {
-			log.error("msg", e);
-			throw new JPQLException(e);
-		}
-	}
-
-	@Override
-	public <T> T findUnique(String jpql, Class<T> clazz) {
-		List<T> results = find(jpql, clazz);
-		return results.isEmpty() ? null : results.get(0);
-	}
-
-	@Override
-	public <T> T findUnique(String jpql, Map<String, Object> params, Class<T> resultClass) {
-		List<T> results = find(jpql, params, resultClass);
-		return results.isEmpty() ? null : results.get(0);
-	}
-
-	@Override
-	public <T> T findUnique(String jpql, String paramName, Object paramValue, Class<T> clazz) {
-		List<T> results = find(jpql, paramName, paramValue, clazz);
-		return results.isEmpty() ? null : results.get(0);
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> List<T> find(String jpql, Map<String, Object> params, Class<T> resultClass) {
-		try {
-			return createQuery(jpql, params, resultClass).getResultList();
-		} catch (Throwable e) {
-			log.error("msg", e);
-			throw new JPQLException(e);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> List<T> find(String jpql, String paramName, Object paramValue, Class<T> clazz) {
-		try {
-			return createQuery(jpql, paramName, paramValue, clazz).getResultList();
-		} catch (Throwable e) {
-			log.error("msg", e);
-			throw new JPQLException(e);
-		}
-	}
-
 	/**
 	 * 返回单个对象，不存在则返回null
 	 *
@@ -948,29 +897,6 @@ public class JpaDao implements JPQLOperations, SQLOperations, CriteriaOperations
 			}
 		}
 		return entities;
-	}
-
-	@Override
-	public <T> Query createQuery(String jpql, Class<T> resultClass) {
-		Objects.requireNonNull(jpql, "jpql cannot be null");
-		TypedQuery<T> query = em().createQuery(jpql, resultClass);
-		if (hibernateUseQueryCache) {
-			query.setHint(HINT_QUERY_CACHE, true);
-		}
-		return query;
-	}
-
-	@Override
-	public <T> Query createQuery(final String jpql, String paramName, Object paramValue, Class<T> resultClass) {
-		Objects.requireNonNull(jpql, "jpql cannot be null");
-		TypedQuery<T> query = em().createQuery(jpql, resultClass);
-		if (hibernateUseQueryCache) {
-			query.setHint(HINT_QUERY_CACHE, true);
-		}
-		if (isNotBlank(paramName)) {
-			query.setParameter(paramName, paramValue);
-		}
-		return query;
 	}
 
 	@Override

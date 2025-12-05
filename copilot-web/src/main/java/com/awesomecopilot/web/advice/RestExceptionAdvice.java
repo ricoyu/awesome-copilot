@@ -339,9 +339,19 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	 * </pre>
 	 */
 	@ExceptionHandler(Throwable.class)
-	@ResponseStatus(value = HttpStatus.OK)
-	@ResponseBody
-	public ResponseEntity<?> handleThrowable(Throwable e) throws Throwable {
+	@ResponseStatus(value = HttpStatus.OK) // 强烈建议 500，不要再用 200！
+	public ResponseEntity<?> handleThrowable(Throwable e) {
+		log.error("未捕获异常", e);
+
+		// 重点：如果用了 Sentinel，只做 trace，不 throw！
+		if (sentinelExists) {
+			try {
+				com.alibaba.csp.sentinel.Tracer.trace(e); // 让 Sentinel 统计异常
+			} catch (Throwable ignored) {
+			}
+		}
+
+		// 永远返回我们自己的错误结构，绝不走 Spring Boot 默认错误页！
 		return findRealCause(e);
 	}
 
@@ -352,7 +362,7 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 	 * @param e
 	 * @return
 	 */
-	private ResponseEntity<?> findRealCause(Throwable e) throws Throwable {
+	private ResponseEntity<?> findRealCause(Throwable e) {
 		if (e.getCause() != null && e.getCause() instanceof BusinessException) {
 			return handleBusinessException((BusinessException) e.getCause());
 		}
@@ -389,17 +399,16 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 		 */
 		logger.error("Rest API ERROR happen", e);
 		if (sentinelExists) {
-			throw e;
+			com.alibaba.csp.sentinel.Tracer.trace(e); // 让 Sentinel 统计异常
 		}
 		try {
 			Object restBlockExceptionHandler = applicationContext.getBean("restBlockExceptionHandler");
 			sentinelExists = true;
-			log.debug("当前整合了Sentinel, 关闭Throwable异常处理, 否则RestBlockExceptionHandler熔断规则处理将不生效");
 			/*
 			 * 为了即保证sentinel熔断能够生效有保证异常能被处理返回REST结果, copilot-spring-cloud-starter那边添加了ExceptionFilter
 			 * copilot-spring-security6-starter那边添加了SecurityExceptionFilter用来处理这边的漏网之鱼
 			 */
-			throw e;
+			com.alibaba.csp.sentinel.Tracer.trace(e); // 让 Sentinel 统计异常
 		} catch (NoSuchBeanDefinitionException e1) {
 			log.debug("当前没有整合Sentinel, 开启Throwable异常处理");
 		}

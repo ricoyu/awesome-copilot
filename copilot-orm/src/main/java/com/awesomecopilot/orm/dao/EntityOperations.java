@@ -3,6 +3,7 @@ package com.awesomecopilot.orm.dao;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -86,7 +87,7 @@ public interface EntityOperations {
 	 */
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK id);
 	
-	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, List<PK> ids);
+	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, Collection<PK> ids);
 
 	/**
 	 * 跟Hibernate的get方法同语义，根据主键查找，返回bean本身，找不到则返回null
