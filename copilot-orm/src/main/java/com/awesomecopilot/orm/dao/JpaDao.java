@@ -12,6 +12,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import com.awesomecopilot.orm.utils.SQLUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -800,7 +801,10 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		//进行解析
 		Velocity.evaluate(context, sql, queryName, queryString.toString());
 
-		String parsedSQL = sql.toString();
+		String preParsedSQL = sql.toString();
+		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+		String parsedSQL = SQLUtils.build(preParsedSQL);
+		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
