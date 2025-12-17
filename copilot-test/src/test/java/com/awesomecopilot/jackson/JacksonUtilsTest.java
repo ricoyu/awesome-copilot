@@ -142,6 +142,14 @@ public class JacksonUtilsTest {
 		System.out.println(toJson(map));
 		assertEquals(toJson(map), detail);
 	}
+
+	@Test
+	public void testMap2Json() {
+		Map<Long, String> map = new HashMap<>();
+		map.put(1L, "hello");
+		String json = JacksonUtils.toJson(map);
+		System.out.println(json);
+	}
 	
 	@Test
 	public void testToList2() {

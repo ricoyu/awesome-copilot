@@ -65,7 +65,12 @@ public class ValidationUtils {
 		}
 		for (ObjectError objectError : globalErrors) {
 			MsgTemplate msgTemplate = RegexUtils.msgTemplate(objectError.getDefaultMessage());
-			error = new String[]{objectError.getObjectName(), toString(msgTemplate)};
+			//error = new String[]{objectError.getObjectName(), toString(msgTemplate)};
+			/*
+			 * 2025-12-09 如果是全局的验证错误, 只给错误消息就可以了, 第一个objectError.getObjectName()不用给了,
+			 * 因为给了也只是告诉前端是哪个DTO而不是哪个字段报错, 这种验证错误一般就是页面顶部显示一下不需要显示到对应字段旁边
+			 */
+			error = new String[]{toString(msgTemplate)};
 			errors.add(error);
 		}
 		errors = errors.stream()

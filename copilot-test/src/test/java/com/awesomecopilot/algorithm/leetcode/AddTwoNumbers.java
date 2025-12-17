@@ -69,12 +69,12 @@ public class AddTwoNumbers {
 
 	public static void main(String[] args) {
 		ListNode l1 = new ListNode(0);
-		ListNode l1_2 = new ListNode(9);
-				l1.next = l1_2;
+		//ListNode l1_2 = new ListNode(9);
+		//		l1.next = l1_2;
 
 		ListNode l2 = new ListNode(1);
-		ListNode l2_2 = new ListNode(1);
-				l2.next = l2_2;
+		//ListNode l2_2 = new ListNode(1);
+		//		l2.next = l2_2;
 
 		ListNode node= addTwoNumbers(l1, l2);
 		while(node != null) {
@@ -87,20 +87,20 @@ public class AddTwoNumbers {
 	public static ListNode addTwoNumbers(ListNode l1, ListNode l2) {
 		// 使用哑结点简化链表操作，避免处理头节点为空的特殊情况
 		ListNode dummy = new ListNode(0);
-		ListNode current = dummy; // 当前节点指针，用于构建结果链表
-		int carry = 0; // 进位值，初始为0
+		ListNode current = dummy; // 当前节点指针, 用于构建结果链表
+		int carry = 0; // 进位值, 初始为0
 
-		// 当任一链表未遍历完或仍有进位时，继续循环
+		// 当任一链表未遍历完或仍有进位时, 继续循环
 		while (l1 != null || l2 != null || carry != 0) {
 			// 获取当前两个节点的值（如果节点存在则取值，否则为0）
 			int val1 = l1 == null ? 0 : l1.val;
 			int val2 = l2 == null ? 0 : l2.val;
 
-			// 计算当前位的总和（包括进位）
+			// 计算当前位的总和 (包括进位)
 			int sum = val1 + val2 + carry;
 			carry = sum / 10; // 更新进位值
 
-			// 创建新节点存储当前位的计算结果，并移动当前指针
+			// 创建新节点存储当前位的计算结果, 并移动当前指针
 			current.next = new ListNode(sum % 10);
 			current = current.next;
 

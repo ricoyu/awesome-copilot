@@ -167,13 +167,20 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 		List<String[]> msgs = errorMessage.getErrors()
 				.stream()
 				.map((errArray) -> {
-					Matcher matcher = MESSAGE_TEMPLATE_PATTERN.matcher(errArray[1]);
-					if (matcher.matches()) {
-						errArray[1] = MessageHelper.getMessage(matcher.group(1));
+					if (errArray.length > 1) {
+						Matcher matcher = MESSAGE_TEMPLATE_PATTERN.matcher(errArray[1]);
+						if (matcher.matches()) {
+							errArray[1] = MessageHelper.getMessage(matcher.group(1));
+						}
+						return errArray;
+					} else {
+						Matcher matcher = MESSAGE_TEMPLATE_PATTERN.matcher(errArray[0]);
+						if (matcher.matches()) {
+							errArray[0] = MessageHelper.getMessage(matcher.group(1));
+						}
+						return errArray;
 					}
-					return errArray;
-				})
-				.collect(toList());
+				}).collect(toList());
 		/*
 		 * 这边不要对msgs执行Jackson序列化, 如果这么做, 输出到前端的JSON串会对双引号转义, 看到的将会是类似这样:
 		 * <pre>

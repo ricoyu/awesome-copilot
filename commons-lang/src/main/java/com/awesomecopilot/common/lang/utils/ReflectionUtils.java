@@ -1446,12 +1446,43 @@ public class ReflectionUtils {
 	}
 
 	/**
+	 * 判断字符串是否为驼峰式命名（包含单单词纯小写形式，如"id"也判定为true）
+	 * @param variableName 待判断的变量名
+	 * @return 是驼峰式返回true，否则返回false
+	 */
+	public static boolean isCamelCase(String variableName) {
+		// 1. 空值/空白字符串直接返回false
+		if (variableName == null || variableName.trim().isEmpty()) {
+			return false;
+		}
+		String trimmedName = variableName.trim();
+		int length = trimmedName.length();
+
+		// 2. 首字符必须是小写字母（核心：不能是数字/大写/特殊字符）
+		char firstChar = trimmedName.charAt(0);
+		if (!Character.isLowerCase(firstChar)) {
+			return false;
+		}
+
+		// 3. 遍历检查所有字符：仅允许字母/数字，禁止特殊字符（如下划线、空格等）
+		for (int i = 0; i < length; i++) {
+			char c = trimmedName.charAt(i);
+			if (!Character.isLetterOrDigit(c)) {
+				return false;
+			}
+		}
+
+		// 4. 满足以上条件即判定为驼峰式（包含单单词纯小写、标准驼峰）
+		return true;
+	}
+
+	/**
 	 * 将下划线风格的数据库字段名转换为驼峰式的Java属性名。
 	 *
 	 * @param underscoreName 下划线风格的名称
 	 * @return 驼峰式的名称
 	 */
-	public static String toPropertyName(String underscoreName) {
+	public static String toCamelCase(String underscoreName) {
 		if (underscoreName == null || underscoreName.isEmpty()) {
 			return "";
 		}
@@ -1481,6 +1512,57 @@ public class ReflectionUtils {
 		}
 
 		return camelCaseName.toString();
+	}
+
+	/**
+	 * 将驼峰式命名（camelCase/PascalCase）转换为下划线命名（snake_case）
+	 * 修复连续大写场景：userID→user_id、userIDCard→user_id_card
+	 * @param camelCaseName 驼峰式命名的字符串（支持小驼峰/大驼峰）
+	 * @return 标准下划线命名的字符串，空值/空白返回空字符串
+	 */
+	public static String toUnderScore(String camelCaseName) {
+		// 1. 空值/空白字符串处理
+		if (camelCaseName == null || camelCaseName.trim().isEmpty()) {
+			return "";
+		}
+
+		String trimmedName = camelCaseName.trim();
+		StringBuilder sb = new StringBuilder();
+		int length = trimmedName.length();
+
+		// 2. 遍历每个字符处理驼峰转换
+		for (int i = 0; i < length; i++) {
+			char currentChar = trimmedName.charAt(i);
+			// 大写字母处理逻辑（核心修复）
+			if (Character.isUpperCase(currentChar)) {
+				// 转小写
+				char lowerChar = Character.toLowerCase(currentChar);
+
+				// 条件1：非首字符 → 优先加下划线（避免开头下划线）
+				if (i > 0) {
+					// 条件2：前一个字符是小写/数字 → 直接加下划线（如 userID 中 r→I）
+					char prevChar = trimmedName.charAt(i - 1);
+					if (Character.isLowerCase(prevChar) || Character.isDigit(prevChar)) {
+						sb.append("_");
+					}
+					// 条件3：后一个字符是小写 → 加下划线（如 IDCard 中 D→C）
+					else if (i < length - 1) {
+						char nextChar = trimmedName.charAt(i + 1);
+						if (Character.isLowerCase(nextChar)) {
+							sb.append("_");
+						}
+					}
+				}
+				sb.append(lowerChar);
+			} else {
+				// 小写字母/数字直接拼接
+				sb.append(currentChar);
+			}
+		}
+
+		// 3. 去除首尾可能的下划线（防御性处理）
+		String result = sb.toString().replaceAll("^_+|_+$", "");
+		return result;
 	}
 
 }

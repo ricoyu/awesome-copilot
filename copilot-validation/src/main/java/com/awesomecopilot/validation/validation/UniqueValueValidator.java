@@ -14,6 +14,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * If value of referenceField equals as specified in referenceValue, mandatoryField is
  * mandatory, otherwise not.
@@ -34,12 +36,17 @@ public class UniqueValueValidator implements ConstraintValidator<UniqueValue, Ob
 
 	@Override
 	public void initialize(UniqueValue constraintAnnotation) {
-		field = constraintAnnotation.field();
 		table = constraintAnnotation.table();
 		primaryKeyField = constraintAnnotation.primaryKey();
+		field = constraintAnnotation.field();
 		property = constraintAnnotation.property();
 		isSoftDelete = constraintAnnotation.isSoftDelete();
 		softDeleteField = constraintAnnotation.softDeleteField();
+
+		//如果没有显式指定表字段名, 默认属性名转下划线风格
+		if (isBlank(field)) {
+			field = ReflectionUtils.toUnderScore(property);
+		}
 	}
 
 	@Override
@@ -54,17 +61,31 @@ public class UniqueValueValidator implements ConstraintValidator<UniqueValue, Ob
 			Connection connection = dataSource.getConnection();
 			PreparedStatement stmt = null;
 			String sql = null;
+			//表主键字段名
+			String idField = null;
+			//bean的主键字段名
+			String idProperty = null;
 
-			//propertyValues是SQL where条件中的值
-			Object primaryKeyValue = ReflectionUtils.getFieldValue(primaryKeyField, bean);
-			//主键值为null表示INSERT场景
-			if (primaryKeyValue == null) {
-				sql = "select count(*) from " + table + " where " + field + " = ?";
+			/*
+			 * 如果字段是驼峰式命名, 那么认为提供的是bean的属性名, 会自动转成下划线分隔的表字段名
+			 */
+			if (ReflectionUtils.isCamelCase(primaryKeyField)) {
+				idProperty = primaryKeyField;
+				idField = ReflectionUtils.toUnderScore(primaryKeyField); // 将驼峰式命名转换成下划线分隔的表字段名
 			} else {
-				sql = sql + "and " + primaryKeyField + "!=" + primaryKeyValue;
+				idField = primaryKeyField;
+				idProperty = ReflectionUtils.toCamelCase(primaryKeyField); // 将下划线分隔的表字段名转换成驼峰式命名
+			}
+			Object primaryKeyValue = ReflectionUtils.getFieldValue(idProperty, bean);
+			//主键值为null表示INSERT场景
+
+			sql = "select count(*) from " + table + " where " + field + " = ?";
+
+			if (primaryKeyValue != null) {
+				sql = sql + " and " + idField + " != " + primaryKeyValue;
 			}
 			if (isSoftDelete) {
-				sql = sql + "and " + softDeleteField + " = 0";
+				sql = sql + " and " + softDeleteField + " = 0";
 			}
 
 			stmt = connection.prepareStatement(sql);

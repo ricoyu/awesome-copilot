@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -209,6 +210,25 @@ public final class ServletUtils {
 	 */
 	public static void setIntHeader(HttpServletResponse response, String header, int value) {
 		response.setIntHeader(header, value);
+	}
+
+	/**
+	 * 根据文件名后缀获取对应的Content-Type
+	 */
+	public static String getContentTypeByFileName(String fileName) {
+		if (fileName == null) {
+			return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+		}
+		String suffix = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+		return switch (suffix) {
+			case "txt" -> MediaType.TEXT_PLAIN_VALUE;
+			case "jpg", "jpeg" -> MediaType.IMAGE_JPEG_VALUE;
+			case "png" -> MediaType.IMAGE_PNG_VALUE;
+			case "gif" -> MediaType.IMAGE_GIF_VALUE;
+			case "bmp" -> "image/bmp";
+			case "webp" -> "image/webp";
+			default -> MediaType.APPLICATION_OCTET_STREAM_VALUE;
+		};
 	}
 
 	/**

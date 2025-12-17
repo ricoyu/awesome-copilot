@@ -5,6 +5,8 @@ import java.util.Scanner;
 /**
  * 下降路径最小和
  * <p>
+ * <image src="images/MinFallingPathSum.png" />
+ * <p>
  * 给你一个 n x n 的方形整数数组 matrix ，请你找出并返回通过 matrix 的下降路径的最小和 。
  * <p>
  * 下降路径可以从第一行中的任何元素开始，并从每一行中选择一个元素。在下一行选择的元素和当前行所选元素最多相隔一列（即位于正下方或者沿对角线向左或者向右的第一个元素）。

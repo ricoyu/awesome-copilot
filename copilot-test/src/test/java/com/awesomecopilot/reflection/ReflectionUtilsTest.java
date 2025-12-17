@@ -18,6 +18,9 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.awesomecopilot.common.lang.utils.ReflectionUtils.isCamelCase;
+import static com.awesomecopilot.common.lang.utils.ReflectionUtils.toUnderScore;
+
 /**
  * <p>
  * Copyright: (C), 2020-11-18 9:51
@@ -71,9 +74,34 @@ public class ReflectionUtilsTest {
         String[] underscoreNames = new String[]{"src_field", "basicTask_equipmentChangeNotify"};
         for (int i = 0; i < underscoreNames.length; i++) {
             String underscoreName = underscoreNames[i];
-            String camelCaseName = ReflectionUtils.toPropertyName(underscoreName);
+            String camelCaseName = ReflectionUtils.toCamelCase(underscoreName);
             System.out.println(camelCaseName); // 输出: srcField
         }
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testIsCamelCase() {
+        // 符合驼峰的场景（包含单单词纯小写）
+        System.out.println(isCamelCase("id"));            // true
+        System.out.println(isCamelCase("name"));          // true
+        System.out.println(isCamelCase("userId"));        // true
+        System.out.println(isCamelCase("user123Name"));   // true
+        // 不符合的场景
+        System.out.println(isCamelCase("ID"));            // false（全大写，首字符非小写）
+        System.out.println(isCamelCase("UserId"));        // false（首字符大写）
+        System.out.println(isCamelCase("user_name"));     // false（包含下划线）
+        System.out.println(isCamelCase("123userId"));     // false（首字符数字）
+        System.out.println(isCamelCase("user name"));     // false（包含空格）
+        System.out.println(isCamelCase(""));              // false（空字符串）
+        System.out.println(isCamelCase(null));            // false（空指针）
+    }
+
+    @org.junit.jupiter.api.Test
+    public void testCamelCase2UnderScore() {
+        // 优化后测试：userID → user_id（而非 user_i_d）
+        System.out.println(toUnderScore("id")); // id
+        System.out.println(toUnderScore("userID")); // user_id
+        System.out.println(toUnderScore("userIDCard")); // user_id_card
     }
 
     @Inherited
