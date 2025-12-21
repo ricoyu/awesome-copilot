@@ -687,77 +687,115 @@ public class MessageContent {
 
 ## 4.1 分页查询
 
-### 4.1.1 AppProductSpuController
+### 4.1.1 BrandController
 
 ```java
-@GetMapping("/page")
-@Operation(summary = "获得商品 SPU 分页")
-@PermitAll
-public Result<List<AppProductSpuRespVO>> getSpuPage(@Valid AppProductSpuPageReqVO pageVO) {
-  List<ProductSpuVO> pageResult = productSpuService.getSpuPage(pageVO);
-  if (CollectionUtils.isEmpty(pageResult)) {
-    return Results.<List<AppProductSpuRespVO>>success().build();
-  }
-
-  // 拼接返回
-  pageResult.forEach(spu -> spu.setSalesCount(spu.getSalesCount() + spu.getVirtualSalesCount()));
-  List<AppProductSpuRespVO> results = pageResult.stream().map((spu) -> {
-    AppProductSpuRespVO appProductSpuRespVO = BeanUtils.copyProperties(spu, AppProductSpuRespVO.class);
-    List<String> sliderPicUrls = appProductSpuRespVO.getSliderPicUrls();
-    for (int i = 0; i < sliderPicUrls.size(); i++) {
-        String sliderPicUrl = sliderPicUrls.get(i);
-      sliderPicUrl = StringUtils.cleanQuotationMark(sliderPicUrl);
-      sliderPicUrls.set(i, sliderPicUrl);
-    }
-    return appProductSpuRespVO;
-  }).collect(toList());
-  Result<List<AppProductSpuRespVO>> result = Results.<List<AppProductSpuRespVO>>success()
-      .page(pageVO.getPage())
-      .data(results)
-      .build();
-  return result;
+@PostMapping("/search")
+public Result<List<BrandVO>> searchBrand(@RequestBody BrandDTO brandDTO) {
+  List<BrandVO> brandVOS =brandService.searchBrand(brandDTO);
+  return Results.<List<BrandVO>>success().data(brandVOS).build();
 }
 ```
 
-EmployeeQueryVO
+返回的Result对象里面有一个Page属性, 框架会通过AOP把分页结果(总记录数, 总页数等)回填进去, 我们业务代码不需要关心, 返回结果示例
+
+```json
+{
+  "code": "0",
+  "status": "success",
+  "message": null,
+  "page": {
+    "pageNum": 1,
+    "pageSize": 10,
+    "total": 1,
+    "totalPages": 1
+  },
+  "data": [
+    {
+      "brandId": 1,
+      "descript": "班尼路 1981 年诞生于香港，是家喻户晓的休闲服饰品牌。产品覆盖男、女、中性及童装等全品类，主打简约舒适、高性价比的设计风格，满足日常穿搭需求。品牌门店遍布全国，数量超 2500 家，凭借亲民定位收获了广泛消费群体的喜爱。",
+      "firstLetter": "B",
+      "logo": "http://localhost:8070/file/ceph/show/4303c60aa3f2_班尼路.jpeg",
+      "name": "班尼路",
+      "showStatus": 1,
+      "sort": 1
+    }
+  ]
+}
+```
+
+
+
+BrandDTO继承PageDTO是因为PageDTO里面有Page对象属性可以接收分页参数, 也可以用单独的请求参数来传递分页参数: 
+
+* pageNum(第几页, 从1开始)
+* pageSize(每页多少条记录)
+* order(排序规则: 在字段名后加“:asc或:desc”指定升序 (降序), 多个字段使用逗号分隔, 省略排序默认使用升序)", example = "“字段1,字段2” 或者 “字段1:asc,字段2:desc)
 
 ```java
-@Schema(description = "用户 App - 商品 SPU 分页 Request VO")
+package com.copilot.bilibili.mall.product.dto;
+
+import com.awesomecopilot.common.lang.dto.PageDTO;
+import com.awesomecopilot.validation.validation.annotation.UniqueValue;
+import com.copilot.bilibili.mall.common.validation.groups.AddGroups;
+import com.copilot.bilibili.mall.common.validation.groups.UpdateGroups;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+/**
+ * 品牌数据传输对象
+ */
 @Data
-@ToString(callSuper = true)
-public class AppProductSpuPageReqVO extends PageDTO {
+@UniqueValue(table = "pms_brand", primaryKey = "brand_id", property = "name", message = "品牌名称已存在")
+public class BrandDTO extends PageDTO {
 
-    public static final String SORT_FIELD_PRICE = "price";
-    public static final String SORT_FIELD_SALES_COUNT = "salesCount";
-    public static final String SORT_FIELD_CREATE_TIME = "createTime";
+    /**
+     * 品牌id
+     */
+    @Null(groups = {AddGroups.class}, message = "品牌id必须为空")
+    @NotNull(groups = {UpdateGroups.class}, message = "品牌id不能为空")
+    private Long brandId;
 
-    @Schema(description = "商品 SPU 编号数组", example = "1,3,5")
-    private List<Long> ids;
+    /**
+     * 品牌名
+     */
+    @NotEmpty(message = "品牌名称不能为空", groups = {AddGroups.class, UpdateGroups.class})
+    private String name;
 
-    @Schema(description = "分类编号", example = "1")
-    private Long categoryId;
+    /**
+     * 品牌logo地址
+     */
+    @NotEmpty(message = "品牌logo不能为空", groups = {AddGroups.class, UpdateGroups.class})
+    @Size(max = 2000, message = "品牌logo长度不能超过2000", groups = {AddGroups.class, UpdateGroups.class})
+    private String logo;
 
-    @Schema(description = "分类编号数组", example = "1,2,3")
-    private List<Long> categoryIds;
+    /**
+     * 介绍
+     */
+    @NotEmpty(message = "品牌介绍不能为空", groups = {AddGroups.class, UpdateGroups.class})
+    private String descript;
 
-    @Schema(description = "关键字", example = "好看")
-    private String keyword;
+    /**
+     * 显示状态(0-不显示；1-显示)
+     */
+    @NotNull(message = "显示状态不能为空", groups = {AddGroups.class, UpdateGroups.class})
+    private Boolean showStatus;
 
-    @Schema(description = "排序字段", example = "price") // 参见 AppProductSpuPageReqVO.SORT_FIELD_XXX 常量
-    private String sortField;
+    /**
+     * 检索首字母
+     */
+    @NotBlank(message = "检索首字母不能为空")
+    private String firstLetter;
 
-    @Schema(description = "排序方式", example = "true")
-    private Boolean sortAsc;
-
-    @AssertTrue(message = "排序字段不合法")
-    @JsonIgnore
-    public boolean isSortFieldValid() {
-        if (StringUtils.isEmpty(sortField)) {
-            return true;
-        }
-        return equalsAny(sortField, SORT_FIELD_PRICE, SORT_FIELD_SALES_COUNT);
-    }
-
+    /**
+     * 排序
+     */
+    @NotNull(message = "排序不能为空")
+    private Integer sort;
 }
 ```
 
@@ -767,7 +805,7 @@ Page对象是commons-lang提供的, 可以作为接收查询参数的Bean的属�
 
 ```json
 {
-  "fullName": "Tiffany Schneider",
+  "name": "Tiffany Schneider",
   "page": {
     "pageNum": 1,
     "pageSize": 10,
@@ -790,69 +828,45 @@ Page对象是commons-lang提供的, 可以作为接收查询参数的Bean的属�
 
 
 
-```
-{
-  "code": "0",
-  "status": "success",
-  "page": {
-        "pageNum": 1,
-        "pageSize": 10,
-        "total": 6,
-        "totalPages": 1
-    },
-  "data": [
-    ...
-  ]
-}
-```
-
 ### 4.1.2 Service 层
 
 ```java
-@Service
-public class EmployeeService {
-  
-  @Autowired
-  private SQLOperations sqlOperations;
-  
-  public List<Employee> listEmployees(EmployeeQueryVO queryVO) {
-    Map<String, Object> params = new HashMap<>();
-    params.put("fullName", queryVO.getFullName());
-    params.put("lowSalary", queryVO.getLowSalary());
-    params.put("highSalary", queryVO.getHighSalary());
-    return sqlOperations.namedSqlQuery("queryEmployees", params, Employee.class, queryVO.getPage());
-  }
+public List<BrandVO> searchBrand(BrandDTO brandDTO) {
+  List<BrandVO> brandVOs = sqlOperations.query("queryBrands")
+      .addlikeParam("name", brandDTO.getName())
+      .page(brandDTO.getPageNum(), brandDTO.getPageSize())
+      .resultClass(BrandVO.class)
+      .findPage();
+  return brandVOs;
 }
 ```
 
-只需要注入SQLOperations对象, SQLOperations是一个接口, JpaDao实现了该接口, 主要提供原生SQL查询的功能, listEmployees是这个原生SQL的名字, 在named-sql目录下的xxx.hbm.xml中定义, Employee可以是JPA的实体类也可以是普通的POJO, 其中"fullName"是SQL语句中查询条件的占位符名字
+只需要注入SQLOperations对象, SQLOperations是一个接口, JpaDao实现了该接口, 主要提供原生SQL查询的功能, queryBrands是这个原生SQL的名字, 在named-sql目录下的xxx.hbm.xml中定义, BrandVO可以是JPA的实体类也可以是普通的POJO, 其中"name"是SQL语句中查询条件的占位符名字
 
-### 4.1.3 Employee.hbm.xml
+* addlikeParam 是为like语句创建的便捷方法, 如果brandDTO.getName()不为空则会往params添加一个name变量, 值是%brandDTO.getName()%
+
+* addLlikeParam 是往params添加一个name变量, 值是%brandDTO.getName()
+* addRlikeParam 是往params添加一个name变量, 值是brandDTO.getName()%
+* 不是like条件的话直接addParam即可
+
+### 4.1.3 Brand.hbm.xml
 
 分页语句以及排序子句都会自动生成, 你这边只需要写select以及查询条件即可
 
 ```xml
-<sql-query name="queryProductSpu">
-    <![CDATA[
-        select * from product_spu
-        where `status`=1
-        #if($keyword)
-            and name like :keyword
-        #end
-        #if(!$categoryIds.isEmpty())
-            and category_id in :categoryIds
-        #end
-        #if($!sortField == "salesCount")
-            ORDER BY (sales_count + virtual_sales_count) #ifEqual($sortAsc, true, "ASC", "DESC")
-        #elseif($!sortField == "price")
-            ORDER BY price #ifEqual($sortAsc, true, "ASC", "DESC")
-        #elseif($!sortField == "createTime")
-            ORDER BY create_time #ifEqual($sortAsc, true, "ASC", "DESC")
-        #else
-            ORDER BY `sort` desc, id desc
-        #end
-  ]]>
-</sql-query>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd" >
+<hibernate-mapping>
+    <sql-query name="queryBrands">
+        <![CDATA[
+            select * from pms_brand where
+            #if($name)
+            name like :name
+            order by `sort` asc
+            #end
+    	]]>
+    </sql-query>
+</hibernate-mapping>
 ```
 
 

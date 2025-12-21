@@ -1,7 +1,8 @@
 package com.awesomecopilot.common.spring.utils;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.FatalBeanException;
 
 import java.beans.PropertyDescriptor;
@@ -26,8 +27,9 @@ import static org.springframework.beans.BeanUtils.getPropertyDescriptors;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class BeanUtils {
+
+	private static final Logger log = LoggerFactory.getLogger(BeanUtils.class);
 
 	/**
 	 * 从source拷贝到target, 不包括值为null的属性
@@ -61,6 +63,7 @@ public class BeanUtils {
 	}
 
 	/**
+	 * 为了BeanUtils的简洁性, 废弃方法
 	 * 从 sources 中取出元素挨个拷贝属性
 	 * 根据class创建相应对象，从source拷贝到target，拷贝所有，不包括值为null的属性
 	 * 
@@ -71,7 +74,8 @@ public class BeanUtils {
 	 * @on
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> copyProperties(List<?> sources, Class<? super T> clazz) {
+	@Deprecated
+	private static <T> List<T> copyProperties(List<?> sources, Class<? super T> clazz) {
 		List<T> results = new ArrayList<>();
 		for (Object source : sources) {
 			results.add((T) copyProperties(source, clazz));
@@ -81,6 +85,7 @@ public class BeanUtils {
 	}
 
 	/**
+	 * 为了BeanUtils的简洁性, 废弃方法
 	 * 从 sources 中取出元素挨个拷贝属性
 	 * 根据class创建相应对象，从source拷贝到target，不包括值为null的属性
 	 * 
@@ -89,7 +94,7 @@ public class BeanUtils {
 	 * @param sources
 	 * @param clazz
 	 * @param ignoreProperties
-	 * @on
+	 * @deprecated
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> List<T> copyProperties(List<?> sources, Class<? super T> clazz, String... ignoreProperties) {
@@ -130,29 +135,6 @@ public class BeanUtils {
 		}
 		return target;
 	}
-
-	/**
-	 * 拷贝source到target，不拷贝指定的属性
-	 * 
-	 * @param source
-	 * @param clazz
-	 * @param ignoreNull
-	 * @param ignoreProperties
-	 */
-	@SuppressWarnings("unchecked")
-	public static <T> T copyProperties(Object source, Class<? super T> clazz, boolean ignoreNull,
-			String... ignoreProperties) {
-		T target = null;
-		try {
-			target = (T) clazz.newInstance();
-			copyProperties(source, target, ignoreNull, ignoreProperties);
-		} catch (InstantiationException | IllegalAccessException e) {
-			log.error("msg", e);
-		}
-		return target;
-	}
-
-
 	/**
 	 * 拷贝source到target，不拷贝指定的属性
 	 *
@@ -200,4 +182,26 @@ public class BeanUtils {
 			}
 		}
 	}
+
+	/**
+	 * 拷贝source到target，不拷贝指定的属性
+	 * 
+	 * @param source
+	 * @param clazz
+	 * @param ignoreNull
+	 * @param ignoreProperties
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T copyProperties(Object source, Class<? super T> clazz, boolean ignoreNull,
+			String... ignoreProperties) {
+		T target = null;
+		try {
+			target = (T) clazz.newInstance();
+			copyProperties(source, target, ignoreNull, ignoreProperties);
+		} catch (InstantiationException | IllegalAccessException e) {
+			log.error("msg", e);
+		}
+		return target;
+	}
+
 }

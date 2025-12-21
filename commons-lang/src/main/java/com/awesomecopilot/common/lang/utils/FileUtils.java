@@ -2,7 +2,13 @@ package com.awesomecopilot.common.lang.utils;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class FileUtils {
@@ -16,6 +22,12 @@ public final class FileUtils {
 
 	// 检测是否已经是 clean 过的文件名：以 12位小写十六进制 + 下划线 开头
 	private static final Pattern CLEANED_FILENAME_PATTERN = Pattern.compile("^[a-f0-9]{12}_.*");
+
+	// Java ImageIO 标准支持的图片格式（读者名称）
+	private static final Set<String> SUPPORTED_IMAGE_EXTENSIONS = Set.of(
+			"jpg", "jpeg", "png", "gif", "bmp", "wbmp", "tif", "tiff"
+			// 如果后续需要支持 webp、svg 等，需要额外库，这里暂不包含
+	);
 
 	public static String cleanFilename(String originalFilename) {
 		if (originalFilename == null || originalFilename.isBlank()) {
@@ -71,4 +83,65 @@ public final class FileUtils {
 				? String.format("%s_%s", hash, shortName)
 				: String.format("%s_%s.%s", hash, shortName, suffixPart);
 	}
+
+	/**
+	 * 验证上传的文件是否为真实图片
+	 * @param size    文件大小
+	 * @param inputStream 输入流
+	 * @return boolean
+	 * @throws IOException
+	 */
+	public static boolean isImage(long size, String filename, InputStream inputStream) {
+		if (size == 0 || inputStream == null) {
+			return false;
+		}
+
+		// 1. 检查文件名后缀
+		if (filename == null || filename.trim().isEmpty()) {
+			return false;
+		}
+		String extension = getFileExtension(filename);
+		if (extension.isEmpty() || !SUPPORTED_IMAGE_EXTENSIONS.contains(extension.toLowerCase(Locale.ENGLISH))) {
+			return false;
+		}
+
+		try {
+			BufferedImage image = ImageIO.read(inputStream);
+			return image != null;
+		} catch (IOException e) {
+			// 如果读取失败或IO异常，则不是有效图片
+			return false;
+		}
+	}
+
+	/**
+	 * 字节数组转十六进制字符串（工具方法）
+	 */
+	private static String bytesToHex(byte[] bytes) {
+		StringBuilder hexString = new StringBuilder();
+		for (byte b : bytes) {
+			String hex = Integer.toHexString(0xFF & b);
+			if (hex.length() == 1) {
+				hexString.append('0');
+			}
+			hexString.append(hex);
+		}
+		return hexString.toString();
+	}
+
+	/**
+	 * 从文件名中提取后缀（不包含点）
+	 * 示例： "photo.JPG" -> "jpg"
+	 *       "image.png"   -> "png"
+	 *       "noext"       -> ""
+	 *       ".hidden"     -> ""
+	 */
+	private static String getFileExtension(String filename) {
+		int lastDotIndex = filename.lastIndexOf('.');
+		if (lastDotIndex == -1 || lastDotIndex == filename.length() - 1) {
+			return "";
+		}
+		return filename.substring(lastDotIndex + 1);
+	}
+
 }

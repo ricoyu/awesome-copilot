@@ -20,16 +20,73 @@ import java.util.Map;
  */
 public interface SqlQueryBuilder {
 
+	/**
+	 * 将一个查询条件塞到Map<String, Object> params = new HashMap<>()里面, 作为SQL查询的参数值
+	 * @param paramName
+	 * @param paramValue
+	 * @return SqlQueryBuilder
+	 */
 	public SqlQueryBuilder addParam(String paramName, Object paramValue);
 
+	/**
+	 * 将多个查询条件塞到Map<String, Object> params = new HashMap<>()里面, 作为SQL查询的参数值
+	 * @param params
+	 * @return SqlQueryBuilder
+	 */
 	public SqlQueryBuilder addParams(Map<String, Object> params);
 
+	/**
+	 * 如果paramValue不为null, 将paramValue改成 "%"+paramValue
+	 * @param paramName
+	 * @param paramValue
+	 * @return SqlQueryBuilder
+	 */
+	public SqlQueryBuilder addLlikeParam(String paramName, String paramValue);
+
+	/**
+	 * 如果paramValue不为null, 将paramValue改成 paramValue+"%"
+	 * @param paramName
+	 * @param paramValue
+	 * @return SqlQueryBuilder
+	 */
+	public SqlQueryBuilder addRlikeParam(String paramName, String paramValue);
+
+	/**
+	 * 如果paramValue不为null, 将paramValue改成 "%"+paramValue+"%"
+	 * @param paramName
+	 * @param paramValue
+	 * @return SqlQueryBuilder
+	 */
+	public SqlQueryBuilder addlikeParam(String paramName, String paramValue);
+
+	/**
+	 * page对象可以包含分页参数业绩排序规则
+	 * @param page
+	 * @return SqlQueryBuilder
+	 */
 	public SqlQueryBuilder page(Page page);
 
+	/**
+	 * 仅设置分页参数
+	 * @param paggeNum
+	 * @param pageSize
+	 * @return
+	 */
 	public SqlQueryBuilder page(int paggeNum, int pageSize);
 
+	/**
+	 * 设置主排序字段
+	 * @param order
+	 * @return SqlQueryBuilder
+	 */
 	public SqlQueryBuilder order(OrderBean order);
 
+	/**
+	 * 设置主排序字段
+	 * @param orderBy
+	 * @param direction
+	 * @return SqlQueryBuilder
+	 */
 	public SqlQueryBuilder order(String orderBy, DIRECTION direction);
 
 	/**

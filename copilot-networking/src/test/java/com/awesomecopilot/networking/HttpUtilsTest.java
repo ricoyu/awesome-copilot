@@ -416,5 +416,14 @@ public class HttpUtilsTest {
 		log.info("调用结束");
 		SECONDS.sleep(5);
 	}
+
+	@Test
+	public void testUrlContainerChineseCharacters() {
+		byte[] bytes = HttpUtils.get("http://localhost:8070/file/ceph/download/f5e1b1d542f8_qq图片20160718100555.jpg")
+				.returnBytes(true)
+				.request();
+
+		IOUtils.write("D://a.jpg", bytes);
+	}
 	
 }

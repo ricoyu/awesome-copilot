@@ -12,6 +12,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import com.awesomecopilot.orm.utils.SQLUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +37,7 @@ import java.util.regex.Pattern;
 
 import static java.text.MessageFormat.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * 原生SQL查询生成器
@@ -156,7 +158,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 	@Override
 	public SqlQueryBuilder addParam(String paramName, Object paramValue) {
-		if (isBlank(paramName)) {
+		if (!isBlank(paramName)) {
 			throw new IllegalArgumentException("paramName 不能为空");
 		}
 		params.put(paramName, paramValue);
@@ -166,6 +168,33 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	@Override
 	public SqlQueryBuilder addParams(Map<String, Object> params) {
 		this.params.putAll(params);
+		return this;
+	}
+
+	@Override
+	public SqlQueryBuilder addLlikeParam(String paramName, String paramValue) {
+		if (isNotBlank(paramValue)) {
+			paramValue = "%" + paramValue;
+			params.put(paramName, paramValue);
+		}
+		return this;
+	}
+
+	@Override
+	public SqlQueryBuilder addRlikeParam(String paramName, String paramValue) {
+		if (isNotBlank(paramValue)) {
+			paramValue = paramValue + "%";
+			params.put(paramName, paramValue);
+		}
+		return this;
+	}
+
+	@Override
+	public SqlQueryBuilder addlikeParam(String paramName, String paramValue) {
+		if (isNotBlank(paramValue)) {
+			paramValue = "%" + paramValue + "%";
+			params.put(paramName, paramValue);
+		}
 		return this;
 	}
 
@@ -303,12 +332,24 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		// 排序
 		if (page != null) {
 			boolean primaryOrdered = false;
-			//优先取order
+			/*
+			 * order里面存的是第一个排序字段, 后面的orders里面放的事二三候选排序字段
+			 * 优先取order
+			 */
 			if (page.getOrder() != null) {
 				primaryOrdered = true;
-				queryString.append(" ORDER BY ")
-						.append(page.getOrder().getOrderBy()).append(" ")
-						.append(page.getOrder().getDirection());
+				/*
+				 * 如果SQL里面已经提供了ORDER BY排序, 这边就不需要再加ORDER BY了
+				 */
+				if (queryString.toString().toUpperCase().contains("ORDER BY")) {
+					queryString.append(" ORDER BY ")
+							.append(page.getOrder().getOrderBy()).append(" ")
+							.append(page.getOrder().getDirection());
+				} else {
+					queryString.append(" , ")
+							.append(page.getOrder().getOrderBy()).append(" ")
+							.append(page.getOrder().getDirection());
+				}
 			}
 			if (!page.getOrders().isEmpty()) { //2,3候选排序
 				if (!primaryOrdered) {//没有提供page.order
@@ -326,7 +367,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			}
 
 			//如果没有提供排序, 则默认采用create_time desc
-			if (queryString.indexOf("ORDER BY") == -1) {
+			if (queryString.toString().toUpperCase().indexOf("ORDER BY") == -1) {
 				page.setOrder(DFAULT_ORDER);
 				queryString.append(" ORDER BY ")
 						.append(page.getOrder().getOrderBy())
@@ -352,7 +393,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
 
-		String parsedSQL = sql.toString();
+		String preParsedSQL = sql.toString();
+		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+		//用来添加/删除 WHERE 或者 AND 关键字
+		String parsedSQL = SQLUtils.build(preParsedSQL);
+		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);

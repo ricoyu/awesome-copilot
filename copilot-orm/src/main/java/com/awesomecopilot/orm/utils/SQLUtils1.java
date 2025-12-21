@@ -3,17 +3,6 @@ package com.awesomecopilot.orm.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 接近完美的版本, 只有select * from pms_category order by cat_id asc还没通过
- * <p/>
- * Copyright: Copyright (c) 2025-12-11 20:48
- * <p/>
- * Company: Sexy Uncle Inc.
- * <p/>
-
- * @author Rico Yu  ricoyu520@gmail.com
- * @version 1.0
- */
 public class SQLUtils1 {
 
 	public static String build(String rawSql) {
@@ -22,13 +11,37 @@ public class SQLUtils1 {
 		String mainSql = extractSubqueries(sql, subs);
 		String fixedMain = fixWhereAnd(mainSql);
 
-		// 正确写法：递归处理所有子查询
 		for (int i = 0; i < subs.size(); i++) {
-			String processedSub = build(subs.get(i));  // 递归调用
+			String processedSub = build(subs.get(i));
 			fixedMain = fixedMain.replace("(@sub" + i + ")", "(" + processedSub + ")");
 		}
 
-		return lowercaseKeywords(fixedMain);
+		String result = lowercaseKeywords(fixedMain);
+
+		// ==================== 您的思路：最终统一清理尾随 where ====================
+		// 先统一把多余空格压成一个，然后 trim
+		result = result.replaceAll("\\s+", " ").trim();
+
+		// 如果以 " where" 或单纯 "where" 结尾（考虑大小写），且前面是空格或开头，则移除
+		while (true) {
+			String lower = result.toLowerCase();
+			if (lower.endsWith(" where")) {
+				result = result.substring(0, result.length() - 6).trim();
+			} else if (lower.endsWith("where")) {
+				// 确认前面是空格或开头，避免误删中间的 where
+				int pos = result.length() - 5;
+				if (pos == 0 || Character.isWhitespace(result.charAt(pos - 1))) {
+					result = result.substring(0, pos).trim();
+				} else {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+		// =========================================================================
+
+		return result;
 	}
 
 	private static String extractSubqueries(String sql, List<String> subs) {
@@ -64,6 +77,22 @@ public class SQLUtils1 {
 		int fromIdx = sql.toLowerCase().indexOf("from ");
 		if (fromIdx == -1) return sql;
 
+		// 快速路径：FROM 后直接是 order by / group by / having / limit / union，则没有真实条件
+		String afterFrom = sql.substring(fromIdx + 5);
+		int firstSpace = afterFrom.indexOf(' ');
+		if (firstSpace != -1) {
+			String potentialClause = afterFrom.substring(firstSpace + 1).trim();
+			String lowerClause = potentialClause.toLowerCase();
+			if (lowerClause.startsWith("order by ") ||
+					lowerClause.startsWith("group by ") ||
+					lowerClause.startsWith("having ") ||
+					lowerClause.startsWith("limit ") ||
+					lowerClause.startsWith("union ")) {
+				return lowercaseKeywords(sql);
+			}
+		}
+
+		// 原有逻辑（保持不变）
 		int tableStart = fromIdx + 5;
 		int condStart = sql.indexOf(' ', tableStart);
 		if (condStart == -1) condStart = sql.length();
@@ -71,7 +100,6 @@ public class SQLUtils1 {
 
 		String prefix = sql.substring(0, condStart);
 
-		// 支持多种结束关键字
 		String lower = sql.toLowerCase();
 		int orderIdx  = lower.indexOf(" order by ", condStart);
 		int groupIdx  = lower.indexOf(" group by ", condStart);
