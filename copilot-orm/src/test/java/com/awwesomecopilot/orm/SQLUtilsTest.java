@@ -227,6 +227,13 @@ public class SQLUtilsTest {
 	@Test
 	@Order(19)
 	public void test19() {
+		String sql19 = """
+				select * from pms_attr_group where
+						order by `sort`""";
+		System.out.println("sql19原始 " + sql19);
+		System.out.println("sql19    " + build(sql19));
+		assertEquals("select * from pms_attr_group order by `sort`", build(sql19));
+		System.out.print("\n=============================\n");
 	}
 
 	@Test

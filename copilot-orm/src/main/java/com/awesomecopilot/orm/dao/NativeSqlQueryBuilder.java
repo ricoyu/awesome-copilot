@@ -158,7 +158,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 	@Override
 	public SqlQueryBuilder addParam(String paramName, Object paramValue) {
-		if (!isBlank(paramName)) {
+		if (isBlank(paramName)) {
 			throw new IllegalArgumentException("paramName 不能为空");
 		}
 		params.put(paramName, paramValue);
