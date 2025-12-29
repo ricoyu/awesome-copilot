@@ -1,8 +1,9 @@
 package com.awesomecopilot.web.http;
 
+import com.awesomecopilot.web.utils.XssCleanUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
-import org.apache.commons.lang3.StringEscapeUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -36,7 +37,7 @@ public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrappe
 	public String getParameter(String name) {
 		String value = super.getParameter(name);
 		if (isNotEmpty(name)) {
-			return StringEscapeUtils.escapeHtml4(value);
+			return XssCleanUtils.clean(value);
 		}
 		
 		return value;
@@ -52,7 +53,7 @@ public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrappe
 		for (int i = 0; i < values.length; i++) {
 			String value = values[i];
 			if (isNotEmpty(value)) {
-				values[i] = StringEscapeUtils.escapeHtml4(value);
+				values[i] = XssCleanUtils.clean(value);
 			}
 		}
 		return values;
@@ -62,7 +63,7 @@ public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrappe
 	public String getHeader(String name) {
 		String value = super.getHeader(name);
 		if (isNotEmpty(value)) {
-			return StringEscapeUtils.escapeHtml4(value);
+			return XssCleanUtils.clean(value);
 		}
 		
 		return value;
@@ -75,7 +76,7 @@ public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrappe
 		while (values.hasMoreElements()) {
 			String value = values.nextElement();
 			if (isNotEmpty(value)) {
-				headerValues.add(StringEscapeUtils.escapeHtml4(value));
+				headerValues.add(XssCleanUtils.clean(value));
 			} else {
 				headerValues.add(value);
 			}
