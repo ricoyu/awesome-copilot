@@ -3,7 +3,7 @@ package com.awesomecopilot.orm.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SQLUtils {
+public class SQLUtils3 {
 
 	public static String build(String rawSql) {
 		String sql = rawSql.trim().replaceAll("\\s+", " ");

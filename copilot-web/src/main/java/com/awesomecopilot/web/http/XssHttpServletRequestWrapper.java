@@ -12,8 +12,7 @@ import java.util.List;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
- * getParameter方法是直接通过request获得querystring类型的入参调用的方法
- * 如果是通过springMVC注解类型来获得参数的话, 走的是getParameterValues的方法
+ * 获取到的请求参数值, 进行XSS过滤, 把一些危险的标签比如<script></script>都给替换掉, 但是这里还不会对HTML标签做转义
  *
  * <p>
  * Copyright: (C), 2020-7-22 0022 9:57
@@ -24,11 +23,11 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrapper {
+public class XssHttpServletRequestWrapper extends HttpServletRequestWrapper {
 	
 	private HttpServletRequest request;
 	
-	public XssAndSqlHttpServletRequestWrapper(HttpServletRequest request) {
+	public XssHttpServletRequestWrapper(HttpServletRequest request) {
 		super(request);
 		this.request = request;
 	}

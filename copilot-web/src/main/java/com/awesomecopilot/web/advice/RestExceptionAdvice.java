@@ -15,6 +15,7 @@ import com.awesomecopilot.validation.exception.ValidationException;
 import com.awesomecopilot.validation.utils.ValidationUtils;
 import com.awesomecopilot.web.exception.LocalizedException;
 import com.awesomecopilot.web.utils.MessageHelper;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -27,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -150,9 +152,26 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler implemen
 		return new ResponseEntity(result, HttpStatus.OK);
 	}
 
+	/**
+	 * 处理输出JSON串时候序列表报错
+	 * @param ex the exception to handle
+	 * @param headers the headers to use for the response
+	 * @param status the status code to use for the response
+	 * @param request the current request
+	 * @return
+	 */
 	@Override
 	protected ResponseEntity<Object> handleHttpMessageNotReadable(
 			HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+		logger.info("Rest API ERROR happen", ex);
+		headers.add("Content-Type", "application/json");
+		Result result = Results.status(INTERNAL_SERVER_ERROR).build();
+		return new ResponseEntity(result, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+
+	@Override
+	protected @Nullable ResponseEntity<Object> handleHttpMessageNotWritable(
+			HttpMessageNotWritableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		logger.info("Rest API ERROR happen", ex);
 		headers.add("Content-Type", "application/json");
 		Result result = Results.status(BAD_REQUEST).build();

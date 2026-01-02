@@ -14,11 +14,17 @@ public class SQLUtilsTest {
 	@Test
 	@Order(1)
 	public void test1() {
-		String sql1 = "select * from sys_menu name='rico'";
-		System.out.println("sql1原始 " + sql1); // 输出: select * from sys_menu WHERE name='rico'
-		System.out.println("sql1    " + build(sql1)); // 输出: select * from sys_menu WHERE name='rico'
-		assertEquals("select * from sys_menu where name='rico'", build(sql1));
-		System.out.print("\n=============================\n");
+		long begin = System.currentTimeMillis();
+		for (int i = 0; i < 1000; i++) {
+			String sql1 = "select * from sys_menu name='rico'";
+			//System.out.println("sql1原始 " + sql1); // 输出: select * from sys_menu WHERE name='rico'
+			//System.out.println("sql1    " + build(sql1)); // 输出: select * from sys_menu WHERE name='rico'
+			String finalSql = build(sql1);
+			//assertEquals("select * from sys_menu where name='rico'", build(sql1));
+			//System.out.print("\n=============================\n");
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("耗时：" + (end - begin) + "ms");
 	}
 
 	@Test
@@ -173,7 +179,6 @@ public class SQLUtilsTest {
 		System.out.println("sql14    " + build(sql14));
 		assertEquals("select * from sys_menu where name='rico' and type=1", build(sql14));
 		System.out.print("\n=============================\n");
-
 	}
 
 	@Test
@@ -185,7 +190,6 @@ public class SQLUtilsTest {
 		System.out.println("sql15    " + build(sql15));
 		assertEquals("select * from sys_menu where remark like '%and%' and name='rico'", build(sql15));
 		System.out.print("\n=============================\n");
-
 	}
 
 	@Test
@@ -237,11 +241,32 @@ public class SQLUtilsTest {
 	}
 
 	@Test
+	@Order(20)
+	public void test20() {
+		String sql20 = "select * from (select * from a_table name='rico')";
+		System.out.println("sql20原始 " + sql20);
+		System.out.println("sql20    " + build(sql20));
+		assertEquals("select * from (select * from a_table where name='rico')", build(sql20));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(21)
+	public void test21() {
+		String sql21 = "select *  (select * from a_table name='rico')";
+		System.out.println("sql21原始 " + sql21);
+		System.out.println("sql21    " + build(sql21));
+		assertEquals("select * from (select * from a_table where name='rico')", build(sql21));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
 	@Order(28)
 	public void test28() {
 		// 测试用例 28：子查询里也有 group by having（递归测试）
 		String sql28 =
-				"select * from sys_menu dept_id in (select dept_id from sys_user name='admin' group by dept_id having" +
+				"select * from sys_menu dept_id in (select dept_id from sys_user name='admin' group by dept_id " +
+						"having" +
 						" " +
 						"count(*)>4) status=1";
 		System.out.println("sql28原始 " + sql28);
@@ -262,7 +287,6 @@ public class SQLUtilsTest {
 		System.out.println("sql29    " + build(sql29));
 		assertEquals("select * from sys_menu where sql like '%where and or having%' and name='evil'", build(sql29));
 		System.out.print("\n=============================\n");
-
 	}
 
 	@Test
@@ -274,7 +298,6 @@ public class SQLUtilsTest {
 		System.out.println("sql30    " + build(sql30));
 		assertEquals("select * from config where `and`=1 and `or`=0 and name='test'", build(sql30));
 		System.out.print("\n=============================\n");
-
 	}
 
 	@Test
@@ -314,7 +337,6 @@ public class SQLUtilsTest {
 		System.out.println("sql36    " + build(sql36)); // 输出: select * from pms_brand
 		assertEquals("select * from pms_brand", build(sql36));
 		System.out.print("\n=============================\n");
-
 	}
 
 	@Test

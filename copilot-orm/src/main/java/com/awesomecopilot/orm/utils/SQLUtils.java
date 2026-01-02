@@ -1,11 +1,24 @@
 package com.awesomecopilot.orm.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class SQLUtils {
 
+	private static final Logger log = LoggerFactory.getLogger(SQLUtils.class);
+
+	private static final HashMap<String, String> SQL_CACHE = new HashMap<>();
+
 	public static String build(String rawSql) {
+		if (SQL_CACHE.containsKey(rawSql)) {
+			String finalSql = SQL_CACHE.get(rawSql);
+			//log.debug("从缓存中取出SQL: {} 处理后的版本: {}", rawSql, finalSql);
+			return finalSql;
+		}
 		String sql = rawSql.trim().replaceAll("\\s+", " ");
 		List<String> subs = new ArrayList<>();
 		String mainSql = extractSubqueries(sql, subs);
@@ -16,7 +29,19 @@ public class SQLUtils {
 			fixedMain = fixedMain.replace("(@sub" + i + ")", "(" + processedSub + ")");
 		}
 
-		return lowercaseKeywords(fixedMain);
+		// 修复缺少 FROM 的子查询情况：如果主查询是 "select * (select ...)"，插入 " from "
+		String lowerFixed = fixedMain.toLowerCase();
+		if (lowerFixed.contains("select * (select") && !lowerFixed.contains("select * from (select")) {
+			int subPos = lowerFixed.indexOf("select * (select") + 8;  // "select * " 的长度是9，但调整为插入点
+			fixedMain = fixedMain.substring(0, subPos) + "from " + fixedMain.substring(subPos);
+		}
+
+		String result = lowercaseKeywords(fixedMain);
+		result = result.replaceAll("from", " from");
+		result = result.replaceAll("\\s+", " ").trim();
+
+		SQL_CACHE.put(rawSql, result);
+		return result;
 	}
 
 	private static String extractSubqueries(String sql, List<String> subs) {
@@ -150,15 +175,14 @@ public class SQLUtils {
 
 			int startCond = i;
 
-			// 字段名（支持 . ` " ' _）
+			// 字段名
 			while (i < conds.length() && (Character.isLetterOrDigit(conds.charAt(i)) ||
-					conds.charAt(i) == '_' || conds.charAt(i) == '.' || conds.charAt(i) == '`' || conds.charAt(i) == '"' || conds.charAt(i) == '\'')) {
+					conds.charAt(i) == '_' || conds.charAt(i) == ':' || conds.charAt(i) == '"' || conds.charAt(i) == '`')) {
 				i++;
 			}
 
 			i = skipSpaces(conds, i);
 
-			// 操作符
 			if (i < conds.length()) {
 				char c = conds.charAt(i);
 				if ("=><!".indexOf(c) != -1) {
@@ -174,21 +198,18 @@ public class SQLUtils {
 
 			i = skipSpaces(conds, i);
 
-			// 值处理
 			if (i < conds.length()) {
 				char c = conds.charAt(i);
-				if (c == '\'' || c == '"') {
-					char quote = c;
+				if (c == '\'') {
 					i++;
-					while (i < conds.length() && conds.charAt(i) != quote) i++;
+					while (i < conds.length() && conds.charAt(i) != '\'') i++;
 					if (i < conds.length()) i++;
 				} else if (c == '(') {
 					int count = 1;
 					i++;
 					while (i < conds.length() && count > 0) {
-						char ch = conds.charAt(i);
-						if (ch == '(') count++;
-						else if (ch == ')') count--;
+						if (conds.charAt(i) == '(') count++;
+						else if (conds.charAt(i) == ')') count--;
 						i++;
 					}
 				} else {
@@ -221,6 +242,6 @@ public class SQLUtils {
 		for (String kw : kws) {
 			sql = sql.replaceAll("(?i)\\b" + kw + "\\b", kw.toLowerCase());
 		}
-		return sql.replaceAll("\\s+", " ").trim();
+		return sql;
 	}
 }

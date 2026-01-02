@@ -610,6 +610,21 @@ public final class JedisUtils {
 	public static Long incrBy(String key, long size) {
 		return jedisOperations.incrBy(key, size);
 	}
+
+	/**
+	 * <h4>Redis compare and set 相关操作</h4>
+	 * 如果key对应的值>=decrValue, 那么将key值设为 原始值-decrValue, 返回true
+	 * 否则不扣减并返回false
+	 * <p>
+	 * 适用场景: 库存超卖问题
+	 * @param key
+	 * @param decrValue
+	 * @return
+	 * TODO 待实现
+	 */
+	public static boolean compareAndDecr(String key, long decrValue) {
+		return false; //TODO 待实现, 需要配置Lua脚本实现
+	}
 	
 	/**
 	 * <h4>Redis list 相关操作</h4>
