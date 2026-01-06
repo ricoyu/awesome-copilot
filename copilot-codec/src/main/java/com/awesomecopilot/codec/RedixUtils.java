@@ -510,7 +510,7 @@ public class RedixUtils {
     }
 
     /**
-     * byte[]转int
+     * byte[]转32位有符号int
      *
      * @param bytes
      * @return int
