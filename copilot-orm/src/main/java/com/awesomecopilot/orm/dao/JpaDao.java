@@ -119,6 +119,9 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Value("${copilot.orm.logical-delete.enabled:true}")
 	private boolean logicalDeleteEnabled = false;
 
+	@Value("${copilot.orm.sql.auto-fix:false}")
+	private boolean sqlAutoFix = false;
+
 	/**
 	 * 逻辑删除的字段名
 	 */
@@ -534,7 +537,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	@Override
-	public  CriteriaQueryBuilder query(Class entityClass) {
+	public CriteriaQueryBuilder query(Class entityClass) {
 		return new CriteriaQueryBuilder(entityManager, entityManagerFactory, entityClass);
 	}
 
@@ -708,7 +711,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 * @param queryName
 	 * @param paramName
 	 * @param paramValue
-	 * @param clazz 这个指的是SQL查询结果集要封装进哪个POJO对象里面, 查询单列不要用这个
+	 * @param clazz      这个指的是SQL查询结果集要封装进哪个POJO对象里面, 查询单列不要用这个
 	 * @return T
 	 */
 	@SuppressWarnings("rawtypes")
@@ -802,9 +805,12 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		Velocity.evaluate(context, sql, queryName, queryString.toString());
 
 		String preParsedSQL = sql.toString();
-		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-		String parsedSQL = SQLUtils.build(preParsedSQL);
-		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		String parsedSQL = preParsedSQL;
+		if (sqlAutoFix) {
+			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		}
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
@@ -931,13 +937,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			params.put(paramName, paramValue);
 		}
 		List<?> results = query4RawList(queryName, params);
-		return results.isEmpty() ? null : (T)results.get(0);
+		return results.isEmpty() ? null : (T) results.get(0);
 	}
 
 	@Override
 	public <T> T findOne(String queryName, Map<String, Object> params) {
 		List<?> results = query4RawList(queryName, params);
-		return results.isEmpty() ? null : (T)results.get(0);
+		return results.isEmpty() ? null : (T) results.get(0);
 	}
 
 	@Override

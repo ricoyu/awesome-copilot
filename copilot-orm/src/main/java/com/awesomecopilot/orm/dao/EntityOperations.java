@@ -44,7 +44,7 @@ public interface EntityOperations {
 	public <T> List<T> merge(List<T> entities);
 
 	/**
-	 * 如果ID不为null，则调用persist， 否则调用merge
+	 * 如果ID不为null，则调用merge， 否则调用persist
 	 * 
 	 * @param entity
 	 * @return 一个新的T对象

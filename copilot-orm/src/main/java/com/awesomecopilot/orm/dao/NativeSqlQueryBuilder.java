@@ -1,6 +1,7 @@
 package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.common.lang.context.ThreadContext;
+import com.awesomecopilot.common.lang.resource.YamlReader;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
@@ -34,7 +35,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import static com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION.ASC;
 import static java.text.MessageFormat.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -54,6 +57,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 	private static final Logger log = LoggerFactory.getLogger(NativeSqlQueryBuilder.class);
 
+	private YamlReader yamlReader = new YamlReader("application.yaml");
 	/**
 	 * 用于判断是否是查询语句
 	 */
@@ -233,6 +237,22 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	}
 
 	@Override
+	public SqlQueryBuilder order(String order) {
+		if (StringUtils.isNotEmpty(order)) {
+			String[] orderList = order.split(",");
+			Stream.of(orderList).forEach(o -> {
+				String[] arr = o.split(":");
+				OrderBean.DIRECTION direction = arr.length == 1 ? ASC : OrderBean.DIRECTION.of(arr[1]);
+				OrderBean orderBean = new OrderBean();
+				orderBean.setOrderBy(arr[0]);
+				orderBean.setDirection(direction);
+				orders.add(orderBean);
+			});
+		}
+		return this;
+	}
+
+	@Override
 	public <T> SqlQueryBuilder resultClass(Class<T> resultClass) {
 		this.resultClass = resultClass;
 		return this;
@@ -269,7 +289,15 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
 
-		String parsedSQL = sql.toString();
+		boolean autoFix = yamlReader.getBoolean("copilot.orm.sql.auto-fix", false);
+		String preParsedSQL = sql.toString();
+		String parsedSQL = preParsedSQL;
+		if (autoFix) {
+			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			//用来添加/删除 WHERE 或者 AND 关键字
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		}
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
@@ -368,11 +396,20 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 			//如果没有提供排序, 则默认采用create_time desc
 			if (queryString.toString().toUpperCase().indexOf("ORDER BY") == -1) {
-				page.setOrder(DFAULT_ORDER);
-				queryString.append(" ORDER BY ")
-						.append(page.getOrder().getOrderBy())
-						.append(" ")
-						.append(page.getOrder().getDirection());
+				if (this.orders.isEmpty()) {
+					page.setOrder(DFAULT_ORDER);
+					queryString.append(" ORDER BY ")
+							.append(page.getOrder().getOrderBy())
+							.append(" ")
+							.append(page.getOrder().getDirection());
+				} else {
+					for (OrderBean orderBean : this.orders) {
+						queryString.append(" ORDER BY ")
+								.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection())
+								.append(", ");
+					}
+					queryString.delete(queryString.length() - 2, queryString.length());
+				}
 			}
 
 		}
@@ -392,12 +429,15 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		StringWriter sql = new StringWriter();
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
-
+		boolean autoFix = yamlReader.getBoolean("copilot.orm.sql.auto-fix", false);
 		String preParsedSQL = sql.toString();
-		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-		//用来添加/删除 WHERE 或者 AND 关键字
-		String parsedSQL = SQLUtils.build(preParsedSQL);
-		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		String parsedSQL = preParsedSQL;
+		if (autoFix) {
+			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			//用来添加/删除 WHERE 或者 AND 关键字
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		}
 
 		query = em()
 				.createNativeQuery(parsedSQL)

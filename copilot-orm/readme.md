@@ -255,6 +255,19 @@ public class BaseEntity implements Serializable {
 
 
 
+### 1.7 提供了雪花算法ID生成器
+
+CopilotSnowflakeIdGenerator, 用法
+
+```java
+@Id
+@GeneratedValue(generator = "snowflake-id")
+@GenericGenerator(name = "snowflake-id", type = CopilotSnowflakeIdGenerator.class)
+private Long id;
+```
+
+
+
 # 二 条件分支
 
 ## 2.1 基于存在性判断
@@ -1128,3 +1141,12 @@ SQLOperations 和 CriteriaOperations两个接口都支持
 
 
 关闭以后只会检查租户ID的存在性来自动判断是否加入 tenant_id=xxx 条件
+
+
+
+# 九  SQL自动修复
+
+可以一定程度上对SQL做自动修复, 比如你写的SQL是: select * from sys_menu name='rico' age>18 is_deleted=0
+显然少了一个where关键字, 那么开启SQL自动修复后会自动帮你加上where关键字, 修复后的SQL会变成: select * from sys_menu where name='rico' and age>18 and is_deleted=0
+
+但是实测只对相对简单的SQL有效, 复杂SQL(多表join, 子查询等等)不一定靠谱

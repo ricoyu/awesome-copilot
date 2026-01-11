@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SQLUtils {
+public class SQLUtils4 {
 
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils4.class);
 

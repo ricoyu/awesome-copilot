@@ -11,9 +11,10 @@ import java.util.Enumeration;
 /**
  * Twitter_Snowflake<br>
  * SnowFlake的结构如下(每部分用-分开):<br>
- * 0 - 0000000000 0000000000 0000000000 0000000000 0 - 00000 - 00000 - 000000000000 <p>
+ * <image src="images/snowflakeId.png"/>
+ * <p>
  * 1位标识, 由于long基本类型在Java中是带符号的, 最高位是符号位, 正数是0, 负数是1, 所以id一般是正数, 最高位是0<p>
- * 41位时间戳(毫秒级), 注意, 41位时间戳不是存储当前时间的时间截, 而是存储时间截的差值(当前时间戳 - 开始时间戳)
+ * 41位时间戳(毫秒级), 注意, 41位时间戳不是存储当前时间的时间截, 而是存储时间截的差值(当前时间戳 - 开始时间戳) <p>
  * 这里的的开始时间戳, 一般是我们的id生成器开始使用的时间, 由我们程序来指定的(如下下面程序IdWorker类的startTime属性)
  * 41位的时间戳, 可以使用69年, 年T = (1L << 41) / (1000L * 60 * 60 * 24 * 365) = 69<p>
  * <p>
@@ -118,11 +119,11 @@ public class SnowflakeId {
 		if (!propertyReader.resourceExists()) {
 			YamlOps yamlOps = YamlProfileReaders.instance("application");
 			if (yamlOps.exists()) {
-				workerId = yamlOps.getInt("copilot.snowflake.worker-id", generateWorkerIdFromIp());
+				workerId = yamlOps.getInt("copilot.snowflake.worker-id", WorkerIdGenerator.generateWorkerIdFromIp());
 				datacenterId = yamlOps.getInt("copilot.snowflake.datacenter-id", 1);
 			}
 		} else {
-			workerId = propertyReader.getInt("copilot.snowflake.worker-id", generateWorkerIdFromIp());
+			workerId = propertyReader.getInt("copilot.snowflake.worker-id", WorkerIdGenerator.generateWorkerIdFromIp());
 			datacenterId = propertyReader.getInt("copilot.snowflake.datacenter-id", 1);
 		}
 		if (workerId > maxWorkerId || workerId < 0) {
@@ -231,7 +232,7 @@ public class SnowflakeId {
 		} catch (Exception e) {
 			// ignore
 		}
-		return 1L; // fallback
+		return 1; // fallback
 	}
 
 }

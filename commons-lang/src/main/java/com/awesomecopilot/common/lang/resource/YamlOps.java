@@ -21,4 +21,8 @@ public interface YamlOps {
 	public String getString(String path);
 	
 	public String getString(String path, String defaultValue);
+
+	public Boolean getBoolean(String path);
+
+	public Boolean getBoolean(String path, boolean defaultValue);
 }

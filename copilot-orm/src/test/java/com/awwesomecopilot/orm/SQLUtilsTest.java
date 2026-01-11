@@ -261,6 +261,42 @@ public class SQLUtilsTest {
 	}
 
 	@Test
+	@Order(22)
+	public void test22() {
+		String sql22 = """
+				select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id
+				      LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+				      LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+				      where and a.attr_name like :attrName
+				
+				ORDER BY CREATE_TIME DESC""";
+		System.out.println("sql22原始 " + sql22);
+		System.out.println("sql22    " + build(sql22));
+		String expected = """
+				select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a
+				      left join pms_category c on a.catelog_id = c.cat_id
+				      LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+				      LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+				      where
+				                                a.attr_name like :attrName
+				
+				ORDER BY CREATE_TIME DESC""";
+		assertEquals(expected, build(sql22));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(23)
+	public void test23() {
+		String sql23 = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id";
+		System.out.println("sql23原始 " + sql23);
+		System.out.println("sql23    " + build(sql23));
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id";
+		assertEquals(expected, build(sql23));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
 	@Order(28)
 	public void test28() {
 		// 测试用例 28：子查询里也有 group by having（递归测试）

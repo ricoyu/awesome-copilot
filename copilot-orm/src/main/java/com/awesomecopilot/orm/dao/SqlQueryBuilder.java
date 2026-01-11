@@ -90,6 +90,17 @@ public interface SqlQueryBuilder {
 	public SqlQueryBuilder order(String orderBy, DIRECTION direction);
 
 	/**
+	 * 排序规则
+	 * <p>
+	 * 可以就写一个字段名(表字段名, 非bean属性名), 表示按这个字段升序排, 也可以在字段名后加“:asc或:desc”指定升序 (降序), 比如"catelog_name:desc" 表示 按catelog_name字段降序排
+	 * <p>
+	 * （在字段名后加“:asc或:desc”指定升序 (降序), 多个字段使用逗号分隔, 省略排序默认使用升序)", example = "“字段1,字段2” 或者 “字段1:asc,字段2:desc”
+	 * @param order
+	 * @return SqlQueryBuilder
+	 */
+	public SqlQueryBuilder order(String order);
+
+	/**
 	 * 将查到的每一行数据封装进这个class对应的对象中 <br/>
 	 * 如果不指定resultClass, 那么最后返回的结果是List<Object[]>
 	 * @param resultClass

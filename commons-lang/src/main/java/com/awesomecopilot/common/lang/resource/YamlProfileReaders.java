@@ -99,4 +99,23 @@ public class YamlProfileReaders implements YamlOps {
 		
 		return value;
 	}
+
+	@Override
+	public Boolean getBoolean(String path) {
+		if (profileReader == null) {
+			return yamlReader.getBoolean(path);
+		}
+
+		Boolean value = profileReader.getBoolean(path);
+		return value;
+	}
+
+	@Override
+	public Boolean getBoolean(String path, boolean defaultValue) {
+		Boolean value = getBoolean(path);
+		if (value == null) {
+			return defaultValue;
+		}
+		return value;
+	}
 }

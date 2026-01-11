@@ -2,7 +2,6 @@ package com.awesomecopilot.common.lang.resource;
 
 import com.awesomecopilot.common.lang.transformer.Transformers;
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -157,7 +156,22 @@ public class YamlReader implements YamlOps {
 		
 		return value;
 	}
-	
+
+	@Override
+	public Boolean getBoolean(String path) {
+		Object value = get(path);
+		return Transformers.convert(value, Boolean.class);
+	}
+
+	@Override
+	public Boolean getBoolean(String path, boolean defaultValue) {
+		Boolean value = getBoolean(path);
+		if (value == null) {
+			return defaultValue;
+		}
+		return value;
+	}
+
 	public String getResource() {
 		return this.resource;
 	}
