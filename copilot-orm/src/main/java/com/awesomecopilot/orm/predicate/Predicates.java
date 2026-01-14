@@ -117,10 +117,22 @@ public class Predicates {
 		return new LocalDatePredicate(propertyName, propertyValue, dateMatchMode);
 	}
 
+	/**
+	 * propertyValue 用Object类型即可, 因为实际处理得时候通过反射动态判断了是否是Collection类型, 是否是Long[], Integer[]等等
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return
+	 */
 	public static Predicate inPredicate(String propertyName, Object propertyValue) {
 		return new InPredicate(propertyName, propertyValue);
 	}
-	
+
+	/**
+	 * propertyValue 用Object类型即可, 因为实际处理得时候通过反射动态判断了是否是Collection类型, 是否是Long[], Integer[]等等
+	 * @param propertyName
+	 * @param propertyValue
+	 * @return
+	 */
 	public static Predicate notInPredicate(String propertyName, Object propertyValue) {
 		return new InPredicate(propertyName, propertyValue, CompareMode.NOTIN);
 	}

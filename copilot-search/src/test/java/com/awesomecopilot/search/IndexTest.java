@@ -59,7 +59,7 @@ public class IndexTest {
         boolean created = ElasticUtils.Admin.createIndex("blogs")
                 .settings()
                 .numberOfShards(3) //#主分片数3
-                .numberOfReplicas(3) //每个主分片3个副本
+                .numberOfReplicas(1) //每个主分片1个副本
                 .thenCreate();
         assertTrue(created);
     }

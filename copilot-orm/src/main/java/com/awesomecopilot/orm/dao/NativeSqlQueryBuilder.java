@@ -289,15 +289,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
 
-		boolean autoFix = yamlReader.getBoolean("copilot.orm.sql.auto-fix", false);
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		if (autoFix) {
-			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-			//用来添加/删除 WHERE 或者 AND 关键字
-			parsedSQL = SQLUtils.build(preParsedSQL);
-			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
-		}
+		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+		//用来添加/删除 WHERE 或者 AND 关键字
+		parsedSQL = SQLUtils.build(preParsedSQL);
+		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
@@ -429,15 +426,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		StringWriter sql = new StringWriter();
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
-		boolean autoFix = yamlReader.getBoolean("copilot.orm.sql.auto-fix", false);
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		if (autoFix) {
-			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-			//用来添加/删除 WHERE 或者 AND 关键字
-			parsedSQL = SQLUtils.build(preParsedSQL);
-			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
-		}
+		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+		//用来添加/删除 WHERE 或者 AND 关键字
+		parsedSQL = SQLUtils.build(preParsedSQL);
+		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
 
 		query = em()
 				.createNativeQuery(parsedSQL)

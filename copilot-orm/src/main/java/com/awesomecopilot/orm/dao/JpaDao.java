@@ -119,9 +119,6 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Value("${copilot.orm.logical-delete.enabled:true}")
 	private boolean logicalDeleteEnabled = false;
 
-	@Value("${copilot.orm.sql.auto-fix:false}")
-	private boolean sqlAutoFix = false;
-
 	/**
 	 * 逻辑删除的字段名
 	 */
@@ -806,11 +803,9 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		if (sqlAutoFix) {
-			log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-			parsedSQL = SQLUtils.build(preParsedSQL);
-			log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
-		}
+		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+		parsedSQL = SQLUtils.build(preParsedSQL);
+		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);

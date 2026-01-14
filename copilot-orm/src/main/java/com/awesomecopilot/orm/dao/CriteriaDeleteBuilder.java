@@ -59,6 +59,19 @@ public class CriteriaDeleteBuilder {
 		return this;
 	}
 
+	/**
+	 * 为了传参方便, value的类型设为Object, 实际处理的时候已经通过反射动态判断了是否是
+	 * Collection类型, 是否是Long[], 是否是Integer[]等等
+	 * @param propertyName
+	 * @param values
+	 * @return
+	 */
+	public CriteriaDeleteBuilder in(String propertyName, Object values) {
+		com.awesomecopilot.orm.predicate.Predicate predicate = Predicates.inPredicate(propertyName, values);
+		conditions.add(predicate.toPredicate(criteriaBuilder, root));
+		return this;
+	}
+
 	public int execute() {
 		delete.where(conditions.toArray(new jakarta.persistence.criteria.Predicate[0]));
 		return this.em().createQuery(delete).executeUpdate();

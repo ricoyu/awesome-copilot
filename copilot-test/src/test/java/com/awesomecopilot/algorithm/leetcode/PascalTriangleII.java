@@ -47,39 +47,27 @@ public class PascalTriangleII {
 		System.out.print("请输入行数: ");
 		int numRows = scanner.nextInt();
 		List<Integer> result = getRow(numRows);
+		System.out.println(result);
 		scanner .close();
 	}
 
-	private static List<Integer> getRow(int numRows) {
+	private static List<Integer> getRow(int rowIndex) {
 		// 初始化结果列表，第rowIndex行有rowIndex+1个元素，初始值都为1
-		List<List<Integer>> pascalTriangle = new ArrayList<>();
-
-		// 边界条件：如果输入行数为0，直接返回空列表
-		if (numRows == 0) {
-			return new ArrayList<>();
+		List<Integer> row = new ArrayList<>(rowIndex + 1);
+		for (int i = 0; i <= rowIndex; i++) {
+			row.add(1);
 		}
 
-		// 初始化第一行（索引0），杨辉三角第一行固定为[1]
-		List<Integer> firstRow = new ArrayList<>();
-		firstRow.add(1);
-		pascalTriangle.add(firstRow);
-
-		// 从第二行开始生成（索引从1到numRows-1）
-		for (int i = 1; i < numRows; i++) {
-		    List<Integer> prevRow = pascalTriangle.get(i - 1);
-			List<Integer> currentRow = new ArrayList<>();
-			currentRow.add(1);
-			for (int j = 1; j < i; j++) {
-				int element = prevRow.get(j - 1) + prevRow.get(j);
-				currentRow.add(element);
+		// 从第2行开始计算（索引从0开始，i=2对应第3行），因为前两行[1]、[1,1]无需计算
+		for (int i = 2; i <= rowIndex; i++) {
+			// 从后往前更新，避免覆盖未使用的上一行数据
+			// j从i-1开始（倒数第二个元素），到1结束（第一个元素是1，无需更新）
+			for (int j = i - 1; j >= 1; j--) {
+				// 当前元素 = 上一行的当前元素（未更新前的值） + 上一行前一个元素（未更新前的值）
+				row.set(j, row.get(j) + row.get(j - 1));
 			}
-			// 每行的最后一个元素固定为1
-			currentRow.add(1);
-
-			// 将当前行添加到杨辉三角列表中
-			pascalTriangle.add(currentRow);
 		}
 
-		return pascalTriangle.get(numRows - 1);
+		return row;
 	}
 }

@@ -18,7 +18,7 @@ import jakarta.validation.ConstraintValidatorContext;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-public class AllowedValueValidator implements ConstraintValidator<AllowedValues, String> {
+public class AllowedValueValidator implements ConstraintValidator<AllowedValues, Object> {
 	private String[] candidateValues = null;
 	private String[] exceptValues = null;
 	private boolean caseSensitive = false;
@@ -44,7 +44,7 @@ public class AllowedValueValidator implements ConstraintValidator<AllowedValues,
 	}
 
 	@Override
-	public boolean isValid(String value, ConstraintValidatorContext context) {
+	public boolean isValid(Object value, ConstraintValidatorContext context) {
 
 		if (null == value) {
 			if (mandatory) {
@@ -56,12 +56,12 @@ public class AllowedValueValidator implements ConstraintValidator<AllowedValues,
 			return true;
 		}
 
+		String valueStr = value.toString();
+
 		for (int i = 0; i < exceptValues.length; i++) {
-			boolean matchExceptValue = caseSensitive ? value.equals(exceptValues[i])
-					: value.equalsIgnoreCase(exceptValues[i]);
+			boolean matchExceptValue = caseSensitive ? valueStr.equals(exceptValues[i])
+					: valueStr.equalsIgnoreCase(exceptValues[i]);
 			if (matchExceptValue) {
-				//context.disableDefaultConstraintViolation();
-				//context.buildConstraintViolationWithTemplate("Is required.").addConstraintViolation();
 				return false;
 			}
 		}
@@ -70,8 +70,8 @@ public class AllowedValueValidator implements ConstraintValidator<AllowedValues,
 		}
 
 		for (int i = 0; i < candidateValues.length; i++) {
-			boolean matchCandidateValue = caseSensitive ? value.equals(candidateValues[i])
-					: value.equalsIgnoreCase(candidateValues[i]);
+			boolean matchCandidateValue = caseSensitive ? valueStr.equals(candidateValues[i])
+					: valueStr.equalsIgnoreCase(candidateValues[i]);
 			if (matchCandidateValue) {
 				return true;
 			}

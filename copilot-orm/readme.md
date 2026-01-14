@@ -1150,3 +1150,63 @@ SQLOperations 和 CriteriaOperations两个接口都支持
 显然少了一个where关键字, 那么开启SQL自动修复后会自动帮你加上where关键字, 修复后的SQL会变成: select * from sys_menu where name='rico' and age>18 and is_deleted=0
 
 但是实测只对相对简单的SQL有效, 复杂SQL(多表join, 子查询等等)不一定靠谱
+
+目前能做到的是已经不需要去写where 1=1这种SQL语句了, 示例如下:
+
+```mysql
+select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a
+left join pms_category c on a.catelog_id = c.cat_id
+LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+where
+#if($catelogId)
+  a.catelog_id = :catelogId
+#end
+#if($attrName)
+  and a.attr_name like :attrName
+#end
+order by agr.attr_group_id asc, agr.attr_sort
+```
+
+* 如果最后发现一个条件都没有, 那么多余的where关键字会被删掉
+* 如果catelogId没传而attrName传了, 会发现where后面多了一个and关键字, and关键字也会被自动删掉
+
+所以目前写动态SQL还是比较舒服的
+
+
+
+# 十 排序
+
+如果你写的原生SQL里面已经有排序字段了, 那么分页接口里面的动态排序字段就不生效了, 比如
+
+```mysql
+<sql-query name="searchAttrs">
+    <![CDATA[
+        select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a
+        left join pms_category c on a.catelog_id = c.cat_id
+        LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+        LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+        where 1=1
+        #if($catelogId)
+          and a.catelog_id = :catelogId
+        #end
+        #if($attrName)
+          and a.attr_name like :attrName
+        #end
+        order by attr_group_id, attr_sort
+    ]]>
+</sql-query>
+```
+
+那么如下分页查询接口中传入的排序规则就忽视了
+
+```java
+List<PmsAttrVO> attrVOs = sqlOperations.query("searchAttrs")
+            .addParam("catelogId", catelogId)
+            .addParam("attrName", attrSearchDTO.getAttrName())
+            .page(attrSearchDTO.getPageNum(), attrSearchDTO.getPageSize())
+            .order(attrSearchDTO.getOrder())
+            .resultClass(PmsAttrVO.class)
+            .findPage();
+```
+

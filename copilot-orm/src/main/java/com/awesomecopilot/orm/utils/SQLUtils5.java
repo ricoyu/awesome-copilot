@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SQLUtils {
+public class SQLUtils5 {
 
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils4.class);
 
@@ -22,9 +22,8 @@ public class SQLUtils {
 		String sql = rawSql.trim().replaceAll("\\s+", " ");
 		/*
 		 * 下面的处理逻辑经测试只对简单的SQL有效, 复杂一点的就无效
-		 * 包含join的SQL就不处理, 包含子查询 (select xx from x where r where xx=xx) AS xx 就不处理
 		 */
-		if (!sql.toLowerCase().contains(" join ") && !sql.toLowerCase().replaceAll("\\s+", "").contains(")as")) {
+		if (!sql.toLowerCase().contains(" join ")) {
 			List<String> subs = new ArrayList<>();
 			String mainSql = extractSubqueries(sql, subs);
 			String fixedMain = fixWhereAnd(mainSql);
@@ -48,13 +47,10 @@ public class SQLUtils {
 			SQL_CACHE.put(rawSql, result);
 			return result;
 		} else {
-			if (!sql.toLowerCase().replaceAll("\\s+", "").contains(")as")) {
-				String parsedSql = SQLWhereCleaner.cleanWhereAndOr(rawSql);
-				parsedSql = SQLWhereCleaner.cleanInvalidWhere(parsedSql);
-				SQL_CACHE.put(rawSql, parsedSql);
-				return parsedSql;
-			}
-			return rawSql;
+			String parsedSql = SQLWhereCleaner.cleanWhereAndOr(rawSql);
+			parsedSql = SQLWhereCleaner.cleanInvalidWhere(parsedSql);
+			SQL_CACHE.put(rawSql, parsedSql);
+			return parsedSql;
 		}
 
 	}
@@ -72,11 +68,8 @@ public class SQLUtils {
 					i = j + 6;
 					while (i < sql.length() && count > 0) {
 						char ch = sql.charAt(i);
-						if (ch == '(') {
-							count++;
-						} else if (ch == ')') {
-							count--;
-						}
+						if (ch == '(') count++;
+						else if (ch == ')') count--;
 						i++;
 					}
 					String subSql = sql.substring(start + 1, i - 1).trim();
@@ -93,18 +86,12 @@ public class SQLUtils {
 
 	private static String fixWhereAnd(String sql) {
 		int fromIdx = sql.toLowerCase().indexOf("from ");
-		if (fromIdx == -1) {
-			return sql;
-		}
+		if (fromIdx == -1) return sql;
 
 		// 准确找到表名结束位置
 		int tableEnd = fromIdx + 5;
-		while (tableEnd < sql.length() && !Character.isWhitespace(sql.charAt(tableEnd))) {
-			tableEnd++;
-		}
-		while (tableEnd < sql.length() && Character.isWhitespace(sql.charAt(tableEnd))) {
-			tableEnd++;
-		}
+		while (tableEnd < sql.length() && !Character.isWhitespace(sql.charAt(tableEnd))) tableEnd++;
+		while (tableEnd < sql.length() && Character.isWhitespace(sql.charAt(tableEnd))) tableEnd++;
 
 		String afterTable = sql.substring(tableEnd);
 		String trimmedLower = afterTable.trim().toLowerCase();
@@ -126,8 +113,7 @@ public class SQLUtils {
 			if (trimmedLower.startsWith("where")) {
 				String afterWhere = afterTable.trim().substring(5).trim();
 				String afterWhereLower = afterWhere.toLowerCase();
-				if (afterWhereLower.isEmpty() || afterWhereLower.startsWith("order by") || afterWhereLower.startsWith(
-						"group by") ||
+				if (afterWhereLower.isEmpty() || afterWhereLower.startsWith("order by") || afterWhereLower.startsWith("group by") ||
 						afterWhereLower.startsWith("having") || afterWhereLower.startsWith("limit") || afterWhereLower.startsWith("union")) {
 					String prefix = sql.substring(0, tableEnd);
 					String suffix = afterTable.replaceAll("(?i)^where\\s*", " ").replaceAll("\\s+", " ").trim();
@@ -142,11 +128,11 @@ public class SQLUtils {
 		String prefix = sql.substring(0, tableEnd);
 
 		String lower = sql.toLowerCase();
-		int orderIdx = lower.indexOf(" order by ", tableEnd);
-		int groupIdx = lower.indexOf(" group by ", tableEnd);
+		int orderIdx  = lower.indexOf(" order by ", tableEnd);
+		int groupIdx  = lower.indexOf(" group by ", tableEnd);
 		int havingIdx = lower.indexOf(" having ", tableEnd);
-		int limitIdx = lower.indexOf(" limit ", tableEnd);
-		int unionIdx = lower.indexOf(" union ", tableEnd);
+		int limitIdx  = lower.indexOf(" limit ", tableEnd);
+		int unionIdx  = lower.indexOf(" union ", tableEnd);
 
 		int conditionEnd = sql.length();
 		for (int idx : new int[]{orderIdx, groupIdx, havingIdx, limitIdx, unionIdx}) {
@@ -175,9 +161,7 @@ public class SQLUtils {
 	}
 
 	private static String fixConditions(String conds) {
-		if (conds.trim().isEmpty()) {
-			return "";
-		}
+		if (conds.trim().isEmpty()) return "";
 
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
@@ -185,9 +169,7 @@ public class SQLUtils {
 
 		while (i < conds.length()) {
 			i = skipSpaces(conds, i);
-			if (i >= conds.length()) {
-				break;
-			}
+			if (i >= conds.length()) break;
 
 			// 循环跳过连续 and
 			while (i < conds.length() && conds.substring(i).toLowerCase().startsWith("and")) {
@@ -195,9 +177,7 @@ public class SQLUtils {
 				i = skipSpaces(conds, i);
 			}
 
-			if (i >= conds.length()) {
-				break;
-			}
+			if (i >= conds.length()) break;
 
 			if (!first) {
 				sb.append(" and ");
@@ -218,9 +198,7 @@ public class SQLUtils {
 				char c = conds.charAt(i);
 				if ("=><!".indexOf(c) != -1) {
 					i++;
-					if (i < conds.length() && conds.charAt(i) == '=') {
-						i++;
-					}
+					if (i < conds.length() && conds.charAt(i) == '=') i++;
 				} else {
 					String word = getNextWord(conds, i);
 					if ("in like is between not exists".contains(word.toLowerCase())) {
@@ -235,27 +213,18 @@ public class SQLUtils {
 				char c = conds.charAt(i);
 				if (c == '\'') {
 					i++;
-					while (i < conds.length() && conds.charAt(i) != '\'') {
-						i++;
-					}
-					if (i < conds.length()) {
-						i++;
-					}
+					while (i < conds.length() && conds.charAt(i) != '\'') i++;
+					if (i < conds.length()) i++;
 				} else if (c == '(') {
 					int count = 1;
 					i++;
 					while (i < conds.length() && count > 0) {
-						if (conds.charAt(i) == '(') {
-							count++;
-						} else if (conds.charAt(i) == ')') {
-							count--;
-						}
+						if (conds.charAt(i) == '(') count++;
+						else if (conds.charAt(i) == ')') count--;
 						i++;
 					}
 				} else {
-					while (i < conds.length() && !Character.isWhitespace(conds.charAt(i))) {
-						i++;
-					}
+					while (i < conds.length() && !Character.isWhitespace(conds.charAt(i))) i++;
 				}
 			}
 
@@ -266,9 +235,7 @@ public class SQLUtils {
 	}
 
 	private static int skipSpaces(String s, int start) {
-		while (start < s.length() && Character.isWhitespace(s.charAt(start))) {
-			start++;
-		}
+		while (start < s.length() && Character.isWhitespace(s.charAt(start))) start++;
 		return start;
 	}
 
@@ -282,9 +249,7 @@ public class SQLUtils {
 	}
 
 	private static String lowercaseKeywords(String sql) {
-		String[] kws =
-				{"SELECT", "FROM", "WHERE", "AND", "OR", "IN", "ORDER", "BY", "GROUP", "HAVING", "LIMIT", "UNION",
-						"EXISTS"};
+		String[] kws = {"SELECT","FROM","WHERE","AND","OR","IN","ORDER","BY","GROUP","HAVING","LIMIT","UNION","EXISTS"};
 		for (String kw : kws) {
 			sql = sql.replaceAll("(?i)\\b" + kw + "\\b", kw.toLowerCase());
 		}
