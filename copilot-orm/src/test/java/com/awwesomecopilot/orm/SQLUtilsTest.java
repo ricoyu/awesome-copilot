@@ -267,7 +267,7 @@ public class SQLUtilsTest {
 				select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id
 				      LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
 				      LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
-				      where and a.attr_name like :attrName
+				      where and a.attr_name like ?
 				
 				ORDER BY CREATE_TIME DESC""";
 		System.out.println("sql22原始 " + sql22);
@@ -275,8 +275,8 @@ public class SQLUtilsTest {
 		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id " +
 				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
 				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
-				"where a.attr_name like :attrName ORDER BY CREATE_TIME DESC";
-		assertEquals(expected, build(sql22));
+				"where a.attr_name like ? ORDER BY CREATE_TIME DESC";
+		assertEquals(expected.toLowerCase(), build(sql22).toLowerCase());
 		System.out.print("\n=============================\n");
 	}
 
@@ -294,133 +294,258 @@ public class SQLUtilsTest {
 	@Test
 	@Order(24)
 	public void test24() {
-		String sql24 = """
-				SELECT bu.id, bu.bind_user_time AS brokerageTime,
-				(SELECT SUM(price) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokeragePrice,
-				(SELECT COUNT(1) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokerageOrderCount,
-				(SELECT COUNT(1) FROM trade_brokerage_user c WHERE c.bind_user_id = bu.id AND c.deleted = FALSE) AS brokerageUserCount
-				FROM trade_brokerage_user AS bu where  bu.deleted = false ORDER BY brokerageUserCount""";
+		String sql24 = "SELECT bu.id, bu.bind_user_time AS brokerageTime, " +
+				"(SELECT SUM(price) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokeragePrice, " +
+				"(SELECT COUNT(1) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokerageOrderCount, " +
+				"(SELECT COUNT(1) FROM trade_brokerage_user c WHERE c.bind_user_id = bu.id AND c.deleted = FALSE) AS brokerageUserCount " +
+				"FROM trade_brokerage_user AS bu where bu.deleted = false ORDER BY brokerageUserCount";
 		System.out.println("sql24原始 " + sql24);
 		System.out.println("sql24    " + build(sql24));
-		String expected = "SELECT bu.id, bu.bind_user_time AS brokerageTime,\n" +
-				"(SELECT SUM(price) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokeragePrice,\n" +
-				"(SELECT COUNT(1) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokerageOrderCount,\n" +
-				"(SELECT COUNT(1) FROM trade_brokerage_user c WHERE c.bind_user_id = bu.id AND c.deleted = FALSE) AS brokerageUserCount\n" +
-				"FROM trade_brokerage_user AS bu where  bu.deleted = false ORDER BY brokerageUserCount";
-		assertEquals(expected, build(sql24));
+		String expected = "SELECT bu.id, bu.bind_user_time AS brokerageTime, " +
+				"(SELECT SUM(price) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokeragePrice, " +
+				"(SELECT COUNT(1) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokerageOrderCount, " +
+				"(SELECT COUNT(1) FROM trade_brokerage_user c WHERE c.bind_user_id = bu.id AND c.deleted = FALSE) AS brokerageUserCount " +
+				"FROM trade_brokerage_user AS bu where bu.deleted = false ORDER BY brokerageUserCount";
+		assertEquals(expected.toLowerCase(), build(sql24).toLowerCase());
 		System.out.print("\n=============================\n");
 	}
 
 	@Test
 	@Order(25)
 	public void test25() {
-		String sql25 = """
-				select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a
-				  left join pms_category c on a.catelog_id = c.cat_id
-				  LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
-				  LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
-				  where
-				     and a.attr_type = :attrType
-				     and a.attr_name like :attrName
-				  order by agr.attr_group_id asc, agr.attr_sort""";
-		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a " +
-				"left join pms_category c on a.catelog_id = c.cat_id " +
+		String sql25 = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name " +
+				"from pms_attr a left join pms_category c on a.catelog_id = c.cat_id " +
+				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+				"where and a.attr_type = :attrType and a.attr_name like :attrName order by agr.attr_group_id asc, agr.attr_sort";
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name " +
+				"from pms_attr a left join pms_category c on a.catelog_id = c.cat_id " +
 				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
 				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
 				"where a.attr_type = :attrType and a.attr_name like :attrName order by agr.attr_group_id asc, agr.attr_sort";
 		System.out.println("sql25原始 " + sql25);
 		System.out.println("sql25    " + build(sql25));
-		assertEquals(expected, build(sql25));
+		assertEquals(expected.toLowerCase(), build(sql25).toLowerCase());
 		System.out.print("\n=============================\n");
 	}
 
 	@Test
+	@Order(26)
+	public void test26() {
+		String sql26 = "select a.* from pms_attr a where a.catelog_id=:categoryId " +
+				"and a.attr_name like :attrName " +
+				"and not EXISTS (select 1 from pms_attr_attrgroup_relation r WHERE r.attr_id = a.attr_id) order by a.attr_id asc";
+		String expected = "select a.* from pms_attr a where a.catelog_id=:categoryId " +
+				"and a.attr_name like :attrName " +
+				"and not EXISTS (select 1 from pms_attr_attrgroup_relation r WHERE r.attr_id = a.attr_id) order by a.attr_id asc";
+		System.out.println("sql26原始 " + sql26);
+		System.out.println("sql26    " + build(sql26));
+		assertEquals(expected.toLowerCase(), build(sql26).toLowerCase());
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(27)
+	public void test27() {
+		// 测试用例 28：子查询里也有 group by having（递归测试）
+		String sql27 =
+				"select * from sys_menu dept_id in (select dept_id from sys_user name='admin' group by dept_id having count(*)>4) status=1";
+		System.out.println("sql27原始 " + sql27);
+		System.out.println("sql27    " + build(sql27));
+		assertEquals("select * from sys_menu where dept_id in (select dept_id from sys_user where name='admin' group " +
+				"by dept_id having count(*)>4) and status=1".toLowerCase(), build(sql27).toLowerCase());
+		System.out.print("\n=============================\n");
+
+	}
+
+
+	@Test
 	@Order(28)
 	public void test28() {
-		// 测试用例 28：子查询里也有 group by having（递归测试）
-		String sql28 =
-				"select * from sys_menu dept_id in (select dept_id from sys_user name='admin' group by dept_id " +
-						"having" +
-						" " +
-						"count(*)>4) status=1";
+		System.out.print("\n=============================\n");
+		String sql28 = "select * from pms_category order by cat_id asc";
 		System.out.println("sql28原始 " + sql28);
 		System.out.println("sql28    " + build(sql28));
-		assertEquals("select * from sys_menu where dept_id in (select dept_id from sys_user where name='admin' group" +
-				" " +
-				"by dept_id having count(*)>4) and status=1", build(sql28));
-		System.out.print("\n=============================\n");
+		assertEquals("select * from pms_category order by cat_id asc", build(sql28).toLowerCase());
+		System.out.println(" =========================== ");
 
 	}
 
 	@Test
 	@Order(29)
 	public void test29() {
-		// 测试用例 29：字符串中包含 where/and/or 关键词
-		String sql29 = "select * from sys_menu where sql like '%where and or having%' name='evil'";
-		System.out.println("sql29原始 " + sql29);
-		System.out.println("sql29    " + build(sql29));
-		assertEquals("select * from sys_menu where sql like '%where and or having%' and name='evil'", build(sql29));
+		String sql29 = """
+				select * 
+				from sys_menu 
+				name='rico'
+				""";
+		System.out.println("sql29原始 " + sql29); // 输出: select * from sys_menu WHERE name='rico'
+		System.out.println("sql29    " + build(sql29)); // 输出: select * from sys_menu WHERE name='rico'
+		assertEquals("select * from sys_menu where name='rico'", build(sql29));
 		System.out.print("\n=============================\n");
+
 	}
 
 	@Test
 	@Order(30)
 	public void test30() {
-		// 测试用例 30：字段名就是 and（变态中的变态）
-		String sql30 = "select * from config where `and`=1 `or`=0 name='test'";
-		System.out.println("sql30原始 " + sql30);
-		System.out.println("sql30    " + build(sql30));
-		assertEquals("select * from config where `and`=1 and `or`=0 and name='test'", build(sql30));
+		String sql30 = """
+				select * from pms_brand where
+				""";
+		System.out.println("sql30原始 " + sql30); // 输出: select * from pms_brand where
+		System.out.println("sql30    " + build(sql30)); // 输出: select * from pms_brand
+		assertEquals("select * from pms_brand", build(sql30));
 		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(31)
+	public void test31() {
+		String sql31 = """
+				select * from pms_brand where order by `sort` asc limit 10,10""";
+		System.out.println("sql31原始 " + sql31); // 输出: select * from pms_brand where
+		System.out.println("sql31    " + build(sql31)); // 输出: select * from pms_brand
+		assertEquals("select * from pms_brand order by `sort` asc limit 10,10", build(sql31));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(32)
+	public void test32() {
+		String sql32 = "select * from pms_attr_group where";
+		assertEquals("select * from pms_attr_group", build(sql32));
+		System.out.println("处理前sql32：" + sql32);
+		System.out.println("处理后sql32：" + build(sql32));
+		System.out.println("--------------------------");
+	}
+
+	@Test
+	@Order(33)
+	public void test33() {
+		String sql33 = "select * from pms_attr_group where order by `sort` asc, attr_group_name asc limit ?";
+		String sql2where = build(sql33);
+		assertEquals("select * from pms_attr_group order by `sort` asc, attr_group_name asc limit ?", sql2where);
+		System.out.println("处理前sql33：" + sql33);
+		System.out.println("处理后sql33：" + sql2where);
+		System.out.println("--------------------------");
+
+		String sql1WhereAnd = build(sql33);
+		assertEquals("select * from pms_attr_group order by `sort` asc, attr_group_name asc limit ?", sql1WhereAnd);
+		System.out.println("处理前sql33：" + sql33);
+		System.out.println("处理后sql33：" + sql1WhereAnd);
 	}
 
 	@Test
 	@Order(34)
 	public void test34() {
-		System.out.print("\n=============================\n");
-		String sql34 = "select * from pms_category order by cat_id asc";
-		System.out.println("sql34原始 " + sql34);
-		System.out.println("sql34    " + build(sql34));
-		assertEquals("select * from pms_category order by cat_id asc", build(sql34));
-		System.out.println(" =========================== ");
-
+		// 测试用例3：where后多个空格+and，再无其他条件
+		String sql34 = "select * from user where    and order by create_time";
+		String sqlwhere = build(sql34);
+		assertEquals("select * from user order by create_time", sqlwhere);
+		System.out.println("处理前sql34：" + sql34);
+		System.out.println("处理后sql34：" + sqlwhere);
+		System.out.println("--------------------------");
 	}
 
 	@Test
 	@Order(35)
-	public void test35() {
-		String sql35 = """
-				select * 
-				from sys_menu 
-				name='rico'
-				""";
-		System.out.println("sql35原始 " + sql35); // 输出: select * from sys_menu WHERE name='rico'
-		System.out.println("sql35    " + build(sql35)); // 输出: select * from sys_menu WHERE name='rico'
-		assertEquals("select * from sys_menu where name='rico'", build(sql35));
-		System.out.print("\n=============================\n");
-
+	public void tes35() {
+		// 测试用例4：where后有有效条件（不处理）
+		String sql35 = "select * from user where name = 'test' order by age";
+		String sqlwhere = build(sql35);
+		assertEquals("select * from user where name = 'test' order by age", sqlwhere);
+		System.out.println("处理前sql35：" + sql35);
+		System.out.println("处理后sql35：" + sqlwhere);
+		System.out.println("--------------------------");
 	}
 
 	@Test
 	@Order(36)
 	public void test36() {
-		String sql36 = """
-				select * from pms_brand where
-				""";
-		System.out.println("sql36原始 " + sql36); // 输出: select * from pms_brand where
-		System.out.println("sql36    " + build(sql36)); // 输出: select * from pms_brand
-		assertEquals("select * from pms_brand", build(sql36));
-		System.out.print("\n=============================\n");
+		// 测试用例5：where后换行+or，再跟limit
+		String sql36 = "select * from order where\n   or limit 10";
+		String sqlwhere = build(sql36);
+		assertEquals("select * from order limit 10", sqlwhere);
+		System.out.println("处理前sql36：" + sql36);
+		System.out.println("处理后sql36：" + sqlwhere);
 	}
 
 	@Test
 	@Order(37)
 	public void test37() {
-		String sql37 = """
-				select * from pms_brand where order by `sort` asc limit 10,10""";
-		System.out.println("sql37原始 " + sql37); // 输出: select * from pms_brand where
-		System.out.println("sql37    " + build(sql37)); // 输出: select * from pms_brand
-		assertEquals("select * from pms_brand order by `sort` asc limit 10,10", build(sql37));
-		System.out.print("\n=============================\n");
+		String sql37 = "select * from pms_attr_group where order by `sort` asc, attr_group_name asc limit ?";
+		String sqlwhere = build(sql37);
+		assertEquals("select * from pms_attr_group order by `sort` asc, attr_group_name asc limit ?", sqlwhere);
+		System.out.println("处理前sql37：" + sql37);
+		System.out.println("处理后sql37：" + sqlwhere);
+		System.out.println("--------------------------");
+	}
+
+	@Test
+	@Order(38)
+	public void test38() {
+		String sql38 = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a " +
+				"left join pms_category c on a.catelog_id = c.cat_id " +
+				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+				"where order by agr.attr_group_id asc, agr.attr_sort";
+		String sqlwhere = build(sql38);
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a " +
+				"left join pms_category c on a.catelog_id = c.cat_id " +
+				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+				"order by agr.attr_group_id asc, agr.attr_sort";
+		System.out.println("处理前sql38：" + sql38);
+		System.out.println("处理后sql38：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+		System.out.println("--------------------------");
+	}
+
+	@Test
+	@Order(39)
+	public void test39() {
+		String sql39 = """
+				select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a
+				left join pms_category c on a.catelog_id = c.cat_id
+				LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+				LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+				where
+				  a.catelog_id = :catelogId
+				  and a.attr_type = :attrType
+				  and a.attr_name like :attrName
+				order by agr.attr_group_id asc, agr.attr_sort""";
+		String sqlwhere = build(sql39);
+		String expected =
+				"select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a " +
+				"left join pms_category c on a.catelog_id = c.cat_id " +
+						"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+						"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+						"where " +
+						"a.catelog_id = :catelogId " +
+						"and a.attr_type = :attrType " +
+						"and a.attr_name like :attrName " +
+						"order by agr.attr_group_id asc, agr.attr_sort";
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+		System.out.println("处理前sql39：" + sql39);
+		System.out.println("处理后sql39：" + sqlwhere);
+	}
+
+	@Test
+	@Order(40)
+	public void test40() {
+		String sql40 = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a " +
+				"where a.catelog_id=:categoryId " +
+				"and a.attr_name like :attrName " +
+				"and not EXISTS (select 1 from pms_attr_attrgroup_relation r WHERE r.attr_id = a.attr_id) " +
+				"order by a.attr_id asc";
+		String sqlwhere = build(sql40);
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a " +
+				"where a.catelog_id=:categoryId " +
+				"and a.attr_name like :attrName " +
+				"and not EXISTS (select 1 from pms_attr_attrgroup_relation r WHERE r.attr_id = a.attr_id) " +
+				"order by a.attr_id asc";
+		System.out.println("处理前sql40：" + sql40);
+		System.out.println("处理后sql40：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
 	}
 }

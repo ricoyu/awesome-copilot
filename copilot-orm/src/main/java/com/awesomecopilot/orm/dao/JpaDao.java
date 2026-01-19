@@ -409,7 +409,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 * 根据主键数组删除
 	 *
 	 * @param entityClass 实体类
-	 * @param ids 主键数组
+	 * @param ids         主键数组
 	 */
 	@Override
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK[] ids) {
@@ -419,6 +419,30 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		for (PK id : ids) {
 			deleteByPK(entityClass, id);
+		}
+	}
+
+	@Override
+	public <T> void deleteByPK(Class<T> entityClass, long[] ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		if (ids.length == 0) {
+			return;
+		}
+		for (long id : ids) {
+			Objects.requireNonNull(id, "id cannot be null");
+
+			if (logicalDeleteEnabled) {
+				// 执行逻辑删除：更新deleted字段为true
+				T entity = em().find(entityClass, id);
+				if (entity != null) {
+					ReflectionUtils.setField(logicalDeleteField, entity, true);
+					em().merge(entity);
+				}
+			} else {
+				// 执行物理删除
+				T entity = em().getReference(entityClass, id);
+				delete(entity);
+			}
 		}
 	}
 

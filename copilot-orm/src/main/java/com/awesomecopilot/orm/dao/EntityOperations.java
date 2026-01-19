@@ -99,6 +99,14 @@ public interface EntityOperations {
 	/**
 	 * 根据主键批量删除
 	 * @param entityClass
+	 * @param ids 需要传入包装器类型的数组
+	 * @param <T>
+	 */
+	public <T> void deleteByPK(Class<T> entityClass, long[] ids);
+
+	/**
+	 * 根据主键批量删除
+	 * @param entityClass
 	 * @param ids
 	 * @param <T>
 	 * @param <PK>
