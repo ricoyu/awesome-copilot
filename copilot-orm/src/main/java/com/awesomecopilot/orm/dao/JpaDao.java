@@ -116,9 +116,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	/**
 	 * 是否自动支持逻辑删除
 	 */
-	@Value("${copilot.orm.logical-delete.enabled:true}")
+	@Value("${copilot.orm.logical-delete.enabled:false}")
 	private boolean logicalDeleteEnabled = false;
-
 	/**
 	 * 逻辑删除的字段名
 	 */
@@ -391,8 +390,36 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK id) {
 		Objects.requireNonNull(id, "id cannot be null");
-		T entity = em().getReference(entityClass, id);
-		delete(entity);
+
+		if (logicalDeleteEnabled) {
+			// 执行逻辑删除：更新deleted字段为true
+			T entity = em().find(entityClass, id);
+			if (entity != null) {
+				ReflectionUtils.setField(logicalDeleteField, entity, true);
+				em().merge(entity);
+			}
+		} else {
+			// 执行物理删除
+			T entity = em().getReference(entityClass, id);
+			delete(entity);
+		}
+	}
+
+	/**
+	 * 根据主键数组删除
+	 *
+	 * @param entityClass 实体类
+	 * @param ids 主键数组
+	 */
+	@Override
+	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK[] ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		if (ids.length == 0) {
+			return;
+		}
+		for (PK id : ids) {
+			deleteByPK(entityClass, id);
+		}
 	}
 
 	@Override

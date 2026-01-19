@@ -1,5 +1,6 @@
 package com.awesomecopilot.orm.criteria;
 
+import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION;
 import com.awesomecopilot.common.lang.vo.Page;
@@ -10,13 +11,9 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaBuilder.In;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Fetch;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -502,6 +499,10 @@ public class JPACriteriaQuery<T> implements Serializable {
 		this.groupBy = groupBy;
 	}
 
+	/**
+	 * 别看这个方法名是list(), 分页查询也是走这个方法哦
+	 * @return
+	 */
 	public List<T> list() {
 		TypedQuery<T> query = entityManager.createQuery(fillUpCriterias());
 		if (page != null) {
@@ -522,6 +523,11 @@ public class JPACriteriaQuery<T> implements Serializable {
 				query.setHint(hintName, queryHints.get(hintName));
 			}
 		}
+
+		/*
+		 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+		 */
+		ThreadContext.put("page", page);
 
 		try {
 			return query.getResultList();

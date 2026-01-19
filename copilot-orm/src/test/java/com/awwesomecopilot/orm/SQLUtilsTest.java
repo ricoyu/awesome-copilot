@@ -20,8 +20,8 @@ public class SQLUtilsTest {
 			//System.out.println("sql1原始 " + sql1); // 输出: select * from sys_menu WHERE name='rico'
 			//System.out.println("sql1    " + build(sql1)); // 输出: select * from sys_menu WHERE name='rico'
 			String finalSql = build(sql1);
-			//assertEquals("select * from sys_menu where name='rico'", build(sql1));
-			//System.out.print("\n=============================\n");
+			assertEquals("select * from sys_menu where name='rico'", build(sql1));
+			System.out.print("\n=============================\n");
 		}
 		long end = System.currentTimeMillis();
 		System.out.println("耗时：" + (end - begin) + "ms");
@@ -272,7 +272,10 @@ public class SQLUtilsTest {
 				ORDER BY CREATE_TIME DESC""";
 		System.out.println("sql22原始 " + sql22);
 		System.out.println("sql22    " + build(sql22));
-		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id where a.attr_name like :attrName ORDER BY CREATE_TIME DESC";
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_name from pms_attr a left join pms_category c on a.catelog_id = c.cat_id " +
+				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+				"where a.attr_name like :attrName ORDER BY CREATE_TIME DESC";
 		assertEquals(expected, build(sql22));
 		System.out.print("\n=============================\n");
 	}
@@ -289,7 +292,7 @@ public class SQLUtilsTest {
 	}
 
 	@Test
-	@Order(23)
+	@Order(24)
 	public void test24() {
 		String sql24 = """
 				SELECT bu.id, bu.bind_user_time AS brokerageTime,
@@ -299,7 +302,35 @@ public class SQLUtilsTest {
 				FROM trade_brokerage_user AS bu where  bu.deleted = false ORDER BY brokerageUserCount""";
 		System.out.println("sql24原始 " + sql24);
 		System.out.println("sql24    " + build(sql24));
-		assertEquals(sql24, build(sql24));
+		String expected = "SELECT bu.id, bu.bind_user_time AS brokerageTime,\n" +
+				"(SELECT SUM(price) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokeragePrice,\n" +
+				"(SELECT COUNT(1) FROM trade_brokerage_record r WHERE r.user_id = bu.id AND biz_type = 0 ) AS brokerageOrderCount,\n" +
+				"(SELECT COUNT(1) FROM trade_brokerage_user c WHERE c.bind_user_id = bu.id AND c.deleted = FALSE) AS brokerageUserCount\n" +
+				"FROM trade_brokerage_user AS bu where  bu.deleted = false ORDER BY brokerageUserCount";
+		assertEquals(expected, build(sql24));
+		System.out.print("\n=============================\n");
+	}
+
+	@Test
+	@Order(25)
+	public void test25() {
+		String sql25 = """
+				select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a
+				  left join pms_category c on a.catelog_id = c.cat_id
+				  LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id
+				  LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id
+				  where
+				     and a.attr_type = :attrType
+				     and a.attr_name like :attrName
+				  order by agr.attr_group_id asc, agr.attr_sort""";
+		String expected = "select a.*, c.`name` catelog_name, ag.attr_group_id, ag.attr_group_name from pms_attr a " +
+				"left join pms_category c on a.catelog_id = c.cat_id " +
+				"LEFT JOIN pms_attr_attrgroup_relation agr on a.attr_id = agr.attr_id " +
+				"LEFT JOIN pms_attr_group ag on agr.attr_group_id = ag.attr_group_id " +
+				"where a.attr_type = :attrType and a.attr_name like :attrName order by agr.attr_group_id asc, agr.attr_sort";
+		System.out.println("sql25原始 " + sql25);
+		System.out.println("sql25    " + build(sql25));
+		assertEquals(expected, build(sql25));
 		System.out.print("\n=============================\n");
 	}
 

@@ -32,12 +32,12 @@
 <dependency>
     <groupId>jakarta.xml.bind</groupId>
     <artifactId>jakarta.xml.bind-api</artifactId>
-    <version>4.0.0</version>
+    <version>5.0.0</version>
 </dependency>
 <dependency>
     <groupId>org.glassfish.jaxb</groupId>
     <artifactId>jaxb-runtime</artifactId>
-    <version>4.0.5</version> <!-- 请根据你的需求选择合适的版本 -->
+    <version>5.0.5</version> <!-- 请根据你的需求选择合适的版本 -->
 </dependency>
 
 <!-- web环境可以简化分页的使用 -->
@@ -693,14 +693,127 @@ public class MessageContent {
    * StringListConverter
    
      支持POJO属性是List<String>类型, 数据库字段是varchar类型, 值是'[item1,item2,item2]'这种形式互转
+     
+     ```java
+     package com.awesomecopilot.orm.converter;
+     
+     import com.awesomecopilot.common.lang.utils.StringUtils;
+     import com.awesomecopilot.orm.utils.JsonUtils;
+     import jakarta.persistence.AttributeConverter;
+     
+     import java.util.Arrays;
+     import java.util.List;
+     
+     /**
+      * 数据库字段值为字符串到Java Bean属性值List类型的转换
+      * <p/>
+      * Copyright: Copyright (c) 2025-04-04 9:04
+      * <p/>
+      * Company: Sexy Uncle Inc.
+      * <p/>
+     
+      * @author Rico Yu  ricoyu520@gmail.com
+      * @version 1.0
+      */
+     public class StringListConverter implements AttributeConverter<List<String>, String> {
+     	@Override
+     	public String convertToDatabaseColumn(List<String> attribute) {
+     		if (attribute == null) {
+     			return null;
+     		}
+     		return JsonUtils.toJson(attribute);
+     	}
+     
+     	@Override
+     	public List<String> convertToEntityAttribute(String dbData) {
+     		if (dbData == null) {
+     			return null;
+     		}
+     		dbData = dbData.trim();
+     		if (dbData.startsWith("[") && dbData.endsWith("]")) {
+     			return (List<String>) JsonUtils.toList(dbData, String.class);
+     		} else {
+     			String[] split = StringUtils.split(dbData);
+     			return Arrays.asList(split);
+     		}
+     	}
+     }
+     
+     ```
+     
+     
 
 
 
-# 四 完整示例
+# 五 实体类映射
 
-## 4.1 分页查询
+1. enum类型
 
-### 4.1.1 BrandController
+   ```java
+   // 状态枚举
+   public enum StatusEnum {
+       // 序号0，对应数据库值0
+       DISABLED,
+       // 序号1，对应数据库值1
+       ENABLED
+   }
+   ```
+
+   
+
+   * JPA 默认就会将枚举的ordinal()值 (从 0 开始的序号) 存入数据库, 无需额外配置
+
+     ```java
+     import jakarta.persistence.*; // JPA 3.0+ 使用jakarta包，旧版本用javax.persistence
+     
+     @Data
+     @Entity
+     @Table(name = "t_user")
+     public class User {
+         @Id
+         @GeneratedValue(strategy = GenerationType.IDENTITY)
+         private Long id;
+         
+         private String username;
+         
+         // 直接使用枚举类型，默认按ordinal映射（DISABLED=0，ENABLED=1）
+         private StatusEnum status;
+     }
+     ```
+
+   * 显式指定 EnumType.ORDINAL (推荐)
+
+     ```java
+     import jakarta.persistence.*;
+     
+     @Entity
+     @Table(name = "t_user")
+     public class User {
+         @Id
+         @GeneratedValue(strategy = GenerationType.IDENTITY)
+         private Long id;
+         
+         private String username;
+         
+         // 显式指定按ordinal映射
+         @Enumerated(EnumType.ORDINAL)
+         private StatusEnum status;
+     
+         // 省略getter/setter
+     }
+     ```
+
+     
+
+   
+
+   
+
+# 五 完整示例
+
+## 5.1 分页查询
+
+### 5.1.1 BrandController
 
 ```java
 @PostMapping("/search")
@@ -841,7 +954,7 @@ Page对象是commons-lang提供的, 可以作为接收查询参数的Bean的属�
 
 
 
-### 4.1.2 Service 层
+### 5.1.2 Service 层
 
 ```java
 public List<BrandVO> searchBrand(BrandDTO brandDTO) {
@@ -862,7 +975,7 @@ public List<BrandVO> searchBrand(BrandDTO brandDTO) {
 * addRlikeParam 是往params添加一个name变量, 值是brandDTO.getName()%
 * 不是like条件的话直接addParam即可
 
-### 4.1.3 Brand.hbm.xml
+### 5.1.3 Brand.hbm.xml
 
 分页语句以及排序子句都会自动生成, 你这边只需要写select以及查询条件即可
 
@@ -972,7 +1085,7 @@ public class PurchaseOrderListsVO {
 
 
 
-# 五 多线程环境下没有Spring事务控制下使用
+# 六 多线程环境下没有Spring事务控制下使用
 
 写数据需要手工开启事务/提交事务, 比如:
 
@@ -984,7 +1097,7 @@ entityOperations.commit();
 
 
 
-# 六 枚举类型用自定义属性值读写
+# 七 枚举类型用自定义属性值读写
 
 1. 假设有这样一个有自定义属性的枚举类EquipmentType
 
@@ -1089,13 +1202,13 @@ entityOperations.commit();
    }
    ```
 
-# 七 ORM 错误
+# 八 ORM 错误
 
 如果是多module项目, Entity实体类在一个module里面, 然后另一个module是一个SpringBoot应用, 在这里执行named-sql查询, xxx.hbm.xml也是放在这个module里面的, 那么正常的Idea debug没问题, 但是用Jrebel debug会找不到named-sql, 必须把xxx.hbm.xml和实体类放到同一个module下
 
 
 
-# 八 自动添加 逻辑删除和租户ID 条件
+# 九 自动添加 逻辑删除和租户ID 条件
 
 默认就支持逻辑删除, 每条SQL后面都会自动加上deleted=0, 强制租户ID需要手工开启
 
@@ -1144,7 +1257,7 @@ SQLOperations 和 CriteriaOperations两个接口都支持
 
 
 
-# 九  SQL自动修复
+# 十  SQL自动修复
 
 可以一定程度上对SQL做自动修复, 比如你写的SQL是: select * from sys_menu name='rico' age>18 is_deleted=0
 显然少了一个where关键字, 那么开启SQL自动修复后会自动帮你加上where关键字, 修复后的SQL会变成: select * from sys_menu where name='rico' and age>18 and is_deleted=0
@@ -1175,7 +1288,7 @@ order by agr.attr_group_id asc, agr.attr_sort
 
 
 
-# 十 排序
+# 十一 排序
 
 如果你写的原生SQL里面已经有排序字段了, 那么分页接口里面的动态排序字段就不生效了, 比如
 

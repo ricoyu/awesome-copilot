@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class SQLUtils {
+public class SQLUtils6 {
 
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils4.class);
 
@@ -49,7 +49,8 @@ public class SQLUtils {
 			return result;
 		} else {
 			if (!sql.toLowerCase().replaceAll("\\s+", "").contains(")as")) {
-				String parsedSql = SQLWhereCleaner.cleanSql(rawSql);
+				String parsedSql = SQLWhereCleaner.cleanWhereAndOr(rawSql);
+				parsedSql = SQLWhereCleaner.cleanInvalidWhere(parsedSql);
 				SQL_CACHE.put(rawSql, parsedSql);
 				return parsedSql;
 			}

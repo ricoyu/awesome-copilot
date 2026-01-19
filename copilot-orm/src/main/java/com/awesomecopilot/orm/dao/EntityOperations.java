@@ -86,7 +86,23 @@ public interface EntityOperations {
 	 * @param id
 	 */
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK id);
-	
+
+	/**
+	 * 根据主键批量删除
+	 * @param entityClass
+	 * @param ids 需要传入包装器类型的数组
+	 * @param <T>
+	 * @param <PK>
+	 */
+	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK[] ids);
+
+	/**
+	 * 根据主键批量删除
+	 * @param entityClass
+	 * @param ids
+	 * @param <T>
+	 * @param <PK>
+	 */
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, Collection<PK> ids);
 
 	/**
