@@ -11,9 +11,8 @@ import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * https://juejin.im/post/5aaa2ba8f265da239530b69e
@@ -41,7 +40,7 @@ public class CopyOnWriteArrayListTest {
 		list.add("2");
 		list.add("3");
 		
-		ThreadPoolExecutor executor = CopilotExecutors.of("copy-on-write-arraylist-")
+		ExecutorService executor = CopilotExecutors.of("copy-on-write-arraylist-")
 				.corePoolSize(2)
 				.maxPoolSize(100)
 				.keepAliveTime(60, SECONDS)

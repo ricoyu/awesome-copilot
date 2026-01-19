@@ -1,8 +1,6 @@
 package com.awesomecopilot.common.lang.concurrent;
 
 import com.alibaba.ttl.threadpool.TtlExecutors;
-import com.awesomecopilot.common.lang.context.ThreadContext;
-import com.awesomecopilot.common.lang.dto.PageHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +8,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -34,10 +33,11 @@ import java.util.function.Supplier;
  *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
+ * @on
  */
-public final class Concurrent1 {
+public final class Concurrent {
 
-	private static final Logger log = LoggerFactory.getLogger(Concurrent1.class);
+	private static final Logger log = LoggerFactory.getLogger(Concurrent.class);
 
 	/**
 	 * The number of CPUs
@@ -65,6 +65,9 @@ public final class Concurrent1 {
 	 */
 	private static final ThreadLocal<Set<CompletableFuture<?>>> COMPLETABLE_FUTURE_THREAD_LOCAL = new ThreadLocal<>();
 
+	public static final String CURRENT_THREAD = "currentThread";
+
+	public static final String PAGEHOLDER_MAP = "pageHolderMap";
 	/**
 	 * CPU 内核数 + 1个线程, 适合CPU密集型应用<p/>
 	 * 任务队列大小为2600, 线程池已经预热
@@ -91,7 +94,7 @@ public final class Concurrent1 {
 	public static ExecutorService ioConcentratedFixedThreadPool() {
 		ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(2 * NCPUS + 1, 2 * NCPUS + 1,
 				0L, TimeUnit.MILLISECONDS,
-				new LinkedBlockingQueue<Runnable>(2600),
+				new LinkedBlockingQueue<Runnable>(),
 				defaultThreadFactory);
 		threadPoolExecutor.prestartAllCoreThreads();
 		return threadPoolExecutor;
@@ -105,18 +108,17 @@ public final class Concurrent1 {
 	 * @return FutureResult<T>
 	 */
 	public static <T> FutureResult<T> submit(Supplier<T> supplier) {
-		/**
-		 * 为了应对分页查询放到线程中执行的情况下, JPADao那边仍然可以把Page回传给提交任务的线程,
-		 * 使得PageResultAspect可以从ThreadContext中先拿到这个pageHolder对象, 再间接拿到Page对象
-		 */
-		ThreadContext.put(PageHolder.PAGE_HOLDER, new PageHolder());
-		CompletableFuture<T> completableFuture = CompletableFuture.supplyAsync(supplier, IO_POOL);
-		completableFuture.whenComplete((result, e) -> {
+		CompletableFuture completableFuture = CompletableFuture.supplyAsync(supplier, IO_POOL);
+		completableFuture = completableFuture.handle((result, e) -> {
 			if (e != null) {
 				log.error("任务执行失败", e);
+				CompletableFuture<T> failedFuture = new CompletableFuture<>();
+				failedFuture.completeExceptionally((Throwable) e); // 使用异常完成新的 CompletableFuture
+				return failedFuture;
 			} else {
 				log.debug("任务执行成功");
 			}
+			return CompletableFuture.completedFuture(result);// 返回一个正常完成的 CompletableFuture, 因为是 runAsync，所以返回 null
 		});
 		addCompleteFuture(completableFuture);
 		return new FutureResult<>(completableFuture);
@@ -129,12 +131,16 @@ public final class Concurrent1 {
 	 * @return FutureResult<T>
 	 */
 	public static void execute(Runnable task) {
-		CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(task, IO_POOL);
-		completableFuture.whenComplete((result, e) -> {
+		CompletableFuture completableFuture = CompletableFuture.runAsync(task, IO_POOL);
+		completableFuture = completableFuture.handle((result, e) -> {
 			if (e != null) {
 				log.error("任务执行失败", e);
+				CompletableFuture<Void> failedFuture = new CompletableFuture<>();
+				failedFuture.completeExceptionally((Throwable) e); // 使用异常完成新的 CompletableFuture
+				return failedFuture;
 			} else {
 				log.debug("任务执行成功");
+				return CompletableFuture.completedFuture(null); // 返回一个正常完成的 CompletableFuture, 因为是 runAsync，所以返回 null
 			}
 		});
 		addCompleteFuture(completableFuture);
@@ -148,28 +154,34 @@ public final class Concurrent1 {
 	 * @return FutureResult<T>
 	 */
 	public static void execute(Runnable task, Consumer consumer) {
-		CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(task, IO_POOL);
-		completableFuture.whenComplete((result, e) -> {
+		CompletableFuture completableFuture = CompletableFuture.runAsync(task, IO_POOL);
+		completableFuture = completableFuture.handle((result, e) -> {
 			if (e != null) {
 				log.error("任务执行失败", e);
+				CompletableFuture<Void> failedFuture = new CompletableFuture<>();
+				failedFuture.completeExceptionally((Throwable) e); // 使用异常完成新的 CompletableFuture
+				return failedFuture;
 			} else {
 				log.debug("任务执行成功");
 				try {
 					consumer.accept(null);
 				} catch (Exception e1) {
-					log.error("回调执行失败", e1);
+					log.error("", e1);
 				}
+				return CompletableFuture.completedFuture(null); // 返回一个正常完成的 CompletableFuture, 因为是 runAsync，所以返回 null
 			}
 		});
 		addCompleteFuture(completableFuture);
 	}
 
 	/**
-	 * 等待所有submit的任务执行完毕, 无论任务是否抛异常, await()方法都会等待所有任务完成, 不会抛出异常。
-	 * 任务异常将在调用 FutureResult.get() 时抛出。
+	 * 等待所有submit的任务执行完毕
 	 * <p/>
 	 * 不管任务是否都成功执行, COMPLETABLE_FUTURE_THREAD_LOCAL都会被清理
+	 *
+	 * @throws CompletionException
 	 */
+	@SuppressWarnings("rawtypes")
 	public static void await() {
 		Set<CompletableFuture<?>> set = COMPLETABLE_FUTURE_THREAD_LOCAL.get();
 		if (set == null || set.isEmpty()) {
@@ -179,7 +191,7 @@ public final class Concurrent1 {
 		try {
 			int taskCount = set.size();
 			log.debug("等待所有{}个任务执行完毕", taskCount);
-			CompletableFuture<?>[] completableFutures = set.toArray(new CompletableFuture<?>[taskCount]);
+			CompletableFuture[] completableFutures = set.toArray(new CompletableFuture[taskCount]);
 			CompletableFuture.allOf(completableFutures).join();
 		} finally {
 			COMPLETABLE_FUTURE_THREAD_LOCAL.remove();
@@ -191,7 +203,6 @@ public final class Concurrent1 {
 	 */
 	public static void shutdown() {
 		IO_POOL.shutdown();
-		DELAY_POOL.shutdown();
 	}
 
 	private static void addCompleteFuture(CompletableFuture<?> completableFuture) {
@@ -210,7 +221,7 @@ public final class Concurrent1 {
 		try {
 			executorService.awaitTermination(timeout, timeUnit);
 		} catch (InterruptedException e) {
-			log.error("等待线程池终止失败", e);
+			log.error("", e);
 			throw new RuntimeException(e);
 		}
 	}

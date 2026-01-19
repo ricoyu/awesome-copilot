@@ -37,7 +37,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -392,7 +392,7 @@ public class HttpUtilsTest {
 	@Test
 	public void testHelloSentinel() {
 		CountDownLatch countDownLatch = new CountDownLatch(100);
-		ThreadPoolExecutor pool = CopilotExecutors.of("sentinel-pool")
+		ExecutorService pool = CopilotExecutors.of("sentinel-pool")
 				.corePoolSize(8)
 				.maxPoolSize(12)
 				.prestartAllCoreThreads()

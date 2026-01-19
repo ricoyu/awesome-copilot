@@ -2,6 +2,7 @@ package com.awesomecopilot.common.lang.concurrent;
 
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -187,7 +188,7 @@ public final class CopilotExecutors {
 		return this;
 	}
 	
-	public ThreadPoolExecutor build() {
+	public ExecutorService build() {
 		RejectedExecutionHandler handler = null;
 		
 		if (rejectPolicy instanceof RejectedExecutionHandler) {

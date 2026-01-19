@@ -29,9 +29,9 @@ public class MandatoryIfValidator implements ConstraintValidator<MandatoryIf, Ob
 	
 	@Override
 	public void initialize(MandatoryIf constraintAnnotation) {
-		mandatoryField = constraintAnnotation.mandatoryField();
-		referenceField = constraintAnnotation.referenceField();
-		referenceValue = constraintAnnotation.referenceValue();
+		mandatoryField = constraintAnnotation.field();
+		referenceField = constraintAnnotation.refField();
+		referenceValue = constraintAnnotation.refValue();
 		message = constraintAnnotation.message();
 	}
 	

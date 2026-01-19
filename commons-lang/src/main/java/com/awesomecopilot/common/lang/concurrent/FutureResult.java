@@ -82,7 +82,7 @@ public class FutureResult<T> implements Serializable {
 	}
 
 	/**
-	 * 如果返回结果不为null，那么消费次结果。
+	 * 如果返回结果不为null，那么消费此结果。
 	 * 不管消费与否，最终都返回结果T
 	 * @param consumer
 	 * @return T

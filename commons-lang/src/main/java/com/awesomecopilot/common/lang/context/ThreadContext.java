@@ -1,5 +1,6 @@
 package com.awesomecopilot.common.lang.context;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 2016-01-16 改用TransmittableThreadLocal
  * A ThreadContext provides a means of binding and unbinding objects to the
  * current thread based on key/value pairs.
  * <p/>
@@ -29,7 +31,7 @@ public final class ThreadContext {
 	 */
 	private static final Logger logger = LoggerFactory.getLogger(ThreadContext.class);
 
-	private static final ThreadLocal<Map<Object, Object>> resources = new InheritableThreadLocalMap<>();
+	private static final ThreadLocal<Map<Object, Object>> resources = new TransmittableThreadLocalMap<>();
 
 	/**
 	 * Default no-argument constructor.
@@ -181,8 +183,8 @@ public final class ThreadContext {
 		resources.remove();
 	}
 
-	private static final class InheritableThreadLocalMap<T extends Map<Object, Object>>
-			extends InheritableThreadLocal<Map<Object, Object>> {
+	private static final class TransmittableThreadLocalMap<T extends Map<Object, Object>>
+			extends TransmittableThreadLocal<Map<Object, Object>> {
 
 		/**
 		 * This implementation was added to address a <a

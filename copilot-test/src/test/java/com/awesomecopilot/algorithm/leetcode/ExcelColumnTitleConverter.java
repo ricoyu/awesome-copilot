@@ -70,6 +70,7 @@ public class ExcelColumnTitleConverter {
 		System.out.print("请输入列数: ");
 		int columnNumber = scanner.nextInt();
 		System.out.println(convertToTitle(columnNumber));
+		scanner.close();
 	}
 
 	/**

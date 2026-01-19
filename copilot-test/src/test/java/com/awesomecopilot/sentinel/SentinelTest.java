@@ -8,9 +8,9 @@ import org.junit.Test;
 
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * <p>
@@ -30,7 +30,7 @@ public class SentinelTest {
 	 */
 	@Test
 	public void testRelateRule() {
-		ThreadPoolExecutor executor = CopilotExecutors.of("order-pool")
+		ExecutorService executor = CopilotExecutors.of("order-pool")
 				.corePoolSize(8)
 				.maxPoolSize(18)
 				.build();
@@ -59,7 +59,7 @@ public class SentinelTest {
 	
 	@Test
 	public void testWarmUp() {
-		ThreadPoolExecutor executor = CopilotExecutors.of("order-pool")
+		ExecutorService executor = CopilotExecutors.of("order-pool")
 				.corePoolSize(10)
 				.maxPoolSize(18)
 				.prestartAllCoreThreads()
@@ -156,7 +156,7 @@ public class SentinelTest {
 	
 	@Test
 	public void testDegrade() {
-		ThreadPoolExecutor executor = CopilotExecutors.of("DEGRADE")
+		ExecutorService executor = CopilotExecutors.of("DEGRADE")
 				.corePoolSize(5)
 				.prestartAllCoreThreads()
 				.build();
@@ -181,7 +181,7 @@ public class SentinelTest {
 	@Test
 	public void testExceptionCounter() {
 		CountDownLatch countDownLatch = new CountDownLatch(50);
-		ThreadPoolExecutor executor = CopilotExecutors.of("rico")
+		ExecutorService executor = CopilotExecutors.of("rico")
 				.corePoolSize(10)
 				.prestartAllCoreThreads()
 				.build();

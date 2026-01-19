@@ -33,19 +33,21 @@ public @interface MandatoryIf {
 	 * Bean中哪个属性是必填的
 	 * @return
 	 */
-	String mandatoryField();
+	String field();
 	
 	/**
 	 * 参考字段的名字。即这个参考字段值满足什么条件必填字段才被验证为必填
+	 * <p>
+	 * 就是说当refField的值为refValue时，field字段才被验证为必填
 	 * @return
 	 */
-	String referenceField();
+	String refField();
 	
 	/**
 	 * 参考字段的值，不提供则只验证参考字段不为null
 	 * @return
 	 */
-	String referenceValue() default "";
+	String refValue() default "";
 	
 	String message() default "Mandatory.";
 	

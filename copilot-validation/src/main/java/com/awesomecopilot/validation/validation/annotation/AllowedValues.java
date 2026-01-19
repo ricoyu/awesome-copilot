@@ -29,6 +29,8 @@ public @interface AllowedValues {
 
 	/**
 	 * Allowed candidate values, default to all values
+	 * <p>
+	 * 如果是枚举类型, 支持按ordinal或者name来校验
 	 * @return String[]
 	 */
 	String[] value() default {};

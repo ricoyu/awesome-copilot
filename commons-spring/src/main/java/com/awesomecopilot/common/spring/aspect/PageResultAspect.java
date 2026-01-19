@@ -20,7 +20,7 @@ import org.aspectj.lang.annotation.Aspect;
  */
 @Aspect
 public class PageResultAspect {
-	
+
 	/**
 	 * 分页方法需要持有一个Page类型参数, 或者第一个参数VO里面包含一个Page类型的字段page
 	 *
@@ -31,7 +31,7 @@ public class PageResultAspect {
 			Page page = ThreadContext.get("page");
 			setPage(result, page);
 	}
-	
+
 	private void setPage(Object result, Object page) {
 		if (!(result instanceof Result)) {
 			return;
