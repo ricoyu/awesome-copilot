@@ -290,63 +290,57 @@ public class BlockingLock implements Lock, AutoCloseable {
 			AtomicInteger successRenewCount = new AtomicInteger(1);
 			final int MAX_RENEW_COUNT = 10;
 
-			watchDogThreadLocal.get().scheduleAtFixedRate(() -> {
-				log.info("看门狗定时任务第[{}]次运行...", counter.getAndIncrement());
-				// 加锁防止任务堆积
-				synchronized (renewLock) {
-					// 先检查终止标记，立即退出
-					if (watchDogStopped) {
+
+			// 定义续期逻辑（Runnable）
+			Runnable renewTask = new Runnable() {
+				@Override
+				public void run() {
+					log.info("看门狗定时任务第[{}]次运行...", counter.getAndIncrement());
+					if (watchDogStopped || watchDog.isShutdown()) {
 						return;
 					}
 
-					try {
-						// ========== 通用化自动检测逻辑（无业务依赖） ==========
-						// 检测1：线程是否存活（JDK原生）
-						if (!lockHolderThread.isAlive()) {
-							log.warn("锁[{}]的持有线程已死亡，停止看门狗续期", key);
-							stopWatchDog();
-							return;
-						}
-
-						// 检测2：线程是否还在处理加锁后的业务（通用栈特征）
-						boolean isThreadProcessingLockBusiness =
-								isThreadProcessingLockRelatedBusiness(lockHolderThread);
-						if (!isThreadProcessingLockBusiness) {
-							log.warn("锁[{}]的持有线程已回到空闲状态，停止看门狗续期", key);
-							stopWatchDog();
-							return;
-						}
-
-						// 检测3：最大续期次数兜底（双重保险）
-						if (renewCount.incrementAndGet() > MAX_RENEW_COUNT) {
-							log.warn("锁[{}]续期次数达到上限，停止看门狗，将在{}秒后自动释放", key, defaultTimeout);
-							stopWatchDog();
-							return;
-						}
-
-						//如果key已经过期了, 那么watchDog就不用再去刷新key过期时间了
-						boolean isSuccess = false;
-						for (int retry = 0; retry < 2; retry++) {
-							isSuccess = JedisUtils.expire(key, defaultTimeout, TimeUnit.SECONDS);
-							if (isSuccess) {
-								break;
+					synchronized (renewLock) {
+						try {
+							if (!lockHolderThread.isAlive()) {
+								log.warn("持有线程已死亡，停止续期 {}", key);
+								stopWatchDog();
+								return;
 							}
-						}
-						if (!isSuccess) {
-							log.info("Key {} 已经过期了, 看门狗停止刷新", key);
+
+							if (!isThreadProcessingLockRelatedBusiness(lockHolderThread)) {
+								log.info("线程已空闲，停止看门狗续期 {}", key);
+								stopWatchDog();
+								return;
+							}
+
+							if (renewCount.incrementAndGet() > MAX_RENEW_COUNT) {
+								log.warn("续期超过最大次数，停止 {}", key);
+								stopWatchDog();
+								return;
+							}
+
+							boolean success = JedisUtils.expire(key, defaultTimeout, TimeUnit.SECONDS);
+							if (success) {
+								log.info("看门狗第[{}]次续期成功, 将锁 {} 过期时间刷新为 {} 秒", successRenewCount.getAndIncrement() ,key, defaultTimeout);
+								// 续期成功 → 重新调度下一次
+								watchDog.schedule(this, defaultTimeout / 3, TimeUnit.SECONDS);
+							} else {
+								log.info("key 已不存在或过期，停止看门狗 {}", key);
+								stopWatchDog();
+							}
+						} catch (Exception e) {
+							log.error("看门狗异常，key={}", key, e);
 							stopWatchDog();
-						} else {
-							log.info("看门狗第[{}]次将锁 {} 过期时间刷新为 {} 秒", successRenewCount.getAndIncrement() ,key, defaultTimeout);
 						}
-					} catch (Exception e) {
-						log.error("看门狗续期任务异常，强制停止续期", e);
-						stopWatchDog();
 					}
 				}
-			}, defaultTimeout / 3, defaultTimeout / 3, TimeUnit.SECONDS); // 初始延迟设为间隔，防刚设就跑
+			};
 
-			// 线程池优化（防止泄漏）
-			watchDog.setKeepAliveTime(5, TimeUnit.SECONDS);
+			// 第一次调度
+			watchDog.schedule(renewTask, defaultTimeout / 3, TimeUnit.SECONDS);
+
+			watchDog.setKeepAliveTime(10, TimeUnit.SECONDS);
 			watchDog.allowCoreThreadTimeOut(true);
 		}
 	}
