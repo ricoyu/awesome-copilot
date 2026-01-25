@@ -9,10 +9,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPubSub;
 
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -50,6 +55,11 @@ public class BlockingLock implements Lock, AutoCloseable {
 	 * 解锁channel模板
 	 */
 	private static final String NOTIFY_CHANNEL_FORMAT = "copilot:blk:%s:lock:channel";
+
+	// 看门狗终止标记（volatile保证多线程可见性）
+	private volatile boolean watchDogStopped = false;
+	// 单次执行锁（防止任务堆积导致日志重复）
+	private final Object renewLock = new Object();
 
 	/**
 	 * 解锁后在该channel上通知等待线程可以获取锁了
@@ -126,7 +136,7 @@ public class BlockingLock implements Lock, AutoCloseable {
 				return;
 			}
 
-			log.debug(">>>>>> {} 第一次没能成功获取锁, 开始自旋获取锁 <<<<<<", threadName);
+			log.info(">>>>>> {} 第一次没能成功获取锁, 开始自旋获取锁 <<<<<<", threadName);
 			/**
 			 * 尝试maxTimedSpins次自旋获取锁, 加锁成功则启动watchDog并返回
 			 */
@@ -223,6 +233,10 @@ public class BlockingLock implements Lock, AutoCloseable {
 
 	/**
 	 * 订阅通知channel, 只会订阅一次
+	 * <p>
+	 * 通过判断subscribeThreadLocal里面是否已经有JedisPubSub来判断是否已经订阅了
+	 * <p>
+	 * 已经订阅就不再订阅量
 	 */
 	public void startListener() {
 		if (this.subscribeThreadLocal.get() == null) {
@@ -260,44 +274,140 @@ public class BlockingLock implements Lock, AutoCloseable {
 	}
 
 	/**
-	 * 定时刷新锁的过期时间
+	 * 定时刷新锁的过期时间, 看门狗自动检测线程是否还在处理业务，忘记解锁也会自动停止续期
 	 * 注意通过Idea debug的时候, 断点Suspend要设为Thread级别, 不然watchDog线程不会运行, 导致锁一会就失效了
 	 */
 	private void startWatchDog() {
 		if (watchDogThreadLocal.get() == null) {
-			ScheduledThreadPoolExecutor watchDog =
-					new ScheduledThreadPoolExecutor(1, new CopilotThreadFactory("copilot Cache key renewval watch " +
-							"dog"));
+			ScheduledThreadPoolExecutor watchDog = new ScheduledThreadPoolExecutor(1, new CopilotThreadFactory("分布式锁看门狗"));
 			watchDogThreadLocal.set(watchDog);
+
+			// 保存持有锁的线程 + 加锁时的栈轨迹（仅记录和当前锁相关的特征）
+			Thread lockHolderThread = Thread.currentThread();
+			// 最大续期次数兜底（双重保险）
+			AtomicInteger counter = new AtomicInteger(1);
+			AtomicInteger renewCount = new AtomicInteger(0);
+			AtomicInteger successRenewCount = new AtomicInteger(1);
+			final int MAX_RENEW_COUNT = 10;
+
+			watchDogThreadLocal.get().scheduleAtFixedRate(() -> {
+				log.info("看门狗定时任务第[{}]次运行...", counter.getAndIncrement());
+				// 加锁防止任务堆积
+				synchronized (renewLock) {
+					// 先检查终止标记，立即退出
+					if (watchDogStopped) {
+						return;
+					}
+
+					try {
+						// ========== 通用化自动检测逻辑（无业务依赖） ==========
+						// 检测1：线程是否存活（JDK原生）
+						if (!lockHolderThread.isAlive()) {
+							log.warn("锁[{}]的持有线程已死亡，停止看门狗续期", key);
+							stopWatchDog();
+							return;
+						}
+
+						// 检测2：线程是否还在处理加锁后的业务（通用栈特征）
+						boolean isThreadProcessingLockBusiness =
+								isThreadProcessingLockRelatedBusiness(lockHolderThread);
+						if (!isThreadProcessingLockBusiness) {
+							log.warn("锁[{}]的持有线程已回到空闲状态，停止看门狗续期", key);
+							stopWatchDog();
+							return;
+						}
+
+						// 检测3：最大续期次数兜底（双重保险）
+						if (renewCount.incrementAndGet() > MAX_RENEW_COUNT) {
+							log.warn("锁[{}]续期次数达到上限，停止看门狗，将在{}秒后自动释放", key, defaultTimeout);
+							stopWatchDog();
+							return;
+						}
+
+						//如果key已经过期了, 那么watchDog就不用再去刷新key过期时间了
+						boolean isSuccess = false;
+						for (int retry = 0; retry < 2; retry++) {
+							isSuccess = JedisUtils.expire(key, defaultTimeout, TimeUnit.SECONDS);
+							if (isSuccess) {
+								break;
+							}
+						}
+						if (!isSuccess) {
+							log.info("Key {} 已经过期了, 看门狗停止刷新", key);
+							stopWatchDog();
+						} else {
+							log.info("看门狗第[{}]次将锁 {} 过期时间刷新为 {} 秒", successRenewCount.getAndIncrement() ,key, defaultTimeout);
+						}
+					} catch (Exception e) {
+						log.error("看门狗续期任务异常，强制停止续期", e);
+						stopWatchDog();
+					}
+				}
+			}, defaultTimeout / 3, defaultTimeout / 3, TimeUnit.SECONDS); // 初始延迟设为间隔，防刚设就跑
+
+			// 线程池优化（防止泄漏）
+			watchDog.setKeepAliveTime(5, TimeUnit.SECONDS);
+			watchDog.allowCoreThreadTimeOut(true);
 		}
-		watchDogThreadLocal.get().scheduleAtFixedRate(() -> {
-			//如果key已经过期了, 那么watchDog就不用再去刷新key过期时间了
-			boolean isSuccess = false;
-			for (int retry = 0; retry < 2; retry++) {
-				isSuccess = JedisUtils.expire(key, defaultTimeout, TimeUnit.SECONDS);
-				if (isSuccess) {
-					break;
-				}
-				try {
-					Thread.sleep(100); // 短暂重试间隔
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
-			}
-			if (!isSuccess) {
-				log.debug("Key {} already expired after retries, Watch dog stop refresh", key);
-				stopWatchDog();
-			} else {
-				log.debug("Watch dog refresh lock {} timeout to default {} seconds", key, defaultTimeout);
-			}
-		}, defaultTimeout / 3, defaultTimeout / 3, TimeUnit.SECONDS); // 初始延迟设为间隔，防刚设就跑
 	}
 
+	// ========== 修正后的stopWatchDog方法（完整可编译） ==========
 	private void stopWatchDog() {
-		if (watchDogThreadLocal.get() != null && !watchDogThreadLocal.get().isShutdown()) {
-			watchDogThreadLocal.get().shutdown();
-			watchDogThreadLocal.set(null);
-			watchDogThreadLocal.remove();  // 清理
+		// 优先级1：立即标记终止（先置位，再处理线程池，杜绝新任务执行）
+		this.watchDogStopped = true;
+
+		// 优先级2：获取线程池（先拿引用，再清空ThreadLocal，防止时序漏洞）
+		ScheduledExecutorService watchDog = watchDogThreadLocal.get();
+		if (watchDog == null || watchDog.isShutdown()) {
+			watchDogThreadLocal.remove(); // 仅当线程池为空时清空
+			return;
+		}
+
+		try {
+			// 1. 强制停止线程池（核心：先停止，再清空ThreadLocal）
+			List<Runnable> remaining = watchDog.shutdownNow();
+			log.info("锁[{}]看门狗停止，清理待执行任务数：{}", key, remaining.size());
+
+			// 2. 强制中断当前执行的任务（新增：主动中断线程池工作线程）
+			interruptExecutorThread(watchDog);
+
+			// 3. 等待线程池终止（延长等待时间到2秒，确保终止）
+			if (!watchDog.awaitTermination(2, TimeUnit.SECONDS)) {
+				log.warn("锁[{}]看门狗线程池终止超时，已强制中断所有线程", key);
+			}
+
+			// 4. 最后清空ThreadLocal（时序优化）
+			watchDogThreadLocal.remove();
+			log.info("锁[{}]看门狗已彻底终止", key);
+		} catch (InterruptedException e) {
+			log.info("停止看门狗中断", e);
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	/**
+	 * 核心新增：强制中断线程池的工作线程（直接终止正在执行的任务）
+	 */
+	private void interruptExecutorThread(ScheduledExecutorService executor) {
+		if (executor instanceof ScheduledThreadPoolExecutor) {
+			ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor) executor;
+			// 反射获取线程池的工作线程（JDK8/JDK11通用）
+			try {
+				Field workerField = ThreadPoolExecutor.class.getDeclaredField("workers");
+				workerField.setAccessible(true);
+				Set<?> workers = (Set<?>) workerField.get(stpe);
+				for (Object worker : workers) {
+					Field threadField = worker.getClass().getDeclaredField("thread");
+					threadField.setAccessible(true);
+					Thread thread = (Thread) threadField.get(worker);
+					if (thread.isAlive()) {
+						thread.interrupt(); // 强制中断正在执行的任务线程
+						log.info("锁[{}]强制中断看门狗线程：{}", key, thread.getName());
+					}
+				}
+			} catch (Exception e) {
+				log.warn("反射中断线程失败（非关键）", e);
+			}
 		}
 	}
 
@@ -305,6 +415,87 @@ public class BlockingLock implements Lock, AutoCloseable {
 	public void close() {
 		if (lockedThreadLocal.get()) {
 			unlock();
+		}
+	}
+
+	/**
+	 * 通用化检测：记录加锁时栈中是否包含当前锁类的调用（无业务依赖）
+	 */
+	private boolean checkLockStackInCurrentThread() {
+		StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+		String lockClassName = this.getClass().getName(); // 当前锁类的全限定名（通用）
+		for (StackTraceElement element : stackTrace) {
+			if (element.getClassName().equals(lockClassName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 核心通用检测：线程是否还在处理加锁后的业务（移除hasLockStack参数）
+	 */
+	private boolean isThreadProcessingLockRelatedBusiness(Thread thread) {
+		try {
+			// 新增：结合线程状态检查（NIO worker空闲时通常WAITING on park）
+			Thread.State state = thread.getState();
+			if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+				log.info("锁[{}]持有线程状态为{}，判断为空闲", key, state);
+				return false;
+			}
+
+			StackTraceElement[] stackTrace = thread.getStackTrace();
+			if (stackTrace == null || stackTrace.length <= 3) {
+				return false;
+			}
+
+			// 如果栈深度小，视为空闲（Tomcat空闲线程通常<10）
+			if (stackTrace.length < 10) {
+				return false;
+			}
+
+			// 扩展框架前缀，覆盖更多Tomcat/JDK底层（基于典型栈迹）
+			String[] frameworkPrefixes = {
+					"org.apache.tomcat.",    // Tomcat核心
+					"org.apache.coyote.",    // Coyote HTTP处理器
+					"org.apache.catalina.",  // Catalina容器
+					"java.lang.",            // JDK线程/反射
+					"java.util.concurrent.", // 线程池/锁
+					"sun.nio.ch.",           // NIO通道
+					"java.net.",             // Socket/BIO
+					"java.nio.",             // NIO
+					"sun.misc.",             // Unsafe park
+					"jdk.internal."          // JDK内部（Java 9+）
+			};
+
+			int frameworkStackCount = 0;
+			for (StackTraceElement element : stackTrace) {
+				String className = element.getClassName();
+				for (String prefix : frameworkPrefixes) {
+					if (className.startsWith(prefix)) {
+						frameworkStackCount++;
+						break;
+					}
+				}
+			}
+
+			// 如果框架栈 >= 90%，视为空闲（非框架栈 <=10%）
+			boolean isProcessing = frameworkStackCount < stackTrace.length * 0.9;
+
+			// 新增：日志打印简要栈迹，便于debug（可选，生产可移除）
+			if (!isProcessing) {
+				StringBuilder sb = new StringBuilder("空闲栈迹样本: ");
+				for (int i = 0; i < Math.min(5, stackTrace.length); i++) { // 只打印前5
+					sb.append(stackTrace[i]).append("; ");
+				}
+				log.info("锁[{}]判断为空闲，栈深度={}, 框架栈比例={}/{}，样本: {}",
+						key, stackTrace.length, frameworkStackCount, stackTrace.length, sb);
+			}
+
+			return isProcessing;
+		} catch (Exception e) {
+			log.warn("检测线程业务状态失败，默认认为还在处理业务", e);
+			return true;
 		}
 	}
 }
