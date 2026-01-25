@@ -17,6 +17,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Id;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
@@ -42,6 +43,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -130,8 +132,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Value("${hibernate.query.cache:false}")
 	private boolean hibernateUseQueryCache = false;
 
-	@Value("${hibernate.jdbc.batch_size:100}")
-	private int batchSize = 0;
+	/**
+	 * 是否自动修复SQL, 比如动态SQL因为某些条件没传, 导致多了一个 AND 关键字之类
+	 */
+	@Value("${copilot.orm.sql.auto-fix:true}")
+	private boolean sqlAutofix = false;
+
+	@Value("${copilot.orm.sql.batch-size:100}")
+	private int batchSize = 100;
 
 	/**
 	 * 如果类的某个属性是enum类型，并且需要根据这个enum类型的某个属性来和数据库列值匹配，那么要指明这个属性的名字
@@ -283,7 +291,12 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T> T save(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
-		Object id = ReflectionUtils.getFieldValue("id", entity);
+		/*
+		 * 找到主键字段, 原来按照字段名称来找, 固定找"id"字段, 但实际开发可能主键字段不叫id, 而叫xxx_id
+		 * 所以2026-01-23改成找到标注了@Id注解的字段, 然后取该字段的值, 这样比较稳妥
+		 */
+		Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entity.getClass(), Id.class);
+		Object id = ReflectionUtils.getFieldValue(idField, entity);
 		if (id == null) {
 			persist(entity);
 			return entity;
@@ -355,7 +368,10 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		Objects.requireNonNull(entity, "entity cannot be null");
 		try {
 			em().remove(entity);
-		} catch (Throwable e) {
+		}catch (EntityNotFoundException e) {
+			throw new com.awesomecopilot.common.lang.exception.EntityNotFoundException("要删除的记录不存在",  e);
+		}
+		catch (Throwable e) {
 			log.error("", e);
 			throw e;
 		}
@@ -424,6 +440,30 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> void deleteByPK(Class<T> entityClass, long[] ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		if (ids.length == 0) {
+			return;
+		}
+		for (long id : ids) {
+			Objects.requireNonNull(id, "id cannot be null");
+
+			if (logicalDeleteEnabled) {
+				// 执行逻辑删除：更新deleted字段为true
+				T entity = em().find(entityClass, id);
+				if (entity != null) {
+					ReflectionUtils.setField(logicalDeleteField, entity, true);
+					em().merge(entity);
+				}
+			} else {
+				// 执行物理删除
+				T entity = em().getReference(entityClass, id);
+				delete(entity);
+			}
+		}
+	}
+
+	@Override
+	public <T> void deleteByPK(Class<T> entityClass, int[] ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		if (ids.length == 0) {
 			return;
@@ -854,9 +894,15 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-		parsedSQL = SQLUtils.build(preParsedSQL);
-		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		if (sqlAutofix) {
+			if (log.isDebugEnabled()) {
+				log.debug("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			}
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			if (log.isDebugEnabled()) {
+				log.debug("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+			}
+		}
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);

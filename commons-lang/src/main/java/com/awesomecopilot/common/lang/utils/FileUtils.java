@@ -29,6 +29,19 @@ public final class FileUtils {
 			// 如果后续需要支持 webp、svg 等，需要额外库，这里暂不包含
 	);
 
+	/**
+	 * 这个方法会去掉文件名中的一些特殊字符，并生成一个更适合的文件名
+	 * <p>
+	 * 同一个文件名 cleanFilename后得到的总是相同的最终文件名
+	 * <ul>比如:
+	 *     <li/>"这是一个测试文件.docx" -> "d9b1c8a6ec35_这是一个测试文件.docx"
+	 *     <li/>" 报告 #2025 (最终版).xlsx " -> "37545fd3a5f0_报告_2025_最终版.xlsx"
+	 *     <li/>"DSC00064.JPG" -> "b99e560c5746_dsc00064.jpg"
+	 *     <li/>"!@#$%^&*().zip" -> "837ddf55c8af_unknown.zip"
+	 * </ul>
+	 * @param originalFilename
+	 * @return
+	 */
 	public static String cleanFilename(String originalFilename) {
 		if (originalFilename == null || originalFilename.isBlank()) {
 			return "unknown_file";

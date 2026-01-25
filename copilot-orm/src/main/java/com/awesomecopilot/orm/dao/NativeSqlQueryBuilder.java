@@ -1,7 +1,8 @@
 package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.common.lang.context.ThreadContext;
-import com.awesomecopilot.common.lang.resource.YamlReader;
+import com.awesomecopilot.common.lang.resource.YamlOps;
+import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
@@ -57,7 +58,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 	private static final Logger log = LoggerFactory.getLogger(NativeSqlQueryBuilder.class);
 
-	private YamlReader yamlReader = new YamlReader("application.yaml");
+	private YamlOps yamlOps = YamlProfileReaders.instance("application");
 	/**
 	 * 用于判断是否是查询语句
 	 */
@@ -291,10 +292,17 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-		//用来添加/删除 WHERE 或者 AND 关键字
-		parsedSQL = SQLUtils.build(preParsedSQL);
-		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		boolean autoFix = yamlOps.getBoolean("copilot.orm.sql.auto-fix", true);
+		if (autoFix) {
+			if (log.isDebugEnabled()) {
+				log.debug("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			}
+			//用来添加/删除 WHERE 或者 AND 关键字
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			if (log.isDebugEnabled()) {
+				log.debug("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+			}
+		}
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
@@ -428,10 +436,17 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		log.info("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
-		//用来添加/删除 WHERE 或者 AND 关键字
-		parsedSQL = SQLUtils.build(preParsedSQL);
-		log.info("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+		boolean autoFix = yamlOps.getBoolean("copilot.orm.sql.auto-fix", true);
+		if (autoFix) {
+			if (log.isDebugEnabled()) {
+				log.debug("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
+			}
+			//用来添加/删除 WHERE 或者 AND 关键字
+			parsedSQL = SQLUtils.build(preParsedSQL);
+			if (log.isDebugEnabled()) {
+				log.debug("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
+			}
+		}
 
 		query = em()
 				.createNativeQuery(parsedSQL)

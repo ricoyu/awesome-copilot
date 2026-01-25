@@ -411,6 +411,11 @@
                 <artifactId>cglib</artifactId>
                 <version>3.3.0</version>
             </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.14.12</version> <!-- 最新稳定版 -->
+            </dependency>
 
             <!-- JSON 处理 -->
             <dependency>

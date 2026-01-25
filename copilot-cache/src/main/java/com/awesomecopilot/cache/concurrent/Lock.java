@@ -49,6 +49,6 @@ public interface Lock{
 	 *
 	 * @throws IllegalMonitorStateException
 	 */
-	public void unlockAnyway();
+	//public void unlockAnyway();
 	
 }

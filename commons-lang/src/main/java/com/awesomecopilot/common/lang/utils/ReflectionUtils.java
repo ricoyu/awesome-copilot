@@ -285,6 +285,48 @@ public class ReflectionUtils {
 		}
 		return null;
 	}
+
+	/**
+	 * 查找指定类（包括其父类，但排除Object类）中被指定注解标注的字段
+	 * @param clazz 要查找的目标类
+	 * @param annotationClass 要匹配的注解类型
+	 * @return 匹配的字段集合（找不到返回空集合）
+	 */
+	public static Set<Field> findFieldsWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationClass) {
+		// 参数校验
+		Assert.notNull(clazz, "Class must not be null");
+		Assert.notNull(annotationClass, "Annotation class must not be null");
+
+		Set<Field> matchedFields = new HashSet<>();
+		Class<?> searchType = clazz;
+
+		// 遍历类层级（直到Object类停止）
+		while (Object.class != searchType && searchType != null) {
+			// 从缓存获取当前类声明的字段
+			Field[] declaredFields = getDeclaredFields(searchType);
+			for (Field field : declaredFields) {
+				// 检查字段是否标注了目标注解
+				if (field.isAnnotationPresent(annotationClass)) {
+					matchedFields.add(field);
+				}
+			}
+			// 继续查找父类
+			searchType = searchType.getSuperclass();
+		}
+
+		return Collections.unmodifiableSet(matchedFields);
+	}
+
+	/**
+	 * 重载方法：查找指定类中被指定注解标注的第一个字段（常用场景简化）
+	 * @param clazz 要查找的目标类
+	 * @param annotationClass 要匹配的注解类型
+	 * @return 第一个匹配的字段（找不到返回null）
+	 */
+	public static Field findFirstFieldWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationClass) {
+		Set<Field> fields = findFieldsWithAnnotation(clazz, annotationClass);
+		return fields.isEmpty() ? null : fields.iterator().next();
+	}
 	
 	/**
 	 * 去掉name中的中划线, 下划线, 空白符, 然后跟Field大小写不敏感匹配

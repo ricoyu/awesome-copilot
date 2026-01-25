@@ -2,7 +2,7 @@ package com.awesomecopilot.common.spring.utils;
 
 import com.awesomecopilot.common.spring.http.Requests;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

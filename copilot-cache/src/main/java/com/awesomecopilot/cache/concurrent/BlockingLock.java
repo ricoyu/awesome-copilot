@@ -120,7 +120,7 @@ public class BlockingLock implements Lock, AutoCloseable {
 			 */
 			boolean lockedFlag = JedisUtils.setnx(key, lockValue, defaultTimeout, TimeUnit.SECONDS);
 			if (lockedFlag && verifyLock(lockValue)) {
-				log.debug(">>>>>> {} 获取锁成功, key={}, value={} <<<<<<", threadName, key, lockValue);
+				log.info(">>>>>> {} 获取锁成功, key={}, value={} <<<<<<", threadName, key, lockValue);
 				this.lockedThreadLocal.set(true); //为了支持多线程环境使用
 				startWatchDog();
 				return;
@@ -133,15 +133,15 @@ public class BlockingLock implements Lock, AutoCloseable {
 			while (i++ < maxTimedSpins) {
 				lockedFlag = JedisUtils.setnx(key, lockValue, defaultTimeout, TimeUnit.SECONDS);
 				if (lockedFlag && verifyLock(lockValue)) {
-					log.debug(">>>>>> {} 自旋{}次获取锁成功 <<<<<<", threadName, i);
+					log.info(">>>>>> {} 自旋{}次获取锁成功 <<<<<<", threadName, i);
 					this.lockedThreadLocal.set(true); //为了支持多线程环境使用
 					startWatchDog();
 					return;
 				}
-				log.debug(">>>>>> {} 自旋{}次获取锁失败 <<<<<<", threadName, i);
+				log.info(">>>>>> {} 自旋{}次获取锁失败 <<<<<<", threadName, i);
 			}
 
-			log.debug(">>>>>> {} 自旋失败, 进入阻塞等待 <<<<<<", threadName);
+			log.info(">>>>>> {} 自旋失败, 进入阻塞等待 <<<<<<", threadName);
 			/**
 			 * 循环获取锁, 获取加锁成功则启动watchDog并返回
 			 * 加锁失败挂起线程
@@ -159,13 +159,13 @@ public class BlockingLock implements Lock, AutoCloseable {
 				}
 				lockedFlag = JedisUtils.setnx(key, lockValue, defaultTimeout, TimeUnit.SECONDS);
 				if (lockedFlag && verifyLock(lockValue)) {
-					log.debug(">>>>>> {} 醒来后终获成功, key={}, value={} <<<<<<", threadName, key, lockValue);
+					log.info(">>>>>> {} 醒来后终获成功, key={}, value={} <<<<<<", threadName, key, lockValue);
 					this.lockedThreadLocal.set(true); //为了支持多线程环境使用
 					stopListener();
 					startWatchDog();
 					return;
 				}
-				log.debug("{} 醒来后仍然没有获取到锁, 准备再次进入阻塞状态, key={}", threadName, key);
+				log.info("{} 醒来后仍然没有获取到锁, 准备再次进入阻塞状态, key={}", threadName, key);
 			}
 		} finally {
 			// 如果失败，清理ThreadLocal，避免泄漏
@@ -199,7 +199,7 @@ public class BlockingLock implements Lock, AutoCloseable {
 		if (!unlockSuccess) {
 			throw new OperationNotSupportedException("解锁失败了哟");
 		}
-		log.debug(">>>>>> {} 解锁成功, key={}, value={} <<<<<<", threadName, key, valueThreadLocal.get());
+		log.info(">>>>>> {} 解锁成功, key={}, value={} <<<<<<", threadName, key, valueThreadLocal.get());
 		lockedThreadLocal.set(false);
 		lockedThreadLocal.remove();
 		valueThreadLocal.remove();
@@ -208,28 +208,17 @@ public class BlockingLock implements Lock, AutoCloseable {
 		 * 通知其他线程可以重新获取锁了, 把当前线程名作为消息发出去, 方便记log
 		 */
 		JedisUtils.publish(notifyChannel, Thread.currentThread().getName());
-		log.debug(">>>>>> {} 发布消息, 现在其他线程可以重新获取锁, key={} <<<<<<", threadName, key);
+		log.info(">>>>>> {} 发布消息, 现在其他线程可以重新获取锁, key={} <<<<<<", threadName, key);
 		/*
 		 * 关掉看门狗
 		 */
 		stopWatchDog();
-		log.debug(">>>>>> {} shutdown Watch dog, key={} <<<<<<", threadName, key);
+		log.info(">>>>>> {} shutdown Watch dog, key={} <<<<<<", threadName, key);
 	}
 
 	@Override
 	public boolean locked() {
 		return lockedThreadLocal.get();
-	}
-
-	@Override
-	public void unlockAnyway() {
-		JedisUtils.del(key); //无视value
-		log.warn("强制解锁 key={}", key);
-		// 清理状态
-		lockedThreadLocal.set(false);
-		lockedThreadLocal.remove();
-		valueThreadLocal.remove();
-		stopWatchDog();
 	}
 
 	/**
@@ -265,7 +254,7 @@ public class BlockingLock implements Lock, AutoCloseable {
 
 		@Override
 		public void onMessage(String channel, String message) {
-			log.debug("收到 {} 发来的消息, 准备唤醒 {}, channel={}", message, thread.getName(), channel);
+			log.info("收到 {} 发来的消息, 准备唤醒线程: {}, channel: {}", message, thread.getName(), channel);
 			LockSupport.unpark(thread);
 		}
 	}

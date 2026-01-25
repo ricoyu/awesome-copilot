@@ -99,4 +99,6 @@ public final class ObjectUtils {
 	public static <T> boolean equalsAny(T obj, T... array) {
 		return Arrays.asList(array).contains(obj);
 	}
+
+
 }

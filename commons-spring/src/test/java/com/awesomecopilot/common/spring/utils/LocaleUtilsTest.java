@@ -1,9 +1,10 @@
 package com.awesomecopilot.common.spring.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>
@@ -20,9 +21,9 @@ public class LocaleUtilsTest {
 	@Test
 	public void testZhCN() {
 		Locale locale = LocaleUtils.toLocale("zh_CN");
-		Assert.assertTrue(locale.equals(Locale.CHINA));
+		assertTrue(locale.equals(Locale.CHINA));
 		
 		Locale locale2 = LocaleUtils.toLocale("ZH_CN");
-		Assert.assertTrue(locale.equals(Locale.CHINA));
+		assertTrue(locale.equals(Locale.CHINA));
 	}
 }

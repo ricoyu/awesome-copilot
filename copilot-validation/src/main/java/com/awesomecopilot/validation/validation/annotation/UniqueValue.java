@@ -12,7 +12,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @UniqueEntity注解的更新版本, 用于校验某个字段在数据表中值的唯一性
+ * @UniqueEntity 注解的更新版本, 用于校验某个字段在数据表中值的唯一性
  * <p/>
  * Copyright: Copyright (c) 2025-12-08 20:06
  * <p/>
@@ -37,7 +37,10 @@ public @interface UniqueValue {
 	String table();
 
 	/**
-	 * 要检查唯一性的数据库表字段名, 一般不需要显式提供, 根据property推断即可; 但如果开发人员命名的表字段和bean属性名不一致, 可以显式指定
+	 * 要检查唯一性的数据库表字段名, 一般不需要显式提供, 根据property推断即可;
+	 * <p>
+	 * 但如果开发人员命名的表字段和属性名不一致, 可以显式指定
+	 * <p>
 	 * 如果同时指定, 表字段名以这个为准
 	 *
 	 * @return String
@@ -45,8 +48,11 @@ public @interface UniqueValue {
 	String field() default "";
 
 	/**
-	 * 如果是驼峰式的, 表示这个bean的哪个属性是唯一性的, 然后对应的表字段名是转成下划线风格的名字
-	 * 如果是下划线分隔的, 默认认为是数据库字段名, 会自动转成驼峰式bean属性名
+	 * 如果property是驼峰式的, 认为是这个bean的某个属性名, 这个属性对应的字段值在表里面是唯一的
+	 * <p>
+	 * 对应的数据库表字段名是对应下划线风格的名字
+	 * <p>
+	 * 如果property是下划线分隔的, 默认是数据库字段名, 会自动转成驼峰式bean属性名
 	 * 
 	 * @return
 	 */
@@ -54,8 +60,10 @@ public @interface UniqueValue {
 
 	/**
 	 * Bean中持有主键的属性名, 或者数据库字段名
-	 * 如果是驼峰式的, 默认认为是bean属性名, 会自动转成_分隔的数据库字段名,
-	 * 同理, 如果是下划线分隔的, 默认认为是数据库字段名, 会自动转成驼峰式bean属性名
+	 * <p>
+	 * 如果是驼峰式的, 默认是bean属性名, 会自动转成_分隔的数据库字段名,
+	 * <p>
+	 * 同理, 如果是下划线分隔的, 默认为数据库字段名
 	 * 
 	 * @return
 	 */

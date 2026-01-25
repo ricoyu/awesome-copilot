@@ -4,7 +4,6 @@ import com.awesomecopilot.cache.JedisUtils;
 import com.awesomecopilot.cache.exception.OperationNotSupportedException;
 import com.awesomecopilot.cache.utils.KeyUtils;
 import com.awesomecopilot.common.lang.concurrent.CopilotThreadFactory;
-import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisPubSub;
@@ -135,7 +134,7 @@ public class NonBlockingLock implements Lock{
 		}
 	}
 
-	@Override
+	/*@Override
 	public void unlockAnyway() {
 		if (this.transactionEventsInitialized) {
 			throw new OperationNotSupportedException("unlockAnyway()只能调一次");
@@ -148,7 +147,7 @@ public class NonBlockingLock implements Lock{
 		} else {
 			throw new OperationNotSupportedException("你还没获取到锁哦");
 		}
-	}
+	}*/
 	
 	/**
 	 * 定时刷新锁的过期时间

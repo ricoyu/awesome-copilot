@@ -482,6 +482,8 @@ public final class JedisUtils {
 	
 	/**
 	 * key是字符串, value是一个ArrayList, 通过Jackson序列化反序列化
+	 * <p>
+	 * 如果没有数据, 返回的也是一个空的List而不是null
 	 *
 	 * @param key
 	 * @param clazz
@@ -490,14 +492,19 @@ public final class JedisUtils {
 	public static <T> List<T> getList(String key, Class<T> clazz) {
 		return getList(toBytes(key), clazz);
 	}
-	
+
+	/**
+	 * 如果没有数据, 返回的也是一个空的List而不是null
+	 */
 	public static <T> List<T> getList(byte[] key, Class<T> clazz) {
 		byte[] value = jedisOperations.get(key);
 		return UnMarshaller.toList(value, clazz);
 	}
 	
 	/**
-	 * 根据key从缓存中取, 如果取不到对应的value则调用supplier并回填, 默认5分钟过期
+	 * 根据key从缓存中取, 如果取不到对应的value则调用supplier并回填, 回填后key5分钟过期
+	 * <p>
+	 * 如果没有数据, 返回的也是一个空的List而不是null
 	 *
 	 * @param key
 	 * @param clazz
@@ -529,6 +536,8 @@ public final class JedisUtils {
 	
 	/**
 	 * 根据key从缓存中取, 如果取不到对应的value则调用supplier并回填, 同时指定key的过期时间
+	 * <p>
+	 * 如果没有数据, 返回的也是一个空的List而不是null
 	 *
 	 * @param key
 	 * @param clazz
