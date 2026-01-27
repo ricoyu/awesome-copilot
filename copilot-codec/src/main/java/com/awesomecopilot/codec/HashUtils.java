@@ -149,6 +149,33 @@ public final class HashUtils {
 		}
 		return hexString.toString();
 	}
+
+	/**
+	 * 将字节数组通过 SHA-256 哈希后转换为 int 类型的 hashCode
+	 * @param bytes 原始字节数组
+	 * @return int 类型的哈希值
+	 */
+	public static int sha256Hash(byte[] bytes) {
+		MessageDigest digest = null;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			log.error("不支持该Hash算法[{}]", "SHA-256");
+			throw new NoSuchHashAlgorithmException(e);
+		}
+		// 生成 SHA-256 哈希字节数组（32 字节）
+		byte[] encodedHash = digest.digest(bytes);
+
+		// 初始化 int 结果为 0
+		int result = 0;
+		// 遍历 32 字节，每 4 个字节为一组，和 result 做异或运算
+		for (int i = 0; i < encodedHash.length; i++) {
+			// 将当前字节左移 (i % 4) * 8 位，拼接到 4 字节的int中
+			result ^= (encodedHash[i] & 0xFF) << ((i % 4) * 8);
+		}
+
+		return result;
+	}
 	
 	/**
 	 * 用于JWT签名
@@ -195,6 +222,26 @@ public final class HashUtils {
 	 */
 	public static String md5(String source) {
 		return DigestUtils.md5Hex(source);
+	}
+
+	/**
+	 * 将字符串通过 MD5 哈希后转换为 int 类型的 hashCode
+	 * @param source 原始字符串
+	 * @return int 类型的 MD5 哈希值
+	 */
+	public static int md5Hash(String source) {
+		// 1. 获取 MD5 哈希的字节数组（16 字节）
+		// md5 方法直接返回 byte[]，比先转 hex 字符串再转回字节更高效
+		byte[] md5Bytes = DigestUtils.md5(source);
+
+		// 2. 将 16 字节的 MD5 哈希压缩为 int（4 字节）
+		int result = 0;
+		for (int i = 0; i < md5Bytes.length; i++) {
+			// 每 4 个字节为一组，通过异或拼接成 int
+			result ^= (md5Bytes[i] & 0xFF) << ((i % 4) * 8);
+		}
+
+		return result;
 	}
 	
 	/**
