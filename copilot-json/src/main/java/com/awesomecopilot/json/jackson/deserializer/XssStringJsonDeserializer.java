@@ -1,10 +1,10 @@
 package com.awesomecopilot.json.jackson.deserializer;
 
+import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.IOException;
 
@@ -22,6 +22,6 @@ public class XssStringJsonDeserializer extends JsonDeserializer<String> {
 	
 	@Override
 	public String deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-		return StringEscapeUtils.escapeHtml4(jsonParser.getText());
+		return StringUtils.escapeHtml4(jsonParser.getText());
 	}
 }
