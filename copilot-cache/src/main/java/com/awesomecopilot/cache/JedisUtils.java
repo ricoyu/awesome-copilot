@@ -2625,6 +2625,17 @@ public final class JedisUtils {
 	public static void del(Object key) {
 		jedisOperations.del(toBytes(key));
 	}
+
+	/**
+	 * 批量删除key, key可以是带通配符的, 比如user*
+	 * <p>
+	 * 在生产环境需谨慎使用 —— 它会遍历 Redis 所有 Key, 数据量大时会阻塞主线程, 导致 Redis 响应变慢。
+	 * @param keyPattern 带通配符的key, 比如user*, 会删除所有user开头的key
+	 */
+	public static void delKeys(String keyPattern) {
+		//TODO 批量删除key, key可以是带通配符的, 比如user*
+		//需要通过lua脚本实现, 保证原子性
+	}
 	
 	/**
 	 * 删除并返回key对应的value

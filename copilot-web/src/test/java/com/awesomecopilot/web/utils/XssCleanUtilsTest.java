@@ -103,4 +103,14 @@ public class XssCleanUtilsTest {
 		String cleanResult = XssCleanUtils.clean(testInput);
 		assertEquals("<a href=>链接</a><div >文本</div>正常内容", cleanResult);
 	}
+
+	/**
+	 * 测试场景9：人民币符号
+	 */
+	@Test
+	public void testRMB() {
+		String testInput = "2 年碎屏险 ¥259.00";
+		String cleanResult = XssCleanUtils.clean(testInput);
+		assertEquals("2 年碎屏险 ¥259.00", cleanResult);
+	}
 }

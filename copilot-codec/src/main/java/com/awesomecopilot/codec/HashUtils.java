@@ -200,6 +200,46 @@ public final class HashUtils {
 		
 		return Base64.encodeBase64String(hmacSHA256.doFinal(message.getBytes(StandardCharsets.UTF_8)));
 	}
+
+	/**
+	 * 计算 HMAC-SHA256 并返回 int 类型的 hashCode
+	 * @param message 待哈希的消息
+	 * @param secret 哈希密钥
+	 * @return 32 位 int 类型的哈希值
+	 */
+	public static int hmacSha256Hash(String message, String secret) {
+		// 保留原有的非空校验
+		Assert.notNull(message, "message不能为null");
+		Assert.notNull(secret, "secret不能为null");
+
+		Mac hmacSHA256 = null;
+		try {
+			hmacSHA256 = Mac.getInstance("HmacSHA256");
+			// 密钥按 UTF-8 编码（原代码用默认编码，这里优化为显式 UTF-8，避免编码不一致问题）
+			SecretKeySpec secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+			hmacSHA256.init(secretKey);
+		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
+			log.error("初始化HmacSHA256失败", e);
+			throw new HmacSha256Exception(e);
+		}
+
+		// 1. 计算完整的 HMAC-SHA256 字节数组（32 字节）
+		byte[] hmacBytes = hmacSHA256.doFinal(message.getBytes(StandardCharsets.UTF_8));
+
+		// 2. 将 32 字节压缩为 int（32 位）：按位异或所有 4 字节分组，保证均匀性
+		int hashCode = 0;
+		for (int i = 0; i < hmacBytes.length; i += 4) {
+			// 取每 4 字节拼接成一个 int，与现有结果异或
+			int chunk = 0;
+			// 处理不足 4 字节的最后一段
+			for (int j = 0; j < 4 && (i + j) < hmacBytes.length; j++) {
+				chunk |= (hmacBytes[i + j] & 0xFF) << (24 - j * 8);
+			}
+			hashCode ^= chunk;
+		}
+
+		return hashCode;
+	}
 	
 	
 	/**
@@ -327,7 +367,17 @@ public final class HashUtils {
 		//0x7fffffff的二进制表示: 01111111 11111111 11111111 11111111
 		return number & 0x7fffffff;
 	}
-	
+
+
+
+	/**
+	 * 将字符串按照UTF-8编码转换为字节数组
+	 * 
+	 * @param str 待编码的字符串，不能为null
+	 * @return UTF-8编码的字节数组
+	 * @throws IllegalArgumentException 当输入字符串为null时抛出
+	 * @throws EncodeException 当不支持UTF-8编码时抛出
+	 */
 	private static byte[] encode(final String str) {
 		try {
 			if (str == null) {

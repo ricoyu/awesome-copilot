@@ -68,6 +68,24 @@ public class RemoveLinkedListElements {
 
 		return dummy.next;
 	}
+	/*
+	private static ListNode removeElements(ListNode head1, int val) {
+		ListNode dummy = new ListNode(-1);
+		dummy.next = head1;
+		ListNode current = dummy;
+		while (current.next != null) {
+			if (current.next.val == val) {
+				current.next = current.next.next;
+			} else {
+				// 不是要删除的节点，指针向后移动
+				current = current.next;
+			}
+
+		}
+
+		return dummy.next;
+	}
+	*/
 
 	// 辅助打印链表的方法
 	private static void printList(ListNode head) {

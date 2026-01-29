@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -440,6 +441,17 @@ public abstract class StringUtils {
 			return "";
 		}
 		return value.trim();
+	}
+
+	/**
+	 * 转义HTML标签, 但是保留人民币符号
+	 * @param html
+	 * @return
+	 */
+	public static String escapeHtml4(String html) {
+		// 先转义所有字符，再还原人民币符号
+		String escaped = StringEscapeUtils.escapeHtml4(html).replace("&yen;", "¥");
+		return escaped;
 	}
 	
 	/**
