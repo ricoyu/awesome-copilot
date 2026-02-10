@@ -1,6 +1,5 @@
 package com.awesomecopilot.common.lang.bean;
 
-import lombok.Data;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 
@@ -17,7 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Data
+//@Data
 public class UrlParts {
 	
 	/**
@@ -80,4 +79,43 @@ public class UrlParts {
 		return multiMap;
 	}
 	
+	public String getScheme() {
+		return scheme;
+	}
+	
+	public void setScheme(String scheme) {
+		this.scheme = scheme;
+	}
+	
+	public String getHost() {
+		return host;
+	}
+	
+	public void setHost(String host) {
+		this.host = host;
+	}
+	
+	public Integer getPort() {
+		return port;
+	}
+	
+	public void setPort(Integer port) {
+		this.port = port;
+	}
+	
+	public String getPath() {
+		return path;
+	}
+	
+	public void setPath(String path) {
+		this.path = path;
+	}
+	
+	public String getParams() {
+		return params;
+	}
+	
+	public void setParams(String params) {
+		this.params = params;
+	}
 }
