@@ -51,7 +51,7 @@
         <!-- 这个是Redis 6的客户端-->
         <jedis.version>5.0.2</jedis.version>
 
-        <elasticsearch.version>7.9.3</elasticsearch.version>
+        <elasticsearch.version>7.17.23</elasticsearch.version>
 
         <guava.version>32.0.0-jre</guava.version>
         <commons-lang3.version>3.4</commons-lang3.version>
@@ -572,18 +572,18 @@
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson</artifactId>
-                <version>3.21.2</version>
+                <version>3.22.0</version>
             </dependency>
 
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.1.28.Final</version>
+                <version>4.1.42.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.5.5</version>
+                <version>3.8.4</version>
                 <exclusions>
                     <exclusion>
                         <groupId>io.netty</groupId>
