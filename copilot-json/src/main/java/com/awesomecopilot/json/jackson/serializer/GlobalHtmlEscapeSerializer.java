@@ -1,10 +1,10 @@
 package com.awesomecopilot.json.jackson.serializer;
 
+import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.json.jackson.annotation.UnescapeHtml;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.IOException;
 
@@ -41,7 +41,7 @@ public class GlobalHtmlEscapeSerializer extends StdScalarSerializer<String> {
             gen.writeString(value);
         } else {
             // VO类无注解 → 全局默认 HTML转义
-            gen.writeString(StringEscapeUtils.escapeHtml4(value));
+            gen.writeString(StringUtils.escapeHtml4(value));
         }
     }
 }

@@ -52,6 +52,7 @@ public class IsomorphicStringChecker {
 		System.out.print("请输入字符串t: ");
 		String t = scanner.nextLine();
 		System.out.println(isIsomorphic(s, t));
+		scanner.close();
 	}
 
 	/**

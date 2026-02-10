@@ -77,6 +77,16 @@ public class SnowflakeId {
 	private final long sequenceMask = -1L ^ (-1L << sequenceBits);
 	
 	/**
+	 * 可容忍的最大时钟回拨时间（毫秒），适配NTP同步场景
+	 */
+	private static final long MAX_CLOCK_BACKWARD_MS = 50L;
+	
+	/**
+	 * 等待时钟恢复的最大超时时间（毫秒）
+	 */
+	private static final long MAX_WAIT_MS_FOR_CLOCK = 1000L;
+	
+	/**
 	 * 工作机器ID(0~31)
 	 */
 	private long workerId;
@@ -127,11 +137,11 @@ public class SnowflakeId {
 			datacenterId = propertyReader.getInt("copilot.snowflake.datacenter-id", 1);
 		}
 		if (workerId > maxWorkerId || workerId < 0) {
-			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",
+			throw new IllegalArgumentException(String.format("工作机器ID不能大于%d或小于0",
 					maxWorkerId));
 		}
 		if (datacenterId > maxDatacenterId || datacenterId < 0) {
-			throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0",
+			throw new IllegalArgumentException(String.format("数据中心ID不能大于%d或小于0",
 					maxDatacenterId));
 		}
 		this.workerId = workerId;
@@ -140,11 +150,11 @@ public class SnowflakeId {
 
 	public SnowflakeId(long workerId, long datacenterId) {
 		if (workerId > maxWorkerId || workerId < 0) {
-			throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0",
+			throw new IllegalArgumentException(String.format("工作机器ID不能大于%d或小于0",
 					maxWorkerId));
 		}
 		if (datacenterId > maxDatacenterId || datacenterId < 0) {
-			throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0",
+			throw new IllegalArgumentException(String.format("数据中心ID不能大于%d或小于0",
 					maxDatacenterId));
 		}
 		this.workerId = workerId;
@@ -159,10 +169,42 @@ public class SnowflakeId {
 	public synchronized long nextId() {
 		long timestamp = System.currentTimeMillis();
 		
-		//如果当前时间小于上一次ID生成的时间戳, 说明系统时钟回退过这个时候应当抛出异常
+		/*如果当前时间小于上一次ID生成的时间戳, 说明系统时钟回退过这个时候应当抛出异常
 		if (timestamp < lastTimestamp) {
 			throw new RuntimeException(
 					String.format("Clock moved backwards.  Refusing to generate id for %d milliseconds", lastTimestamp - timestamp));
+		}*/
+		// ========== 优化：容错的时钟回拨处理 ==========
+		if (timestamp < lastTimestamp) {
+			long timeDiff = lastTimestamp - timestamp;
+			
+			// 1. 轻微回拨（≤50ms）：等待时钟恢复
+			if (timeDiff <= MAX_CLOCK_BACKWARD_MS) {
+				try {
+					// 等待时钟恢复，最多等待MAX_WAIT_MS_FOR_CLOCK
+					long waitStart = System.currentTimeMillis();
+					while (timestamp <= lastTimestamp) {
+						// 短暂休眠，避免自旋消耗CPU
+						Thread.sleep(1);
+						timestamp = System.currentTimeMillis();
+						
+						// 超过最大等待时间则抛出异常
+						if (System.currentTimeMillis() - waitStart > MAX_WAIT_MS_FOR_CLOCK) {
+							throw new RuntimeException(
+									String.format("系统时钟回拨, 等待%d毫秒后超时, 拒绝生成ID, 时钟回拨时长: %d毫秒",
+											MAX_WAIT_MS_FOR_CLOCK, timeDiff));
+						}
+					}
+				} catch (InterruptedException e) {
+					// 等待被中断时抛出异常
+					throw new RuntimeException("等待时钟恢复时被中断", e);
+				}
+			}
+			// 2. 严重回拨（>50ms）：直接抛出异常，避免重复ID
+			else {
+				throw new RuntimeException(
+						String.format("系统时钟回拨超出容忍范围, 拒绝生成ID, 时钟回拨时长: %d毫秒", timeDiff));
+			}
 		}
 		
 		//如果是同一时间生成的, 则进行毫秒内序列
