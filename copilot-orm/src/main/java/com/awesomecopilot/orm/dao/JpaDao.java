@@ -39,6 +39,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.Serializable;
@@ -1286,16 +1287,20 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 *
 	 * @return EntityManager
 	 */
+	// 修改em()方法，在适当时候调用清理
 	@Override
 	public EntityManager em() {
 		if (TransactionSynchronizationManager.isActualTransactionActive()) {
 			return entityManager;
 		} else {
-			if (entityManagerThreadLocal.get() != null) {
-				return entityManagerThreadLocal.get();
+			EntityManager existingEm = entityManagerThreadLocal.get();
+			if (existingEm != null && existingEm.isOpen()) {
+				return existingEm;
 			} else {
 				EntityManager noTransactionalEntityManager = entityManagerFactory.createEntityManager();
 				entityManagerThreadLocal.set(noTransactionalEntityManager);
+				// 注册清理回调
+				registerCleanupCallback();
 				return noTransactionalEntityManager;
 			}
 		}
@@ -1335,6 +1340,19 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		} else {
 			em().getTransaction().rollback();
 		}
+	}
+	
+	private void registerCleanupCallback() {
+		// 使用Spring的TransactionSynchronization注册清理回调
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			TransactionSynchronizationManager.initSynchronization();
+		}
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCompletion(int status) {
+				cleanupEntityManager();
+			}
+		});
 	}
 
 	private boolean isSqlStatement(String queryName) {
@@ -1410,5 +1428,21 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			throw new RawSQLQueryException(msg, e);
 		}
 	}
-
+	
+	// 在JpaDao类中添加清理方法
+	public void cleanupEntityManager() {
+		EntityManager em = entityManagerThreadLocal.get();
+		if (em != null && em.isOpen()) {
+			try {
+				if (em.getTransaction().isActive()) {
+					em.getTransaction().rollback();
+				}
+				em.close();
+			} catch (Exception e) {
+				log.warn("Error closing EntityManager", e);
+			} finally {
+				entityManagerThreadLocal.remove();
+			}
+		}
+	}
 }

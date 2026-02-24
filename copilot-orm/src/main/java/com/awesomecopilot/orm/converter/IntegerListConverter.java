@@ -22,7 +22,7 @@ public class IntegerListConverter implements AttributeConverter<List<Integer>, S
 		}
 		dbData = dbData.trim();
 		if (dbData.startsWith("[") && dbData.endsWith("]")) {
-			dbData = dbData.substring(1, dbData.length() - 2);
+			dbData = dbData.substring(1, dbData.length() - 1);
 		}
 		String[] split = StringUtils.split(dbData);
 		return Arrays.asList(split).stream().map(Integer::parseInt).collect(toList());

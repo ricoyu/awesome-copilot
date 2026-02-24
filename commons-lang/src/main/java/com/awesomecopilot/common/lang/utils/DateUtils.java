@@ -5,7 +5,6 @@ import com.awesomecopilot.common.lang.exception.DateParseException;
 import com.awesomecopilot.common.lang.exception.NoDateFormatFoundException;
 import com.awesomecopilot.common.lang.exception.UnsupportedLocalDateFormatException;
 import com.awesomecopilot.common.lang.exception.UnsupportedLocalTimeFormatException;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +51,16 @@ public final class DateUtils {
 	private static final Pattern MILLIS_PATTERN = Pattern.compile("\\d+");
 	
 	private DateUtils() {
+	}
+	
+	/**
+	 * 采用"yyyy-MM-dd HH:mm:ss"格式化当前时间, 时区为"Asia/Shanghai", Locale为CHINA
+	 *
+	 * @return String
+	 */
+	public static String formatNow() {
+		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME);
+		return simpleDateFormat.format(new Date());
 	}
 	
 	/**

@@ -2,8 +2,9 @@ package com.awesomecopilot.cache.factory;
 
 import com.awesomecopilot.cache.config.RedisProperties;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.util.Pool;
@@ -28,9 +29,10 @@ import static java.util.stream.Collectors.*;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class JedisSentinelPoolFactory implements PoolFactory {
-
+	
+	private static final Logger log = LoggerFactory.getLogger(JedisSentinelPoolFactory.class);
+	
 	@Override
 	public Pool<Jedis> createPool(PropertyReader propertyReader) {
 		//host:port,host:port,host:port

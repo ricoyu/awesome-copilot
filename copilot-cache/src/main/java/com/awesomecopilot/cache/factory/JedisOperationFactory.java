@@ -7,7 +7,8 @@ import com.awesomecopilot.cache.operations.JedisPoolOperations;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.common.lang.resource.YamlOps;
 import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
@@ -28,8 +29,9 @@ import static org.apache.commons.lang3.StringUtils.isNotEmpty;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class JedisOperationFactory {
+	
+	private static final Logger log = LoggerFactory.getLogger(JedisOperationFactory.class);
 	
 	private static final String SENTINELS = "redis.sentinels";
 	private static final String CLUSTERS = "redis.clusters";

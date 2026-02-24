@@ -1247,7 +1247,7 @@ public final class JedisUtils {
 		 *
 		 * @param key
 		 * @param element
-		 * @return long 本次添加的元素个数
+		 * @return long 本次添加进去的元素个数
 		 */
 		public static long sadd(String key, String element) {
 			if (isBlank(element)) {
@@ -1261,7 +1261,7 @@ public final class JedisUtils {
 		 *
 		 * @param key
 		 * @param elements
-		 * @return long 本次添加的元素个数
+		 * @return long 本次添加进去的元素个数
 		 */
 		public static long sadd(String key, Object... elements) {
 			return jedisOperations.sadd(toBytes(key), toBytes(elements));
