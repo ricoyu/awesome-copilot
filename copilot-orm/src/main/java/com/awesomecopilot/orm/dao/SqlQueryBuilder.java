@@ -36,7 +36,7 @@ public interface SqlQueryBuilder {
 	public SqlQueryBuilder addParams(Map<String, Object> params);
 
 	/**
-	 * 如果paramValue不为null, 将paramValue改成 "%"+paramValue
+	 * 如果paramValue不为null, 将参数值设为 "%"+paramValue
 	 * @param paramName
 	 * @param paramValue
 	 * @return SqlQueryBuilder
@@ -44,7 +44,7 @@ public interface SqlQueryBuilder {
 	public SqlQueryBuilder addLlikeParam(String paramName, String paramValue);
 
 	/**
-	 * 如果paramValue不为null, 将paramValue改成 paramValue+"%"
+	 * 如果paramValue不为null, 将参数值设为 paramValue+"%"
 	 * @param paramName
 	 * @param paramValue
 	 * @return SqlQueryBuilder
@@ -52,7 +52,7 @@ public interface SqlQueryBuilder {
 	public SqlQueryBuilder addRlikeParam(String paramName, String paramValue);
 
 	/**
-	 * 如果paramValue不为null, 将paramValue改成 "%"+paramValue+"%"
+	 * 如果paramValue不为null, 将参数值设为 "%"+paramValue+"%"
 	 * @param paramName
 	 * @param paramValue
 	 * @return SqlQueryBuilder

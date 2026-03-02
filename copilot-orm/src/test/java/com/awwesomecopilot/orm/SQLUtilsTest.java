@@ -548,4 +548,34 @@ public class SQLUtilsTest {
 		System.out.println("处理后sql40：" + sqlwhere);
 		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
 	}
+
+	@Test
+	@Order(41)
+	public void test41() {
+		String sql41 = "select * from pms_sku_info where and brand_id = :brandId " +
+				"AND price BETWEEN :minPrice AND :maxPrice " +
+				"and (sku_name like :key or sku_description like :key) ORDER BY CREATE_TIME DESC";
+		String sqlwhere = build(sql41);
+		String expected = "select * from pms_sku_info where brand_id = :brandId " +
+				"AND price BETWEEN :minPrice AND :maxPrice " +
+				"and (sku_name like :key or sku_description like :key) ORDER BY CREATE_TIME DESC";
+		System.out.println("处理前sql41：" + sql41);
+		System.out.println("处理后sql41：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
+
+	@Test
+	@Order(42)
+	public void test42() {
+		String sql42 = "select * from pms_sku_info where and brand_id = :brandId " +
+				"AND price BETWEEN :minPrice AND :maxPrice " +
+				"(sku_name like :key or sku_description like :key) ORDER BY CREATE_TIME DESC";
+		String sqlwhere = build(sql42);
+		String expected = "select * from pms_sku_info where brand_id = :brandId " +
+				"AND price BETWEEN :minPrice AND :maxPrice " +
+				"and (sku_name like :key or sku_description like :key) ORDER BY CREATE_TIME DESC";
+		System.out.println("处理前sql42：" + sql42);
+		System.out.println("处理后sql42：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
 }
