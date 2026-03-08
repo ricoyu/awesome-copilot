@@ -679,7 +679,7 @@ public class MessageContent {
 
 
 
-# 四 类型转换
+# 四 类型转换 @Convert
 
 1. @Convert注解
 
@@ -745,7 +745,7 @@ public class MessageContent {
 
 
 
-# 五 实体类映射
+# 五 枚举类型示例
 
 1. enum类型
 
@@ -803,9 +803,8 @@ public class MessageContent {
      }
      ```
 
-     
 
-   
+
 
    
 

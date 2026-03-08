@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CriteriaQueryBuilder {
 
@@ -209,12 +210,21 @@ public class CriteriaQueryBuilder {
 	 * @return CriteriaQueryBuilder
 	 */
 	public CriteriaQueryBuilder in(String propertyName, Object... values) {
-		List<Object> list = Arrays.asList(values);
-		if (list == null || list.isEmpty()) {
+		// 1. 处理空参数
+		if (values == null || values.length == 0) {
 			return this;
-		} else {
-			jpaCriteriaQuery.in(propertyName, list);
 		}
+		
+		// 2. 统一转换参数为 List<Object>（兼容 long[] 转换）
+		List<Object> finalValues = convertLongArrayIfNeeded(values);
+		
+		// 3. 空列表直接返回
+		if (finalValues.isEmpty()) {
+			return this;
+		}
+		
+		// 4. 调用原有逻辑（传入转换后的列表）
+		jpaCriteriaQuery.in(propertyName, finalValues);
 		return this;
 	}
 
@@ -398,5 +408,34 @@ public class CriteriaQueryBuilder {
 				return noTransactionalEntityManager;
 			}
 		}
+	}
+	
+	// 核心工具方法：判断并转换 long[] 为 Long[]
+	private List<Object> convertLongArrayIfNeeded(Object... values) {
+		List<Object> list = Arrays.asList(values);
+		
+		// 遍历参数，检测并转换 long[] 类型的元素
+		return list.stream()
+				.map(item -> {
+					// 判断当前元素是否是 long[] 类型
+					if (item instanceof long[]) {
+						long[] primitiveArray = (long[]) item;
+						// 将 long[] 转换为 Long[]
+						return Arrays.stream(primitiveArray)
+								.boxed()
+								.toArray(Long[]::new);
+					}
+					// 非 long[] 类型直接返回原对象
+					return item;
+				})
+				// 扁平化处理（如果传入的是数组，拆分为单个元素）
+				.flatMap(item -> {
+					if (item instanceof Object[]) {
+						return Arrays.stream((Object[]) item);
+					} else {
+						return List.of(item).stream();
+					}
+				})
+				.collect(Collectors.toList());
 	}
 }

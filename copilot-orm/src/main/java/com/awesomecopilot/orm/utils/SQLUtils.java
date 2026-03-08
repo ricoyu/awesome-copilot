@@ -304,20 +304,28 @@ public class SQLUtils {
 			i = skipSpaces(conds, i);
 			if (i >= conds.length()) break;
 			
+			String connector = null;
 			while (i < conds.length()) {
 				String lowerSub = conds.substring(i).toLowerCase();
-				if (lowerSub.startsWith("and") || lowerSub.startsWith("or")) {
-					i += lowerSub.startsWith("and") ? 3 : 2;
-					i = skipSpaces(conds, i);
+				if (lowerSub.startsWith("and")) {
+					connector = " and ";
+					i += 3;
+				} else if (lowerSub.startsWith("or")) {
+					connector = " or ";
+					i += 2;
 				} else {
 					break;
 				}
+				i = skipSpaces(conds, i);
 			}
 			
 			if (i >= conds.length()) break;
 			
 			if (!first) {
-				sb.append(" and ");
+				if (connector == null) {
+					connector = " and ";
+				}
+				sb.append(connector);
 			}
 			first = false;
 			

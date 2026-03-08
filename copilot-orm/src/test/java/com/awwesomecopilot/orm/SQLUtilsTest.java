@@ -578,4 +578,29 @@ public class SQLUtilsTest {
 		System.out.println("处理后sql42：" + sqlwhere);
 		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
 	}
+
+	@Test
+	@Order(43)
+	public void test43() {
+		String sql43 = """
+				select * from pms_sku_info where
+				and (sku_name like :key or sku_desc like :key)
+				order by sku_name asc, sku_id asc""";
+		String sqlwhere = build(sql43);
+		String expected = "select * from pms_sku_info where (sku_name like :key or sku_desc like :key) order by sku_name asc, sku_id asc";
+		System.out.println("处理前sql43：" + sql43);
+		System.out.println("处理后sql43：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
+
+	@Test
+	@Order(44)
+	public void test44() {
+		String sql44 = "select * from wms_ware_info where name like :key or address like :key or areacode like :key order by id asc, name asc";
+		String sqlwhere = build(sql44);
+		String expected = "select * from wms_ware_info where name like :key or address like :key or areacode like :key order by id asc, name asc";
+		System.out.println("处理前sql44：" + sql44);
+		System.out.println("处理后sql44：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
 }

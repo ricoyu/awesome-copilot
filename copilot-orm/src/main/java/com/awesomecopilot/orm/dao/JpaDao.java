@@ -535,6 +535,23 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, long... ids) {
+		Objects.requireNonNull(ids, "ids cannot be null");
+		if (log.isDebugEnabled()) {
+			log.debug("Try to find " + clazz.getName() + " by ids " + ids);
+		}
+		try {
+			Object[] idArr = toBoxedArray(ids);
+			Session session = em().unwrap(Session.class);
+			return session.byMultipleIds(clazz).multiLoad(idArr);
+		} catch (Throwable e) {
+			log.error("", e);
+			throw new EntityOperationException(e);
+		}
+	}
+
 	@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, List<PK> ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
@@ -1444,5 +1461,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 				entityManagerThreadLocal.remove();
 			}
 		}
+	}
+	
+	private Object[] toBoxedArray(long... ids) {
+		Long[] boxedIds = new Long[ids.length];
+		for (int i = 0; i < ids.length; i++) {
+			boxedIds[i] = Long.valueOf(ids[i]);
+		}
+		return (Object[])boxedIds;
 	}
 }
