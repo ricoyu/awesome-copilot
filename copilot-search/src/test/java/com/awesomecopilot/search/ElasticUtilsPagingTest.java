@@ -3,7 +3,7 @@ package com.awesomecopilot.search;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.search.vo.ElasticPage;
 import com.awesomecopilot.search.vo.ElasticScroll;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;

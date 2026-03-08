@@ -2,11 +2,12 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * <p>

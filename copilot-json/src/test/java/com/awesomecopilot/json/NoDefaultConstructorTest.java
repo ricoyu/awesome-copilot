@@ -3,7 +3,7 @@ package com.awesomecopilot.json;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import lombok.Data;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 

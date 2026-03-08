@@ -2,12 +2,13 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.search.support.UpdateResult;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 /**
  * <p>

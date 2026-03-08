@@ -201,7 +201,8 @@ public class ReflectionUtils {
 		try {
 			Field field = findField(fieldName, target.getClass());
 			if (field == null) {
-				return;
+				throw new IllegalArgumentException(String.format(
+						" 字段 %s 在 %s 类中不存在!", fieldName, target.getClass().getName()));
 			}
 			makeAccessible(field);
 			field.set(target, value);

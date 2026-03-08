@@ -2,7 +2,7 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.utils.HttpUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 

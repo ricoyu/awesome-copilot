@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;

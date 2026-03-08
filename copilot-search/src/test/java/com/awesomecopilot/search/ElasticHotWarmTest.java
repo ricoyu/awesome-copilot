@@ -2,7 +2,7 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.ElasticUtils.Cluster;
 import com.awesomecopilot.search.ElasticUtils.Settings;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 

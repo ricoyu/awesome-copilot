@@ -1,11 +1,12 @@
 package com.awesomecopilot.search;
 
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.elasticsearch.index.query.QueryBuilders.*;
+import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 
 /**
  * <p>

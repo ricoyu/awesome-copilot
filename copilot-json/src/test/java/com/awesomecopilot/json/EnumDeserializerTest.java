@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * <p>
@@ -36,7 +36,7 @@ public class EnumDeserializerTest {
 		}
 		long end = System.currentTimeMillis();
 		System.out.println("原生ObjectMapper Spent: " + (end - begin));
-		assertNotNull(data.getProtoType());
+		Assertions.assertNotNull(data.getProtoType());
 		assertThat(data.getProtoType()).isEqualTo(ProtoType.FLOW_TCP);
 		
 		JacksonUtils.toJson(data);
@@ -47,7 +47,7 @@ public class EnumDeserializerTest {
 		}
 		end = System.currentTimeMillis();
 		System.out.println("JacksonUtils Spent: " + (end - begin));
-		assertNotNull(data.getProtoType());
+		org.junit.jupiter.api.Assertions.assertNotNull(data.getProtoType());
 		assertThat(data.getProtoType()).isEqualTo(ProtoType.FLOW_TCP);
 		
 		String employeeJson = "{ \"name\" : \"Emma\",\"age\":32,\"job\":\"Product Manager\",\"gender\":\"female\",\"salary\":35000 }";

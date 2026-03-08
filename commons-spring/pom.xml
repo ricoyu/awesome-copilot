@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
 
         <!-- 一个用于编写**流畅、易读的断言（Assertions）**的 Java 测试库 -->

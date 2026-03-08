@@ -5,13 +5,13 @@ import com.awesomecopilot.search.enums.Dynamic;
 import com.awesomecopilot.search.enums.FieldType;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>

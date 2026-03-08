@@ -4,12 +4,12 @@ import com.awesomecopilot.search.enums.FieldType;
 import com.awesomecopilot.search.support.BulkResult;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>
@@ -30,7 +30,7 @@ public class CompleteSuggestTest {
 				.mapping()
 				.field("title_completion", FieldType.COMPLETION)
 				.thenCreate();
-		Assert.assertTrue(created);
+		assertTrue(created);
 
 		BulkResult bulkResult = ElasticUtils.bulkIndex("articles",
 				"{\"title_completion\": \"lucene is very cool\"}",

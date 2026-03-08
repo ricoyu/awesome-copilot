@@ -1,7 +1,7 @@
 package com.awesomecopilot.cache;
 
 import com.awesomecopilot.cache.concurrent.Lock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

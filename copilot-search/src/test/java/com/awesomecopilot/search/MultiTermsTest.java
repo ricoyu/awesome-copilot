@@ -4,7 +4,7 @@ import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search.builder.agg.ElasticMultiTermsAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search.vo.ElasticPage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

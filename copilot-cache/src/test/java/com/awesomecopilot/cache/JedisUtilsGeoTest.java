@@ -1,6 +1,6 @@
 package com.awesomecopilot.cache;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.resps.GeoRadiusResponse;
 

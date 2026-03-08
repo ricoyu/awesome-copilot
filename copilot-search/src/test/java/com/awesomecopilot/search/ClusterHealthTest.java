@@ -1,9 +1,10 @@
 package com.awesomecopilot.search;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 测试集群健康

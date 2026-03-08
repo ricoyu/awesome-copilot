@@ -3,14 +3,12 @@ package com.awesomecopilot.codec;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.assertj.core.api.Assertions.*;
-import static org.hamcrest.CoreMatchers.*;
 
 /**
  * <p>
@@ -110,7 +108,7 @@ public class RsaUtilsTest {
 		log.info("加密后的字符串\n{}", encrypted);
 		
 		String decrypted = RsaUtils.privateDecrypt(encrypted);
-		Assert.assertThat(decrypted, equalTo(plainText));
+		assertThat(decrypted).isEqualTo(plainText);
 		log.info("解密后的字符串\n{}", decrypted);
 	}
 }

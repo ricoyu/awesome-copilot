@@ -6,11 +6,11 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static java.net.InetAddress.getByName;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * <p>
@@ -27,7 +27,7 @@ public class TransportClientTest {
 	
 	private static TransportClient transportClient;
 	
-	@BeforeClass
+	@BeforeAll
 	@SneakyThrows
 	public static void init() {
 		transportClient = new PreBuiltTransportClient(Settings.EMPTY)

@@ -21,7 +21,7 @@ import static java.util.Optional.ofNullable;
  * @version 1.0
  * @on
  */
-public class PasswordValidator implements ConstraintValidator<PasswordMatch, Object> {
+public class PasswordMatchValidator implements ConstraintValidator<PasswordMatch, Object> {
 
 	private String passwordField;
 

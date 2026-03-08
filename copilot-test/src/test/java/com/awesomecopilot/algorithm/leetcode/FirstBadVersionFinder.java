@@ -40,13 +40,16 @@ import java.util.Scanner;
  */
 public class FirstBadVersionFinder {
 	
+	private static int badVersion;
+	
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);
 		System.out.print("请输入数字n: ");
 		int n = scanner.nextInt();
 		System.out.print("请输入数字bad: ");
 		int bad = scanner.nextInt();
-		System.out.println(firstBadVersion(n, bad));
+		badVersion = bad;
+		System.out.println(firstBadVersion(n));
 		scanner.close();
 	}
 	
@@ -56,7 +59,12 @@ public class FirstBadVersionFinder {
 	 * @param bad 第一个错误的版本号
 	 * @return
 	 */
-	private static int firstBadVersion(int n, int bad) {
+	/**
+	 * 查找第一个错误的版本
+	 * @param n 版本总数
+	 * @return 第一个错误的版本号
+	 */
+	public static int firstBadVersion(int n) {
 		// 左边界：初始为第一个版本
 		int left = 1;
 		// 右边界：初始为最后一个版本
@@ -64,23 +72,24 @@ public class FirstBadVersionFinder {
 		
 		// 二分查找核心循环：当左边界小于右边界时继续查找
 		while (left < right) {
-			// 中间位置：取左边界和右边界中间位置
+			// 计算中间版本，避免(left + right)溢出（例如n=2^31-1时，left+right会超出int范围）
 			int mid = left + (right - left) / 2;
 			
-			// 判断中间位置的版本是否为错误版本
-			if (isBadVersion(mid, bad)) {
+			if (isBadVersion(mid)) {
 				// 中间版本是错误的：第一个错误版本在[left, mid]区间，调整右边界
 				right = mid;
-			}else {
+			} else {
 				// 中间版本是正确的：第一个错误版本在[mid+1, right]区间，调整左边界
 				left = mid + 1;
 			}
 		}
+		
 		// 循环结束时left == right，即为第一个错误版本
 		return left;
 	}
 	
-	private static boolean isBadVersion(int version, int badVersion) {
+	// 模拟判断版本是否错误的接口
+	private static boolean isBadVersion(int version) {
 		return version >= badVersion;
 	}
 }

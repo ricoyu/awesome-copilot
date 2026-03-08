@@ -1,7 +1,7 @@
 package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.enums.FieldType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

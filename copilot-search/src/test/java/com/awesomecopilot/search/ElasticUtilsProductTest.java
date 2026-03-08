@@ -5,7 +5,7 @@ import com.awesomecopilot.search.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search.enums.CalendarInterval;
 import com.awesomecopilot.search.vo.ElasticPage;
 import com.awesomecopilot.search.vo.ElasticScroll;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;

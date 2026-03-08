@@ -1,7 +1,7 @@
 package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.vo.ElasticPage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 

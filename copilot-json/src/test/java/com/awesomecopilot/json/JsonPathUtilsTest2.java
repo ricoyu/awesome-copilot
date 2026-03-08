@@ -3,7 +3,7 @@ package com.awesomecopilot.json;
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>

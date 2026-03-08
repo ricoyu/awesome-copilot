@@ -47,8 +47,8 @@ import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
 import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,27 +59,15 @@ import java.util.Set;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
-import static com.awesomecopilot.search.enums.FieldType.COMPLETION;
-import static com.awesomecopilot.search.enums.FieldType.KEYWORD;
-import static com.awesomecopilot.search.enums.FieldType.TEXT;
+import static com.awesomecopilot.search.enums.FieldType.*;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.BEST_FIELDS;
-import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
-import static org.elasticsearch.index.query.QueryBuilders.boostingQuery;
-import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
-import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
-import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
-import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 import static org.elasticsearch.search.suggest.SortBy.FREQUENCY;
 import static org.elasticsearch.search.suggest.term.TermSuggestionBuilder.StringDistanceImpl.INTERNAL;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * <p>
@@ -94,7 +82,7 @@ import static org.junit.Assert.*;
 @Slf4j
 public class ElasticUtilsTest {
 
-	@BeforeClass
+	@BeforeAll
 	public static void testInitialize() {
 		Class<ElasticUtils> elasticUtilsClass = ElasticUtils.class;
 		assertThat(ElasticUtils.CLIENT != null);

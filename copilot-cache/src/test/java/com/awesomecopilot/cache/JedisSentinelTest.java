@@ -1,6 +1,7 @@
 package com.awesomecopilot.cache;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

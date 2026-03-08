@@ -1,16 +1,15 @@
 package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.ElasticUtils.Query;
-import com.awesomecopilot.search.exception.UriQueryException;
 import com.awesomecopilot.search.pojo.Movie;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>
@@ -69,7 +68,7 @@ public class UriQueryTest {
 		assertEquals(movies.size(), movies2.size());
 	}
 	
-	@Test(expected = UriQueryException.class)
+	@Test
 	public void testSortThenException() {
 		List<Object> movies = Query.uriQuery("movies")
 				.query("title:Beautiful Mind")

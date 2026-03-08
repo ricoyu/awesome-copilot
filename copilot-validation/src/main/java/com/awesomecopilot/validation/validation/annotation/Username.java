@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 @Documented
 public @interface Username {
 
-	String message() default "Please enter valid username";
+	String message() default "请输入有效的用户名";
 
 	Class<?>[] groups() default {};
 

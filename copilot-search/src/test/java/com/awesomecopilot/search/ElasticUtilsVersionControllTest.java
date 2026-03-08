@@ -2,9 +2,9 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.support.UpdateResult;
 import com.awesomecopilot.search.vo.VersionedDoc;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>

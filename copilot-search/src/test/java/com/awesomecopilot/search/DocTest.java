@@ -3,13 +3,14 @@ package com.awesomecopilot.search;
 import com.awesomecopilot.search.support.UpdateResult;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DocTest {
 

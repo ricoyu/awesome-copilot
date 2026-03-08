@@ -15,7 +15,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.List;
@@ -25,9 +25,7 @@ import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
 import static com.awesomecopilot.search.builder.agg.sub.SubAggregations.avg;
 import static com.awesomecopilot.search.builder.agg.sub.SubAggregations.dateHistogram;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.max;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.min;
-import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
+import static org.elasticsearch.search.aggregations.AggregationBuilders.*;
 
 /**
  * <p>

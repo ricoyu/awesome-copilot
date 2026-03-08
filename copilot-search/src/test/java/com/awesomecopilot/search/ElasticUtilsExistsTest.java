@@ -1,7 +1,7 @@
 package com.awesomecopilot.search;
 
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 

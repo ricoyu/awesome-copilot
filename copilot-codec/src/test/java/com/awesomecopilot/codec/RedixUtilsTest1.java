@@ -2,11 +2,12 @@ package com.awesomecopilot.codec;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.common.lang.utils.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>

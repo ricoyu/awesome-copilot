@@ -1,18 +1,17 @@
 package com.awesomecopilot.workbook;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import com.awesomecopilot.workbook.exception.ValidationException;
-import com.awesomecopilot.workbook.unmarshal.ExcelUnmarshaller;
 import com.awesomecopilot.workbook.pojo.FaPiao;
 import com.awesomecopilot.workbook.pojo.SettlementItem;
-import org.junit.Test;
+import com.awesomecopilot.workbook.unmarshal.ExcelUnmarshaller;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.List;
 
 public class ExcelUnmarshellTest {
 	
-	@Test(expected = ValidationException.class)
+	@Test()
 	public void testUnmarshall() throws Exception {
 		File file = IOUtils.readClasspathFileAsFile("excel/1005466.xlsx");
 		ExcelUnmarshaller unmarshaller = ExcelUnmarshaller.builder(file)

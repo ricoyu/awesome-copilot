@@ -4,7 +4,7 @@ import com.awesomecopilot.search.ElasticUtilsTest.Product;
 import com.awesomecopilot.search.enums.FieldType;
 import com.awesomecopilot.search.enums.SortOrder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 

@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.math.BigDecimal;

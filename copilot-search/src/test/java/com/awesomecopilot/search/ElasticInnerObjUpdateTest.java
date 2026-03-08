@@ -6,7 +6,7 @@ import com.awesomecopilot.search.support.BulkResult;
 import com.awesomecopilot.search.support.UpdateResult;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;

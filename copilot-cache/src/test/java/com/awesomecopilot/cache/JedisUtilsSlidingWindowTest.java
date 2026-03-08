@@ -2,9 +2,10 @@ package com.awesomecopilot.cache;
 
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * <p>

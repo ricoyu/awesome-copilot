@@ -1,7 +1,7 @@
 package com.awesomecopilot.search;
 
 import lombok.SneakyThrows;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.List;

@@ -6,7 +6,8 @@ import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Test;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * <p>
@@ -399,8 +400,9 @@ public class JedisUtilsTests {
 		String json = JacksonUtils.toJson(user);
 		JedisUtils.set("k1", json);
 	}
-
-	public static class HyperLoglogTest {
+	
+	@Nested
+	class HyperLoglogTest {
 
 		@Test
 		public void testPfAdd() {
@@ -408,8 +410,9 @@ public class JedisUtilsTests {
 			assertTrue(pfadd == 1);
 		}
 	}
-
-	public static class BitMapTest {
+	
+	@Nested
+	class BitMapTest {
 
 		@Test
 		public void testSetBit() {

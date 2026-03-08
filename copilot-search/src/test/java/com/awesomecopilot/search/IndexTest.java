@@ -2,12 +2,12 @@ package com.awesomecopilot.search;
 
 import com.awesomecopilot.search.support.UpdateResult;
 import com.awesomecopilot.search.vo.Index;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IndexTest {
 

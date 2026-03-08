@@ -2,7 +2,7 @@ package com.awesomecopilot.json;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * <p>

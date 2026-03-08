@@ -3,14 +3,12 @@ package com.awesomecopilot.search;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.BEST_FIELDS;
-import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.CROSS_FIELDS;
-import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.MOST_FIELDS;
-import static org.elasticsearch.index.query.QueryBuilders.*;
+import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.*;
+import static org.elasticsearch.index.query.QueryBuilders.multiMatchQuery;
 
 /**
  * <p>
