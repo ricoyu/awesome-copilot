@@ -106,6 +106,21 @@ public class AggTest {
 		System.out.println(toPrettyJson(aggResult));
 	}
 	
+	@Test
+	public void testAgeGenderStatsNestedSubAgg() {
+		// 查出所有年龄分布，并且这些年龄段中各性别的薪资统计情况
+		// 等价 DSL:
+		// aggs: age_agg(terms age) -> gender_agg(terms gender.keyword) -> salary_stats(stats balance)
+		List<Map<String, Object>> aggResult = ElasticUtils.Aggs.terms("bank")
+				.of("age_agg", "age").size(20)
+				.subAggregation(SubAggregations.terms("gender_agg", "gender.keyword").size(10)
+								.subAggregation(SubAggregations.stats("salary_stats", "balance"))
+				)
+				.get();
+		
+		System.out.println(toPrettyJson(aggResult));
+	}
+	
 	
 	@Test
 	public void testStatAgg() {

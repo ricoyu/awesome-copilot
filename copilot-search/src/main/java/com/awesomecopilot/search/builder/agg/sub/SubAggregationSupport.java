@@ -28,7 +28,10 @@ public final class SubAggregationSupport {
 		for (SubAggregation subAggregation : subAggregations) {
 			BaseAggregationBuilder builder = subAggregation.build();
 			if (builder instanceof AggregationBuilder) {
-				aggregationBuilder.subAggregation((AggregationBuilder) builder);
+				AggregationBuilder subAggBuilder = (AggregationBuilder) builder;
+				//递归挂载子聚合的子聚合（支持多层嵌套）
+				addSubAggregations(subAggBuilder, subAggregation.subAggregations);
+				aggregationBuilder.subAggregation(subAggBuilder);
 			} else if (builder instanceof PipelineAggregationBuilder) {
 				aggregationBuilder.subAggregation((PipelineAggregationBuilder) builder);
 			}

@@ -463,3 +463,769 @@
   }},
   "track_total_hits": 2147483647
 }
+2026-03-19 11:08:16.300  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 11:08:16.308  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 11:08:16.309  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 11:08:16.309  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 11:08:16.310  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 11:08:16.311  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 11:08:16.311  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 11:08:18.571  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 11:08:19.430  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 20,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"gender_agg": {
+      "terms": {
+        "shard_min_doc_count": 0,
+        "field": "gender.keyword",
+        "size": 10,
+        "show_term_doc_count_error": false,
+        "min_doc_count": 1,
+        "order": [
+          {"_count": "desc"},
+          {"_key": "asc"}
+        ]
+      },
+      "aggregations": {"salary_stats": {"stats": {"field": "balance"}}}
+    }}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:17.649  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 11:13:17.653  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 11:13:17.654  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 11:13:17.654  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 11:13:17.654  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 11:13:17.654  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 11:13:17.654  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 11:13:19.267  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 11:13:19.938  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"src_ip_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "src_ip",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"src_ip_term_sort": {"bucket_sort": {
+      "gap_policy": "SKIP",
+      "size": 4,
+      "from": 0,
+      "sort": []
+    }}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:19.981  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"src_ip_term": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "src_ip",
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:19.985  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L425 - 第1页, 每页4条, 总共0条
+2026-03-19 11:13:19.987  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"src_ip_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "src_ip",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"src_ip_term_sort": {"bucket_sort": {
+      "gap_policy": "SKIP",
+      "size": 4,
+      "from": 4,
+      "sort": []
+    }}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:19.989  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L435 - 第2页, 每页4条, 总共0条
+2026-03-19 11:13:20.040  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"avg_salary": {"avg": {"field": "salary"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.045  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L235 - Avg Salary: NaN
+2026-03-19 11:13:20.047  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"max_salary": {"max": {"field": "salary"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.051  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L227 - Max Salary: -Infinity
+2026-03-19 11:13:20.054  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"min_salary": {"min": {"field": "salary"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.058  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L219 - Min Salary: Infinity
+2026-03-19 11:13:20.061  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"sum_agg": {"sum": {"field": "age"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.066  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "DestCountry",
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": [
+      {"_count": "asc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.310  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"src_ip_term": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "src_ip",
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": [
+      {"_count": "asc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.317  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {
+    "max_salary": {"max": {"field": "salary"}},
+    "min_salary": {"min": {"field": "salary"}},
+    "avg_salary": {"avg": {"field": "salary"}}
+  },
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.346  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "gender_term": {"terms": {
+        "shard_min_doc_count": 0,
+        "field": "gender.keyword",
+        "size": 10,
+        "show_term_doc_count_error": false,
+        "min_doc_count": 1,
+        "order": [
+          {"_count": "desc"},
+          {"_key": "asc"}
+        ]
+      }},
+      "balance_avg": {"avg": {"field": "balance"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.374  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"jobs_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "job.keyword",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"old_employee": {"top_hits": {
+      "explain": false,
+      "size": 3,
+      "from": 0,
+      "_source": {
+        "excludes": [],
+        "includes": []
+      },
+      "seq_no_primary_term": false,
+      "sort": [{"age": {"order": "desc"}}],
+      "version": false
+    }}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.386  WARN  [ ] --- [            main] wesomecopilot.search.support.AggResultSupport:   L112 - 聚合的字段是一个未映射的字段, 比如enabled=false
+2026-03-19 11:13:20.388  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"jobs": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "job",
+    "size": 20,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": {"_key": "asc"}
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.393  WARN  [ ] --- [            main] wesomecopilot.search.support.AggResultSupport:   L112 - 聚合的字段是一个未映射的字段, 比如enabled=false
+2026-03-19 11:13:20.399  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {"terms": {
+    "shard_min_doc_count": 0,
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "script": {
+      "id": "multi_fields",
+      "params": {"fields": [
+        "src_ip",
+        "src_port"
+      ]}
+    },
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.447  DEBUG [ ] --- [ copilot-pool-T1] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {"terms": {
+    "shard_min_doc_count": 0,
+    "size": 2147483647,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "script": {
+      "id": "multi_fields",
+      "params": {"fields": [
+        "src_ip",
+        "src_port"
+      ]}
+    },
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.448  DEBUG [ ] --- [ copilot-pool-T2] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "script": {
+        "id": "multi_fields",
+        "params": {"fields": [
+          "src_ip",
+          "src_port"
+        ]}
+      },
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"multi_terms_sort": {"bucket_sort": {
+      "gap_policy": "SKIP",
+      "size": 5,
+      "from": 0,
+      "sort": []
+    }}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.451  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L387 - 第1页, 每页5条, 总共0条
+2026-03-19 11:13:20.453  DEBUG [ ] --- [ copilot-pool-T3] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {"terms": {
+    "shard_min_doc_count": 0,
+    "size": 2147483647,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "script": {
+      "id": "multi_fields",
+      "params": {"fields": [
+        "src_ip",
+        "src_port"
+      ]}
+    },
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.453  DEBUG [ ] --- [ copilot-pool-T4] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "script": {
+        "id": "multi_fields",
+        "params": {"fields": [
+          "src_ip",
+          "src_port"
+        ]}
+      },
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"multi_terms_sort": {"bucket_sort": {
+      "gap_policy": "SKIP",
+      "size": 5,
+      "from": 5,
+      "sort": []
+    }}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.456  INFO  [ ] --- [            main] com.awesomecopilot.search.AggTest            :   L398 - 第2页, 每页5条, 总共0条
+2026-03-19 11:13:20.459  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "age",
+    "size": 20,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": {"_key": "asc"}
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.471  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L730 - Query DSL:
+{
+  "query": {"match": {"address": {
+    "auto_generate_synonyms_phrase_query": true,
+    "query": "mill",
+    "zero_terms_query": "NONE",
+    "fuzzy_transpositions": true,
+    "boost": 1,
+    "prefix_length": 0,
+    "operator": "OR",
+    "lenient": false,
+    "max_expansions": 50
+  }}},
+  "_source": {
+    "excludes": [],
+    "includes": []
+  },
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.558  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"multi_terms_agg": {"terms": {
+    "shard_min_doc_count": 0,
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "script": {
+      "id": "multi_fields",
+      "params": {"fields": [
+        "src_ip",
+        "src_port"
+      ]}
+    },
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.567  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "query": {"match": {"address": {
+    "auto_generate_synonyms_phrase_query": true,
+    "query": "mill",
+    "zero_terms_query": "NONE",
+    "fuzzy_transpositions": true,
+    "boost": 1,
+    "prefix_length": 0,
+    "operator": "OR",
+    "lenient": false,
+    "max_expansions": 50
+  }}},
+  "aggregations": {
+    "age_avg": {"avg": {"field": "age"}},
+    "age_agg": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }}
+  },
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.575  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 20,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"gender_agg": {
+      "terms": {
+        "shard_min_doc_count": 0,
+        "field": "gender.keyword",
+        "size": 10,
+        "show_term_doc_count_error": false,
+        "min_doc_count": 1,
+        "order": [
+          {"_count": "desc"},
+          {"_key": "asc"}
+        ]
+      },
+      "aggregations": {"salary_stats": {"stats": {"field": "balance"}}}
+    }}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.611  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"salary_range": {"range": {
+    "field": "salary",
+    "ranges": [
+      {
+        "from": 10000,
+        "to": 20000
+      },
+      {"to": 10000},
+      {
+        "from": 20000,
+        "key": ">20000"
+      }
+    ],
+    "keyed": false
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.625  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "query": {"range": {"create_time": {
+    "include_lower": true,
+    "include_upper": true,
+    "from": 1625414400000,
+    "boost": 1,
+    "to": 1625500740000
+  }}},
+  "aggregations": {
+    "severity": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "severity",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }},
+    "victim_ip": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "victim_ip",
+      "size": 5,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }},
+    "attacker_ip": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "attacker_ip",
+      "size": 5,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }},
+    "attach_result": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "attack_result",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }}
+  },
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.630  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "query": {"range": {"age": {
+    "include_lower": false,
+    "include_upper": true,
+    "from": 20,
+    "boost": 1,
+    "to": null
+  }}},
+  "aggregations": {"jobs": {"terms": {
+    "shard_min_doc_count": 0,
+    "field": "job.keyword",
+    "size": 10,
+    "show_term_doc_count_error": false,
+    "min_doc_count": 1,
+    "order": [
+      {"_count": "desc"},
+      {"_key": "asc"}
+    ]
+  }}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.635  WARN  [ ] --- [            main] wesomecopilot.search.support.AggResultSupport:   L112 - 聚合的字段是一个未映射的字段, 比如enabled=false
+2026-03-19 11:13:20.658  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"rating_avg": {"avg": {"field": "rating"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.663  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"cardinality_agg": {"cardinality": {"field": "job.keyword"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.670  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "DestCountry",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "max_price": {"max": {"field": "AvgTicketPrice"}},
+      "min_price": {"min": {"field": "AvgTicketPrice"}},
+      "average_price": {"avg": {"field": "AvgTicketPrice"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.676  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"job_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "job.keyword",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_stats": {"stats": {"field": "salary"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.681  WARN  [ ] --- [            main] wesomecopilot.search.support.AggResultSupport:   L112 - 聚合的字段是一个未映射的字段, 比如enabled=false
+2026-03-19 11:13:20.684  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"stats_salary": {"stats": {"field": "salary"}}},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:20.712  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_avg": {"avg": {"field": "balance"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:13:45.067  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 11:13:45.073  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 11:13:46.728  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 11:13:47.429  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 20,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"gender_agg": {
+      "terms": {
+        "shard_min_doc_count": 0,
+        "field": "gender.keyword",
+        "size": 10,
+        "show_term_doc_count_error": false,
+        "min_doc_count": 1,
+        "order": [
+          {"_count": "desc"},
+          {"_key": "asc"}
+        ]
+      },
+      "aggregations": {"salary_stats": {"stats": {"field": "balance"}}}
+    }}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 11:20:38.016  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 11:20:38.024  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 11:20:38.025  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 11:20:38.025  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 11:20:38.026  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 11:20:38.026  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 11:20:38.026  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 11:20:40.328  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 11:20:41.189  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 20,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"gender_agg": {
+      "terms": {
+        "shard_min_doc_count": 0,
+        "field": "gender.keyword",
+        "size": 10,
+        "show_term_doc_count_error": false,
+        "min_doc_count": 1,
+        "order": [
+          {"_count": "desc"},
+          {"_key": "asc"}
+        ]
+      },
+      "aggregations": {"salary_stats": {"stats": {"field": "balance"}}}
+    }}
+  }},
+  "track_total_hits": 2147483647
+}

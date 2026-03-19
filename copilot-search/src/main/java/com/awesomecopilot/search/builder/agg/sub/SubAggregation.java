@@ -27,6 +27,22 @@ public abstract class SubAggregation {
 	public SubAggregation() {
 		
 	}
+
+	/**
+	 * 为当前子聚合继续添加子聚合。
+	 *
+	 * <p>注意：这里不强制校验 subAggregation 类型是否合法（例如 pipeline agg 不能再挂子聚合），
+	 * 构建时由 {@link SubAggregationSupport} 决定是否真正挂载。</p>
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前 SubAggregation
+	 */
+	public SubAggregation subAggregation(SubAggregation subAggregation) {
+		if (subAggregation != null) {
+			subAggregations.add(subAggregation);
+		}
+		return this;
+	}
 	
 	/**
 	 * 真正开始构建Elasticsearch的AggregationBuilder, 子聚合关系都建立起来了
