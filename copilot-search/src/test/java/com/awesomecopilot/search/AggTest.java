@@ -85,6 +85,17 @@ public class AggTest {
 	}
 	
 	@Test
+	public void testAgeGenderSubAgg() {
+		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("bank")
+				.of("age_term", "age")
+				.subAggregation(SubAggregations.terms("gender_term", "gender.keyword"))
+				.subAggregation(SubAggregations.avg("balance_avg", "balance"))
+				.get();
+		
+		System.out.println(toPrettyJson(result));
+	}
+	
+	@Test
 	public void testAgeTermsSalarySubAgg() {
 		//按照年龄段聚合, 并请求这些年龄段的人的平均工资
 		List<Map<String, Object>> aggResult = ElasticUtils.Aggs.terms("bank")

@@ -180,12 +180,12 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	}
 	
 	public <T> List<Map<String, T>> get() {
-		AggregationBuilder arrregationBuilder = build();
+		AggregationBuilder aggregationBuilder = build();
 		
 		SearchRequestBuilder searchRequestBuilder = searchRequestBuilder();
 		
 		searchRequestBuilder
-				.addAggregation(arrregationBuilder)
+				.addAggregation(aggregationBuilder)
 				.setSize(0);
 		logDsl(searchRequestBuilder);
 		SearchResponse searchResponse = searchRequestBuilder.get();
