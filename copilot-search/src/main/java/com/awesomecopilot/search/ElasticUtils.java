@@ -182,7 +182,7 @@ public final class ElasticUtils {
     }
 
     /**
-     * 创建一个新的文档, 返回新创建文档的ID
+     * Fluent风格创建一个新的文档, 返回新创建文档的ID
      * 对应REST API POST 方式
      *
      * @param index
@@ -1985,7 +1985,30 @@ public final class ElasticUtils {
         }
 
         /**
-         * 组合多个聚合
+         * 组合多个聚合, 就像这个, 一个查询中包含两个聚合
+         * <pre>
+         * POST bank/_search
+         * {
+         *   "query": {
+         *     "match": {
+         *       "address": "mill"
+         *     }
+         *   },
+         *   "size": 0,
+         *   "aggs": {
+         *     "age_agg": {
+         *       "terms": {
+         *         "field": "age"
+         *       }
+         *     },
+         *     "age_avg":{
+         *       "avg": {
+         *         "field": "age"
+         *       }
+         *     }
+         *   }
+         * }
+         * </pre>
          *
          * @param indices
          * @return ElasticCompositeAggregationBuilder

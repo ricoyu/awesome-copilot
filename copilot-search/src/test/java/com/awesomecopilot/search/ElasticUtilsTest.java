@@ -1,8 +1,10 @@
 package com.awesomecopilot.search;
 
+import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.networking.utils.HttpUtils;
 import com.awesomecopilot.search.ElasticUtils.Admin;
 import com.awesomecopilot.search.ElasticUtils.Cluster;
+import com.awesomecopilot.search.ElasticUtils.Query;
 import com.awesomecopilot.search.annotation.DocId;
 import com.awesomecopilot.search.builder.admin.AbstractMappingBuilder;
 import com.awesomecopilot.search.builder.admin.ElasticIndexMappingBuilder;
@@ -87,6 +89,16 @@ public class ElasticUtilsTest {
 		Class<ElasticUtils> elasticUtilsClass = ElasticUtils.class;
 		assertThat(ElasticUtils.CLIENT != null);
 	}
+	
+	@Test
+	public void testMatch() {
+		List<Object> banks = Query.matchQuery("bank")
+				.query("address", "mill road")
+				.size(10000)
+				.queryForList();
+		banks.forEach(System.out::println);
+		assertThat(banks).size().isEqualTo(33);
+	}
 
 	@Test
 	public void testAllMovies() {
@@ -97,6 +109,21 @@ public class ElasticUtilsTest {
 		for (Object movie : movies) {
 			System.out.println(movie);
 		}
+	}
+	
+	@Test
+	public void testCreateIndex() {
+		boolean deleted = Admin.deleteIndex("bobo");
+		boolean created = ElasticUtils.Admin.createIndex("bobo").create();
+	}
+	
+	@Test
+	public void testSampleDataLogs() {
+		long kibanaSampleDataLogsCount = Query.matchAllQuery("kibana_sample_data_logs")
+				.size(100000000)
+				.queryForCount();
+		
+		assertThat(kibanaSampleDataLogsCount).isEqualTo(14074);
 	}
 
 	@Test
@@ -630,6 +657,12 @@ public class ElasticUtilsTest {
 				.getCount();
 		System.out.println(totalCount);
 	}
+	
+	@Test
+	public void testIndexDocCount() {
+		long count = ElasticUtils.docCount("blank");
+		assertThat(count).isEqualTo(1000);
+	}
 
 	@Test
 	public void testSuggest() {
@@ -784,6 +817,16 @@ public class ElasticUtilsTest {
 				.queryForList();
 		objects.forEach(System.out::println);
 	}
+	
+	@Test
+	public void testTermQuery2() {
+		String bank = Query.termQuery("bank")
+				.query("account_number", 970)
+				.queryForOne();
+		String accountNUmber = JsonPathUtils.readNode(bank, "$.account_number", String.class);
+		assertEquals(accountNUmber, "970");
+		System.out.print(accountNUmber);
+	}
 
 	@Test
 	public void testConstantScoreQuery() {
@@ -873,6 +916,15 @@ public class ElasticUtilsTest {
 				.queryBuilder(multiMatchQueryBuilder)
 				.queryForList()
 				.forEach(System.out::println);
+	}
+	
+	@Test
+	public void testMultiMatch2() {
+		List<Object> banks = Query.multiMatch("bank")
+				.query("mill Lopezo", "address", "city")
+				.queryForList();
+		
+		banks.forEach(System.out::println);
 	}
 
 	@Test

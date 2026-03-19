@@ -5,6 +5,7 @@ import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search.builder.agg.support.RangeAggResult;
+import com.awesomecopilot.search.builder.query.ElasticMatchQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search.support.StatsAggResult;
 import com.awesomecopilot.search.vo.ElasticPage;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 聚合分析
@@ -43,6 +45,56 @@ import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
  */
 @Slf4j
 public class AggTest {
+	
+	@Test
+	public void testBankAddressTerms() {
+		ElasticUtils.Aggs.terms("bank")
+				.of("age_agg", "age")
+				.size(20)
+				.sort("key:asc")
+				.get();
+	}
+	@Test
+	public void test() {
+		List<Object> banks = ElasticUtils.Query.matchQuery("bank")
+				.query("address", "mill")
+				.queryForList();
+		banks.forEach(System.out::println);
+	}
+	
+	@Test
+	public void testAddressAgeCount() {
+		long count = ElasticUtils.Query.bool("bank")
+				.match("address", "mill").must()
+				.term("age", 32)
+				.must()
+				.queryForCount();
+		
+		assertEquals(52, count) ;
+	}
+	@Test
+	public void testTermsAvgAgg() {
+		ElasticMatchQueryBuilder queryBuilder = ElasticUtils.Query.matchQuery("bank")
+				.query("address", "mill");
+		Map<String, Object> map = ElasticUtils.Aggs.composite("bank")
+				.terms("age_agg", "age").and()
+				.avg("age_avg", "age")
+				.setQuery(queryBuilder)
+				.get();
+		System.out.println(toPrettyJson(map));
+	}
+	
+	@Test
+	public void testAgeTermsSalarySubAgg() {
+		//按照年龄段聚合, 并请求这些年龄段的人的平均工资
+		List<Map<String, Object>> aggResult = ElasticUtils.Aggs.terms("bank")
+				.of("age_term", "age")
+				.subAggregation(SubAggregations.avg("salary_avg", "balance"))
+				.get();
+		
+		System.out.println(toPrettyJson(aggResult));
+	}
+	
 	
 	@Test
 	public void testStatAgg() {

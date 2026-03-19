@@ -40,7 +40,34 @@ public class ElasticUtilsVersionControllTest {
 				.update();
 		
 		assertTrue(updateResult.getResult() == UpdateResult.Result.UPDATED);
+	}
+	
+	@Test
+	public void testUpdateEmployee() {
+		VersionedDoc<String> employees = ElasticUtils.getWithVersion("employees", 1);
+		System.out.println(employees.getSource());
 		
-		
+		/*
+		 * 等价于
+		 * <pre>
+		 * POST /employees/_update/1
+		 * {
+		 *   "doc": {
+		 *     "age": 44
+		 *   }
+		 * }
+		 * </pre>
+		 * 这里更新的文档不要加"doc"
+		 */
+		UpdateResult updateResult = ElasticUtils.update("employees")
+				.id(employees.getId())
+				.doc("""
+						{
+						    "age": 43
+						}""")
+				.ifSeqNo(employees.getIfSeqNo())
+				.ifPrimaryTerm(employees.getIfPrimaryTerm())
+				.update();
+		assertTrue(updateResult.getResult() == UpdateResult.Result.UPDATED);
 	}
 }

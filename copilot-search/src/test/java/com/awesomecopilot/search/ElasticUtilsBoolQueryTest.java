@@ -1,5 +1,6 @@
 package com.awesomecopilot.search;
 
+import com.awesomecopilot.search.ElasticUtils.Query;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -38,6 +39,40 @@ public class ElasticUtilsBoolQueryTest {
 				.queryForList();
 		assertEquals(movies.size(), 1);
 				
+	}
+	
+	/**
+	 * 相当于
+	 * <pre>
+	 * POST /bank/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": {"match_all": {}},
+	 *       "filter": {
+	 *         "range": {
+	 *           "balance": {
+	 *             "gte": 20000,
+	 *             "lte": 30000
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testBoolFilter2() {
+		List<Object> banks = Query.bool("bank")
+				.range("balance")
+				.gte(20000)
+				.lte(30000)
+				.filter()
+				.size(10000)
+				.queryForList();
+		assertEquals(banks.size(), 217);
+		banks.forEach(System.out::println);
 	}
 	
 	@Test

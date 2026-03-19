@@ -1,23 +1,351 @@
-2026-01-13 11:48:01.956  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-01-13 11:48:01.971  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-01-13 11:48:01.971  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-01-13 11:48:01.971  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-01-13 11:48:01.972  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-01-13 11:48:01.973  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-01-13 11:48:01.974  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-01-13 11:49:21.942  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-01-13 11:49:21.950  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-01-13 11:49:21.951  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-01-13 11:49:21.951  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-01-13 11:49:21.951  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-01-13 11:49:21.952  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-01-13 11:49:21.952  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-01-13 11:49:24.277  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-01-13 11:50:55.546  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-01-13 11:50:55.554  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-01-13 11:50:55.554  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-01-13 11:50:55.554  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-01-13 11:50:55.555  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-01-13 11:50:55.555  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-01-13 11:50:55.556  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-01-13 11:50:57.837  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 08:09:36.729  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 08:09:36.738  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 08:09:36.738  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 08:09:36.738  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 08:09:36.739  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 08:09:36.741  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 08:09:36.742  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 08:09:39.169  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 08:09:40.400  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "query": {"match": {"address": {
+    "auto_generate_synonyms_phrase_query": true,
+    "query": "mill",
+    "zero_terms_query": "NONE",
+    "fuzzy_transpositions": true,
+    "boost": 1,
+    "prefix_length": 0,
+    "operator": "OR",
+    "lenient": false,
+    "max_expansions": 50
+  }}},
+  "aggregations": {
+    "age_avg": {"avg": {"field": "age"}},
+    "age_agg": {"terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    }}
+  },
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:00:03.114  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:00:03.124  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:00:03.125  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:00:03.125  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:00:03.126  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:00:03.126  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:00:03.126  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:00:05.360  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:00:06.210  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"age_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:02:13.075  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:02:13.086  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:02:13.086  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:02:13.086  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:02:13.087  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:02:13.087  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:02:13.087  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:02:15.268  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:02:16.078  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "DestCountry",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "max_price": {"max": {"field": "AvgTicketPrice"}},
+      "min_price": {"min": {"field": "AvgTicketPrice"}},
+      "average_price": {"avg": {"field": "AvgTicketPrice"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:03:56.880  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:03:56.889  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:03:56.889  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:03:56.890  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:03:56.891  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:03:56.891  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:03:56.891  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:03:59.039  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:03:59.827  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"age_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:05:23.319  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:05:23.326  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:05:23.327  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:05:23.327  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:05:23.328  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:05:23.329  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:05:23.329  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:05:25.533  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:05:26.379  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_agg": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"age_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:08:53.157  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:08:53.162  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:08:53.162  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:08:53.162  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:08:53.162  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:08:53.162  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:08:53.163  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:08:54.737  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:08:55.603  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "DestCountry",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "max_price": {"max": {"field": "AvgTicketPrice"}},
+      "min_price": {"min": {"field": "AvgTicketPrice"}},
+      "average_price": {"avg": {"field": "AvgTicketPrice"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:09:17.031  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:09:17.039  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:09:17.040  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:09:17.040  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:09:17.040  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:09:17.041  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:09:17.041  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:09:19.294  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:09:20.172  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "DestCountry",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "max_price": {"max": {"field": "AvgTicketPrice"}},
+      "min_price": {"min": {"field": "AvgTicketPrice"}},
+      "average_price": {"avg": {"field": "AvgTicketPrice"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:09:37.458  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:09:37.466  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:09:37.467  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:09:37.467  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:09:37.467  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:09:37.467  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:09:37.467  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:09:39.768  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:09:40.588  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"flight_dest": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "DestCountry",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {
+      "max_price": {"max": {"field": "AvgTicketPrice"}},
+      "min_price": {"min": {"field": "AvgTicketPrice"}},
+      "average_price": {"avg": {"field": "AvgTicketPrice"}}
+    }
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:11:25.248  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:11:25.257  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:11:25.257  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:11:25.258  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:11:25.259  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:11:25.259  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:11:25.259  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:11:27.423  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:11:28.266  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:11:36.607  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:11:36.616  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:11:36.616  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:11:36.616  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:11:36.617  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:11:36.617  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:11:36.617  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:11:38.918  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:11:39.841  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:15:43.234  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:15:43.240  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:15:43.240  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:15:43.240  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:15:43.241  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:15:43.241  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:15:43.241  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:15:44.828  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:15:45.486  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_avg": {"avg": {"field": "age"}}}
+  }},
+  "track_total_hits": 2147483647
+}
+2026-03-19 09:18:38.265  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-03-19 09:18:38.274  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-03-19 09:18:38.274  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-03-19 09:18:38.275  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-03-19 09:18:38.276  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-03-19 09:18:38.276  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-03-19 09:18:38.276  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-03-19 09:18:40.505  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-03-19 09:18:41.348  DEBUG [ ] --- [            main] search.builder.agg.AbstractAggregationBuilder:   L71 - Aggregation DSL:
+{
+  "size": 0,
+  "aggregations": {"age_term": {
+    "terms": {
+      "shard_min_doc_count": 0,
+      "field": "age",
+      "size": 10,
+      "show_term_doc_count_error": false,
+      "min_doc_count": 1,
+      "order": [
+        {"_count": "desc"},
+        {"_key": "asc"}
+      ]
+    },
+    "aggregations": {"salary_avg": {"avg": {"field": "balance"}}}
+  }},
+  "track_total_hits": 2147483647
+}

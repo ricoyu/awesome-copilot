@@ -25,6 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class UriQueryTest {
 	
 	@Test
+	public void testSortBank() {
+		List<Object> banks = Query.uriQuery("bank")
+				.query("*")
+				.sort("account_number:asc")
+				.queryForList();
+		banks.forEach(System.out::println);
+	}
+	@Test
 	public void testQueryReturnString() {
 		List<String> movies = Query.uriQuery("movies")
 				.query("title:2012")

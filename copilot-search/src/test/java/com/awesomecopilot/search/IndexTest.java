@@ -50,6 +50,17 @@ public class IndexTest {
                 .execute();
         System.out.println(result);
     }
+    
+    @Test
+    public void testIndexDoc() {
+        String indexed = ElasticUtils.index("users", """
+                {
+                  "firstName": "Jack",\s
+                  "lastName": "Johnson",
+                  "tags":["guitar", "skateboard"]
+                }""", 1);
+        System.out.println(indexed);
+    }
 
     /**
      * 仅创建Index, 同时设置分片和副本数

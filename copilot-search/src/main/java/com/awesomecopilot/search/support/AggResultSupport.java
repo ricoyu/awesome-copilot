@@ -468,17 +468,17 @@ public final class AggResultSupport {
 			List<StringTerms.Bucket> buckets = ((StringTerms) aggregation).getBuckets();
 
 			for (StringTerms.Bucket bucket : buckets) {
-				Map<String, T> result = new HashMap<>();
+				Map<String, T> resultMap = new HashMap<>();
 				String key = bucket.getKeyAsString();
 				Long docCount = bucket.getDocCount();
 				log.debug("Bucket: {}, Doc Count: {}", key, docCount);
-				result.put(key, (T) docCount);
+				resultMap.put(key, (T) docCount);
 				//没有子聚合的话subAggs也不会为null, 可以放心使用
 				Aggregations subAggs = bucket.getAggregations();
 				for (Aggregation subAgg : subAggs) {
-					result.put(subAgg.getName(), aggResult(subAgg));
+					resultMap.put(subAgg.getName(), aggResult(subAgg));
 				}
-				aggResults.add(result);
+				aggResults.add(resultMap);
 			}
 			return;
 		}
@@ -486,6 +486,27 @@ public final class AggResultSupport {
 			InternalAggregations aggregations = ((InternalNested) aggregation).getAggregations();
 			for (Aggregation aggregation1 : aggregations) {
 				bucketsResult(aggregation1, aggResults);
+			}
+		}
+		if (aggregation instanceof LongTerms) {
+			String name = aggregation.getName();
+			List<LongTerms.Bucket> buckets = ((LongTerms) aggregation).getBuckets();
+			boolean printDebugLog = buckets.size() < PRINT_LOG_LIMIT;
+			for (LongTerms.Bucket bucket : buckets) {
+				Map<String, T> resultMap = new HashMap<>(buckets.size());
+				String key = bucket.getKeyAsString();
+				Long docCount = bucket.getDocCount();
+				//优化, 防止聚合后桶太多, 打印日志会很耗时
+				if (printDebugLog) {
+					log.debug("Bucket: {}, Doc Count: {}", key, docCount);
+				}
+				resultMap.put(key, (T)docCount);
+				//没有子聚合的话subAggs也不会为null, 可以放心使用
+				Aggregations subAggs = bucket.getAggregations();
+				for (Aggregation subAgg : subAggs) {
+					resultMap.put(subAgg.getName(), aggResult(subAgg));
+				}
+				aggResults.add(resultMap);
 			}
 		}
 	}

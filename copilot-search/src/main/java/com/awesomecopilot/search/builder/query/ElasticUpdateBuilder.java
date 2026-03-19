@@ -97,7 +97,7 @@ public class ElasticUpdateBuilder {
 	}
 	
 	/**
-	 * 要更新的内容
+	 * 要更新的内容, 可以是一串JSON字符串, 也可以是对象类型(会自动序列化成JSON)
 	 *
 	 * @param doc
 	 * @return ElasticUpdateBuilder
