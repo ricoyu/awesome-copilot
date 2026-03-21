@@ -84,6 +84,44 @@ public class AggTest {
 		System.out.println(toPrettyJson(map));
 	}
 	
+	/**
+	 * 查出所有年龄分布, 并且这些年龄段中M的平均薪资以及这个年龄段所有的薪资情况
+	 * <p>
+	 * 相当于下面这个Query DSL
+	 *
+	 * <pre>
+	 * POST bank/_search
+	 * {
+	 *   "query": {
+	 *     "match_all": {}
+	 *   },
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "age_agg": {
+	 *       "terms": {
+	 *         "field": "age",
+	 *         "size": 20
+	 *       },
+	 *       "aggs": {
+	 *         "gender_agg": {
+	 *           "terms": {
+	 *             "field": "gender.keyword",
+	 *             "size": 10
+	 *           },
+	 *           "aggs": {
+	 *             "salary_avg": {
+	 *               "stats": {
+	 *                 "field": "balance"
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
 	@Test
 	public void testAgeGenderSubAgg() {
 		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("bank")

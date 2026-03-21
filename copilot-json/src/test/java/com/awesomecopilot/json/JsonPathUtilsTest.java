@@ -2,6 +2,7 @@ package com.awesomecopilot.json;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
+import com.awesomecopilot.json.jsonpath.JsonPathUtils1;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 public class JsonPathUtilsTest {
-
+    
+    @Test
+    public void test() {
+        String json = """
+                {
+                  "error" : {
+                    "root_cause" : [ {
+                      "type" : "index_not_found_exception",
+                      "reason" : "no such index [my_index]",
+                      "resource.type" : "index_or_alias",
+                      "resource.id" : "my_index",
+                      "index_uuid" : "_na_",
+                      "index" : "my_index"
+                    } ],
+                    "type" : "index_not_found_exception",
+                    "reason" : "no such index [my_index]",
+                    "resource.type" : "index_or_alias",
+                    "resource.id" : "my_index",
+                    "index_uuid" : "_na_",
+                    "index" : "my_index"
+                  },
+                  "status" : 404
+                }""";
+        Object error = JsonPathUtils1.readNode(json, "$.error.root_cause[0].reason");
+        Object error2 = JsonPathUtils1.readNode(json, "$.error.root_cause[0].reason");
+        System.out.println( error);
+    }
     @Test
     public void testIfExistsWithBlankJson() {
         assertFalse(JsonPathUtils.ifExists("", "$.name"));

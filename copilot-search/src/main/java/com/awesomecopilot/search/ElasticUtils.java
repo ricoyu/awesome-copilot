@@ -173,7 +173,18 @@ public final class ElasticUtils {
     public static final TransportClient CLIENT = TransportClientFactory.create();
 
     private static final ESBulkProcessor BULK_PROCESSOR = new ESBulkProcessor();
-
+    
+    private static final String USERNAME = "elastic.username";
+    private static final String PASSWORD = "elastic.password";
+    
+    /**
+     * 默认读取classpath下elastic.properties文件
+     */
+    private static PropertyReader propertyReader = new PropertyReader("elastic");
+    
+    private static String username = propertyReader.getString(USERNAME);
+    private static String password = propertyReader.getString(PASSWORD);
+    
     /**
      * 只是初始化一下ES客户端连接
      */
@@ -969,14 +980,14 @@ public final class ElasticUtils {
         /**
          * 默认读取classpath下elastic.properties文件
          */
-        private static PropertyReader propertyReader = new PropertyReader("elastic");
+        //private static PropertyReader propertyReader = new PropertyReader("elastic");
 
-        private static final String USERNAME = "elastic.username";
-        private static final String PASSWORD = "elastic.password";
-
-
-        private static String username = propertyReader.getString(USERNAME);
-        private static String password = propertyReader.getString(PASSWORD);
+        //private static final String USERNAME = "elastic.username";
+        //private static final String PASSWORD = "elastic.password";
+        //
+        //
+        //private static String username = propertyReader.getString(USERNAME);
+        //private static String password = propertyReader.getString(PASSWORD);
 
         /**
          * 基于Entity上的注解信息创建索引
@@ -1329,7 +1340,10 @@ public final class ElasticUtils {
      * Elasticsearch Mapping 相关API
      */
     public static class Mappings {
-
+        
+        private static String username = propertyReader.getString(USERNAME);
+        private static String password = propertyReader.getString(PASSWORD);
+        
         /**
          * 获取所有的Mapping信息
          * 返回的Map是Map套Map, 输出成JSON大概是这样子
@@ -1428,6 +1442,70 @@ public final class ElasticUtils {
          */
         public static ElasticPutMappingBuilder putMapping(String index, Dynamic dynamic) {
             return new ElasticPutMappingBuilder(index, dynamic);
+        }
+        
+        /**
+         * 为已有的Index设置Mapping
+         * mapping 格式类似这样:
+         * <pre>
+         * {
+         *   "properties": {
+         *     "title": {
+         *       "type": "text",
+         *       "boost": 2.0
+         *     },
+         *     "content": {
+         *       "type": "text"
+         *     }
+         *   }
+         * }
+         * </pre>
+         * @param index
+         * @param mapping
+         * @return
+         */
+        public static boolean putMapping(String index, String mapping) {
+            int tryCount = 0;
+            for (String host : RestSupport.HOSTS) {
+                if (host.endsWith("/")) {
+                    host = host.substring(0, host.length() - 1);
+                }
+                String result = "";
+                try {
+                    if (isBlank(username)) {
+                        result = HttpUtils.put(host + "/" + index + "/_mapping")
+                                .body(mapping)
+                                .method(HttpMethod.PUT)
+                                .request();
+                    } else {
+                        result = HttpUtils.put(host + "/" + index + "/_mapping")
+                                .body(mapping)
+                                .method(HttpMethod.PUT)
+                                .basicAuth(username, password)
+                                .request();
+                        
+                    }
+                } catch (Exception e) {
+                    log.error("", e);
+                    if (++tryCount == RestSupport.HOSTS.size()) {
+                        throw new IndexTemplateCreateException(e.getMessage());
+                    }
+                    continue;
+                }
+                boolean hasError = JsonPathUtils.ifExists(result, "$.error");
+                if (hasError) {
+                    String errors = JsonPathUtils.readNode(result, "$.error.root_cause[0].reason");
+                    log.error("PUT index template failed, host {}, [{}]", host, errors);
+                    if (++tryCount == RestSupport.HOSTS.size()) {
+                        throw new IndexTemplateCreateException(errors);
+                    }
+                }
+                
+                Boolean acknowledged = JsonPathUtils.readNode(result, "$.acknowledged");
+                log.info("acknowledged: {}", acknowledged);
+                return acknowledged;
+            }
+            return false;
         }
     }
 

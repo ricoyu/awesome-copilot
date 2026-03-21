@@ -29,6 +29,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MappingTest {
 	
 	@Test
+	public void testPutMapping4Index() {
+		ElasticUtils.Admin.deleteIndex("my_index");
+		ElasticUtils.Admin.createIndex("my_index").create();
+		boolean acknowloged = ElasticUtils.Mappings.putMapping("my_index", """
+				{
+				  "properties": {
+				    "title": {
+				      "type": "text",
+				      "boost": 2.0
+				    },
+				    "content": {
+				      "type": "text"
+				    }
+				  }
+				}""");
+		assertTrue(acknowloged);
+		
+	}
+	@Test
 	public void testDynamicMapping() {
 		ElasticUtils.Admin.deleteIndex("mapping_test");
 		String id = ElasticUtils.index("mapping_test", "{\"uid\": \"123\", \"isVip\": false, \"isAdmin\": true, \"age\": 19, \"height\": 180 }", 1);
