@@ -7,7 +7,8 @@ import com.awesomecopilot.common.lang.errors.ErrorTypes;
 import com.awesomecopilot.common.lang.vo.Result;
 import com.awesomecopilot.common.lang.vo.Results;
 import com.awesomecopilot.json.jackson.JacksonUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
@@ -30,8 +31,9 @@ import static org.springframework.web.reactive.function.BodyInserters.fromValue;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class GatewayBlockRequestHandler extends DefaultBlockRequestHandler {
+	
+	private static final Logger log = LoggerFactory.getLogger(GatewayBlockRequestHandler.class);
 	
 	@Override
 	public Mono<ServerResponse> handleRequest(ServerWebExchange exchange, Throwable ex) {

@@ -7,14 +7,16 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
 
-@Slf4j
 public final class JwtUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
 	
 	/**
 	 * 秘钥

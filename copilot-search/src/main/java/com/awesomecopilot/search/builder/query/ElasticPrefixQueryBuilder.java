@@ -3,11 +3,12 @@ package com.awesomecopilot.search.builder.query;
 import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.PrefixQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -22,8 +23,9 @@ import java.util.List;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticPrefixQueryBuilder extends BaseQueryBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticPrefixQueryBuilder.class);
 
 	public ElasticPrefixQueryBuilder(String... indices) {
 		super(indices);

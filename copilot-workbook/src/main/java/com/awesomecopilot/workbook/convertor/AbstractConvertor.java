@@ -1,7 +1,7 @@
 package com.awesomecopilot.workbook.convertor;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
@@ -19,10 +19,9 @@ import java.lang.reflect.Field;
  * @param <S>
  * @param <T>
  */
-@Data
-@Slf4j
 public abstract class AbstractConvertor<S, T> implements Convertor<S, T> {
 
+	private static final Logger log = LoggerFactory.getLogger(AbstractConvertor.class);
 	private Field field;
 
 	/**
@@ -34,4 +33,28 @@ public abstract class AbstractConvertor<S, T> implements Convertor<S, T> {
 	 * Cell的索引, 从0开始
 	 */
 	private int cellIndex;
+	
+	public Field getField() {
+		return field;
+	}
+	
+	public void setField(Field field) {
+		this.field = field;
+	}
+	
+	public String getColumnName() {
+		return columnName;
+	}
+	
+	public void setColumnName(String columnName) {
+		this.columnName = columnName;
+	}
+	
+	public int getCellIndex() {
+		return cellIndex;
+	}
+	
+	public void setCellIndex(int cellIndex) {
+		this.cellIndex = cellIndex;
+	}
 }

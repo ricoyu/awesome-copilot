@@ -13,8 +13,9 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,8 +54,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * Company: Sexy Uncle Inc.
  * <p>
  */
-@Slf4j
 public final class JsonPathUtils {
+    
+    private static final Logger log = LoggerFactory.getLogger(JsonPathUtils.class);
     
     private static final Configuration CONFIG;
     

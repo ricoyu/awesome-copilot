@@ -1,11 +1,12 @@
 package com.awesomecopilot.search.builder.admin;
 
 import com.awesomecopilot.search.ElasticUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.ReindexAction;
 import org.elasticsearch.index.reindex.ReindexRequestBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 
@@ -19,8 +20,9 @@ import static com.awesomecopilot.common.lang.utils.Assert.notNull;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticReindexBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticReindexBuilder.class);
 	
 	private QueryBuilder filter;
 	

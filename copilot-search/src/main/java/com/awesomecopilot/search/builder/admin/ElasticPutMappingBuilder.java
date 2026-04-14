@@ -3,9 +3,10 @@ package com.awesomecopilot.search.builder.admin;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.Dynamic;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -22,8 +23,9 @@ import static com.awesomecopilot.common.lang.utils.Assert.notNull;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticPutMappingBuilder extends AbstractMappingBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticPutMappingBuilder.class);
 	
 	private String index;
 	

@@ -1,7 +1,8 @@
 package com.awesomecopilot.common.spring.http;
 
 import com.awesomecopilot.common.spring.context.ApplicationContextHolder;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
@@ -21,8 +22,9 @@ import java.util.function.Consumer;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2Support {
+	
+	private static final Logger log = LoggerFactory.getLogger(FormRequestBuilder.class);
 	
 	/**
 	 * Basic Authentication

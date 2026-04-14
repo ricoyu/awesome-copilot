@@ -1,11 +1,12 @@
 package com.awesomecopilot.security.utils;
 
 import com.awesomecopilot.common.lang.utils.Assert;
-import com.google.common.base.Strings;
 import com.awesomecopilot.security.exception.TimestampInvalidException;
 import com.awesomecopilot.security.exception.TimestampMissingException;
 import com.awesomecopilot.security.vo.AuthRequest;
-import lombok.extern.slf4j.Slf4j;
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
@@ -15,9 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -32,8 +31,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class SecurityRequestUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(SecurityRequestUtils.class);
 	
 	/**
 	 * 将所有参数按字母顺序排序后转成一个字符串

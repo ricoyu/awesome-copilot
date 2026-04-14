@@ -3,9 +3,10 @@ package com.awesomecopilot.search.builder.admin;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.Dynamic;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -17,8 +18,9 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticIndexBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticIndexBuilder.class);
 	
 	private CreateIndexRequestBuilder createIndexRequestBuilder;
 	

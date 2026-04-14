@@ -2,9 +2,10 @@ package com.awesomecopilot.workbook.unmarshal.assassinator;
 
 import com.awesomecopilot.workbook.unmarshal.command.CellCommand;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 负责从Sheet的Row中读取正确的Cell, 并将Cell的值写入POJO的字段里面
@@ -17,9 +18,10 @@ import org.apache.poi.ss.usermodel.Row;
  * @version 1.0
  * @on 
  */
-@Slf4j
 @Data
 public class POJOAssassinator {
+	
+	private static final Logger log = LoggerFactory.getLogger(POJOAssassinator.class);
 
 	private CellCommand cellCommand;
 

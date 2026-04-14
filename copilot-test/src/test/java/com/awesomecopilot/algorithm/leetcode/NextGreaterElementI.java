@@ -63,5 +63,6 @@ public class NextGreaterElementI {
 		Map<Integer, Integer> map = new HashMap<>();
 		// 单调栈：存储未找到下一个更大元素的元素，保持栈内元素 递减
 		Deque<Integer> stack = new ArrayDeque<>();
+		return new int[0];
 	}
 }

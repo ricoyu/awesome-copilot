@@ -14,7 +14,8 @@ import com.awesomecopilot.workbook.unmarshal.command.LocalDateTimeCellCommand;
 import com.awesomecopilot.workbook.unmarshal.command.LongCellCommand;
 import com.awesomecopilot.workbook.unmarshal.command.StringCellCommand;
 import com.awesomecopilot.workbook.utils.ReflectionUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
@@ -39,8 +40,9 @@ import java.util.Objects;
  * @version 1.0
  * @on
  */
-@Slf4j
 public class POJOAssassinatorBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(POJOAssassinatorBuilder.class);
 
 	public static List<POJOAssassinator> build(Class<?> pojoType) {
 		Objects.requireNonNull(pojoType);

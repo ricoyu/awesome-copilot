@@ -1,11 +1,12 @@
 package com.awesomecopilot.search.enums;
 
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.aggregations.BucketOrder;
 import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -17,8 +18,9 @@ import org.elasticsearch.search.sort.SortBuilders;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class SortOrder {
+	
+	private static final Logger log = LoggerFactory.getLogger(SortOrder.class);
 	
 	private SortType sortType;
 	

@@ -1,6 +1,7 @@
-package com.awesomecopilot.common.lang.utils;
+package com.awesomecopilot.algorithm.leetcode;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Scanner;
@@ -59,8 +60,9 @@ import java.util.Scanner;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class MaxMinBoardLength {
+	
+	private static final Logger log = LoggerFactory.getLogger(MaxMinBoardLength.class);
 
 	public static void main(String[] args) {
 		Scanner scanner = new Scanner(System.in);

@@ -2,9 +2,10 @@ package com.awesomecopilot.workbook.unmarshal.command;
 
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
@@ -26,9 +27,8 @@ import static java.time.format.DateTimeFormatter.ofPattern;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class LocalDateCellCommand extends BaseCellCommand {
-
+	private static final Logger log = LoggerFactory.getLogger(LocalDateCellCommand.class);
 	/**
 	 * yyyyMMdd
 	 */

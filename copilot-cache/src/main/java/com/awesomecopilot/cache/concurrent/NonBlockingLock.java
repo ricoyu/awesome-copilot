@@ -8,13 +8,10 @@ import com.awesomecopilot.common.lang.concurrent.CopilotThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -220,68 +217,31 @@ public class NonBlockingLock implements Lock, AutoCloseable {
 		scheduler.setKeepAliveTime(10, TimeUnit.SECONDS);
 		scheduler.allowCoreThreadTimeOut(true);
 	}
-
+	
 	private void stopWatchDog() {
 		watchDogStopped = true;
-
+		
 		ScheduledExecutorService executor = watchDogThreadLocal.get();
 		if (executor == null || executor.isShutdown()) {
 			watchDogThreadLocal.remove();
 			return;
 		}
-
+		
 		try {
 			List<Runnable> pending = executor.shutdownNow();
 			log.debug("看门狗停止，丢弃待执行任务数：{}，key={}", pending.size(), key);
-
-			interruptExecutorThreads(executor);
-
+			
+			// 不再调用反射中断，直接等待终止
 			if (!executor.awaitTermination(1500, TimeUnit.MILLISECONDS)) {
-				log.warn("看门狗线程池未能在1.5秒内完全终止，key={}", key);
+				log.warn("看门狗线程池未能在1.5秒内完全终止（通常不会发生），key={}", key);
 			}
-
+			
 			log.info("看门狗已彻底停止，key={}", key);
 		} catch (InterruptedException e) {
 			log.warn("等待看门狗终止被中断", e);
 			Thread.currentThread().interrupt();
 		} finally {
 			watchDogThreadLocal.remove();
-		}
-	}
-
-	/**
-	 * 强制中断线程池的工作线程
-	 */
-	private void interruptExecutorThreads(ScheduledExecutorService executor) {
-		if (!(executor instanceof ScheduledThreadPoolExecutor)) {
-			return;
-		}
-
-		ScheduledThreadPoolExecutor stpe = (ScheduledThreadPoolExecutor) executor;
-
-		try {
-			// 获取 workers 字段（类型是 HashSet<Worker>）
-			Field workersField = ThreadPoolExecutor.class.getDeclaredField("workers");
-			workersField.setAccessible(true);
-
-			// 注意：这里用 Set<?> 或 Set<Object>，**不要**写 Set<ThreadPoolExecutor.Worker>
-			@SuppressWarnings("unchecked")
-			Set<?> workers = (Set<?>) workersField.get(stpe);
-
-			for (Object workerObj : workers) {
-				// workerObj 实际是 Worker 实例
-				// 获取 Worker 的 'thread' 字段（private final Thread thread）
-				Field threadField = workerObj.getClass().getDeclaredField("thread");
-				threadField.setAccessible(true);
-
-				Thread thread = (Thread) threadField.get(workerObj);
-				if (thread != null && thread.isAlive()) {
-					thread.interrupt();
-					log.debug("强制中断看门狗线程：{} (key={})", thread.getName(), key);
-				}
-			}
-		} catch (NoSuchFieldException | IllegalAccessException e) {
-			log.warn("无法通过反射中断看门狗线程（非致命），key={}", key, e);
 		}
 	}
 
@@ -334,5 +294,26 @@ public class NonBlockingLock implements Lock, AutoCloseable {
 			return false;
 		}
 		return true;
+	}
+	
+	/**
+	 * 如果加锁成功, 则执行task, task会在try/catch块中执行,
+	 * 无论task执行成功与否, 最后锁都会释放
+	 * @param task 要执行的代码
+	 */
+	public void ifLocked(Runnable task) {
+		if (locked()) {
+			log.info("加锁成功, 执行task");
+			try {
+				task.run();
+			} catch (Exception e) {
+				log.error("task执行异常", e);
+				throw e;
+			} finally {
+				unlock();
+			}
+		} else {
+			log.warn("加锁失败, task未执行");
+		}
 	}
 }

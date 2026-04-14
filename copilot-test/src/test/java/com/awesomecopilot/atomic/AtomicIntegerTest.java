@@ -1,5 +1,7 @@
 package com.awesomecopilot.atomic;
 
+import org.junit.jupiter.api.Test;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,5 +33,16 @@ public class AtomicIntegerTest {
 		}
 		
 		System.out.println("自加10次数值：--->" + atomicInteger.get());
+	}
+	
+	@Test
+	public void test1() {
+		Integer i = new Integer(127);
+		Integer j = new Integer(127);
+		System.out.println(i == j); //false
+		Integer num = Integer.valueOf(127);
+		Integer num2 = Integer.valueOf(127);
+		System.out.println(num == num2); //true
+		System.out.println(i == 127); //true
 	}
 }

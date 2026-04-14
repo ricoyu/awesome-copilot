@@ -3,10 +3,11 @@ package com.awesomecopilot.search.builder.agg.sub;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.aggregations.BaseAggregationBuilder;
 import org.elasticsearch.search.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +26,9 @@ import java.util.stream.Collectors;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticBucketSortSubAggregation extends SubAggregation {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticBucketSortSubAggregation.class);
 	
 	
 	private SubAggregation parentAggregation;

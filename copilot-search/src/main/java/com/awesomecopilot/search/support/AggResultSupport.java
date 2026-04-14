@@ -1,7 +1,6 @@
 package com.awesomecopilot.search.support;
 
 import com.awesomecopilot.search.builder.agg.support.RangeAggResult;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -21,6 +20,8 @@ import org.elasticsearch.search.aggregations.metrics.InternalMin;
 import org.elasticsearch.search.aggregations.metrics.InternalStats;
 import org.elasticsearch.search.aggregations.metrics.InternalSum;
 import org.elasticsearch.search.aggregations.metrics.InternalTopHits;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,8 +38,9 @@ import java.util.Map;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class AggResultSupport {
+	
+	private static final Logger log = LoggerFactory.getLogger(AggResultSupport.class);
 
 	private static final int PRINT_LOG_LIMIT = 100;
 

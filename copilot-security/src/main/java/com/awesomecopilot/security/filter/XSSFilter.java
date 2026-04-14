@@ -2,10 +2,16 @@ package com.awesomecopilot.security.filter;
 
 import com.awesomecopilot.security.http.XSSRequestWrapper;
 import com.awesomecopilot.security.utils.XSSUtils;
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -22,8 +28,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class XSSFilter implements Filter {
+	
+	private static final Logger log = LoggerFactory.getLogger(XSSFilter.class);
 	
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {

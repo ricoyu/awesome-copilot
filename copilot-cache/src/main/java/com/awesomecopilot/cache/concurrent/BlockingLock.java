@@ -347,35 +347,32 @@ public class BlockingLock implements Lock, AutoCloseable {
 
 	// ========== 修正后的stopWatchDog方法（完整可编译） ==========
 	private void stopWatchDog() {
-		// 优先级1：立即标记终止（先置位，再处理线程池，杜绝新任务执行）
+		// 1. 立即标记终止，防止新任务启动
 		this.watchDogStopped = true;
-
-		// 优先级2：获取线程池（先拿引用，再清空ThreadLocal，防止时序漏洞）
+		
+		// 2. 获取线程池引用
 		ScheduledExecutorService watchDog = watchDogThreadLocal.get();
 		if (watchDog == null || watchDog.isShutdown()) {
-			watchDogThreadLocal.remove(); // 仅当线程池为空时清空
+			watchDogThreadLocal.remove();
 			return;
 		}
-
+		
 		try {
-			// 1. 强制停止线程池（核心：先停止，再清空ThreadLocal）
+			// 3. 关闭线程池并丢弃待执行任务
 			List<Runnable> remaining = watchDog.shutdownNow();
 			log.info("锁[{}]看门狗停止，清理待执行任务数：{}", key, remaining.size());
-
-			// 2. 强制中断当前执行的任务（新增：主动中断线程池工作线程）
-			interruptExecutorThread(watchDog);
-
-			// 3. 等待线程池终止（延长等待时间到2秒，确保终止）
+			
+			// 4. 等待终止（2秒足够，单线程池很快结束）
 			if (!watchDog.awaitTermination(2, TimeUnit.SECONDS)) {
-				log.warn("锁[{}]看门狗线程池终止超时，已强制中断所有线程", key);
+				log.warn("锁[{}]看门狗线程池终止超时（极少发生）", key);
 			}
-
-			// 4. 最后清空ThreadLocal（时序优化）
-			watchDogThreadLocal.remove();
+			
 			log.info("锁[{}]看门狗已彻底终止", key);
 		} catch (InterruptedException e) {
-			log.info("停止看门狗中断", e);
+			log.warn("停止看门狗被中断", e);
 			Thread.currentThread().interrupt();
+		} finally {
+			watchDogThreadLocal.remove();
 		}
 	}
 

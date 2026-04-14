@@ -1,7 +1,8 @@
 package com.awesomecopilot.web.utils;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,8 +18,8 @@ import java.io.IOException;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class WebUtils {
+	private static final Logger log = LoggerFactory.getLogger(WebUtils.class);
 
 	/**
 	 * 读取HttpServletRequest Body

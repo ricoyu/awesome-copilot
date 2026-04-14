@@ -3,12 +3,13 @@ package com.awesomecopilot.search.builder.query;
 import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -27,9 +28,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticTermQueryBuilder extends BaseQueryBuilder implements BoolTermQuery {
 
+	private static final Logger log = LoggerFactory.getLogger(ElasticTermQueryBuilder.class);
 	/**
 	 * 嵌套查询的字段
 	 */

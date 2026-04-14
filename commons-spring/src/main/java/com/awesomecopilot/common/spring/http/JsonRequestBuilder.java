@@ -1,7 +1,8 @@
 package com.awesomecopilot.common.spring.http;
 
 import com.awesomecopilot.common.spring.context.ApplicationContextHolder;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +24,9 @@ import static org.springframework.http.HttpMethod.POST;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class JsonRequestBuilder extends AbstractRequestBuilder {
+    
+    private static final Logger log = LoggerFactory.getLogger(JsonRequestBuilder.class);
 
     /**
      * 返回的数据类型

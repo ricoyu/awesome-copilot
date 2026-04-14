@@ -70,8 +70,8 @@ public class CookingMaxDeliciousness {
 	/**
 	 * 回溯核心方法
 	 * @param materials 剩余食材数量（递归中会复制，避免修改原数组）
-	 * @param cookbooks 料理所需食材
-	 * @param attribute 料理属性
+	 * @param cookbooks 料理所需食材, cookbooks[i][j] 表示制作第 i 种料理需要第 j 种食材的数量
+	 * @param attribute 料理属性 attribute[i] = [x,y] 表示第 i 道料理的美味度 x 和饱腹感 y
 	 * @param limit 最低饱腹感
 	 * @param index 当前遍历到的料理索引（从0开始，避免重复选）
 	 * @param curDelicious 当前累计美味度
@@ -81,8 +81,8 @@ public class CookingMaxDeliciousness {
 		// 终止条件：遍历完所有料理
 		if (index == cookbooks.length) {
 			// 若饱腹感满足要求，更新最大美味度
-			if (curFull >= limit && curDelicious > maxDelicious) {
-				maxDelicious = curDelicious;
+			if (curFull >= limit) {
+				maxDelicious = Math.max(curDelicious, maxDelicious);
 			}
 			return;
 		}
@@ -102,17 +102,19 @@ public class CookingMaxDeliciousness {
 		}
 		
 		if (canCook) {
-			// 复制食材数组，避免修改原数组（递归回溯后恢复状态）
-			int[] newMaterials = materials.clone();
 			// 扣除制作当前料理的食材
 			for (int i = 0; i < 5; i++) {
-			    newMaterials[i] -= need[i];
+				materials[i] -= need[i];
 			}
 			// 累计美味度和饱腹感
 			int newDelicious = curDelicious + attribute[index][0];
 			int newFull = curFull + attribute[index][1];
 			// 递归处理下一个料理
-			backtrack(newMaterials, cookbooks, attribute, limit, index + 1, newDelicious, newFull);
+			backtrack(materials, cookbooks, attribute, limit, index + 1, newDelicious, newFull);
+			// 4. 回溯：恢复食材数量（撤销本次选择，不影响其他分支）
+			for (int j = 0; j < 5; j++) {
+				materials[j] += cookbooks[index][j];
+			}
 		}
 	}
 }

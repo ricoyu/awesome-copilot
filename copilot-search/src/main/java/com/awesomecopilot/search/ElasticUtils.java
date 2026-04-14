@@ -12,16 +12,6 @@ import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.utils.HttpUtils;
 import com.awesomecopilot.search.builder.ElasticIndexDocBuilder;
 import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
-import com.awesomecopilot.search.builder.bulk.ElasticBulkIndexBuilder;
-import com.awesomecopilot.search.builder.bulk.ElasticBulkUpdateBuilder;
-import com.awesomecopilot.search.builder.query.ElasticContextSuggestBuilder;
-import com.awesomecopilot.search.builder.query.ElasticGeoDistanceQueryBuilder;
-import com.awesomecopilot.search.builder.query.ElasticMatchPhrasePrefixQueryBuilder;
-import com.awesomecopilot.search.builder.query.ElasticMultiGetBuilder;
-import com.awesomecopilot.search.builder.query.ElasticPrefixQueryBuilder;
-import com.awesomecopilot.search.builder.query.ElasticQueryBuilder;
-import com.awesomecopilot.search.builder.query.ElasticSuggestBuilder;
-import com.awesomecopilot.search.builder.query.ElasticUpdateBuilder;
 import com.awesomecopilot.search.builder.admin.ClusterSettingBuilder;
 import com.awesomecopilot.search.builder.admin.ElasticIndexBuilder;
 import com.awesomecopilot.search.builder.admin.ElasticIndexTemplateBuilder;
@@ -42,26 +32,37 @@ import com.awesomecopilot.search.builder.agg.ElasticStatsAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search.builder.bulk.ESBulkProcessor;
+import com.awesomecopilot.search.builder.bulk.ElasticBulkIndexBuilder;
+import com.awesomecopilot.search.builder.bulk.ElasticBulkUpdateBuilder;
 import com.awesomecopilot.search.builder.query.ElasticBoolQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticContextSuggestBuilder;
 import com.awesomecopilot.search.builder.query.ElasticExistsQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticGeoDistanceQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticIdsQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticMatchAllQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticMatchPhrasePrefixQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticMatchPhraseQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticMatchQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticMultiGetBuilder;
 import com.awesomecopilot.search.builder.query.ElasticMultiMatchQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticPipelineBuilder;
+import com.awesomecopilot.search.builder.query.ElasticPrefixQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticQueryStringBuilder;
 import com.awesomecopilot.search.builder.query.ElasticScrollQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticSuggestBuilder;
 import com.awesomecopilot.search.builder.query.ElasticTemplateQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search.builder.query.ElasticTermsQueryBuilder;
+import com.awesomecopilot.search.builder.query.ElasticUpdateBuilder;
 import com.awesomecopilot.search.builder.query.ElasticUriQueryBuilder;
 import com.awesomecopilot.search.cache.ElasticCacheUtils;
 import com.awesomecopilot.search.constants.ElasticConstants;
 import com.awesomecopilot.search.enums.Analyzer;
 import com.awesomecopilot.search.enums.Dynamic;
 import com.awesomecopilot.search.enums.IndexState;
-import com.awesomecopilot.search.exception.IndexTemplateCreateException;
+import com.awesomecopilot.search.exception.PutMappingException;
+import com.awesomecopilot.search.exception.PutSettingsException;
 import com.awesomecopilot.search.factory.TransportClientFactory;
 import com.awesomecopilot.search.support.BulkResult;
 import com.awesomecopilot.search.support.IndexSupport;
@@ -71,7 +72,6 @@ import com.awesomecopilot.search.support.SettingsSupport;
 import com.awesomecopilot.search.support.UpdateResult;
 import com.awesomecopilot.search.vo.Index;
 import com.awesomecopilot.search.vo.VersionedDoc;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -129,6 +129,8 @@ import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
 import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -162,9 +164,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticUtils {
-
+    
+    private static final Logger log = LoggerFactory.getLogger(ElasticUtils.class);
     /**
      * 唯一的一个type是_doc
      */
@@ -1200,7 +1202,7 @@ public final class ElasticUtils {
                 } catch (Exception e) {
                     log.error("", e);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new IndexTemplateCreateException(e.getMessage());
+                        throw new PutSettingsException(e.getMessage());
                     }
                     continue;
                 }
@@ -1209,7 +1211,7 @@ public final class ElasticUtils {
                     String errors = JsonPathUtils.readNode(result, "$.error.caused_by.reason");
                     log.error("PUT index template failed, host {}, [{}]", host, errors);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new IndexTemplateCreateException(errors);
+                        throw new PutSettingsException(errors);
                     }
                 }
 
@@ -1460,8 +1462,8 @@ public final class ElasticUtils {
          *   }
          * }
          * </pre>
-         * @param index
-         * @param mapping
+         * @param index  索引名
+         * @param mapping mapping JSON串
          * @return
          */
         public static boolean putMapping(String index, String mapping) {
@@ -1488,7 +1490,7 @@ public final class ElasticUtils {
                 } catch (Exception e) {
                     log.error("", e);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new IndexTemplateCreateException(e.getMessage());
+                        throw new PutMappingException(e.getMessage());
                     }
                     continue;
                 }
@@ -1497,7 +1499,7 @@ public final class ElasticUtils {
                     String errors = JsonPathUtils.readNode(result, "$.error.root_cause[0].reason");
                     log.error("PUT index template failed, host {}, [{}]", host, errors);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new IndexTemplateCreateException(errors);
+                        throw new PutMappingException(errors);
                     }
                 }
                 
@@ -1522,6 +1524,64 @@ public final class ElasticUtils {
          */
         public static ElasticUpdateSettingBuilder update(String... indices) {
             return new ElasticUpdateSettingBuilder(indices);
+        }
+        
+        /**
+         * 设置索引的Settings, 比如
+         * <pre>
+         * {
+         *   "number_of_replicas": 2,          // 修改副本数（最常用）
+         *   "refresh_interval": "30s",        // 修改数据刷新间隔
+         *   "index.max_result_window": 20000, // 修改分页查询最大条数
+         *   "index.unassigned.node_left.delayed_timeout": "5m" // 分片延迟分配
+         * }
+         * </pre>
+         * @param index 索引名
+         * @param settings settings JSON串
+         * @return 是否设置成功
+         */
+        public static boolean putSettings(String index, String settings) {
+            int tryCount = 0;
+            for (String host : RestSupport.HOSTS) {
+                if (host.endsWith("/")) {
+                    host = host.substring(0, host.length() - 1);
+                }
+                String result = "";
+                try {
+                    if (isBlank(username)) {
+                        result = HttpUtils.put(host + "/" + index + "/_settings")
+                                .body(settings)
+                                .method(HttpMethod.PUT)
+                                .request();
+                    } else {
+                        result = HttpUtils.put(host + "/" + index + "/_settings")
+                                .body(settings)
+                                .method(HttpMethod.PUT)
+                                .basicAuth(username, password)
+                                .request();
+                        
+                    }
+                } catch (Exception e) {
+                    log.error("", e);
+                    if (++tryCount == RestSupport.HOSTS.size()) {
+                        throw new PutSettingsException(e.getMessage());
+                    }
+                    continue;
+                }
+                boolean hasError = JsonPathUtils.ifExists(result, "$.error");
+                if (hasError) {
+                    String errors = JsonPathUtils.readNode(result, "$.error.root_cause[0].reason");
+                    log.error("PUT index template failed, host {}, [{}]", host, errors);
+                    if (++tryCount == RestSupport.HOSTS.size()) {
+                        throw new PutSettingsException(errors);
+                    }
+                }
+                
+                Boolean acknowledged = JsonPathUtils.readNode(result, "$.acknowledged");
+                log.info("acknowledged: {}", acknowledged);
+                return acknowledged;
+            }
+            return false;
         }
     }
 
@@ -1551,7 +1611,7 @@ public final class ElasticUtils {
          */
         public static Map<String, Object> allSettings() {
             String url = RestSupport.HOSTS.get(0) +"/_cluster/settings?include_defaults=true&flat_settings=true";
-            String settings = HttpUtils.get(url).basicAuth("elastic", "qianyu14")
+            String settings = HttpUtils.get(url).basicAuth(username, password)
                     .request();
             Map<String, Object> settingsMap = JacksonUtils.toMap(settings);
             return settingsMap;

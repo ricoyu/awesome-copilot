@@ -5,7 +5,8 @@ import com.awesomecopilot.security.exception.JwtTokenParseException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwt;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.Key;
 import java.util.function.Consumer;
@@ -21,8 +22,9 @@ import java.util.function.Consumer;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class Jwts {
+	
+	private static final Logger log = LoggerFactory.getLogger(Jwts.class);
 	
 	public static JwtBuilder signingKey(Key key) {
 		Assert.notNull(key, "key cannot be null");

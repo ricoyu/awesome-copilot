@@ -1,5 +1,8 @@
 package com.awesomecopilot.cache.concurrent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * <b>分布式锁</b><p>
  * 提供加锁成功与否的返回结果与解锁操作
@@ -13,7 +16,9 @@ package com.awesomecopilot.cache.concurrent;
  * @version 1.0
  * @formatter:off
  */
-public interface Lock{
+public interface Lock {
+	
+	public static final Logger log = LoggerFactory.getLogger(Lock.class);
 	
 	/**
 	 * 是否成功获取锁
@@ -50,5 +55,14 @@ public interface Lock{
 	 * @throws IllegalMonitorStateException
 	 */
 	//public void unlockAnyway();
+	
+	/**
+	 * 如果加锁成功, 则执行task, task会在try/catch块中执行,
+	 * 无论task执行成功与否, 最后锁都会释放
+	 * @param task 要执行的代码
+	 */
+	public default void ifLocked(Runnable task) {
+		log.info("只有NonBlockingLock支持该方法");
+	}
 	
 }

@@ -22,6 +22,12 @@ public interface SqlQueryBuilder {
 
 	/**
 	 * 将一个查询条件塞到Map<String, Object> params = new HashMap<>()里面, 作为SQL查询的参数值
+	 * 如果这个参数是用作SQL的 IN 查询, 不能用数组, 要用List, Hibernate会把整个数组当成一个二进制对象序列化,
+	 * 然后产生类似这样的奇怪报错信息:
+	 * <p>
+	 * check the manual that corresponds to your MySQL server version for the right syntax to use near 'x'aced0005757200025b4a782004b512b17593020000787000000004000000000000000a00000000' at line 1]
+	 * <p>
+	 * 所以这边如果检测到传入的参数是数组, 则将其转换成List
 	 * @param paramName
 	 * @param paramValue
 	 * @return SqlQueryBuilder
@@ -135,4 +141,5 @@ public interface SqlQueryBuilder {
 	 * @param <T>
 	 */
 	public <T> T findOne();
+	
 }

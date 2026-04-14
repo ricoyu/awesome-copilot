@@ -4,7 +4,8 @@ import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.Dynamic;
 import com.awesomecopilot.search.enums.FieldType;
 import com.awesomecopilot.search.support.FieldDef;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,8 +26,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public abstract class AbstractMappingBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(AbstractMappingBuilder.class);
 	
 	private String index;
 	

@@ -1,7 +1,6 @@
 package com.awesomecopilot.search.builder.bulk;
 
 import com.awesomecopilot.search.ElasticUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -9,6 +8,8 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -20,8 +21,9 @@ import org.elasticsearch.common.unit.TimeValue;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ESBulkProcessor {
+	
+	private static final Logger log = LoggerFactory.getLogger(ESBulkProcessor.class);
 	
 	public BulkProcessor bulkProcessor() {
 		return BulkProcessor.builder(ElasticUtils.CLIENT,

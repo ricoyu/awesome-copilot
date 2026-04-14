@@ -795,3 +795,70 @@ List<Map<String, Object>> resultMap = Aggs.terms("kibana_sample_data_flights")
         .get();
 ```
 
+
+
+# 五 整合SpringCloud注意点
+
+1. 项目要添加依赖
+
+   ```xml
+   <!-- 解决 ES Netty 依赖冲突：缺少 UnixChannel 类 -->
+   <dependency>
+       <groupId>io.netty</groupId>
+       <artifactId>netty-transport-native-unix-common</artifactId>
+       <version>4.1.94.Final</version> <!-- 跟你的 ES 客户端 Netty 版本一致 -->
+   </dependency>
+   <dependency>
+       <groupId>io.netty</groupId>
+       <artifactId>netty-transport-classes-epoll</artifactId>
+       <version>4.1.94.Final</version>
+   </dependency>
+   ```
+
+   不做这步处理运行会报错
+
+   ```
+   io.netty.channel.ChannelPipelineException: io.netty.handler.ssl.SslHandler.handlerAdded() has thrown an exception; removed.
+   	at io.netty.channel.DefaultChannelPipeline.callHandlerAdded0(DefaultChannelPipeline.java:624)
+   	at io.netty.channel.DefaultChannelPipeline.replace(DefaultChannelPipeline.java:572)
+   	at io.netty.channel.DefaultChannelPipeline.replace(DefaultChannelPipeline.java:509)
+   	at org.elasticsearch.xpack.core.security.transport.netty4.SecurityNetty4Transport$ClientSslHandlerInitializer.connect(SecurityNetty4Transport.java:205)
+   	at io.netty.channel.AbstractChannelHandlerContext.invokeConnect(AbstractChannelHandlerContext.java:659)
+   	at io.netty.channel.AbstractChannelHandlerContext.connect(AbstractChannelHandlerContext.java:634)
+   	at io.netty.handler.logging.LoggingHandler.connect(LoggingHandler.java:240)
+   	at io.netty.channel.AbstractChannelHandlerContext.invokeConnect(AbstractChannelHandlerContext.java:657)
+   	at io.netty.channel.AbstractChannelHandlerContext.connect(AbstractChannelHandlerContext.java:634)
+   	at io.netty.channel.AbstractChannelHandlerContext.connect(AbstractChannelHandlerContext.java:618)
+   	at io.netty.channel.DefaultChannelPipeline.connect(DefaultChannelPipeline.java:978)
+   	at io.netty.channel.AbstractChannel.connect(AbstractChannel.java:265)
+   	at io.netty.bootstrap.Bootstrap$3.run(Bootstrap.java:264)
+   	at io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:173)
+   	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute$$$capture(AbstractEventExecutor.java:166)
+   	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java)
+   	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:470)
+   	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:569)
+   	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:997)
+   	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+   	at java.base/java.lang.Thread.run(Thread.java:842)
+   Caused by: java.lang.NoClassDefFoundError: io/netty/channel/unix/UnixChannel
+   	at io.netty.handler.ssl.SslHandler.setOpensslEngineSocketFd(SslHandler.java:2244)
+   	at io.netty.handler.ssl.SslHandler.handlerAdded(SslHandler.java:2083)
+   	at io.netty.channel.AbstractChannelHandlerContext.callHandlerAdded(AbstractChannelHandlerContext.java:1130)
+   	at io.netty.channel.DefaultChannelPipeline.callHandlerAdded0(DefaultChannelPipeline.java:609)
+   ```
+
+   SpringCloud 自带了低版本 / 不完整的 Netty, 覆盖了你 ES 需要的完整 Netty, 导致类找不到
+
+   * 报错 NoClassDefFoundError: io/netty/channel/unix/UnixChannel
+   * 就是 SpringCloud 自带的 Netty 缺少 UnixChannel 这个类
+
+2. 启动类要排除SpringBoot的ES自动化配置配, 如果你配置了ES的安全性, 启动会报错
+
+   ```java
+   @SpringBootApplication(exclude =  {
+   		ElasticsearchRestClientAutoConfiguration.class,
+   		ElasticsearchDataAutoConfiguration.class
+   })
+   ```
+
+   

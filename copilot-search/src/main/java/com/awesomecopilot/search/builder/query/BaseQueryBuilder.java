@@ -12,7 +12,6 @@ import com.awesomecopilot.search.exception.DocumentDeleteException;
 import com.awesomecopilot.search.support.SearchHitsSupport;
 import com.awesomecopilot.search.vo.ElasticPage;
 import com.awesomecopilot.search.vo.ElasticScroll;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -31,6 +30,8 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -53,8 +54,9 @@ import static org.elasticsearch.common.lucene.search.function.CombineFunction.MU
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public abstract class BaseQueryBuilder implements BoolQuery {
+	
+	private static final Logger log = LoggerFactory.getLogger(BaseQueryBuilder.class);
 
 	private ElasticBoolQueryBuilder boolQueryBuilder;
 

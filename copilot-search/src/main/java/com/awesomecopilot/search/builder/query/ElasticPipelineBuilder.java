@@ -6,7 +6,8 @@ import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.networking.utils.HttpUtils;
 import com.awesomecopilot.search.exception.CreatePipelineException;
 import com.awesomecopilot.search.support.RestSupport;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -22,8 +23,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticPipelineBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticPipelineBuilder.class);
+	
 	private static final String USERNAME = "elastic.username";
 	private static final String PASSWORD = "elastic.password";
 	

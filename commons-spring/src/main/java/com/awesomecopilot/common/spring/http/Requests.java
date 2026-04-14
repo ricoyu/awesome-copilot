@@ -3,7 +3,8 @@ package com.awesomecopilot.common.spring.http;
 import com.awesomecopilot.common.spring.context.ApplicationContextHolder;
 import com.awesomecopilot.common.spring.utils.ServletUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -30,8 +31,9 @@ import java.util.Set;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class Requests {
+	
+	private static final Logger log = LoggerFactory.getLogger(Requests.class);
 	
 	private static final String SCHEMA_HTTP = "http";
 	

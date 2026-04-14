@@ -48,6 +48,7 @@ public class ParenthesesGenerator {
 		// 调用回溯方法，初始状态：空字符串，0个左括号，0个右括号
 		backtrack(result, new StringBuilder(), 0, 0, n);
 		scanner.close();
+		System.out.print(result);
 	}
 
 	/**

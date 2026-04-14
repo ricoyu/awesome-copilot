@@ -6,13 +6,14 @@ import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregation;
 import com.awesomecopilot.search.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search.constants.ElasticConstants;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHits;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +28,9 @@ import java.util.List;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public abstract class AbstractAggregationBuilder{
+	
+	private static final Logger log = LoggerFactory.getLogger(AbstractAggregationBuilder.class);
 	
 	protected String[] indices;
 	

@@ -1,13 +1,15 @@
 package com.awesomecopilot.search.builder.query;
 
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.SortSupport;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermsQueryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,8 +27,9 @@ import java.util.List;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticTermsQueryBuilder extends BaseQueryBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticTermsQueryBuilder.class);
 	
 	private Object[] values;
 	
@@ -42,7 +45,9 @@ public final class ElasticTermsQueryBuilder extends BaseQueryBuilder {
 	 */
 	public ElasticTermsQueryBuilder query(String field, Object... values) {
 		this.field = field;
-		this.values = values;
+		if (values.length == 1 && ArrayUtils.isArray(values[0])) {
+			this.values = ArrayUtils.toObjectArray(values[0]);
+		}
 		return this;
 	}
 	

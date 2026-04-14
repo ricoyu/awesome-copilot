@@ -13,7 +13,6 @@ import com.awesomecopilot.workbook.exception.UnrecognizedWorkbookException;
 import com.awesomecopilot.workbook.exception.WorkbookCreationException;
 import com.awesomecopilot.workbook.marshal.CellWriter;
 import com.awesomecopilot.workbook.marshal.VarInfo;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -25,6 +24,8 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
@@ -47,9 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.awesomecopilot.common.lang.utils.IOUtils.GBK;
-import static com.awesomecopilot.workbook.marshal.VarInfo.DT;
-import static com.awesomecopilot.workbook.marshal.VarInfo.NUM;
-import static com.awesomecopilot.workbook.marshal.VarInfo.STR;
+import static com.awesomecopilot.workbook.marshal.VarInfo.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.text.MessageFormat.format;
 import static java.util.Arrays.asList;
@@ -57,9 +56,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.poi.ss.usermodel.CellType.FORMULA;
-import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
-import static org.apache.poi.ss.usermodel.CellType.STRING;
+import static org.apache.poi.ss.usermodel.CellType.*;
 
 /**
  * 读写excel工具类
@@ -72,8 +69,9 @@ import static org.apache.poi.ss.usermodel.CellType.STRING;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ExcelUtils {
+	private static final Logger log = LoggerFactory.getLogger(ExcelUtils.class);
+	
 	/**
 	 * 2003- 版本的excel
 	 */

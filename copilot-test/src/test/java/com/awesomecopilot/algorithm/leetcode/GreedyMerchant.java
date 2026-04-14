@@ -1,9 +1,7 @@
-package com.awesomecopilot.common.lang.utils;
+package com.awesomecopilot.algorithm.leetcode;
 
 import java.util.Arrays;
 import java.util.Scanner;
-
-import static java.util.concurrent.TimeUnit.DAYS;
 
 /**
  * 贪心的商人

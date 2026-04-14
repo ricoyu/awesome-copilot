@@ -3,12 +3,13 @@ package com.awesomecopilot.search.factory;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.search.exception.TransportClientInitException;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.elasticsearch.xpack.client.PreBuiltXPackTransportClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,8 +26,9 @@ import java.util.Objects;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class TransportClientFactory {
+	
+	private static final Logger log = LoggerFactory.getLogger(TransportClientFactory.class);
 	
 	private static final String CLUSTER_NAME = "cluster.name";
 	private static final String USERNAME = "elastic.username";

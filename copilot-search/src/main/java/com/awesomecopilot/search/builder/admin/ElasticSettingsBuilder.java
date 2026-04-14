@@ -1,9 +1,10 @@
 package com.awesomecopilot.search.builder.admin;
 
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -18,8 +19,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticSettingsBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticSettingsBuilder.class);
 	
 	/**
 	 * number_of_shards

@@ -1,7 +1,8 @@
 package com.awesomecopilot.cache.operations;
 
 import com.awesomecopilot.json.jackson.JacksonUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
@@ -27,8 +28,9 @@ import static java.util.stream.Collectors.*;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class JedisClusterOperations implements JedisOperations {
+	
+	private static final Logger log = LoggerFactory.getLogger(JedisClusterOperations.class);
 	
 	private final JedisCluster jedisCluster;
 	

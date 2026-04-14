@@ -38,7 +38,6 @@ public enum ErrorTypes implements ErrorType {
      * 提交数据有误, 比如应该是布尔值的, 但是传了个"on", Jackson在转换成Boolean报错
      */
     BAD_REQUEST("4001","template.bad.request", "请求参数不合法"),
-    
     /**
      * 数据校验失败的时候msg取的是具体的校验失败的msg, 这里的"数据校验失败"其实是没有用的, 但是这里定义了error code
      */
@@ -52,9 +51,7 @@ public enum ErrorTypes implements ErrorType {
     TOKEN_INVALID("4012", "template.invalid.token.error", "无效的Token"),
     OAUTH2_GET_TOKENKEY_ERROR("4013", "template.get.tokenkey.error", "获取token key失败"),
     TOKEN_EXPIRED("4014", "template.token.expired.error", "您尚未登录或者Token已过期, 请重新登录"),
-
     MISSING_IDEMPOTENT_TOKEN("4015", "missing.idempotent.token", "缺少幂等性Token"),
-    
     USERNAME_PASSWORD_MISMATCH("4016", "template.username.password.error", "用户名或密码错误"),
     ACCOUNT_LOCKED("4017", "template.account.locked", "账户已锁定"),
     ACCOUNT_DISABLED("4018", "template.account.disabled", "账户已禁用"),
@@ -71,8 +68,15 @@ public enum ErrorTypes implements ErrorType {
     SMS_CODE_NOT_FOUND("40119", "template.smscode.not.found", "验证码不存在"),
     SMS_CODE_NOT_EXPIRED("40120", "template.smscode.expired", "验证码已过期"),
     API_SIGN_FAILED("40121", "template.apisign.failed", "接口签名验证失败"),
+    ACCESS_DENIED("400122", "template.access.denied", "你无权访问该资源"),
+    
+    //-------------------- Elasticsearch相关错误 403开头--------------------------------------
+    CREATE_INDEX_FAIL("40301", "template.bulk.index.fail", "创建索引失败"),
+    BULK_INDEX_FAIL("40302", "template.bulk.index.fail", "批量写入文档失败"),
+    INSERT_DOC_FAIL("40303", "template.insert.doc.fail", "写入单个文档失败"),
+    
 
-    ACCESS_DENIED("4031", "template.access.denied", "你无权访问该资源"),
+    
     //-------------------- 流控相关错误, 429 开头 --------------------------------------
     TOO_MANY_REQUESTS("42900", "template.too.many.requests", "Too Many Requests"),
     FLOW_EXCEPTION("42901", "template.flow.control", "已被流控"),

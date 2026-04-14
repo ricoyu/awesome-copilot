@@ -4,7 +4,6 @@ import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.SuggestMode;
 import com.awesomecopilot.search.enums.SuggestSort;
 import com.awesomecopilot.search.exception.SuggestException;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.Suggest.Suggestion;
@@ -13,6 +12,8 @@ import org.elasticsearch.search.suggest.SuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestion;
 import org.elasticsearch.search.suggest.term.TermSuggestion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -32,8 +33,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticSuggestBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticSuggestBuilder.class);
 	
 	private String[] indices;
 	

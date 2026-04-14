@@ -2,7 +2,8 @@ package com.awesomecopilot.networking.utils;
 
 import com.awesomecopilot.codec.RedixUtils;
 import com.awesomecopilot.networking.matcher.IpAddressMatcher;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,10 +25,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class IPUtils {
 	
-	
+	private static final Logger log = LoggerFactory.getLogger(IPUtils.class);
 	/**
 	 * xx.xx.xx.2/24
 	 * 斜杠后面的数字就表示子网掩码, 数字具体代表32位子网掩码(二进制形式)中前面的"1"的个数

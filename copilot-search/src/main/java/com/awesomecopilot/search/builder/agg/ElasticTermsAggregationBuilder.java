@@ -9,7 +9,6 @@ import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.AggResultSupport;
 import com.awesomecopilot.search.support.SortSupport;
 import com.awesomecopilot.search.vo.ElasticPage;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -17,6 +16,8 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +37,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder implements TermAggregationBuilder, SubAggregatable, Compositable {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticTermsAggregationBuilder.class);
 
 	/**
 	 * 嵌套聚合名称

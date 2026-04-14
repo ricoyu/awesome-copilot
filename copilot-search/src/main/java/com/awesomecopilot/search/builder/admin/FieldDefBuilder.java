@@ -5,14 +5,16 @@ import com.awesomecopilot.search.enums.ContextType;
 import com.awesomecopilot.search.enums.FieldType;
 import com.awesomecopilot.search.support.FieldContext;
 import com.awesomecopilot.search.support.FieldDef;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 public final class FieldDefBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(FieldDefBuilder.class);
 	
 	private AbstractMappingBuilder elasticMappingBuilder;
 	

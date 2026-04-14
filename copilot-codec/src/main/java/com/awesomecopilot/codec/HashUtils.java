@@ -4,9 +4,10 @@ import com.awesomecopilot.codec.exception.EncodeException;
 import com.awesomecopilot.codec.exception.HmacSha256Exception;
 import com.awesomecopilot.codec.exception.NoSuchHashAlgorithmException;
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -28,8 +29,9 @@ import java.util.Objects;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class HashUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(HashUtils.class);
 	
 	private static final String CHARSET_UTF8 = "UTF-8";
 	

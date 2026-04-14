@@ -3,7 +3,8 @@ package com.awesomecopilot.json.jackson;
 import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,8 +23,9 @@ import static org.apache.commons.lang3.StringUtils.trim;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class JsonNodeUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(JsonNodeUtils.class);
 	
 	public static String readStr(JsonNode rootNode, String nodeName) {
 		JsonNode jsonNode = rootNode.get(nodeName);

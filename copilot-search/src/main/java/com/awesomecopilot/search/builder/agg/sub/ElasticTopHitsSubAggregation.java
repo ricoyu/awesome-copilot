@@ -1,10 +1,11 @@
 package com.awesomecopilot.search.builder.agg.sub;
 
 import com.awesomecopilot.search.enums.SortOrder;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +23,9 @@ import static org.apache.commons.lang3.StringUtils.split;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticTopHitsSubAggregation extends SubAggregation {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticTopHitsSubAggregation.class);
 	
 	/**
 	 * 聚合的名字

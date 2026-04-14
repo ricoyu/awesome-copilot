@@ -3,10 +3,11 @@ package com.awesomecopilot.search.builder.admin;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.search.ElasticUtils;
 import com.awesomecopilot.search.enums.Dynamic;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +25,9 @@ import static java.util.Arrays.asList;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticIndexTemplateBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticIndexTemplateBuilder.class);
 	
 	private TransportClient client;
 	

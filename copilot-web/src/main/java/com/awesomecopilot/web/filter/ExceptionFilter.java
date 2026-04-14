@@ -8,7 +8,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
@@ -26,8 +27,9 @@ import static com.awesomecopilot.common.lang.errors.ErrorTypes.INTERNAL_SERVER_E
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ExceptionFilter implements Filter {
+	
+	private static final Logger log = LoggerFactory.getLogger(ExceptionFilter.class);
 	
 	public static final String ROUTE_CAUSE = "routeCause";
 	

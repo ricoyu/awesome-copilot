@@ -1,6 +1,7 @@
 package com.awesomecopilot.workbook.unmarshal.convertor.datetime;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 
@@ -14,8 +15,9 @@ import java.time.LocalDateTime;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class DateTimeConvertors {
+	
+	private static final Logger log = LoggerFactory.getLogger(DateTimeConvertors.class);
 
 	private static DateTimeConvertor[] convertors = new DateTimeConvertor[] {
 			new DateTimeConvertor19(),

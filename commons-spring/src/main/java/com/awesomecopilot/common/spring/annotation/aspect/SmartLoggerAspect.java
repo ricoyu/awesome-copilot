@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -25,11 +24,10 @@ import org.springframework.stereotype.Component;
  * @version 1.0
  */
 @Aspect
-@Slf4j
 @Component
 public class SmartLoggerAspect {
 
-	private static Logger logger = LoggerFactory.getLogger(SmartLoggerAspect.class);
+	private static Logger log = LoggerFactory.getLogger(SmartLoggerAspect.class);
 
 	private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -50,7 +48,7 @@ public class SmartLoggerAspect {
 		try {
 			log.info("参数: {}", objectMapper.writeValueAsString(joinPoint.getArgs()));
 		} catch (JsonProcessingException e) {
-			logger.info("打印参数报错", e);
+			log.info("打印参数报错", e);
 		}
 	}
 	

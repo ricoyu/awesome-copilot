@@ -2,7 +2,8 @@ package com.awesomecopilot.search.support;
 
 import com.awesomecopilot.search.enums.Direction;
 import com.awesomecopilot.search.enums.SortOrder;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +23,9 @@ import static org.apache.commons.lang3.StringUtils.split;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class SortSupport {
+	
+	private static final Logger log = LoggerFactory.getLogger(SortSupport.class);
 	
 	/**
 	 * 排序字符串支持的格式:

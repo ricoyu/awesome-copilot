@@ -9,7 +9,6 @@ import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.enums.Scope;
 import com.awesomecopilot.networking.http.OAuth2Support;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -22,6 +21,8 @@ import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.message.BasicNameValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -48,8 +49,8 @@ import static org.apache.http.HttpHeaders.CONTENT_TYPE;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2Support {
+	private static final Logger log = LoggerFactory.getLogger(FormRequestBuilder.class);
 	
 	public FormRequestBuilder url(String url) {
 		super.url(url);

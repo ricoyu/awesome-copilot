@@ -1,8 +1,9 @@
 package com.awesomecopilot.search.support;
 
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -14,8 +15,9 @@ import org.json.JSONObject;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class LogSupport {
+	
+	private static final Logger log = LoggerFactory.getLogger(LogSupport.class);
 	
 	/**
 	 * 打印QueryDSL

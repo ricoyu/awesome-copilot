@@ -1,7 +1,6 @@
 package com.awesomecopilot.networking.utils;
 
 import com.awesomecopilot.networking.exception.HttpRequestException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
@@ -16,6 +15,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -48,8 +49,9 @@ import java.util.Map;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class HttpClientUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(HttpClientUtils.class);
 	
 	private static String EMPTY_STR = "";
 	private static String UTF_8 = "UTF-8";

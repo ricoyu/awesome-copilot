@@ -745,7 +745,7 @@ public class MessageContent {
 
 
 
-# 五 枚举类型示例
+# 五 枚举 enum 类型示例
 
 1. enum类型
 
@@ -806,7 +806,7 @@ public class MessageContent {
 
 
 
-   
+
 
 # 五 完整示例
 

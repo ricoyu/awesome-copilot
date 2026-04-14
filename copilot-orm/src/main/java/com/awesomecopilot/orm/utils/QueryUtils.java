@@ -2,7 +2,6 @@ package com.awesomecopilot.orm.utils;
 
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +20,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author Rico Yu	ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class QueryUtils {
 
-	private static final Logger logger = LoggerFactory.getLogger(QueryUtils.class);
+	private static final Logger log = LoggerFactory.getLogger(QueryUtils.class);
 
 	/**
 	 * 用于SQL查询中的 like子句的条件 <p> 
@@ -168,7 +166,7 @@ public final class QueryUtils {
 		try {
 			code = ReflectionUtils.getFieldValue("code", clazz);
 		} catch (IllegalArgumentException e) {
-			logger.warn("{} 没有定义 code 属性, 忽略次查询条件", clazz.getSimpleName());
+			log.warn("{} 没有定义 code 属性, 忽略次查询条件", clazz.getSimpleName());
 		}
 		if (code == null) {
 			return;

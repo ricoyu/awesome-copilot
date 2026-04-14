@@ -2,7 +2,8 @@ package com.awesomecopilot.common.spring.annotation.processor;
 
 import com.awesomecopilot.common.spring.annotation.PostInitialize;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,8 +31,8 @@ import static org.springframework.util.ReflectionUtils.invokeMethod;
  * @author Bastien Cecchinato
  * @since 1.0.0
  */
-@Slf4j
 public class PostInitializeProcessor implements SmartInitializingSingleton {
+	private static final Logger log = LoggerFactory.getLogger(PostInitializeProcessor.class);
 	
 	/**
 	 * The maximum number of threads in parallel

@@ -1,11 +1,12 @@
 package com.awesomecopilot.search.builder.query;
 
 import com.awesomecopilot.search.ElasticUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,8 +26,9 @@ import static java.util.Arrays.asList;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticContextSuggestBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticContextSuggestBuilder.class);
 	
 	/**
 	 * 索引名

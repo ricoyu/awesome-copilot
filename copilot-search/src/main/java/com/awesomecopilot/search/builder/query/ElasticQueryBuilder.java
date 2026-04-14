@@ -9,7 +9,6 @@ import com.awesomecopilot.search.enums.SortOrder.SortOrderBuilder;
 import com.awesomecopilot.search.exception.ElasticQueryException;
 import com.awesomecopilot.search.support.SearchHitsSupport;
 import com.awesomecopilot.search.vo.ElasticPage;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -20,6 +19,8 @@ import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,8 +39,9 @@ import static org.elasticsearch.common.lucene.search.function.CombineFunction.MU
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticQueryBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticQueryBuilder.class);
 	
 	/**
 	 * 要查询的索引

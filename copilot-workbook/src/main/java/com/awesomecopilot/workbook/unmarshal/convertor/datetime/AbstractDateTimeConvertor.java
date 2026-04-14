@@ -1,6 +1,7 @@
 package com.awesomecopilot.workbook.unmarshal.convertor.datetime;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -17,8 +18,8 @@ import java.util.regex.Pattern;
  * @version 1.0
  * @on
  */
-@Slf4j
 public abstract class AbstractDateTimeConvertor implements DateTimeConvertor {
+	private static final Logger log = LoggerFactory.getLogger(AbstractDateTimeConvertor.class);
 
 	protected Pattern[] patterns = null;
 

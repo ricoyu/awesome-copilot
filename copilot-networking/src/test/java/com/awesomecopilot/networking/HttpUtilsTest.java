@@ -8,7 +8,6 @@ import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
 import com.awesomecopilot.networking.utils.HttpUtils;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -26,6 +25,8 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.*;
 
@@ -53,8 +55,9 @@ import static org.junit.Assert.*;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class HttpUtilsTest {
+	
+	private static final Logger log = LoggerFactory.getLogger(HttpUtilsTest.class);
 	
 	@Test
 	public void testGet() {

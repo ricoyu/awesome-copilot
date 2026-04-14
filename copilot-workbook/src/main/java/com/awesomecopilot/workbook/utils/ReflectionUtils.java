@@ -1,7 +1,8 @@
 package com.awesomecopilot.workbook.utils;
 
 import com.awesomecopilot.workbook.exception.FieldWriteException;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cglib.proxy.UndeclaredThrowableException;
 import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
@@ -30,8 +31,9 @@ import java.util.Map;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ReflectionUtils {
+	
+	private static final Logger log = LoggerFactory.getLogger(ReflectionUtils.class);
 
 	private static final String SETTER_PREFIX = "set";
 

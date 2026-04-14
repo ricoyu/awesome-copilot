@@ -2,13 +2,14 @@ package com.awesomecopilot.search.builder.agg;
 
 import com.awesomecopilot.search.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search.support.AggResultSupport;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *  
@@ -21,8 +22,9 @@ import org.elasticsearch.search.aggregations.metrics.SumAggregationBuilder;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticSumAggregationBuilder extends AbstractAggregationBuilder implements ElasticAggregationBuilder {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticSumAggregationBuilder.class);
 	
 	private ElasticSumAggregationBuilder(String[] indices) {
 		this.indices = indices;

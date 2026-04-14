@@ -2,9 +2,10 @@ package com.awesomecopilot.workbook.unmarshal.command;
 
 import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,8 +22,9 @@ import java.util.function.Function;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class EnumCellCommand extends BaseCellCommand {
+	
+	private static final Logger log = LoggerFactory.getLogger(EnumCellCommand.class);
 	
 	private AtomicReference<Function<Cell, Enum>> atomicReference = new AtomicReference<>();
 	

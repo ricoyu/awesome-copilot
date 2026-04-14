@@ -1,8 +1,9 @@
 package com.awesomecopilot.networking;
 
 import com.awesomecopilot.networking.utils.IPUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,8 +20,9 @@ import static org.junit.Assert.*;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class IPUtilsTest {
+	
+	private static final Logger log = LoggerFactory.getLogger(IPUtilsTest.class);
 	
 	//private static final InetAddressValidator validator = InetAddressValidator.getInstance();
 	

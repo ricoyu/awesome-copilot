@@ -1,9 +1,10 @@
 package com.awesomecopilot.workbook.unmarshal.command;
 
 import com.awesomecopilot.workbook.utils.ReflectionUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,8 +23,8 @@ import java.util.regex.Pattern;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class DoubleCellCommand extends BaseCellCommand {
+	private static final Logger log = LoggerFactory.getLogger(DoubleCellCommand.class);
 
 	private static Pattern moneyDoublePattern = Pattern.compile("\\$(.+)");
 

@@ -192,12 +192,15 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
 		//初始化运行时引擎
 		Velocity.init(properties);
+		log.info("Velocity初始化完成");
 	}
 
 	@PostConstruct
 	public void initialize() {
 		SqlUtils.logicalDeleteEnabled = this.logicalDeleteEnabled;
 		SqlUtils.logicalDeleteField = this.logicalDeleteField;
+		this.query("首次使用前的初始化");
+		log.info("首次使用前的初始化完成");
 	}
 
 	/**
@@ -635,10 +638,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public SqlQueryBuilder query(String sqlOrQueryName) {
-		SqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager, entityManagerFactory);
-		ReflectionUtils.setField("sqlOrQueryName", sqlQueryBuilder, sqlOrQueryName);
-		ReflectionUtils.setField("hibernateQueryMode", sqlQueryBuilder, hibernateQueryMode);
-		ReflectionUtils.setField("enumLookupProperties", sqlQueryBuilder, enumLookupProperties);
+		NativeSqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager, entityManagerFactory);
+		sqlQueryBuilder.setSqlOrQueryName(sqlOrQueryName);
+		sqlQueryBuilder.setHibernateQueryMode(hibernateQueryMode);
+		sqlQueryBuilder.setEnumLookupProperties(enumLookupProperties);
+		//ReflectionUtils.setField("sqlOrQueryName", sqlQueryBuilder, sqlOrQueryName);
+		//ReflectionUtils.setField("hibernateQueryMode", sqlQueryBuilder, hibernateQueryMode);
+		//ReflectionUtils.setField("enumLookupProperties", sqlQueryBuilder, enumLookupProperties);
 		return sqlQueryBuilder;
 	}
 

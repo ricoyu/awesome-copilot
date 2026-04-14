@@ -1,13 +1,14 @@
 package com.awesomecopilot.search.builder.query;
 
 import com.awesomecopilot.json.jackson.JacksonUtils;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
 import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetRequestBuilder;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,8 +27,9 @@ import static java.util.stream.Collectors.*;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ElasticMultiGetBuilder<T> {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticMultiGetBuilder.class);
 	
 	private TransportClient client;
 	

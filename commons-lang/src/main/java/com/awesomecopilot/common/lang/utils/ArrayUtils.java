@@ -4,9 +4,11 @@ import com.awesomecopilot.common.lang.functional.Matcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Arrays.stream;
 
@@ -263,5 +265,109 @@ public final class ArrayUtils {
 	 */
 	public static <T> boolean isNotEmpty(T[] array) {
 		return (null != array && array.length != 0);
+	}
+	
+	/**
+	 * 判断value是否是数组
+	 * @param value
+	 * @return boolean
+	 */
+	public static boolean isArray(Object value) {
+		return value != null && value.getClass().isArray();
+	}
+	
+	/**
+	 * 如果value是数组, 那么转对应的 List, 否则返回value对象本身
+	 * <p>
+	 * 适配 JPA IN 查询参数
+	 * @param value
+	 * @return
+	 */
+	public static Object toListIfArray(Object value) {
+		if (value == null) {
+			return Collections.emptyList();
+		}
+		
+		if (!isArray(value)) {
+			return Collections.singletonList(value);
+		}
+		
+		// 1. long[]
+		if (value instanceof long[]) {
+			return Arrays.stream((long[]) value).boxed().toList();
+		}
+		if (value instanceof Long[]) {
+			return Arrays.stream((Long[]) value).toList();
+		}
+		// 2. int[]
+		if (value instanceof int[]) {
+			return Arrays.stream((int[]) value).boxed().toList();
+		}
+		if (value instanceof Integer[]) {
+			return Arrays.stream((Integer[]) value).toList();
+		}
+		// 3. double[]
+		if (value instanceof double[]) {
+			return Arrays.stream((double[]) value).boxed().toList();
+		}
+		if (value instanceof Double[]) {
+			return Arrays.stream((Double[]) value).toList();
+		}
+		// 4. short[]
+		if (value instanceof short[]) {
+			short[] arr = (short[]) value;
+			return IntStream.range(0, arr.length).mapToObj(i -> arr[i]).toList();
+		}
+		// 5. byte[]
+		if (value instanceof byte[]) {
+			byte[] arr = (byte[]) value;
+			return IntStream.range(0, arr.length).mapToObj(i -> arr[i]).toList();
+		}
+		// 6. char[]
+		if (value instanceof char[]) {
+			char[] arr = (char[]) value;
+			return IntStream.range(0, arr.length).mapToObj(i -> arr[i]).toList();
+		}
+		// 7. float[] → 修复
+		if (value instanceof float[]) {
+			float[] arr = (float[]) value;
+			return IntStream.range(0, arr.length).mapToObj(i -> arr[i]).toList();
+		}
+		// 8. boolean[]
+		if (value instanceof boolean[]) {
+			boolean[] arr = (boolean[]) value;
+			return IntStream.range(0, arr.length).mapToObj(i -> arr[i]).toList();
+		}
+		// 9. String[]
+		if (value instanceof String[]) {
+			String[] arr = (String[]) value;
+			return Arrays.asList(arr);
+		}
+		// 10. String[]
+		if (value instanceof Object[]) {
+			Object[] arr = (Object[]) value;
+			return Arrays.asList(arr);
+		}
+		
+		// 对象数组：Long[]、String[]、Integer[] 等
+		return value;
+	}
+	
+	/**
+	 * 如果value是一个数组类型, 转成Object[]并返回
+	 * @param value
+	 * @return
+	 */
+	public static Object[] toObjectArray(Object value) {
+		if (isArray(value)) {
+			int len = java.lang.reflect.Array.getLength(value);
+			Object[] result = new Object[len];
+			for (int i = 0; i < len; i++) {
+				result[i] = java.lang.reflect.Array.get(value, i);
+			}
+			return result;
+		}
+		
+		return new Object[]{value};
 	}
 }

@@ -4,6 +4,7 @@ import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.resource.YamlOps;
 import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
+import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.common.lang.utils.SqlUtils;
@@ -55,67 +56,67 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @version 1.0
  */
 public class NativeSqlQueryBuilder implements SqlQueryBuilder {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(NativeSqlQueryBuilder.class);
-
+	
 	private YamlOps yamlOps = YamlProfileReaders.instance("application");
 	/**
 	 * 用于判断是否是查询语句
 	 */
 	private static final Pattern SELECT_PATTERN =
 			Pattern.compile("\\bSELECT\\b[\\s\\S]*?\\bFROM\\b\\s+", Pattern.CASE_INSENSITIVE);
-
+	
 	//用于判断是否insert语句
 	private static final Pattern DELETE_PATTERN =
 			Pattern.compile("\\bdelete\\b[\\s\\S]*?\\bFROM\\b\\s+", Pattern.CASE_INSENSITIVE);
-
+	
 	//用于判断是否insert语句
 	private static final Pattern INSERT_PATTERN =
 			Pattern.compile("\\binsert\\b[\\s\\S]*?\\binto\\b\\s+", Pattern.CASE_INSENSITIVE);
-
+	
 	//用于判断是否update语句
 	private static final Pattern UPDATE_PATTERN =
 			Pattern.compile("\\bupdate\\b[\\s\\S]*?\\bset\\b\\s+", Pattern.CASE_INSENSITIVE);
-
+	
 	private static final String IS_COUNT_QUERY = "isCountQuery";
-
+	
 	/**
 	 * 默认会根据CREATE_TIME倒序排
 	 */
 	private static final OrderBean DFAULT_ORDER = new OrderBean("CREATE_TIME", OrderBean.DIRECTION.DESC);
-
+	
 	private static final ConcurrentMap<String, ArrayTypes> ARRAY_TYPE_MAP = new ConcurrentHashMap<>();
-
+	
 	private String sqlOrQueryName;
-
+	
 	private Map<String, Object> params = new HashMap<>();
-
+	
 	private List<OrderBean> orders = new ArrayList<>();
-
+	
 	private boolean logicalDelete;
-
+	
 	private String logicalDeleteField = "deleted";
-
+	
 	private Page page;
-
+	
 	private Class resultClass;
-
+	
 	protected final EntityManager entityManager;
-
+	
 	private EntityManagerFactory entityManagerFactory;
-
+	
 	private String hibernateQueryMode = "loose";
-
+	
 	/**
 	 * 如果类的某个属性是enum类型，并且需要根据这个enum类型的某个属性来和数据库列值匹配，那么要指明这个属性的名字
 	 */
 	private Set<String> enumLookupProperties = new HashSet<>();
-
+	
 	/**
 	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
 	 */
 	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
-
+	
 	/**
 	 * 根据contextClasses找对应的Class对象在namedSqlQuery中会把classMap中的key/value对put到VelocityContext中
 	 * 这样在SQL里面就可以用了, 示例如下:
@@ -127,7 +128,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	 */
 	@SuppressWarnings("rawtypes")
 	private Map<String, Class> classMap = new HashMap<>();
-
+	
 	static {
 		ARRAY_TYPE_MAP.put(ArrayTypes.LONG.getClassName(), ArrayTypes.LONG);
 		ARRAY_TYPE_MAP.put(ArrayTypes.LONG_WRAPPER.getClassName(), ArrayTypes.LONG_WRAPPER);
@@ -139,43 +140,48 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT.getClassName(), ArrayTypes.FLOAT);
 		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT_WRAPPER.getClassName(), ArrayTypes.FLOAT_WRAPPER);
 	}
-
+	
 	public NativeSqlQueryBuilder(EntityManager entityManager) {
 		this.entityManager = entityManager;
 	}
-
+	
 	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory) {
 		this.entityManager = entityManager;
 		this.entityManagerFactory = entityManagerFactory;
 	}
-
+	
 	public NativeSqlQueryBuilder(EntityManager entityManager, String logicalDeleteField) {
 		this.entityManager = entityManager;
 		this.logicalDeleteField = logicalDeleteField;
 	}
-
+	
 	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
 	                             String logicalDeleteField) {
 		this.entityManager = entityManager;
 		this.entityManagerFactory = entityManagerFactory;
 		this.logicalDeleteField = logicalDeleteField;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder addParam(String paramName, Object paramValue) {
+		//如果参数paramValue是数组, 那么该参数肯定是用在IN查询中, 那么该参数的value应该被转换成对应的List
 		if (isBlank(paramName)) {
 			throw new IllegalArgumentException("paramName 不能为空");
 		}
-		params.put(paramName, paramValue);
+		if (ArrayUtils.isArray(paramValue)) {
+			params.put(paramName, ArrayUtils.toListIfArray(paramValue));
+		} else {
+			params.put(paramName, paramValue);
+		}
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder addParams(Map<String, Object> params) {
 		this.params.putAll(params);
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder addLlikeParam(String paramName, String paramValue) {
 		if (isNotBlank(paramValue)) {
@@ -184,7 +190,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder addRlikeParam(String paramName, String paramValue) {
 		if (isNotBlank(paramValue)) {
@@ -193,7 +199,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder addlikeParam(String paramName, String paramValue) {
 		if (isNotBlank(paramValue)) {
@@ -202,7 +208,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder page(Page page) {
 		this.page = page;
@@ -214,7 +220,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder page(int paggeNum, int pageSize) {
 		Page page = new Page();
@@ -223,20 +229,20 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		this.page = page;
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder order(OrderBean order) {
 		orders.add(order);
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder order(String orderBy, OrderBean.DIRECTION direction) {
 		OrderBean order = new OrderBean(orderBy, direction);
 		orders.add(order);
 		return this;
 	}
-
+	
 	@Override
 	public SqlQueryBuilder order(String order) {
 		if (StringUtils.isNotEmpty(order)) {
@@ -252,13 +258,13 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public <T> SqlQueryBuilder resultClass(Class<T> resultClass) {
 		this.resultClass = resultClass;
 		return this;
 	}
-
+	
 	@Override
 	public <T> List<T> findList() {
 		String rawQuery = null;
@@ -273,7 +279,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
 		addOrder(queryString);
-
+		
 		//建立context， 并放入数据
 		VelocityContext context = new VelocityContext();
 		context.put("StringUtils", StringUtils.class);
@@ -289,7 +295,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		StringWriter sql = new StringWriter();
 		//进行解析
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
-
+		
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
 		boolean autoFix = yamlOps.getBoolean("copilot.orm.sql.auto-fix", true);
@@ -316,7 +322,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 					hibernateQueryMode,
 					enumLookupProperties));
 		}
-
+		
 		if (isNotEmpty(params)) {
 			/*
 			 * 如果params里面某个key对应的value是null, 下面query.setProperties(params)会抛NullpointException, 所以这里要移除值为null的key
@@ -334,7 +340,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			}
 			query.setProperties(params);
 		}
-
+		
 		List<T> resultList;
 		try {
 			resultList = query.getResultList();
@@ -345,10 +351,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
-
+		
 		return resultList;
 	}
-
+	
 	@Override
 	public <T> List<T> findPage() {
 		String rawQuery = null;
@@ -361,7 +367,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
-
+		
 		// 排序
 		if (page != null) {
 			boolean primaryOrdered = false;
@@ -398,7 +404,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
 				queryString.delete(queryString.length() - 2, queryString.length());
 			}
-
+			
 			//如果没有提供排序, 则默认采用create_time desc
 			if (queryString.toString().toUpperCase().indexOf("ORDER BY") == -1) {
 				if (this.orders.isEmpty()) {
@@ -416,9 +422,9 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 					queryString.delete(queryString.length() - 2, queryString.length());
 				}
 			}
-
+			
 		}
-
+		
 		//建立context， 并放入数据
 		VelocityContext context = new VelocityContext();
 		context.put("StringUtils", StringUtils.class);
@@ -447,11 +453,11 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				log.debug("裁剪后解析得到的原生SQL: \n {}", parsedSQL);
 			}
 		}
-
+		
 		query = em()
 				.createNativeQuery(parsedSQL)
 				.unwrap(org.hibernate.query.Query.class);
-
+		
 		Class clazz = null;
 		if (this.resultClass != null) {
 			clazz = this.resultClass;
@@ -479,12 +485,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			}
 			query.setProperties(params);
 		}
-
+		
 		if (page != null && !page.isPagingIgnore()) {
 			query.setMaxResults(page.getMaxResults());
 			query.setFirstResult(page.getFirstResult());
 		}
-
+		
 		List<T> resultList;
 		try {
 			resultList = query.getResultList();
@@ -495,7 +501,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
 		}
-
+		
 		//接下来是分页查询中的查询总记录数
 		if (page != null && page.isAutoCount()) {
 			context.put(IS_COUNT_QUERY, true);
@@ -527,7 +533,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		ThreadContext.put("page", page);
 		return resultList;
 	}
-
+	
 	@Override
 	public <T> T findOne() {
 		List<Object> results = findList();
@@ -536,7 +542,19 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		return null;
 	}
-
+	
+	public void setSqlOrQueryName(String sqlOrQueryName) {
+		this.sqlOrQueryName = sqlOrQueryName;
+	}
+	
+	public void setHibernateQueryMode(String hibernateQueryMode) {
+		this.hibernateQueryMode = hibernateQueryMode;
+	}
+	
+	public void setEnumLookupProperties(Set<String> enumLookupProperties) {
+		this.enumLookupProperties = enumLookupProperties;
+	}
+	
 	/**
 	 * 基于是否受Spring事务管理，获取Spring管理的EntityManager或者自行通过EntityManagerFactory创建的EntityManager
 	 *
@@ -555,13 +573,13 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			}
 		}
 	}
-
-
+	
+	
 	private boolean isNotEmpty(Map map) {
 		return map != null && !map.isEmpty();
 	}
-
-
+	
+	
 	/**
 	 * 如果value是List或者数组，当他们是空、长度为0，则需要特殊处理一下，将value改写为'',这样SQL IN 语句才不会出错
 	 *
@@ -573,7 +591,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		if (value == null) {
 			return;
 		}
-
+		
 		if (value instanceof List) {
 			List<?> values = (List<?>) value;
 			if (values.size() == 0) {
@@ -581,12 +599,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			}
 			return;
 		}
-
+		
 		ArrayTypes arrayTypes = ARRAY_TYPE_MAP.get(value.getClass().getName());
 		if (arrayTypes == null) {
 			return;
 		}
-
+		
 		switch (arrayTypes) {
 			case LONG_WRAPPER:
 				Long[] arr1 = (Long[]) value;
@@ -642,16 +660,16 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 					params.put(key, "''");
 				}
 				break;
-
+			
 			default:
 				break;
 		}
 	}
-
+	
 	private void addOrder(StringBuilder queryString) {
 		if (!this.orders.isEmpty()) { //2,3候选排序
 			queryString.append(" ORDER BY ");
-
+			
 			for (OrderBean orderBean : this.orders) {
 				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
 			}
@@ -660,12 +678,12 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			queryString.delete(queryString.length() - 2, queryString.length());
 		}
 	}
-
+	
 	private String addOrder(String sql) {
 		StringBuilder queryString = new StringBuilder(sql);
 		if (!this.orders.isEmpty()) { //2,3候选排序
 			queryString.append(" ORDER BY ");
-
+			
 			for (OrderBean orderBean : this.orders) {
 				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
 			}
@@ -673,7 +691,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
 			queryString.delete(queryString.length() - 2, queryString.length());
 		}
-
+		
 		return queryString.toString();
 	}
 }

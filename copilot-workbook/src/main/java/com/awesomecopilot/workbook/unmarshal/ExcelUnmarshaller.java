@@ -1,21 +1,22 @@
 package com.awesomecopilot.workbook.unmarshal;
 
 import com.awesomecopilot.common.lang.concurrent.Concurrent;
-import com.awesomecopilot.workbook.unmarshal.iterator.RowIterator;
 import com.awesomecopilot.workbook.exception.BuilderUncompleteException;
 import com.awesomecopilot.workbook.exception.WorkbookCreationException;
 import com.awesomecopilot.workbook.unmarshal.assassinator.AssassinatorMaster;
 import com.awesomecopilot.workbook.unmarshal.assassinator.POJOAssassinator;
 import com.awesomecopilot.workbook.unmarshal.builder.POJOAssassinatorBuilder;
+import com.awesomecopilot.workbook.unmarshal.iterator.RowIterator;
 import com.awesomecopilot.workbook.utils.ExcelUtils;
 import com.awesomecopilot.workbook.utils.ValidationUtils;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -37,8 +38,9 @@ import java.util.concurrent.TimeUnit;
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public final class ExcelUnmarshaller {
+	
+	private static final Logger log = LoggerFactory.getLogger(ExcelUnmarshaller.class);
 
 	private Workbook workbook;
 

@@ -11,7 +11,6 @@ import com.awesomecopilot.search.enums.SortOrder;
 import com.awesomecopilot.search.support.AggResultSupport;
 import com.awesomecopilot.search.support.SortSupport;
 import com.awesomecopilot.search.vo.ElasticPage;
-import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.script.Script;
@@ -20,6 +19,8 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,8 +41,9 @@ import java.util.stream.Collectors;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class ElasticMultiTermsAggregationBuilder extends AbstractAggregationBuilder implements TermAggregationBuilder, SubAggregatable, Compositable {
+	
+	private static final Logger log = LoggerFactory.getLogger(ElasticMultiTermsAggregationBuilder.class);
 	
 	/**
 	 * 这个是限制返回桶的数量, 如果总共有10个桶, 但是size设为5, 那么聚合结果中只会返回前5个桶

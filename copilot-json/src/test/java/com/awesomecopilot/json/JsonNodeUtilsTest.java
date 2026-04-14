@@ -5,8 +5,9 @@ import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,11 +23,12 @@ import java.util.List;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-@Slf4j
 public class JsonNodeUtilsTest {
 	
-	@SneakyThrows
+	private static final Logger log = LoggerFactory.getLogger(JsonNodeUtilsTest.class);
+	
 	@Test
+	@SneakyThrows
 	public void test() {
 		JsonNode node = JacksonUtils.objectMapper().readTree(IOUtils.readClassPathFileAsBytes("array-field.json"));
 		JsonNode jsonNode = node.get("dns_grouped_A");
