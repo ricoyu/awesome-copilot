@@ -26,7 +26,6 @@
         <module>copilot-security</module>
         <module>commons-cloud</module>
         <module>copilot-test</module>
-        <module>user-api</module>
     </modules>
 
     <properties>
