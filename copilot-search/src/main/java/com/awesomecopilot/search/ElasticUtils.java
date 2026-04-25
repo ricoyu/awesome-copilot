@@ -61,6 +61,7 @@ import com.awesomecopilot.search.constants.ElasticConstants;
 import com.awesomecopilot.search.enums.Analyzer;
 import com.awesomecopilot.search.enums.Dynamic;
 import com.awesomecopilot.search.enums.IndexState;
+import com.awesomecopilot.search.exception.IndexTemplateException;
 import com.awesomecopilot.search.exception.PutMappingException;
 import com.awesomecopilot.search.exception.PutSettingsException;
 import com.awesomecopilot.search.factory.TransportClientFactory;
@@ -1202,7 +1203,7 @@ public final class ElasticUtils {
                 } catch (Exception e) {
                     log.error("", e);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new PutSettingsException(e.getMessage());
+                        throw new IndexTemplateException(e.getMessage());
                     }
                     continue;
                 }
@@ -1211,7 +1212,7 @@ public final class ElasticUtils {
                     String errors = JsonPathUtils.readNode(result, "$.error.caused_by.reason");
                     log.error("PUT index template failed, host {}, [{}]", host, errors);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new PutSettingsException(errors);
+                        throw new IndexTemplateException(errors);
                     }
                 }
 
@@ -1343,8 +1344,8 @@ public final class ElasticUtils {
      */
     public static class Mappings {
         
-        private static String username = propertyReader.getString(USERNAME);
-        private static String password = propertyReader.getString(PASSWORD);
+        //private static String username = propertyReader.getString(USERNAME);
+        //private static String password = propertyReader.getString(PASSWORD);
         
         /**
          * 获取所有的Mapping信息
@@ -1490,14 +1491,14 @@ public final class ElasticUtils {
                 } catch (Exception e) {
                     log.error("", e);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new PutMappingException(e.getMessage());
+                        throw new PutMappingException(e);
                     }
                     continue;
                 }
                 boolean hasError = JsonPathUtils.ifExists(result, "$.error");
                 if (hasError) {
                     String errors = JsonPathUtils.readNode(result, "$.error.root_cause[0].reason");
-                    log.error("PUT index template failed, host {}, [{}]", host, errors);
+                    log.error("PUT Mapping failed, host {}, [{}]", host, errors);
                     if (++tryCount == RestSupport.HOSTS.size()) {
                         throw new PutMappingException(errors);
                     }
@@ -1564,14 +1565,14 @@ public final class ElasticUtils {
                 } catch (Exception e) {
                     log.error("", e);
                     if (++tryCount == RestSupport.HOSTS.size()) {
-                        throw new PutSettingsException(e.getMessage());
+                        throw new PutSettingsException(e);
                     }
                     continue;
                 }
                 boolean hasError = JsonPathUtils.ifExists(result, "$.error");
                 if (hasError) {
                     String errors = JsonPathUtils.readNode(result, "$.error.root_cause[0].reason");
-                    log.error("PUT index template failed, host {}, [{}]", host, errors);
+                    log.error("PUT Settings failed, host {}, [{}]", host, errors);
                     if (++tryCount == RestSupport.HOSTS.size()) {
                         throw new PutSettingsException(errors);
                     }

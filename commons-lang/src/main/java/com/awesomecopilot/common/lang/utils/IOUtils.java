@@ -318,37 +318,48 @@ public class IOUtils {
 	/**
 	 * 将文件读到byte[]中
 	 *
-	 * @param filePath
-	 * @return
+	 * @param filePath 文件路径，不能为null
+	 * @return 文件内容的字节数组
+	 * @throws RuntimeException 文件不存在、无读取权限或发生IO错误时抛出，包装原始IOException
 	 */
 	public static byte[] readFileAsBytes(String filePath) {
-		Path path = Paths.get(filePath);
 		try {
-			return Files.readAllBytes(path);
+			return Files.readAllBytes(Paths.get(filePath));
 		} catch (IOException e) {
-			log.warn(e.getMessage());
+			throw new RuntimeException(e);
 		}
-		return new byte[0];
 	}
 
+	/**
+	 * 将文件读到byte[]中
+	 *
+	 * @param path 文件路径，不能为null
+	 * @return 文件内容的字节数组
+	 * @throws RuntimeException 文件不存在、无读取权限或发生IO错误时抛出，包装原始IOException
+	 */
 	public static byte[] readFileAsBytes(Path path) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		try {
 			return Files.readAllBytes(path);
 		} catch (IOException e) {
-			log.warn(e.getMessage());
+			throw new RuntimeException(e);
 		}
-		return new byte[0];
 	}
 
+	/**
+	 * 将文件读到byte[]中
+	 *
+	 * @param file 文件对象，不能为null
+	 * @return 文件内容的字节数组
+	 * @throws RuntimeException 文件不存在、无读取权限或发生IO错误时抛出，包装原始IOException
+	 */
 	public static byte[] readFileAsBytes(File file) {
 		requireNonNull(file, "file 不能为null");
 		try {
 			return Files.readAllBytes(file.toPath());
 		} catch (IOException e) {
-			log.warn(e.getMessage());
+			throw new RuntimeException(e);
 		}
-		return new byte[0];
 	}
 
 	/**
@@ -361,17 +372,17 @@ public class IOUtils {
 	 */
 	public static byte[] readFileAsBytes(String filePath, int offset, int bytesToRead) {
 		requireNonNull(filePath, "file 不能为null");
-		Path path = Paths.get(filePath);
-		log.info("通过fILE获取文件大小: {} BYTES", path.toFile().length());
-		try {
-			InputStream inputStream = Files.newInputStream(path);
-			log.info("通过InputStream获取文件大小: {} BYTES", inputStream.available());
-			RandomAccessFile raf = new RandomAccessFile(path.toFile(), "r");
+		try (RandomAccessFile raf = new RandomAccessFile(filePath, "r")) {
 			raf.seek(offset);
 			byte[] buffer = new byte[bytesToRead];
-			int len = 0;
-			while (-1 != (len = raf.read(buffer))) {
-
+			int totalRead = 0;
+			while (totalRead < bytesToRead) {
+				int read = raf.read(buffer, totalRead, bytesToRead - totalRead);
+				if (read == -1) break;
+				totalRead += read;
+			}
+			if (totalRead < bytesToRead) {
+				return Arrays.copyOf(buffer, totalRead);
 			}
 			return buffer;
 		} catch (IOException e) {
@@ -386,23 +397,18 @@ public class IOUtils {
 	 * @param blocks
 	 */
 	public static void merge(String destFile, String... blocks) {
-		int len = 0;
 		byte[] buffer = new byte[1024];
-		InputStream is = null;
-		OutputStream bos = null;
-		for (int i = 0; i < blocks.length; i++) {
-			try {
-				bos = new BufferedOutputStream(new FileOutputStream(new File(destFile), true));
-				is = new BufferedInputStream(new FileInputStream(new File(blocks[i])));
-				while (-1 != (len = is.read(buffer))) {
-					bos.write(buffer, 0, len);
+		try (OutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destFile), true))) {
+			for (String block : blocks) {
+				try (InputStream is = new BufferedInputStream(new FileInputStream(new File(block)))) {
+					int len;
+					while (-1 != (len = is.read(buffer))) {
+						bos.write(buffer, 0, len);
+					}
 				}
-				bos.flush();
-				bos.close();
-				is.close();
-			} catch (IOException e) {
-				throw new RuntimeException(e);
 			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -818,7 +824,7 @@ public class IOUtils {
 	 * false 不存在
 	 */
 	public static boolean createParentDir(Path path) {
-		Optional.of(path.getParent())
+		Optional.ofNullable(path.getParent())
 				.ifPresent(parent -> {
 					if (!Files.exists(parent, NOFOLLOW_LINKS)) {
 						try {
@@ -1537,7 +1543,12 @@ public class IOUtils {
 			return false;
 		}
 
-		return INVALID_FILENAME_PATTERN.matcher(filename).matches();
+		/*
+		 * matches() 是全字符串匹配，只有整个文件名都是特殊字符才返回 true。
+		 * 如果文件名中混有普通字符和特殊字符（如 file<name.txt），会返回 false，即认为合法。
+		 * 应改用 find()：
+		 */
+		return INVALID_FILENAME_PATTERN.matcher(filename).find();
 	}
 
 	/**
@@ -1671,7 +1682,7 @@ public class IOUtils {
 		}
 
 		SizeUnit upperBoundSizeUnit = SizeUnit.parse(upperBoundUnit);
-		long upperBoundBytes = lowerBoundSizeUnit.toBytes(upperBound);
+		long upperBoundBytes = upperBoundSizeUnit.toBytes(upperBound);
 		if (fileSize > upperBoundBytes) {
 			return false;
 		}

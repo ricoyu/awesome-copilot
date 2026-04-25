@@ -24,7 +24,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,13 +37,13 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.*;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>
@@ -58,6 +58,17 @@ import static org.junit.Assert.*;
 public class HttpUtilsTest {
 	
 	private static final Logger log = LoggerFactory.getLogger(HttpUtilsTest.class);
+	
+	@Test
+	public void testGetModels() {
+		String modelJson = HttpUtils.get("https://aiberm.com/v1/models")
+				.contentType("application/json")
+				.bearerAuth("sk-3wTuRBeuOK7X5aIyDFNYOVAZrQuJfOuvOmkTt6qFmO04tLvn")
+				.request();
+		
+		List<String> models = JsonPathUtils.readListNode(modelJson, "$.data[*].id");
+		models.forEach(System.out::println);
+	}
 	
 	@Test
 	public void testGet() {

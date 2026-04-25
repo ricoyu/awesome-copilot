@@ -100,12 +100,15 @@ public class NonBlockingLock implements Lock, AutoCloseable {
 	/**
 	 * 阻塞式获取锁（有限自旋，不进入 park）
 	 * 非阻塞锁的 lock() 只是多尝试几次，仍然是非阻塞语义
+	 * <p>
+	 * 加锁失败不会抛异常, 后续需要通过locked()方法来判断是否加锁成功
 	 */
 	@Override
 	public void lock() {
 		int spins = 0;
 		while (spins++ < MAX_TIMED_SPINS) {
 			if (tryLock()) {
+				log.debug("自旋{}次后获取锁成功, key={}", spins, key);
 				return;
 			}
 			// 可选：Thread.yield(); 但通常不加，避免过度让出 CPU
@@ -250,6 +253,11 @@ public class NonBlockingLock implements Lock, AutoCloseable {
 	 * 逻辑与 BlockingLock 保持一致
 	 */
 	private boolean isThreadProcessingBusiness(Thread thread) {
+		return thread.isAlive();  // 只要线程活着就续期
+	}
+	
+	/*
+	private boolean isThreadProcessingBusiness(Thread thread) {
 		try {
 			Thread.State state = thread.getState();
 			if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
@@ -285,6 +293,7 @@ public class NonBlockingLock implements Lock, AutoCloseable {
 			return true;
 		}
 	}
+	*/
 
 	private boolean verifyLock(String expectedValue) {
 		String current = JedisUtils.get(key);

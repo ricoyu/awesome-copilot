@@ -1,6 +1,9 @@
 package com.awesomecopilot.base64;
 
-import org.junit.Test;
+
+import com.awesomecopilot.codec.Base64Utils;
+import com.awesomecopilot.common.lang.utils.IOUtils;
+import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Base64;
@@ -8,6 +11,13 @@ import java.util.Base64;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Base64EncorderTest {
+	
+	@Test
+	public void test() {
+		byte[] bytes = IOUtils.readFileAsBytes("D:\\xiaozai.png");
+		String encode = Base64Utils.encode(bytes);
+		System.out.println(encode);
+	}
 
 	@Test
 	public void testEncoderStr() throws UnsupportedEncodingException {

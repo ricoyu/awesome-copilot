@@ -81,26 +81,93 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return this;
 	}
 
+	/**
+	 * 添加 must 条件到布尔查询
+	 * <p>
+	 * must 条件表示文档必须匹配该查询，相当于逻辑 AND 操作<br/>
+	 * must 条件会参与相关性算分，影响文档的 _score
+	 * <p>
+	 * 使用场景：需要强制匹配且关心相关性排序的查询条件
+	 *
+	 * @param queryBuilder 查询构建器
+	 * @return ElasticBoolQueryBuilder
+	 */
 	public ElasticBoolQueryBuilder must(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(MUST, queryBuilder));
 		return this;
 	}
 	
+	/**
+	 * 添加 must_not 条件到布尔查询
+	 * <p>
+	 * must_not 条件表示文档必须不匹配该查询，相当于逻辑 NOT 操作<br/>
+	 * must_not 条件不参与相关性算分，在 Filter Context 中执行
+	 * <p>
+	 * 使用场景：需要排除某些文档的查询条件，例如排除已删除的文档
+	 *
+	 * @param queryBuilder 查询构建器
+	 * @return ElasticBoolQueryBuilder
+	 */
 	public ElasticBoolQueryBuilder mustNot(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(MUST_NOT, queryBuilder));
 		return this;
 	}
 	
+	/**
+	 * 添加 should 条件到布尔查询
+	 * <p>
+	 * should 条件表示文档应该匹配该查询，相当于逻辑 OR 操作<br/>
+	 * should 条件会参与相关性算分，匹配的 should 条件越多，_score 越高
+	 * <p>
+	 * 注意：
+	 * <ul>
+	 * <li/>如果布尔查询中没有 must 或 filter 条件，则至少需要匹配一个 should 条件
+	 * <li/>如果布尔查询中有 must 或 filter 条件，则 should 条件变为可选，仅影响算分
+	 * <li/>可以通过 minimumShouldMatch() 方法控制最少需要匹配的 should 条件数量
+	 * </ul>
+	 * 使用场景：多个可选的查询条件，匹配越多相关性越高
+	 *
+	 * @param queryBuilder 查询构建器
+	 * @return ElasticBoolQueryBuilder
+	 */
 	public ElasticBoolQueryBuilder should(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(SHOULD, queryBuilder));
 		return this;
 	}
 	
+	/**
+	 * 添加 filter 条件到布尔查询
+	 * <p>
+	 * filter 条件表示文档必须匹配该查询，相当于逻辑 AND 操作<br/>
+	 * filter 条件不参与相关性算分，在 Filter Context 中执行，性能更好且结果可缓存
+	 * <p>
+	 * filter 与 must 的区别：
+	 * <ul>
+	 * <li/>filter 不计算 _score，性能更好，适合精确匹配和范围查询
+	 * <li/>must 会计算 _score，适合需要相关性排序的全文检索
+	 * </ul>
+	 * 使用场景：不需要算分的过滤条件，如状态、时间范围、分类等精确匹配
+	 *
+	 * @param queryBuilder 查询构建器
+	 * @return ElasticBoolQueryBuilder
+	 */
 	public ElasticBoolQueryBuilder filter(QueryBuilder queryBuilder) {
 		this.queryBuilders.add(new Node(FILTER, queryBuilder));
 		return this;
 	}
 	
+	/**
+	 * 创建 term 精确查询并返回 BoolTermQuery 接口
+	 * <p>
+	 * term 查询用于精确匹配，不会对查询词进行分词<br/>
+	 * 适用于 keyword、数字、日期、布尔值等不分词字段
+	 * <p>
+	 * 返回 BoolTermQuery 接口，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param field 要查询的字段名
+	 * @param value 要匹配的精确值
+	 * @return BoolTermQuery 接口，支持继续添加布尔查询条件
+	 */
 	public BoolTermQuery term(String field, Object value) {
 		ElasticTermQueryBuilder termQueryBuilder = new ElasticTermQueryBuilder();
 		termQueryBuilder.query(field, value);
@@ -109,10 +176,16 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 	}
 	
 	/**
-	 * terms query
-	 * @param field  要对哪个字段聚合
-	 * @param values 可以是 "val1", "val2" 数组形式; 也可以是一个List类型
-	 * @return BoolQuery
+	 * 创建 terms 多值查询并返回 BoolQuery 接口
+	 * <p>
+	 * terms 查询用于匹配多个精确值中的任意一个，相当于 SQL 中的 IN 操作<br/>
+	 * 不会对查询词进行分词，适用于 keyword、数字等不分词字段
+	 * <p>
+	 * 返回 BoolQuery 接口，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param field  要查询的字段名
+	 * @param values 要匹配的值列表，可以是数组形式 "val1", "val2"，也可以是一个 List 类型
+	 * @return BoolQuery 接口，支持继续添加布尔查询条件
 	 */
 	public BoolQuery terms(String field, Object... values) {
 		if (values != null && values.length == 1) {
@@ -126,6 +199,18 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return termsQueryBuilder;
 	}
 	
+	/**
+	 * 创建 match 全文查询并返回 BoolMatchQuery 接口
+	 * <p>
+	 * match 查询用于全文检索，会对查询词进行分词，然后匹配分词后的词项<br/>
+	 * 适用于 text 类型的分词字段，支持相关性算分
+	 * <p>
+	 * 返回 BoolMatchQuery 接口，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param field 要查询的字段名
+	 * @param value 要匹配的文本，会被分词
+	 * @return BoolMatchQuery 接口，支持继续添加布尔查询条件
+	 */
 	public BoolMatchQuery match(String field, String value) {
 		ElasticMatchQueryBuilder matchQueryBuilder = new ElasticMatchQueryBuilder();
 		matchQueryBuilder.query(field, value);
@@ -133,6 +218,17 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return matchQueryBuilder;
 	}
 	
+	/**
+	 * 创建 range 范围查询并返回 BoolRangeQuery 接口
+	 * <p>
+	 * range 查询用于范围匹配，支持数字、日期、字符串等类型的范围查询<br/>
+	 * 可以使用 gte(大于等于)、gt(大于)、lte(小于等于)、lt(小于) 等方法设置范围
+	 * <p>
+	 * 返回 BoolRangeQuery 接口，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param field 要查询的字段名
+	 * @return BoolRangeQuery 接口，支持继续添加布尔查询条件
+	 */
 	public BoolRangeQuery range(String field) {
 		ElasticRangeQueryBuilder rangeQueryBuilder = new ElasticRangeQueryBuilder();
 		rangeQueryBuilder.field(field);
@@ -140,6 +236,17 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return rangeQueryBuilder;
 	}
 	
+	/**
+	 * 创建 exists 存在性查询并返回 BoolQuery 接口
+	 * <p>
+	 * exists 查询用于查找指定字段存在且有值的文档<br/>
+	 * 字段值为 null 或不存在的文档不会被匹配
+	 * <p>
+	 * 返回 BoolQuery 接口，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param field 要检查的字段名
+	 * @return BoolQuery 接口，支持继续添加布尔查询条件
+	 */
 	public BoolQuery exists(String field) {
 		ElasticExistsQueryBuilder existsQueryBuilder = new ElasticExistsQueryBuilder();
 		existsQueryBuilder.field(field);
@@ -147,6 +254,17 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return existsQueryBuilder;
 	}
 	
+	/**
+	 * 创建 query_string 查询并返回 ElasticQueryStringBuilder
+	 * <p>
+	 * query_string 查询支持 Lucene 查询语法，可以使用 AND、OR、NOT 等操作符<br/>
+	 * 支持通配符、模糊查询、范围查询等高级语法
+	 * <p>
+	 * 返回 ElasticQueryStringBuilder，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param queryString Lucene 查询语法字符串，例如 "title:elasticsearch AND status:published"
+	 * @return ElasticQueryStringBuilder，支持继续添加布尔查询条件
+	 */
 	public ElasticQueryStringBuilder queryString(String queryString) {
 		ElasticQueryStringBuilder queryStringBuilder = new ElasticQueryStringBuilder();
 		queryStringBuilder.query(queryString);
@@ -154,6 +272,16 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return queryStringBuilder;
 	}
 	
+	/**
+	 * 创建 ids 查询并返回 ElasticIdsQueryBuilder（数组形式）
+	 * <p>
+	 * ids 查询用于根据文档 ID 列表查询文档，支持一次查询多个 ID
+	 * <p>
+	 * 返回 ElasticIdsQueryBuilder，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param ids 文档 ID 数组
+	 * @return ElasticIdsQueryBuilder，支持继续添加布尔查询条件
+	 */
 	public ElasticIdsQueryBuilder ids(String... ids) {
 		ElasticIdsQueryBuilder elasticIdsQueryBuilder = new ElasticIdsQueryBuilder();
 		elasticIdsQueryBuilder.ids(ids);
@@ -161,6 +289,16 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 		return elasticIdsQueryBuilder;
 	}
 	
+	/**
+	 * 创建 ids 查询并返回 ElasticIdsQueryBuilder（List 形式）
+	 * <p>
+	 * ids 查询用于根据文档 ID 列表查询文档，支持一次查询多个 ID
+	 * <p>
+	 * 返回 ElasticIdsQueryBuilder，支持链式调用继续添加 must/mustNot/should/filter 等布尔条件
+	 *
+	 * @param ids 文档 ID 列表
+	 * @return ElasticIdsQueryBuilder，支持继续添加布尔查询条件
+	 */
 	public ElasticIdsQueryBuilder ids(List<String> ids) {
 		ElasticIdsQueryBuilder elasticIdsQueryBuilder = new ElasticIdsQueryBuilder();
 		elasticIdsQueryBuilder.ids(ids.stream().toArray(String[]::new));

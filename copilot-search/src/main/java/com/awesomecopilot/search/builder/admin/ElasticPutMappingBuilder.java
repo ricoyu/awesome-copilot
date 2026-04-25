@@ -35,6 +35,16 @@ public class ElasticPutMappingBuilder extends AbstractMappingBuilder {
 		notNull(index, "index cannot be null!");
 	}
 	
+	/**
+	 * 执行 Mapping 更新操作
+	 * <p>
+	 * 将之前通过 field() 方法定义的字段 Mapping 应用到指定的索引<br/>
+	 * 注意：只能添加新字段或更新已有字段的某些属性，不能修改已有字段的类型
+	 * <p>
+	 * 使用场景：为已存在的索引添加新字段或更新 Mapping 配置
+	 *
+	 * @return true 表示操作成功，false 表示操作失败
+	 */
 	public boolean thenCreate() {
 		Map<String, Object> source = build();
 		if (log.isDebugEnabled()) {

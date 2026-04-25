@@ -48,12 +48,8 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
-import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
-import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,16 +57,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
 import static com.awesomecopilot.search.enums.FieldType.*;
+import static com.awesomecopilot.search.enums.SuggestMode.POPULAR;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.*;
 import static org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.BEST_FIELDS;
 import static org.elasticsearch.index.query.QueryBuilders.*;
-import static org.elasticsearch.search.suggest.SortBy.FREQUENCY;
 import static org.elasticsearch.search.suggest.term.TermSuggestionBuilder.StringDistanceImpl.INTERNAL;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -705,55 +703,42 @@ public class ElasticUtilsTest {
 	
 	@Test
 	public void testSuggest() {
-		TermSuggestionBuilder suggestionBuilder =
-				SuggestBuilders.termSuggestion("body")
-						.suggestMode(TermSuggestionBuilder.SuggestMode.ALWAYS)
-						.text("luce")
-						.prefixLength(1)
-						.stringDistance(INTERNAL)
-						.sort(FREQUENCY);
-		
+		// 改造后的 fluent API 风格
 		Set<String> suggesters = ElasticUtils.suggest("articles")
+				.field("body")
+				.text("luce")
 				.name("term-suggestion")
-				.suggestionBuilder(suggestionBuilder)
+				.prefixLength(1)
+				.stringDistance(INTERNAL)
 				.suggest();
-		
+
 		suggesters.forEach(System.out::println);
 	}
 	
 	@Test
 	public void testSuggest2() {
-		TermSuggestionBuilder suggestionBuilder =
-				SuggestBuilders.termSuggestion("body")
-						.suggestMode(TermSuggestionBuilder.SuggestMode.POPULAR)
-						.text("lucen hocks")
-						//.prefixLength(0)
-						.stringDistance(INTERNAL)
-						.sort(FREQUENCY);
-		
 		Set<String> suggesters = ElasticUtils.suggest("articles")
+				.field("body")
+				.text("lucen hocks")
 				.name("term-suggestion")
-				.suggestionBuilder(suggestionBuilder)
+				.suggestMode(POPULAR)
+				.stringDistance(INTERNAL)
 				.suggest();
-		
+
 		suggesters.forEach(System.out::println);
-		
-		ElasticUtils.termSuggest("lucen rock", "body", "articles")
-				.forEach(System.out::println);
 	}
 	
 	@Test
 	public void testPhraseSuggester() {
-		PhraseSuggestionBuilder suggestionBuilder = SuggestBuilders.phraseSuggestion("body")
+		Set<String> suggests = ElasticUtils.suggest("articles")
+				.field("body")
 				.text("lucne and elasticsear rock")
+				.name("phrase-suggestion")
 				.maxErrors(2f)
 				.confidence(0)
-				.highlight("<em>", "</em>");
-		Set<String> suggests = ElasticUtils.suggest("articles")
-				.suggestionBuilder(suggestionBuilder)
-				.name("phrase-suggestion")
+				.highlight("<em>", "</em>")
 				.suggest();
-		
+
 		suggests.forEach(System.out::println);
 	}
 	
@@ -765,26 +750,21 @@ public class ElasticUtilsTest {
 				.field("title_completion", COMPLETION)
 				.thenCreate();
 		assertTrue(created);
-		
+
 		BulkResult bulkResult = ElasticUtils.bulkIndex("articles",
 				"{\"title_completion\": \"lucene is very cool\"}",
 				"{\"title_completion\": \"Elasticsearch builds on top of Lucene\"}",
 				"{\"title_completion\": \"Elasticsearch rocks\"}",
 				"{\"title_completion\": \"elastic is the company behind ELK stack\"}",
 				"{\"title_completion\": \"TLK stack rocks\"}");
-		CompletionSuggestionBuilder suggestionBuilder =
-				SuggestBuilders.completionSuggestion("title_completion").prefix("e");
+
 		Set<String> suggests = ElasticUtils.suggest("articles")
-				.suggestionBuilder(suggestionBuilder)
+				.field("title_completion")
+				.prefix("e")
 				.name("article_suggester")
 				.suggest();
-		
+
 		suggests.forEach(System.out::println);
-		System.out.println("-----------------");
-		
-		suggests = ElasticUtils.completionSuggest("e", "title_completion", "articles");
-		suggests.forEach(System.out::println);
-		
 	}
 	
 	@SneakyThrows

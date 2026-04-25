@@ -91,6 +91,15 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		return this;
 	}
 	
+	/**
+	 * 设置聚合名称和聚合字段
+	 * <p>
+	 * 聚合名称用于在结果中标识该聚合，聚合字段指定要对哪个字段进行分组统计
+	 *
+	 * @param name  聚合名称
+	 * @param field 要聚合的字段名
+	 * @return ElasticTermsAggregationBuilder
+	 */
 	@Override
 	public ElasticTermsAggregationBuilder of(String name, String field) {
 		this.name = name;
@@ -181,6 +190,15 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		return compositeAggregationBuilder;
 	}
 	
+	/**
+	 * 执行聚合查询并返回结果
+	 * <p>
+	 * 执行 Terms 聚合查询，返回每个桶的统计结果<br/>
+	 * 结果格式为 List&lt;Map&lt;String, T&gt;&gt;，每个 Map 代表一个桶，包含 key 和 doc_count 等信息
+	 *
+	 * @param <T> 结果值的类型
+	 * @return 聚合结果列表，每个元素是一个桶的统计信息
+	 */
 	public <T> List<Map<String, T>> get() {
 		AggregationBuilder aggregationBuilder = build();
 		
@@ -198,6 +216,22 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	}
 	
 	
+	/**
+	 * 执行聚合查询并返回分页结果
+	 * <p>
+	 * 执行 Terms 聚合查询，返回分页格式的结果<br/>
+	 * 需要先通过 subAggregation() 方法添加 bucket_sort 子聚合来实现分页
+	 * <p>
+	 * 使用示例：
+	 * <pre>
+	 * ElasticPage page = ElasticUtils.Aggs.terms("index")
+	 *     .of("agg_name", "field")
+	 *     .subAggregation(bucketSort(0, 10))
+	 *     .getPage();
+	 * </pre>
+	 *
+	 * @return ElasticPage 分页结果对象，包含当前页数据和分页信息
+	 */
 	public ElasticPage getPage() {
 		TermsAggregationBuilder arrregationBuilder = (TermsAggregationBuilder) build();
 		
@@ -221,6 +255,22 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		return elasticPage;
 	}
 	
+	/**
+	 * 添加子聚合
+	 * <p>
+	 * 在当前 Terms 聚合的基础上添加子聚合，可以实现多层嵌套聚合<br/>
+	 * 例如：在按类别聚合的基础上，再按日期进行子聚合
+	 * <p>
+	 * 支持的子聚合类型包括：
+	 * <ul>
+	 * <li/>Metric 聚合 - sum, avg, min, max, stats 等
+	 * <li/>Bucket 聚合 - terms, date_histogram, histogram 等
+	 * <li/>Pipeline 聚合 - bucket_sort, bucket_selector 等
+	 * </ul>
+	 *
+	 * @param subAggregation 子聚合对象
+	 * @return ElasticTermsAggregationBuilder
+	 */
 	@Override
 	public ElasticTermsAggregationBuilder subAggregation(SubAggregation subAggregation) {
 		if (subAggregation instanceof ElasticBucketSortSubAggregation) {
@@ -230,6 +280,22 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		return this;
 	}
 	
+	/**
+	 * 添加排序规则
+	 * <p>
+	 * 对聚合结果进行排序，可以按照 key（桶的键值）或 count（文档数量）排序<br/>
+	 * 排序格式：字段1:asc,字段2:desc
+	 * <p>
+	 * 常用排序：
+	 * <ul>
+	 * <li/>_key:asc - 按桶的键值升序排序
+	 * <li/>_count:desc - 按文档数量降序排序（默认）
+	 * <li/>子聚合名:asc - 按子聚合的结果排序
+	 * </ul>
+	 *
+	 * @param sort 排序规则字符串
+	 * @return ElasticTermsAggregationBuilder
+	 */
 	public ElasticTermsAggregationBuilder sort(String sort) {
 		List<SortOrder> sortOrders = SortSupport.sort(sort);
 		this.sortOrders.addAll(sortOrders);

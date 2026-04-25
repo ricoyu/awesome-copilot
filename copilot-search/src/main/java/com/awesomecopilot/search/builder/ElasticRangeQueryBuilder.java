@@ -72,21 +72,65 @@ public class ElasticRangeQueryBuilder extends BaseQueryBuilder implements BoolRa
 		return this;
 	}
 	
+	/**
+	 * 设置范围查询的下界（大于等于）
+	 * <p>
+	 * Greater Than or Equal，表示字段值必须大于或等于指定值<br/>
+	 * 适用于数字、日期、字符串等类型的字段
+	 * <p>
+	 * 示例：gte(100) 表示字段值 >= 100
+	 *
+	 * @param gte 下界值（包含）
+	 * @return ElasticRangeQueryBuilder
+	 */
 	public ElasticRangeQueryBuilder gte(Object gte) {
 		this.gte = gte;
 		return this;
 	}
 	
+	/**
+	 * 设置范围查询的上界（小于等于）
+	 * <p>
+	 * Less Than or Equal，表示字段值必须小于或等于指定值<br/>
+	 * 适用于数字、日期、字符串等类型的字段
+	 * <p>
+	 * 示例：lte(200) 表示字段值 <= 200
+	 *
+	 * @param lte 上界值（包含）
+	 * @return ElasticRangeQueryBuilder
+	 */
 	public ElasticRangeQueryBuilder lte(Object lte) {
 		this.lte = lte;
 		return this;
 	}
 	
+	/**
+	 * 设置范围查询的下界（大于）
+	 * <p>
+	 * Greater Than，表示字段值必须大于指定值（不包含边界值）<br/>
+	 * 适用于数字、日期、字符串等类型的字段
+	 * <p>
+	 * 示例：gt(100) 表示字段值 > 100
+	 *
+	 * @param gt 下界值（不包含）
+	 * @return ElasticRangeQueryBuilder
+	 */
 	public ElasticRangeQueryBuilder gt(Object gt) {
 		this.gt = gt;
 		return this;
 	}
 	
+	/**
+	 * 设置范围查询的上界（小于）
+	 * <p>
+	 * Less Than，表示字段值必须小于指定值（不包含边界值）<br/>
+	 * 适用于数字、日期、字符串等类型的字段
+	 * <p>
+	 * 示例：lt(200) 表示字段值 < 200
+	 *
+	 * @param lt 上界值（不包含）
+	 * @return ElasticRangeQueryBuilder
+	 */
 	public ElasticRangeQueryBuilder lt(Object lt) {
 		this.lt = lt;
 		return this;

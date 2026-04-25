@@ -1,212 +1,126 @@
-2026-04-10 09:48:41.134  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 09:48:41.148  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 09:48:41.148  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 09:48:41.148  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 09:48:41.149  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 09:48:41.158  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 09:48:41.158  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 09:48:43.419  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:22:46.007  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:22:46.013  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:22:46.014  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:22:46.014  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:22:46.014  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:22:46.014  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:22:46.014  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:22:48.595  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:22:49.544  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
-2026-04-10 10:25:20.638  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:25:20.646  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:25:20.646  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:25:20.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:25:20.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:25:20.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:25:20.647  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:25:23.112  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:25:24.103  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
-2026-04-10 10:26:34.984  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:26:34.991  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:26:34.991  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:26:34.991  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:26:34.991  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:26:34.993  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:26:34.993  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:26:37.648  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:26:38.667  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
-2026-04-10 10:30:26.192  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:30:26.200  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:30:26.201  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:30:26.201  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:30:26.201  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:30:26.202  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:30:26.202  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:30:28.736  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:30:29.771  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
-2026-04-10 10:31:40.948  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:31:40.952  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:31:40.952  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:31:40.952  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:31:40.953  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:31:40.953  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:31:40.953  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:31:43.087  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:31:44.225  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
-2026-04-10 10:36:36.486  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
-2026-04-10 10:36:36.492  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
-2026-04-10 10:36:36.493  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
-2026-04-10 10:36:36.493  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
-2026-04-10 10:36:36.493  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
-2026-04-10 10:36:36.493  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
-2026-04-10 10:36:36.493  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
-2026-04-10 10:36:38.727  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
-2026-04-10 10:36:39.692  DEBUG [ ] --- [            main] copilot.search.builder.query.BaseQueryBuilder:   L732 - Query DSL:
-{
-  "query": {"multi_match": {
-    "auto_generate_synonyms_phrase_query": true,
-    "query": "Poland Street W1V",
-    "zero_terms_query": "NONE",
-    "fuzzy_transpositions": true,
-    "boost": 1,
-    "prefix_length": 0,
-    "fields": [
-      "city^1.0",
-      "country^1.0",
-      "postcode^1.0",
-      "street^1.0"
-    ],
-    "type": "best_fields",
-    "operator": "OR",
-    "slop": 0,
-    "max_expansions": 50
-  }},
-  "_source": {
-    "excludes": [],
-    "includes": []
-  },
-  "track_total_hits": 2147483647
-}
+2026-04-18 10:15:33.928  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-04-18 10:15:33.935  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-04-18 10:15:33.936  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-04-18 10:15:33.936  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-04-18 10:15:33.936  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-04-18 10:15:33.936  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-04-18 10:15:33.937  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-04-18 10:15:35.691  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-04-18 10:42:46.783  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-04-18 10:42:46.787  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-04-18 10:42:48.000  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-04-18 10:53:03.063  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-04-18 10:53:03.067  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-04-18 10:53:03.067  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-04-18 10:53:03.067  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-04-18 10:53:03.067  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-04-18 10:53:03.068  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-04-18 10:53:03.068  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-04-18 10:53:05.000  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-04-18 10:53:07.088  INFO  [ ] --- [            main] .client.transport.TransportClientNodesService:   L438 - failed to get node info for {#transport#-1}{_UpVslsSRoyGSs2YnR-P1w}{172.23.85.241}{172.23.85.241:9300}, disconnecting...
+org.elasticsearch.transport.RemoteTransportException: [t14p][172.17.0.4:9300][cluster:monitor/nodes/liveness]
+Caused by: org.elasticsearch.ElasticsearchSecurityException: unable to authenticate user [elastic] for action [cluster:monitor/nodes/liveness]
+	at org.elasticsearch.xpack.core.security.support.Exceptions.authenticationError(Exceptions.java:18)
+	at org.elasticsearch.xpack.core.security.authc.DefaultAuthenticationFailureHandler.createAuthenticationError(DefaultAuthenticationFailureHandler.java:163)
+	at org.elasticsearch.xpack.core.security.authc.DefaultAuthenticationFailureHandler.failedAuthentication(DefaultAuthenticationFailureHandler.java:97)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$AuditableTransportRequest.authenticationFailed(AuthenticationService.java:775)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$consumeToken$17(AuthenticationService.java:498)
+	at org.elasticsearch.action.ActionListener$1.onFailure(ActionListener.java:71)
+	at org.elasticsearch.action.support.ContextPreservingActionListener.onFailure(ContextPreservingActionListener.java:50)
+	at org.elasticsearch.xpack.core.common.IteratingActionListener.onFailure(IteratingActionListener.java:130)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$consumeToken$13(AuthenticationService.java:472)
+	at org.elasticsearch.action.ActionListener$1.onResponse(ActionListener.java:63)
+	at org.elasticsearch.xpack.security.authc.support.CachingUsernamePasswordRealm.lambda$authenticateWithCache$3(CachingUsernamePasswordRealm.java:176)
+	at org.elasticsearch.action.ActionListener$1.onResponse(ActionListener.java:63)
+	at org.elasticsearch.xpack.security.authc.esnative.ReservedRealm.lambda$doAuthenticate$0(ReservedRealm.java:122)
+	at org.elasticsearch.action.ActionListener$1.onResponse(ActionListener.java:63)
+	at org.elasticsearch.xpack.security.authc.esnative.ReservedRealm.getUserInfo(ReservedRealm.java:223)
+	at org.elasticsearch.xpack.security.authc.esnative.ReservedRealm.doAuthenticate(ReservedRealm.java:99)
+	at org.elasticsearch.xpack.security.authc.support.CachingUsernamePasswordRealm.authenticateWithCache(CachingUsernamePasswordRealm.java:167)
+	at org.elasticsearch.xpack.security.authc.support.CachingUsernamePasswordRealm.authenticate(CachingUsernamePasswordRealm.java:104)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$consumeToken$15(AuthenticationService.java:448)
+	at org.elasticsearch.xpack.core.common.IteratingActionListener.run(IteratingActionListener.java:102)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.consumeToken(AuthenticationService.java:503)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$extractToken$11(AuthenticationService.java:415)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.extractToken(AuthenticationService.java:425)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$checkForApiKey$3(AuthenticationService.java:366)
+	at org.elasticsearch.action.ActionListener$1.onResponse(ActionListener.java:63)
+	at org.elasticsearch.xpack.security.authc.ApiKeyService.authenticateWithApiKeyIfPresent(ApiKeyService.java:345)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.checkForApiKey(AuthenticationService.java:347)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$authenticateAsync$0(AuthenticationService.java:329)
+	at org.elasticsearch.action.ActionListener$1.onResponse(ActionListener.java:63)
+	at org.elasticsearch.xpack.security.authc.TokenService.getAndValidateToken(TokenService.java:405)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$authenticateAsync$2(AuthenticationService.java:325)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lambda$lookForExistingAuthentication$6(AuthenticationService.java:384)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.lookForExistingAuthentication(AuthenticationService.java:395)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.authenticateAsync(AuthenticationService.java:320)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService$Authenticator.access$000(AuthenticationService.java:261)
+	at org.elasticsearch.xpack.security.authc.AuthenticationService.authenticate(AuthenticationService.java:173)
+	at org.elasticsearch.xpack.security.transport.ServerTransportFilter$NodeProfile.inbound(ServerTransportFilter.java:120)
+	at org.elasticsearch.xpack.security.transport.SecurityServerTransportInterceptor$ProfileSecuredRequestHandler.messageReceived(SecurityServerTransportInterceptor.java:313)
+	at org.elasticsearch.transport.RequestHandlerRegistry.processMessageReceived(RequestHandlerRegistry.java:72)
+	at org.elasticsearch.transport.InboundHandler$RequestHandler.doRun(InboundHandler.java:263)
+	at org.elasticsearch.common.util.concurrent.AbstractRunnable.run(AbstractRunnable.java:37)
+	at org.elasticsearch.common.util.concurrent.EsExecutors$DirectExecutorService.execute(EsExecutors.java:226)
+	at org.elasticsearch.transport.InboundHandler.handleRequest(InboundHandler.java:176)
+	at org.elasticsearch.transport.InboundHandler.messageReceived(InboundHandler.java:93)
+	at org.elasticsearch.transport.InboundHandler.inboundMessage(InboundHandler.java:78)
+	at org.elasticsearch.transport.TcpTransport.inboundMessage(TcpTransport.java:692)
+	at org.elasticsearch.transport.InboundPipeline.forwardFragments(InboundPipeline.java:142)
+	at org.elasticsearch.transport.InboundPipeline.doHandleBytes(InboundPipeline.java:117)
+	at org.elasticsearch.transport.InboundPipeline.handleBytes(InboundPipeline.java:82)
+	at org.elasticsearch.transport.netty4.Netty4MessageChannelHandler.channelRead(Netty4MessageChannelHandler.java:76)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.handler.logging.LoggingHandler.channelRead(LoggingHandler.java:271)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.handler.codec.MessageToMessageDecoder.channelRead(MessageToMessageDecoder.java:103)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1518)
+	at io.netty.handler.ssl.SslHandler.decodeJdkCompatible(SslHandler.java:1267)
+	at io.netty.handler.ssl.SslHandler.decode(SslHandler.java:1314)
+	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:501)
+	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:440)
+	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:276)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:357)
+	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1410)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:379)
+	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:365)
+	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:919)
+	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:163)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:714)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysPlain(NioEventLoop.java:615)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:578)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:493)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:989)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at java.lang.Thread.run(Thread.java:832)
+2026-04-18 10:53:43.593  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-04-18 10:53:43.598  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-04-18 10:53:43.599  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-04-18 10:53:43.599  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-04-18 10:53:43.599  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-04-18 10:53:43.599  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-04-18 10:53:43.599  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-04-18 10:53:45.162  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]
+2026-04-18 10:53:45.865  INFO  [ ] --- [            main] com.awesomecopilot.search.ElasticUtils       :   L1063 - 索引articles不存在
+2026-04-18 10:58:21.833  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L199 - no modules loaded
+2026-04-18 10:58:21.838  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.index.reindex.ReindexPlugin]
+2026-04-18 10:58:21.838  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.join.ParentJoinPlugin]
+2026-04-18 10:58:21.838  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.percolator.PercolatorPlugin]
+2026-04-18 10:58:21.838  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.script.mustache.MustachePlugin]
+2026-04-18 10:58:21.839  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.transport.Netty4Plugin]
+2026-04-18 10:58:21.839  INFO  [ ] --- [            main] org.elasticsearch.plugins.PluginsService     :   L202 - loaded plugin [org.elasticsearch.xpack.core.XPackClientPlugin]
+2026-04-18 10:58:23.391  INFO  [ ] --- [            main] org.elasticsearch.transport.NettyAllocator   :   L108 - creating NettyAllocator with the following configs: [name=elasticsearch_configured, chunk_size=1mb, factors={es.unsafe.use_netty_default_chunk_and_page_size=false, g1gc_enabled=true, g1gc_region_size=8mb}]

@@ -1,6 +1,7 @@
 package com.awesomecopilot.networking.builder;
 
 import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.networking.enums.ContentType;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -137,6 +138,26 @@ public class JsonRequestBuilder extends AbstractRequestBuilder {
 	 */
 	public JsonRequestBuilder returnBytes(boolean returnBytes) {
 		this.returnBytes = returnBytes;
+		return this;
+	}
+	
+	/**
+	 * 设置请求头: Content-Type
+	 * @param contentType
+	 * @return
+	 */
+	public JsonRequestBuilder contentType(ContentType contentType) {
+		super.addHeader("Content-Type", contentType.getValue());
+		return this;
+	}
+	
+	/**
+	 * 添加请求头: Content-Type
+	 * @param contentType
+	 * @return
+	 */
+	public JsonRequestBuilder contentType(String contentType) {
+		super.addHeader("Content-Type", contentType);
 		return this;
 	}
 	
