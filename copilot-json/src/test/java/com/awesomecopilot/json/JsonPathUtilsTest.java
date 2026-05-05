@@ -2,7 +2,6 @@ package com.awesomecopilot.json;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
-import com.awesomecopilot.json.jsonpath.JsonPathUtils1;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -34,8 +33,8 @@ public class JsonPathUtilsTest {
                   },
                   "status" : 404
                 }""";
-        Object error = JsonPathUtils1.readNode(json, "$.error.root_cause[0].reason");
-        Object error2 = JsonPathUtils1.readNode(json, "$.error.root_cause[0].reason");
+        Object error = JsonPathUtils.readNode(json, "$.error.root_cause[0].reason");
+        Object error2 = JsonPathUtils.readNode(json, "$.error.root_cause[0].reason");
         System.out.println( error);
     }
     @Test

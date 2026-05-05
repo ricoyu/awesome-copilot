@@ -556,7 +556,7 @@ public abstract class AbstractRequestBuilder {
 	 *
 	 * @return T
 	 */
-	public <T> T request() {
+public <T> T request() {
 		UrlParts urlParts = buildUrlParts();
 
 		URIBuilder builder = new URIBuilder();
@@ -594,54 +594,54 @@ public abstract class AbstractRequestBuilder {
 				}
 			}
 
-			CloseableHttpClient httpClient = buildHttpClient();
-
-			/*
-			 * 如果设置了整个请求生命周期的超时时间, 超时后中断请求
-			 */
-			if (timeout != null) {
-				TimerTask task = new TimerTask() {
-					@Override
-					public void run() {
-						if (httpRequest != null) {
-							httpRequest.abort();
+			try (CloseableHttpClient httpClient = buildHttpClient()) {
+				/*
+				 * 如果设置了整个请求生命周期的超时时间, 超时后中断请求
+				 */
+				if (timeout != null) {
+					TimerTask task = new TimerTask() {
+						@Override
+						public void run() {
+							if (httpRequest != null) {
+								httpRequest.abort();
+							}
 						}
-					}
-				};
-				new Timer(true).schedule(task, timeout);
-			}
-			CloseableHttpResponse response = httpClient.execute(httpRequest);
-
-			/*
-			 * 拿response entity之前先检查一下status code, 实际测试下来如果是405错误,不会报任何异常, 只是拿到的entity是空
-			 */
-			BasicHttpResponse original = (BasicHttpResponse) ReflectionUtils.getFieldValue("original", response);
-			int statucCode =
-					original.getStatusLine().getStatusCode();
-			if (statucCode != 200) {
-				String reasonPhrase = ReflectionUtils.getFieldValue("reasonPhrase", original);
-				ErrorUtils.checkError(statucCode, reasonPhrase);
-			}
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				//表示结果要以byte[]数组形式返回
-				if (returnBytes) {
-					return (T) IOUtils.toByteArray(entity.getContent());
+					};
+					new Timer(true).schedule(task, timeout);
 				}
 
-				String result = EntityUtils.toString(entity, "UTF-8");
-				response.close();
-
-				if (responseType != null) {
-					if (isBlank(result)) {
-						return null;
+				try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
+					/*
+					 * 拿response entity之前先检查一下status code, 实际测试下来如果是405错误,不会报任何异常, 只是拿到的entity是空
+					 */
+					BasicHttpResponse original = (BasicHttpResponse) ReflectionUtils.getFieldValue("original", response);
+					int statucCode =
+							original.getStatusLine().getStatusCode();
+					if (statucCode != 200) {
+						String reasonPhrase = ReflectionUtils.getFieldValue("reasonPhrase", original);
+						ErrorUtils.checkError(statucCode, reasonPhrase);
 					}
-					if (responseType == String.class) {
+					HttpEntity entity = response.getEntity();
+					if (entity != null) {
+						//表示结果要以byte[]数组形式返回
+						if (returnBytes) {
+							return (T) IOUtils.toByteArray(entity.getContent());
+						}
+
+						String result = EntityUtils.toString(entity, "UTF-8");
+
+						if (responseType != null) {
+							if (isBlank(result)) {
+								return null;
+							}
+							if (responseType == String.class) {
+								return (T) result;
+							}
+							return (T) JacksonUtils.toObject(result, responseType);
+						}
 						return (T) result;
 					}
-					return (T) JacksonUtils.toObject(result, responseType);
 				}
-				return (T) result;
 			}
 		} catch (Exception e) {
 			if (errorCallback != null) {
