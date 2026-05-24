@@ -148,7 +148,7 @@ public interface EntityOperations {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public <T, PK extends Serializable> List<T> getMulti(Class<T> entityClass, long... ids);
+	//public <T, PK extends Serializable> List<T> getMulti(Class<T> entityClass, long... ids);
 
 	/**
 	 * 跟Hibernate的get方法同语义，根据主键列表查找，返回bean本身，找不到则返回null

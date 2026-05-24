@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * ##between("column_name", $lowBound, $upperBound)
+ * #between("column_name", $lowBound, $upperBound)
  * "column_name" 是表的字段名, 记得一定要用引号括起来, 否则会报错
  * 如果给了lowBound, upperBound, 则生成的SQL是: column_name BETWEEN :lowBound AND :upperBound
  * 如果只给了lowBound, 则生成的SQL是: column_name >= :lowBound

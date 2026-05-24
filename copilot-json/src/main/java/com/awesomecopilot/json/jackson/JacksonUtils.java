@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -214,6 +215,34 @@ public final class JacksonUtils {
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 			throw new JacksonException(e);
+		}
+	}
+	
+	/**
+	 * 构建 JSON 对象（对标 Fastjson JSONObject）, 用法示例:
+	 * <pre>
+	 * ObjectNode json = JacksonUtils.createJsonObject();
+	 * json.put("name", "三少爷");
+	 * json.put("age", 18);
+	 * System.out.println(JacksonUtils.toJson(json));
+	 * </pre>
+	 * @return ObjectNode
+	 */
+	public static ObjectNode createJsonObject() {
+		return objectMapper.createObjectNode();
+	}
+	
+	/**
+	 * 将JSON字符串解析成 ObjectNode JSON对象
+	 * @param json
+	 * @return ObjectNode
+	 */
+	public static ObjectNode parseObject(String json) {
+		// 3. Jackson 转 ObjectNode（和 fastjson JSON.parseObject 完全对应）
+		try {
+			return objectMapper.readValue(json, ObjectNode.class);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException("解析json字符串报错: ", e);
 		}
 	}
 	

@@ -539,7 +539,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	@SuppressWarnings("unchecked")
-	@Override
+	/*@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, long... ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		if (log.isDebugEnabled()) {
@@ -553,7 +553,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			log.error("", e);
 			throw new EntityOperationException(e);
 		}
-	}
+	}*/
 
 	@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, List<PK> ids) {

@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.*;
+
 
 /**
  * <p>
@@ -23,7 +25,7 @@ public class ElasticUtilsMatchQueryTest {
 		List<Object> movies = ElasticUtils.Query.matchQuery("movies")
 				.query("title", "King George")
 				.queryForList();
-		//assertThat(movies.size() == 10);
+		assertThat(movies.size() == 10);
 	}
 
 	@Test
