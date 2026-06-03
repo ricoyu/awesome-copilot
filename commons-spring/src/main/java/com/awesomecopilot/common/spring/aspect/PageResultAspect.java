@@ -26,7 +26,7 @@ public class PageResultAspect {
 	 *
 	 * @param joinPoint
 	 */
-	@AfterReturning(value = "@annotation(org.springframework.web.bind.annotation.PostMapping)", returning = "result")
+	@AfterReturning(value = "@annotation(com.awesomecopilot.common.spring.annotation.AutoPage)", returning = "result")
 	public void afterReturning(JoinPoint joinPoint, Object result) {
 			Page page = ThreadContext.get("page");
 			setPage(result, page);

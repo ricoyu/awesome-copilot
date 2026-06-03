@@ -5,7 +5,7 @@
     <groupId>com.awesomecopilot</groupId>
     <artifactId>awesome-copilot</artifactId>
     <packaging>pom</packaging>
-    <version>17.0.0</version>
+    <version>21.0.3</version>
     <name>Awesome Copilot</name>
     <url>http://maven.apache.org</url>
 
@@ -30,7 +30,7 @@
 
     <properties>
         <encoding>UTF-8</encoding>
-        <jdk.version>17</jdk.version>
+        <jdk.version>21</jdk.version>
 
         <springframework.version>6.1.5</springframework.version>
         <springsecurity.version>6.2.3</springsecurity.version>
@@ -88,6 +88,14 @@
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
     </properties>
+
+    <!--<distributionManagement>
+        <repository>
+            <id>jaja-store</id>
+            <name>jaja-store</name>
+            <url>http://192.168.0.17:8081/nexus/repository/local-proxy/</url>
+        </repository>
+    </distributionManagement>-->
 
     <dependencyManagement>
         <dependencies>
@@ -632,7 +640,7 @@
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.22</version>
+                <version>1.18.34</version>
             </dependency>
 
             <dependency>

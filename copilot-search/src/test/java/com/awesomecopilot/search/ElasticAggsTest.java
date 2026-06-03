@@ -76,7 +76,7 @@ public class ElasticAggsTest {
 		
 		List<Map<String, Object>> aggResults1 = Aggs.terms("kibana_sample_data_flights")
 				.of("dest-country", "DestCountry")
-				.sort("count")
+				//.sort("count")
 				.get();
 		System.out.println(toPrettyJson(aggResults1));
 	}

@@ -48,6 +48,7 @@ import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -526,12 +527,24 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, PK... ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
+		// ==========核心兼容逻辑：拦截 long[] 被封装成单个元素的场景==========
+		Object[] targetIds = ids;
+		// 兼容 int[] 原生数组
+		if (ids.length == 1 && ids[0] instanceof int[]) {
+			int[] arr = (int[]) ids[0];
+			targetIds = Arrays.stream(arr).boxed().toArray(Integer[]::new);
+		}
+		// 兼容 long[] 原生数组
+		else if (ids.length == 1 && ids[0] instanceof long[]) {
+			long[] arr = (long[]) ids[0];
+			targetIds = Arrays.stream(arr).boxed().toArray(Long[]::new);
+		}
 		if (log.isDebugEnabled()) {
 			log.debug("Try to find " + clazz.getName() + " by ids " + ids);
 		}
 		try {
 			Session session = em().unwrap(Session.class);
-			return session.byMultipleIds(clazz).multiLoad(ids);
+			return session.byMultipleIds(clazz).multiLoad(targetIds);
 		} catch (Throwable e) {
 			log.error("", e);
 			throw new EntityOperationException(e);

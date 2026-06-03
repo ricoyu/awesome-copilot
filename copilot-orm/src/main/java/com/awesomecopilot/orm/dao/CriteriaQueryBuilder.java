@@ -324,6 +324,11 @@ public class CriteriaQueryBuilder {
 		return this;
 	}
 
+	public CriteriaQueryBuilder limit(Integer limit) {
+		jpaCriteriaQuery.limit(limit);
+		return this;
+	}
+
 	public CriteriaQueryBuilder desc(String propertyName) {
 		OrderBean order = Orders.desc(propertyName);
 		jpaCriteriaQuery.addOrder(order);

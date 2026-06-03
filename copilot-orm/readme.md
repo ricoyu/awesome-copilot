@@ -270,6 +270,18 @@ private Long id;
 
 # 二 条件分支
 
+Velocity #if($变量) 布尔值 false、null、空字符串、空集合全部判定为 false
+
+* 用 $onShelf != null，只判非空，不管布尔是 true 还是 false
+
+  ```velocity
+  #if($onShelf != null)
+      and on_shelf = :onShelf
+  #end
+  ```
+
+  
+
 ## 2.1 基于存在性判断
 
 1. 检查fullName不为null则输出and full_name=:fullName
@@ -296,9 +308,21 @@ private Long id;
    #end
    ```
 
+4. 自定义命令
+
+   ```velocity
+   3.自定义的命令
+   #ifNotNull($privilegeId)
+   	and id != :privilegeId
+   #end
+   #ifNull($privilegeId)
+   	and id != :privilegeId
+   #end
+   ```
+
    
 
-4. if语句完整结构
+5. if语句完整结构
 
    ```velocity
    #if(判断条件)

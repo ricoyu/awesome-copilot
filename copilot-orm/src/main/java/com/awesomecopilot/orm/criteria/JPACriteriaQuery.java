@@ -38,7 +38,8 @@ public class JPACriteriaQuery<T> implements Serializable {
 	private static final Logger logger = LoggerFactory.getLogger(JPACriteriaQuery.class);
 
 	private EntityManager entityManager;
-
+	
+	private Integer limit;
 	/**
 	 *  要查询的对象
 	 */
@@ -126,6 +127,17 @@ public class JPACriteriaQuery<T> implements Serializable {
 		}
 		this.predicates.add(criteriaBuilder.equal(root.get(propertyName), value));
 		this.countPredicates.add(criteriaBuilder.equal(countRoot.get(propertyName), value));
+		return this;
+	}
+	
+	/**
+	 * 限制取几条记录
+	 *
+	 * @param limit
+	 * @return
+	 */
+	public JPACriteriaQuery<T> limit(int limit) {
+		this.limit = limit;
 		return this;
 	}
 
@@ -517,6 +529,9 @@ public class JPACriteriaQuery<T> implements Serializable {
 			// 7. 执行查询并返回结果
 			Long totalCount = entityManager.createQuery(countQuery).getSingleResult();
 			page.setTotalCount(totalCount.intValue());
+		}
+		if (limit != null) {
+			query.setMaxResults(limit);
 		}
 		if (!queryHints.isEmpty()) {
 			for (String hintName : queryHints.keySet()) {
