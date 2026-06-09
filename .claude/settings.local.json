@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash([ -f \"$d/pom.xml\" ])",
+      "Bash(grep -m1 '<description>' __TRACKED_VAR__/pom.xml)"
+    ]
+  }
+}

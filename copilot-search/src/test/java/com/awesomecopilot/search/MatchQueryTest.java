@@ -36,7 +36,7 @@ public class MatchQueryTest {
 				.queryBuilder(QueryBuilders.matchQuery("title", "Man of the Year")
 						//.operator(Operator.AND))
 						.minimumShouldMatch("3"))
-				.exclideSources("title")
+				.excludeSources("title")
 				.queryForList();
 		results.forEach(System.out::println);
 	}

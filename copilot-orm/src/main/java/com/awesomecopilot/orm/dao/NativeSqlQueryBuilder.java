@@ -529,8 +529,11 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		}
 		/*
 		 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+		 * 不为null才填充是因为执行多次查询时, 前一个是分页查询, 后一个不是, 那么后一个查询会把ThreadContext中的page对象给清掉
 		 */
-		ThreadContext.put("page", page);
+		if (page != null) {
+			ThreadContext.put("page", page);
+		}
 		return resultList;
 	}
 	

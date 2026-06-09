@@ -7,17 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-/**
- * 自动修复SQL中得语法错误, 比如少了where关键字会自动添加, where后面条件多了and关键字会自动去掉, 迎合动态SQL需求
- * <p/>
- * Copyright: Copyright (c) 2026-03-02 8:43
- * <p/>
- * Company: Sexy Uncle Inc.
- * <p/>
- 
- * @author Rico Yu  ricoyu520@gmail.com
- * @version 1.0
- */
 public class SQLUtils {
 	
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils.class);
@@ -46,13 +35,18 @@ public class SQLUtils {
 		// 最终统一格式：去重空格 + 关键字小写
 		result = lowercaseKeywords(result).replaceAll("\\s+", " ").trim();
 		
-		// ====================== 你提出的最终清理 ======================
-		// 彻底消灭所有 “and and” 和 “and and (” 场景（放在最后，安全无副作用）
 		result = result.replaceAll("(?i)\\s+and\\s+and\\s*", " and ");
-		// ============================================================
 		
 		SQL_CACHE.put(rawSql, result);
 		return result;
+	}
+	
+	private static String processJoinSql(String sql) {
+		String cleaned = sql.replaceAll("(?i)where\\s+and\\s+", "where ")
+				.replaceAll("(?i)where\\s+or\\s+", "where ");
+		cleaned = cleaned.replaceAll("(?i)where\\s+(order by|group by|having|limit|union)\\s+", " $1 ");
+		cleaned = cleaned.replaceAll("(?i)\\s+where\\s*$", "");
+		return cleaned;
 	}
 	
 	private static String processSimpleSql(String sql) {
@@ -86,56 +80,6 @@ public class SQLUtils {
 		return cleanedFinal;
 	}
 	
-	private static String processJoinSql(String sql) {
-		String cleaned = sql.replaceAll("(?i)where\\s+and\\s+", "where ")
-				.replaceAll("(?i)where\\s+or\\s+", "where ");
-		cleaned = cleaned.replaceAll("(?i)where\\s+(order by|group by|having|limit|union)\\s+", " $1 ");
-		cleaned = cleaned.replaceAll("(?i)\\s+where\\s*$", "");
-		return cleaned;
-	}
-	
-	private static String fixTableAlias(String sql) {
-		String lowerSql = sql.toLowerCase();
-		int fromIdx = lowerSql.indexOf("from ");
-		if (fromIdx == -1) return sql;
-		
-		int tableStart = fromIdx + 5;
-		int tableEnd = tableStart;
-		while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
-				|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
-			tableEnd++;
-		}
-		
-		tableEnd = skipSpaces(sql, tableEnd);
-		
-		boolean hasAlias = false;
-		int aliasStart = tableEnd;
-		if (tableEnd < sql.length()) {
-			String remaining = sql.substring(tableEnd).toLowerCase();
-			if (remaining.startsWith("as ")) {
-				hasAlias = true;
-				tableEnd += 3;
-				tableEnd = skipSpaces(sql, tableEnd);
-				while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
-						|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
-					tableEnd++;
-				}
-			} else if (Character.isLetter(sql.charAt(tableEnd)) || sql.charAt(tableEnd) == '`') {
-				hasAlias = true;
-				while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
-						|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
-					tableEnd++;
-				}
-			}
-		}
-		
-		tableEnd = skipSpaces(sql, tableEnd);
-		if (hasAlias && tableEnd < sql.length() && sql.substring(tableEnd).toLowerCase().startsWith("where")) {
-			return sql;
-		}
-		return sql;
-	}
-	
 	private static String cleanEmptyWhere(String sql) {
 		String lowerSql = sql.toLowerCase();
 		int whereIdx = lowerSql.indexOf("where ");
@@ -157,35 +101,6 @@ public class SQLUtils {
 			return sql.substring(0, whereIdx).trim() + (suffix.isEmpty() ? "" : " " + suffix);
 		}
 		return sql;
-	}
-	
-	private static String extractSubqueries(String sql, List<String> subs) {
-		StringBuilder sb = new StringBuilder();
-		int i = 0;
-		while (i < sql.length()) {
-			char c = sql.charAt(i);
-			if (c == '(') {
-				int j = skipSpaces(sql, i + 1);
-				if (j + 6 <= sql.length() && sql.substring(j, j + 6).toLowerCase().equals("select")) {
-					int count = 1;
-					int start = i;
-					i = j + 6;
-					while (i < sql.length() && count > 0) {
-						char ch = sql.charAt(i);
-						if (ch == '(') count++;
-						else if (ch == ')') count--;
-						i++;
-					}
-					String subSql = sql.substring(start + 1, i - 1).trim();
-					subs.add(subSql);
-					sb.append("(@sub").append(subs.size() - 1).append(")");
-					continue;
-				}
-			}
-			sb.append(c);
-			i++;
-		}
-		return sb.toString();
 	}
 	
 	private static String fixWhereAnd(String sql) {
@@ -291,6 +206,78 @@ public class SQLUtils {
 		return result.toString();
 	}
 	
+	// ... 其他方法保持不变（processSimpleSql、processJoinSql、fixTableAlias、cleanEmptyWhere、extractSubqueries、fixWhereAnd、skipSpaces、getNextWord、lowercaseKeywords）...
+	private static String extractSubqueries(String sql, List<String> subs) {
+		StringBuilder sb = new StringBuilder();
+		int i = 0;
+		while (i < sql.length()) {
+			char c = sql.charAt(i);
+			if (c == '(') {
+				int j = skipSpaces(sql, i + 1);
+				if (j + 6 <= sql.length() && sql.substring(j, j + 6).toLowerCase().equals("select")) {
+					int count = 1;
+					int start = i;
+					i = j + 6;
+					while (i < sql.length() && count > 0) {
+						char ch = sql.charAt(i);
+						if (ch == '(') count++;
+						else if (ch == ')') count--;
+						i++;
+					}
+					String subSql = sql.substring(start + 1, i - 1).trim();
+					subs.add(subSql);
+					sb.append("(@sub").append(subs.size() - 1).append(")");
+					continue;
+				}
+			}
+			sb.append(c);
+			i++;
+		}
+		return sb.toString();
+	}
+	
+	private static String fixTableAlias(String sql) {
+		String lowerSql = sql.toLowerCase();
+		int fromIdx = lowerSql.indexOf("from ");
+		if (fromIdx == -1) return sql;
+		
+		int tableStart = fromIdx + 5;
+		int tableEnd = tableStart;
+		while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
+				|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
+			tableEnd++;
+		}
+		
+		tableEnd = skipSpaces(sql, tableEnd);
+		
+		boolean hasAlias = false;
+		int aliasStart = tableEnd;
+		if (tableEnd < sql.length()) {
+			String remaining = sql.substring(tableEnd).toLowerCase();
+			if (remaining.startsWith("as ")) {
+				hasAlias = true;
+				tableEnd += 3;
+				tableEnd = skipSpaces(sql, tableEnd);
+				while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
+						|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
+					tableEnd++;
+				}
+			} else if (Character.isLetter(sql.charAt(tableEnd)) || sql.charAt(tableEnd) == '`') {
+				hasAlias = true;
+				while (tableEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tableEnd))
+						|| sql.charAt(tableEnd) == '_' || sql.charAt(tableEnd) == '`')) {
+					tableEnd++;
+				}
+			}
+		}
+		
+		tableEnd = skipSpaces(sql, tableEnd);
+		if (hasAlias && tableEnd < sql.length() && sql.substring(tableEnd).toLowerCase().startsWith("where")) {
+			return sql;
+		}
+		return sql;
+	}
+	
 	private static String fixConditions(String conds) {
 		if (conds.trim().isEmpty()) {
 			return "";
@@ -306,11 +293,10 @@ public class SQLUtils {
 			
 			String connector = null;
 			while (i < conds.length()) {
-				String lowerSub = conds.substring(i).toLowerCase();
-				if (lowerSub.startsWith("and")) {
+				if (isKeyword(conds, i, "and")) {
 					connector = " and ";
 					i += 3;
-				} else if (lowerSub.startsWith("or")) {
+				} else if (isKeyword(conds, i, "or")) {
 					connector = " or ";
 					i += 2;
 				} else {
@@ -331,6 +317,7 @@ public class SQLUtils {
 			
 			int startCond = i;
 			
+			// Parse column/identifier
 			while (i < conds.length() && (Character.isLetterOrDigit(conds.charAt(i)) ||
 					conds.charAt(i) == '_' || conds.charAt(i) == ':' || conds.charAt(i) == '"' ||
 					conds.charAt(i) == '`' || conds.charAt(i) == '.')) {
@@ -396,14 +383,13 @@ public class SQLUtils {
 				}
 			}
 			
-			// Handle special case for BETWEEN ... AND ...
+			// BETWEEN ... AND ...
 			String opLc = op.toLowerCase();
 			if (opLc.contains("between")) {
 				int savedI = i;
 				i = skipSpaces(conds, i);
-				String nextWord = getNextWord(conds, i);
-				if (nextWord.toLowerCase().equals("and")) {
-					i += nextWord.length();
+				if (isKeyword(conds, i, "and")) {
+					i += 3;
 					i = skipSpaces(conds, i);
 					if (i < conds.length()) {
 						char c2 = conds.charAt(i);
@@ -432,6 +418,35 @@ public class SQLUtils {
 		}
 		
 		return sb.toString().trim();
+	}
+	
+	/**
+	 * 严格判断当前位置是否为完整的关键词（词边界保护）
+	 */
+	private static boolean isKeyword(String s, int pos, String keyword) {
+		String lower = s.toLowerCase();
+		int kwLen = keyword.length();
+		if (pos + kwLen > s.length()) return false;
+		if (!lower.substring(pos, pos + kwLen).equals(keyword.toLowerCase())) return false;
+		
+		// 前边界
+		if (pos > 0) {
+			char prev = s.charAt(pos - 1);
+			if (Character.isLetterOrDigit(prev) || prev == '_' || prev == '.') {
+				return false;
+			}
+		}
+		
+		// 后边界
+		int after = pos + kwLen;
+		if (after < s.length()) {
+			char next = s.charAt(after);
+			if (Character.isLetterOrDigit(next) || next == '_' || next == '.') {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	private static int skipSpaces(String s, int start) {

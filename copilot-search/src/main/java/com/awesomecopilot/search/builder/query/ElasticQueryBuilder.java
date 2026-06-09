@@ -265,7 +265,7 @@ public final class ElasticQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticQueryBuilder inclideSources(String... fields) {
+	public ElasticQueryBuilder includeSources(String... fields) {
 		this.includeSource = fields;
 		return this;
 	}
@@ -275,7 +275,7 @@ public final class ElasticQueryBuilder {
 	 * @param fields
 	 * @return QueryStringBuilder
 	 */
-	public ElasticQueryBuilder exclideSources(String... fields) {
+	public ElasticQueryBuilder excludeSources(String... fields) {
 		this.excludeSource = fields;
 		return this;
 	}

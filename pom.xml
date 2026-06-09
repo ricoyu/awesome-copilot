@@ -5,7 +5,7 @@
     <groupId>com.awesomecopilot</groupId>
     <artifactId>awesome-copilot</artifactId>
     <packaging>pom</packaging>
-    <version>21.0.3</version>
+    <version>21.0.7</version>
     <name>Awesome Copilot</name>
     <url>http://maven.apache.org</url>
 
@@ -21,6 +21,7 @@
         <module>copilot-codec</module>
         <module>copilot-networking</module>
         <module>copilot-search</module>
+        <module>copilot-search-8.x</module>
         <module>copilot-workbook</module>
         <module>copilot-netty</module>
         <module>copilot-security</module>
@@ -52,9 +53,13 @@
         <!-- 这个是Redis 6的客户端-->
         <jedis.version>5.0.2</jedis.version>
 
-       <!-- <elasticsearch.version>7.17.29</elasticsearch.version>-->
+        <elasticsearch.version>7.17.23</elasticsearch.version>
         <!--<elasticsearch.version>7.12.0</elasticsearch.version>-->
-        <elasticsearch.version>7.9.3</elasticsearch.version>
+        <!--<elasticsearch.version>7.9.3</elasticsearch.version>-->
+
+        <!-- ES8.x 官方推荐客户端, 用于 copilot-search-8.x 模块 -->
+        <elasticsearch-java.version>8.19.14</elasticsearch-java.version>
+        <jakarta-json-api.version>2.0.1</jakarta-json-api.version>
 
         <guava.version>32.0.0-jre</guava.version>
         <commons-lang3.version>3.4</commons-lang3.version>
@@ -159,6 +164,18 @@
                 <groupId>org.elasticsearch</groupId>
                 <artifactId>elasticsearch-x-content</artifactId>
                 <version>${elasticsearch.version}</version>
+            </dependency>
+
+            <!-- ES8.x 官方推荐客户端 (co.elastic.clients), 用于 copilot-search-8.x -->
+            <dependency>
+                <groupId>co.elastic.clients</groupId>
+                <artifactId>elasticsearch-java</artifactId>
+                <version>${elasticsearch-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json-api</artifactId>
+                <version>${jakarta-json-api.version}</version>
             </dependency>
 
             <dependency>

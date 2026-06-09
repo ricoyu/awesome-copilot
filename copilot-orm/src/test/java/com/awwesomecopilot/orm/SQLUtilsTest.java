@@ -603,4 +603,16 @@ public class SQLUtilsTest {
 		System.out.println("处理后sql44：" + sqlwhere);
 		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
 	}
+
+	@Test
+	@Order(45)
+	public void test45() {
+		String sql45 = """
+				select id, order_no, customer, amount, status, crate_time from mall_order where deleted = 0 and status = :status and order_no like :orderNo and customer like :customer and amount = :amount AND crate_time <= :orderTimeEnd order by crate_time desc""";
+		String sqlwhere = build(sql45);
+		String expected = "select id, order_no, customer, amount, status, crate_time from mall_order where deleted = 0 and status = :status and order_no like :orderNo and customer like :customer and amount = :amount AND crate_time <= :orderTimeEnd order by crate_time desc";
+		System.out.println("处理前sql45：" + sql45);
+		System.out.println("处理后sql45：" + sqlwhere);
+		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
 }

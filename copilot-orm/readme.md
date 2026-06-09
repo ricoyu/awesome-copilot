@@ -280,7 +280,9 @@ Velocity #if($变量) 布尔值 false、null、空字符串、空集合全部判
   #end
   ```
 
-  
+* #if($status)
+
+  status如果是int型0, velocity会按false处理, 这个要注意
 
 ## 2.1 基于存在性判断
 

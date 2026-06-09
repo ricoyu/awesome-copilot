@@ -20,35 +20,35 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class CriteriaQueryBuilder {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(CriteriaQueryBuilder.class);
-
+	
 	private final EntityManager entityManager;
-
+	
 	private EntityManagerFactory entityManagerFactory;
-
+	
 	/**
 	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
 	 */
 	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
-
+	
 	private CriteriaBuilder criteriaBuilder;
-
+	
 	private JPACriteriaQuery jpaCriteriaQuery;
-
+	
 	private Class entityClass;
-
+	
 	public CriteriaQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
 	                            Class entityClass) {
-
+		
 		this.entityManagerFactory = entityManagerFactory;
 		this.entityManager = entityManager;
 		this.entityClass = entityClass;
-
+		
 		this.criteriaBuilder = em().getCriteriaBuilder();
 		this.jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), false);
 	}
-
+	
 	/**
 	 * 如果propertyValue为null则查询propertyName为null的记录
 	 *
@@ -56,10 +56,10 @@ public class CriteriaQueryBuilder {
 	 * @return CriteriaQueryBuilder
 	 */
 	public CriteriaQueryBuilder isNull(String propertyName) {
-			jpaCriteriaQuery.isNull(propertyName);
+		jpaCriteriaQuery.isNull(propertyName);
 		return this;
 	}
-
+	
 	/**
 	 * 如果propertyValue为null则查询propertyName为null的记录
 	 *
@@ -67,10 +67,10 @@ public class CriteriaQueryBuilder {
 	 * @return CriteriaQueryBuilder
 	 */
 	public CriteriaQueryBuilder isNotNull(String propertyName) {
-			jpaCriteriaQuery.isNotNull(propertyName);
+		jpaCriteriaQuery.isNotNull(propertyName);
 		return this;
 	}
-
+	
 	/**
 	 * 如果propertyValue为null则忽略这个eq条件
 	 *
@@ -86,7 +86,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * 如果propertyValue为null则忽略这个notEq条件
 	 *
@@ -102,7 +102,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * 查询propertyName大于propertyValue
 	 * 如果propertyValue为null则忽略这个gt条件
@@ -119,7 +119,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * 查询propertyName大于等于propertyValue
 	 * 如果propertyValue为null则忽略这个gte条件
@@ -136,7 +136,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * 查询propertyName小于等于propertyValue
 	 * 如果propertyValue为null则忽略这个gte条件
@@ -153,7 +153,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * 查询propertyName小于等于propertyValue
 	 * 如果propertyValue为null则忽略这个gte条件
@@ -170,7 +170,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * SQL 中的 like, 如果propertyValue为null则忽略这个like条件
 	 *
@@ -186,7 +186,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * SQL 中的 in
 	 *
@@ -202,6 +202,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
+	
 	/**
 	 * SQL 中的 in
 	 *
@@ -227,7 +228,7 @@ public class CriteriaQueryBuilder {
 		jpaCriteriaQuery.in(propertyName, finalValues);
 		return this;
 	}
-
+	
 	/**
 	 * SQL 中的 between
 	 *
@@ -261,7 +262,7 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	/**
 	 * SQL 中的 between
 	 *
@@ -274,7 +275,7 @@ public class CriteriaQueryBuilder {
 		Number[] range = {start, end};
 		return between(propertyName, range);
 	}
-
+	
 	/**
 	 * SQL 中的 between
 	 *
@@ -287,7 +288,7 @@ public class CriteriaQueryBuilder {
 		LocalDateTime[] range = {start, end};
 		return between(propertyName, range);
 	}
-
+	
 	/**
 	 * SQL 中的 between
 	 *
@@ -317,24 +318,24 @@ public class CriteriaQueryBuilder {
 		}
 		return this;
 	}
-
+	
 	public CriteriaQueryBuilder asc(String propertyName) {
 		OrderBean order = Orders.asc(propertyName);
 		jpaCriteriaQuery.addOrder(order);
 		return this;
 	}
-
+	
 	public CriteriaQueryBuilder limit(Integer limit) {
 		jpaCriteriaQuery.limit(limit);
 		return this;
 	}
-
+	
 	public CriteriaQueryBuilder desc(String propertyName) {
 		OrderBean order = Orders.desc(propertyName);
 		jpaCriteriaQuery.addOrder(order);
 		return this;
 	}
-
+	
 	/**
 	 * 返回一条数据, 如果查到多条数据，则返回第一条, 不会报错
 	 *
@@ -348,11 +349,11 @@ public class CriteriaQueryBuilder {
 		}
 		return (T) results.get(0);
 	}
-
+	
 	public <T> List<T> findList() {
 		return (List<T>) jpaCriteriaQuery.list();
 	}
-
+	
 	/**
 	 * 分页查询
 	 *
@@ -365,17 +366,20 @@ public class CriteriaQueryBuilder {
 			jpaCriteriaQuery.setPage(page);
 			/*
 			 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+			 * 不为null才填充是因为执行多次查询时, 前一个是分页查询, 后一个不是, 那么后一个查询会把ThreadContext中的page对象给清掉
 			 */
-			ThreadContext.put("page", page);
+			if (page != null) {
+				ThreadContext.put("page", page);
+			}
 		}
 		List<T> data = (List<T>) jpaCriteriaQuery.list();
 		return data;
 	}
-
+	
 	/**
 	 * 分页查询
 	 *
-	 * @param pageNum 页码从1开始计数
+	 * @param pageNum  页码从1开始计数
 	 * @param pageSize
 	 * @param <T>
 	 * @return Result<T>
@@ -395,7 +399,7 @@ public class CriteriaQueryBuilder {
 		List<T> data = jpaCriteriaQuery.list();
 		return data;
 	}
-
+	
 	/**
 	 * 基于是否受Spring事务管理，获取Spring管理的EntityManager或者自行通过EntityManagerFactory创建的EntityManager
 	 *

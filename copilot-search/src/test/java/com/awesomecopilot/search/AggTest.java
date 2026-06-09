@@ -1,6 +1,8 @@
 package com.awesomecopilot.search;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.search.ElasticUtils.Aggs;
 import com.awesomecopilot.search.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search.builder.agg.sub.SubAggregations;
@@ -48,11 +50,13 @@ public class AggTest {
 	
 	@Test
 	public void testBankAddressTerms() {
-		ElasticUtils.Aggs.terms("bank")
+		List<Map<String, Object>> result = Aggs.terms("bank")
 				.of("age_agg", "age")
 				.size(20)
-				.sort("key:asc")
+				//.sort("key:asc")
 				.get();
+		
+		System.out.println(JacksonUtils.toPrettyJson( result));
 	}
 	@Test
 	public void test() {
