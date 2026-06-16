@@ -11,7 +11,7 @@
         <groupId>com.awesomecopilot</groupId>
         <artifactId>awesome-copilot</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>21.0.7</version>
+        <version>21.0.8</version>
     </parent>
 
     <dependencies>

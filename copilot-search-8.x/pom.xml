@@ -12,7 +12,7 @@
         <groupId>com.awesomecopilot</groupId>
         <artifactId>awesome-copilot</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>21.0.7</version>
+        <version>21.0.8</version>
     </parent>
 
     <dependencies>
@@ -37,6 +37,12 @@
             <groupId>co.elastic.clients</groupId>
             <artifactId>elasticsearch-java</artifactId>
         </dependency>
+        <!-- elasticsearch-java 8.x 需要 rest-client 8.x -->
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-client</artifactId>
+            <version>8.19.14</version>
+        </dependency>
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
@@ -51,6 +57,13 @@
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>
+            <exclusions>
+                <!-- 排除 7.x 版本的 rest-client，使用我们指定的 8.x 版本 -->
+                <exclusion>
+                    <groupId>org.elasticsearch.client</groupId>
+                    <artifactId>elasticsearch-rest-client</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.elasticsearch</groupId>
@@ -76,12 +89,7 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.15.0</version>
-        </dependency>
-
+        <!-- 日志框架：Logback 1.4.x + SLF4J 2.x + Log4j 桥接 -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -89,12 +97,31 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>1.4.14</version>
         </dependency>
+        <!-- 显式指定 logback-core 版本，避免传递依赖引入不兼容版本 -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.2.3</version>
+            <version>1.4.14</version>
+        </dependency>
+        <!-- Logback 1.4.x 需要 janino 支持条件处理 -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+            <version>3.1.10</version>
+        </dependency>
+        <!-- Janino 依赖 commons-compiler -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>commons-compiler</artifactId>
+            <version>3.1.10</version>
+        </dependency>
+        <!-- Log4j 到 SLF4J 的桥接器，让 elasticsearch 的 log4j 调用转到 slf4j -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+            <version>2.20.0</version>
         </dependency>
 
         <dependency>
@@ -145,5 +172,21 @@
             <artifactId>assertj-core</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 配置 Surefire 插件以抑制 JUnit Platform 的 INFO 日志 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- 设置 java.util.logging 级别为 WARNING，抑制 JUnit Platform 的配置加载日志 -->
+                        <java.util.logging.config.file>${project.basedir}/src/test/resources/logging.properties</java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

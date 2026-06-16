@@ -69,6 +69,12 @@ public class Page implements Serializable {
 	 */
 	@JsonIgnore
 	public int getFirstResult() {
+		/*
+		 * pageNum是从1开始的, 但是如果前端传了pageNum=0，那么从第一条数据开始, 不跳过任何记录
+		 */
+		if (pageNum < 1) {
+			return 0;
+		}
 		return (pageNum - 1) * pageSize;
 	}
 

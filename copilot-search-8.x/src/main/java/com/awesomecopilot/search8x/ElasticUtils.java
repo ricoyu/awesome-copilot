@@ -71,6 +71,7 @@ import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.DocumentRestSupport;
 import com.awesomecopilot.search8x.support.IndexSupport;
 import com.awesomecopilot.search8x.support.IndicesRestSupport;
+import com.awesomecopilot.search8x.support.IndicesClientSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
 import com.awesomecopilot.search8x.support.RestSupport;
 import com.awesomecopilot.search8x.support.SettingsSupport;
@@ -253,7 +254,7 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(CLIENT, index, id, doc, false);
+        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, doc, false);
         return response.getId();
     }
 
@@ -286,7 +287,7 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(CLIENT, index, id, doc, true);
+        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, doc, true);
         return response.getId();
     }
 
@@ -327,7 +328,7 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(CLIENT, index, id, toJson(doc), false);
+        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, toJson(doc), false);
         return response.getId();
     }
 
@@ -369,7 +370,7 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(CLIENT, index, id, toJson(doc), true);
+        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, toJson(doc), true);
         return response.getId();
     }
 
@@ -397,7 +398,7 @@ public final class ElasticUtils {
     public static BulkResult bulkIndex(String index, String... docs) {
         BulkRequest bulkRequest = new BulkRequest();
         asList(docs).forEach((doc) -> bulkRequest.add(new IndexRequest(index).source(doc, XContentType.JSON)));
-        BulkResponse responses = DocumentRestSupport.bulk(CLIENT, bulkRequest);
+        BulkResponse responses = DocumentRestSupport.bulk(QUERY_CLIENT, bulkRequest);
 
         BulkResult bulkResult = new BulkResult();
         for (BulkItemResponse response : responses) {
@@ -458,7 +459,7 @@ public final class ElasticUtils {
                     }
                     bulkRequest.add(indexRequest);
                 });
-        BulkResponse itemResponses = DocumentRestSupport.bulk(CLIENT, bulkRequest);
+        BulkResponse itemResponses = DocumentRestSupport.bulk(QUERY_CLIENT, bulkRequest);
         BulkResult bulkResult = new BulkResult();
 
         for (Iterator<BulkItemResponse> iterator = itemResponses.iterator(); iterator.hasNext(); ) {
@@ -520,7 +521,7 @@ public final class ElasticUtils {
         Objects.requireNonNull(index, "索引名不能为null");
         Objects.requireNonNull(id, "id 不能为null");
 
-        GetResponse response = DocumentRestSupport.get(CLIENT, index, id, true);
+        GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id, true);
         return response.getSourceAsString();
     }
 
@@ -536,7 +537,7 @@ public final class ElasticUtils {
         Objects.requireNonNull(index, "索引名不能为null");
         Objects.requireNonNull(id, "id 不能为null");
 
-        GetResponse response = DocumentRestSupport.get(CLIENT, index, id, true);
+        GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id, true);
         long ifSeqNo = response.getSeqNo();
         long ifPrimaryTerm = response.getPrimaryTerm();
 
@@ -564,7 +565,7 @@ public final class ElasticUtils {
         Objects.requireNonNull(id, "id 不能为null");
         Objects.requireNonNull(clazz, "clazz不能为null");
 
-        GetResponse response = DocumentRestSupport.get(CLIENT, index, id, true);
+        GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id, true);
         String source = response.getSourceAsString();
         return toObject(source, clazz);
     }
@@ -583,7 +584,7 @@ public final class ElasticUtils {
         Objects.requireNonNull(id, "id 不能为null");
         Objects.requireNonNull(clazz, "clazz不能为null");
 
-        GetResponse response = DocumentRestSupport.get(CLIENT, index, id, true);
+        GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id, true);
 
         long seqNo = response.getSeqNo();
         long primaryTerm = response.getPrimaryTerm();
@@ -750,7 +751,7 @@ public final class ElasticUtils {
      * @return boolean
      */
     public static boolean exists(String index, String id) {
-        GetResponse response = DocumentRestSupport.get(CLIENT, index, id, false);
+        GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id, false);
         return response.isExists();
     }
 
@@ -1022,7 +1023,7 @@ public final class ElasticUtils {
          * @return boolean
          */
         public static boolean existsIndex(String... indices) {
-            return IndicesRestSupport.existsIndex(CLIENT, indices);
+            return IndicesClientSupport.existsIndex(QUERY_CLIENT, indices);
         }
 
         /**
@@ -1036,7 +1037,7 @@ public final class ElasticUtils {
                 log.info("索引{}不存在", (Object) indices);
                 return false;
             }
-            return IndicesRestSupport.deleteIndex(CLIENT, indices);
+            return IndicesClientSupport.deleteIndex(QUERY_CLIENT, indices);
         }
 
         /**
@@ -1618,7 +1619,7 @@ public final class ElasticUtils {
         public static String byId(String index, Object id) {
             Objects.requireNonNull(index, "index cannot be null!");
             Objects.requireNonNull(id, "id cannot be null!");
-            GetResponse response = DocumentRestSupport.get(CLIENT, index, id.toString(), true);
+            GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id.toString(), true);
             return response.getSourceAsString();
         }
 
@@ -1633,7 +1634,7 @@ public final class ElasticUtils {
             Objects.requireNonNull(index, "index cannot be null!");
             Objects.requireNonNull(id, "id cannot be null!");
             Objects.requireNonNull(resultType, "clazz cannot be null!");
-            GetResponse response = DocumentRestSupport.get(CLIENT, index, id.toString(), true);
+            GetResponse response = DocumentRestSupport.get(QUERY_CLIENT, index, id.toString(), true);
             String source = response.getSourceAsString();
             T obj = toObject(source, resultType);
             Field idField = ElasticCacheUtils.idField(resultType);

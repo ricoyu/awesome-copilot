@@ -32,7 +32,7 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.BoostingQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -161,7 +161,7 @@ public class ElasticUtilsTest {
 					"name": "Coffee Maker",
 					"brand": "Good Coffee",
 					"price": 99.99,
-					"in_stock": 15
+					"in_stock": 153
 				}
 				""", 1);
 		try {

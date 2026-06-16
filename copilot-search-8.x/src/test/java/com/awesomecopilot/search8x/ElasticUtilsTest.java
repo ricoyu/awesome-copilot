@@ -27,12 +27,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.BoostingQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
@@ -48,6 +45,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.completion.context.CategoryQueryContext;
+import org.elasticsearch.xcontent.ToXContent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -437,7 +435,7 @@ public class ElasticUtilsTest {
 	
 	@Test
 	public void testExists() {
-		boolean exists = ElasticUtils.exists("users", "3");
+		boolean exists = ElasticUtils.exists("users", "ftgrsZ4ByeJKshBrqjqr");
 		System.out.println(exists);
 	}
 	

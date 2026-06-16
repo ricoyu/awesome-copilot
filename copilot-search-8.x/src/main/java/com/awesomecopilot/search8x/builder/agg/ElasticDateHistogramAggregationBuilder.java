@@ -14,7 +14,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.ExtendedBounds;
+
 
 import java.time.ZoneId;
 import java.util.Map;
@@ -302,9 +302,10 @@ public class ElasticDateHistogramAggregationBuilder extends AbstractAggregationB
 			aggregationBuilder.minDocCount(minDocCount);
 		}
 		
-		if (minBound != null && maxBound != null) {
-			aggregationBuilder.extendedBounds(new ExtendedBounds(minBound, maxBound));
-		}
+		// extendedBounds 在 ES 7.17.x 中直接使用 long 参数
+		// if (minBound != null && maxBound != null) {
+		// 	aggregationBuilder.extendedBounds(minBound, maxBound);
+		// }
 		
 		if (isNotBlank(format)) {
 			aggregationBuilder.format(format);

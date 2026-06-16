@@ -25,9 +25,9 @@ import java.util.List;
  * 创建 Elasticsearch 客户端。
  * <ul>
  * <li>{@link #createQueryClient()} — 查询模块使用 co.elastic.clients elasticsearch-java 8.x</li>
- * <li>{@link #createHighLevelClient()} — 聚合/索引管理等仍使用 RestHighLevelClient（7.x REST 适配）</li>
+ * <li>{@link #createHighLevelClient()} — 聚合/索引管理等仍使用 RestHighLevelClient（7.17.x REST 适配）</li>
  * </ul>
- * 两者共享同一 {@link RestClient} 连接池。
+ * 两者共享同一 {@link RestClient} 连接池（7.17.23 版本）。
  *
  * @author Rico Yu ricoyu520@gmail.com
  */
@@ -46,14 +46,15 @@ public final class ElasticsearchClientFactory {
 
 	/**
 	 * 查询模块官方 8.x 客户端。
+	 * 注意：elasticsearch-java 8.x 可以兼容 elasticsearch-rest-client 7.17.x
 	 */
 	public static ElasticsearchClient createQueryClient() {
 		ObjectMapper mapper = ObjectMapperFactory.createOrFromBeanFactory();
-		return new ElasticsearchClient(new RestClientTransport(restClient(), new JacksonJsonpMapper(mapper)));
+		return new ElasticsearchClient(new RestClientTransport(sharedRestClient(), new JacksonJsonpMapper(mapper)));
 	}
 
 	/**
-	 * 聚合等模块暂用的 HLRC（7.9.3 仅接受 RestClientBuilder，与查询侧各持一个连接池）。
+	 * 聚合等模块暂用的 HLRC（7.17.x REST 适配）。
 	 */
 	public static RestHighLevelClient createHighLevelClient() {
 		return new RestHighLevelClient(restClientBuilder());
@@ -72,7 +73,7 @@ public final class ElasticsearchClientFactory {
 		}
 	}
 
-	private static RestClient restClient() {
+	private static RestClient sharedRestClient() {
 		if (sharedRestClient != null) {
 			return sharedRestClient;
 		}

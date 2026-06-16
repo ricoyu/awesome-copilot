@@ -42,11 +42,13 @@ public final class SearchRequestSupport {
 
 	public static SearchResponse search(ElasticsearchClient client, String[] indices, SearchOptions options) {
 		if (options.getScrollId() != null) {
-			return SearchResponseBridge.scroll(client, options.getScrollId(), options.getScrollKeepAlive());
+			TimeValue keepAlive = options.getScrollKeepAlive() != null ? parseTimeValue(options.getScrollKeepAlive()) : null;
+			return SearchResponseBridge.scroll(client, options.getScrollId(), keepAlive);
 		}
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		options.toConfigurer().configure(sourceBuilder);
-		return SearchResponseBridge.search(client, indices, sourceBuilder, options.getScrollKeepAlive());
+		TimeValue scroll = options.getScrollKeepAlive() != null ? parseTimeValue(options.getScrollKeepAlive()) : null;
+		return SearchResponseBridge.search(client, indices, sourceBuilder, scroll);
 	}
 
 	public static SearchResponse search(ElasticsearchClient client, String[] indices, SearchSourceConfigurer configurer) {
@@ -108,8 +110,8 @@ public final class SearchRequestSupport {
 	 * 将时间字符串转换为 TimeValue
 	 * 支持格式: "30s", "1m", "500ms", "2h" 等
 	 */
-	private static org.elasticsearch.common.unit.TimeValue parseTimeValue(String timeString) {
-		return org.elasticsearch.common.unit.TimeValue.parseTimeValue(timeString, "scroll");
+	private static TimeValue parseTimeValue(String timeString) {
+		return TimeValue.parseTimeValue(timeString, "scroll");
 	}
 
 	public static final class SearchOptions {

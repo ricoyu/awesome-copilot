@@ -7,7 +7,6 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.ExtendedBounds;
 
 import java.time.ZoneId;
 import java.util.Objects;
@@ -277,21 +276,19 @@ public class ElasticDateHistogramSubAggregation extends SubAggregation implement
 	}
 	
 	public AggregationBuilder build() {
-		DateHistogramAggregationBuilder aggregationBuilder = AggregationBuilders.dateHistogram(name).field(field);
+		DateHistogramAggregationBuilder aggregationBuilder = AggregationBuilders.dateHistogram(name)
+				.field(field);
+		
 		if (fixedInterval != null) {
 			aggregationBuilder.fixedInterval(fixedInterval);
 		}
 		if (calendarInterval != null) {
 			aggregationBuilder.calendarInterval(calendarInterval);
 		}
-		
 		if (minDocCount != null) {
 			aggregationBuilder.minDocCount(minDocCount);
 		}
 		
-		if (minDocCount != null && maxBound != null) {
-			aggregationBuilder.extendedBounds(new ExtendedBounds(minBound, maxBound));
-		}
 		if (isNotBlank(format)) {
 			aggregationBuilder.format(format);
 		}
@@ -300,10 +297,11 @@ public class ElasticDateHistogramSubAggregation extends SubAggregation implement
 		} else {
 			aggregationBuilder.timeZone(DateConstants.CHINA.toZoneId());
 		}
+		
 		SubAggregationSupport.addSubAggregations(aggregationBuilder, subAggregations);
 		return aggregationBuilder;
 	}
-	
+
 	@Override
 	public SubAggregation and() {
 		return parentAggregation;

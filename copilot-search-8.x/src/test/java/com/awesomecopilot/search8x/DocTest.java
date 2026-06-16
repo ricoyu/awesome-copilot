@@ -24,10 +24,10 @@ public class DocTest {
 
     @Test
     public void testGetDocById() {
-        String user = ElasticUtils.get("users", "YM3Deo8ByYxHJQGNXPTj");
+        String user = ElasticUtils.get("users", "gdgrsZ4ByeJKshBrvjri");
         System.out.println(user);
-        User user1 = ElasticUtils.Query.byId("users", "YM3Deo8ByYxHJQGNXPTj", User.class);
-        assertEquals(user1.getUser(), "mike");
+        User user1 = ElasticUtils.Query.byId("users", "gdgrsZ4ByeJKshBrvjri", User.class);
+        assertEquals("mike", user1.getUser());
 
     }
 

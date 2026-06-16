@@ -4,7 +4,7 @@ import com.awesomecopilot.search.cache.ElasticCacheUtils;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.xcontent.XContentType;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;

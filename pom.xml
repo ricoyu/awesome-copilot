@@ -5,7 +5,7 @@
     <groupId>com.awesomecopilot</groupId>
     <artifactId>awesome-copilot</artifactId>
     <packaging>pom</packaging>
-    <version>21.0.7</version>
+    <version>21.0.8</version>
     <name>Awesome Copilot</name>
     <url>http://maven.apache.org</url>
 

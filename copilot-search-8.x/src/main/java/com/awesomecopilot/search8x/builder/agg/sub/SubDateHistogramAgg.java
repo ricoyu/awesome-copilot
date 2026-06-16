@@ -7,9 +7,10 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.ExtendedBounds;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -93,6 +94,23 @@ public abstract class SubDateHistogramAgg {
 	 * 上面格式化成日期字符串时使用的时区
 	 */
 	private ZoneId timezone;
+	
+	/**
+	 * 子聚合列表
+	 */
+	protected final List<SubAggregation> subAggregations = new ArrayList<>();
+	
+	/**
+	 * 为当前子聚合继续添加子聚合
+	 * @param subAggregation 子聚合
+	 * @return SubDateHistogramAgg
+	 */
+	public SubDateHistogramAgg subAggregation(SubAggregation subAggregation) {
+		if (subAggregation != null) {
+			subAggregations.add(subAggregation);
+		}
+		return this;
+	}
 	
 	/**
 	 * 就是固定的时间间隔, 不识别 夏令时, 不同月份有不同的天数, 特定年份的润秒
@@ -244,21 +262,19 @@ public abstract class SubDateHistogramAgg {
 	}
 	
 	protected AggregationBuilder build() {
-		DateHistogramAggregationBuilder aggregationBuilder = AggregationBuilders.dateHistogram(name).field(field);
+		DateHistogramAggregationBuilder aggregationBuilder = AggregationBuilders.dateHistogram(name)
+				.field(field);
+		
 		if (fixedInterval != null) {
 			aggregationBuilder.fixedInterval(fixedInterval);
 		}
 		if (calendarInterval != null) {
 			aggregationBuilder.calendarInterval(calendarInterval);
 		}
-		
 		if (minDocCount != null) {
 			aggregationBuilder.minDocCount(minDocCount);
 		}
 		
-		if (minDocCount != null && maxBound != null) {
-			aggregationBuilder.extendedBounds(new ExtendedBounds(minBound, maxBound));
-		}
 		if (isNotBlank(format)) {
 			aggregationBuilder.format(format);
 		}
@@ -268,8 +284,9 @@ public abstract class SubDateHistogramAgg {
 			aggregationBuilder.timeZone(DateConstants.CHINA.toZoneId());
 		}
 		
+		SubAggregationSupport.addSubAggregations(aggregationBuilder, subAggregations);
 		return aggregationBuilder;
 	}
-	
+
 	public abstract Object and();
 }

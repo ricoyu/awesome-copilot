@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <logger name="com.awesomecopilot.search8x" level="DEBUG" />
+    <logger name="org.junit.platform" level="WARN" />
+    <logger name="org.elasticsearch" level="WARN" />
+    
+    <!-- 抑制 JUnit Platform 的配置参数加载日志 -->
+    <logger name="org.junit.platform.launcher.core.LauncherConfigurationParameters" level="ERROR" />
+</configuration>

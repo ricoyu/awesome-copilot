@@ -51,6 +51,8 @@ public class ElasticPutMappingBuilder extends AbstractMappingBuilder {
 			log.debug("Mapping:\n{}", JacksonUtils.toPrettyJson(source));
 		}
 		PutMappingRequest request = new PutMappingRequest(index);
+		// ES 7.x 需要设置 type 为 _doc，虽然 type 已被废弃
+		request.type(ElasticUtils.ONLY_TYPE);
 		request.source(source);
 		try {
 			return ElasticUtils.CLIENT.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged();
