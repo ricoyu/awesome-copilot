@@ -85,7 +85,6 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequest;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -93,7 +92,6 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -122,7 +120,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1377,8 +1374,10 @@ public final class ElasticUtils {
          * @return boolean
          */
         public boolean setReadOnly(String... indices) {
-            return IndicesRestSupport.updateIndexSettings(CLIENT, indices,
-                    org.elasticsearch.common.settings.Settings.builder().put("blocks.read_only", true).build());
+            // 使用 ES 8.x ElasticsearchClient
+            Map<String, Object> settings = new HashMap<>();
+            settings.put("blocks.read_only", true);
+            return IndicesRestSupport.updateIndexSettings(QUERY_CLIENT, indices, settings);
         }
 
         /**

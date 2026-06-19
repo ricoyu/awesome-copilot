@@ -328,6 +328,44 @@ public final class IndicesRestSupport {
 		}
 	}
 
+	/**
+	 * 使用 ES 8.x Java Client 更新索引的 Settings
+	 *
+	 * @param client   ElasticsearchClient
+	 * @param indices  索引名称数组
+	 * @param settings 索引配置（如 blocks.read_only、refresh_interval 等）
+	 * @return boolean 是否更新成功
+	 */
+	public static boolean updateIndexSettings(ElasticsearchClient client, String[] indices, Map<String, Object> settings) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求，避免 API 兼容性问题
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 执行 HTTP PUT 请求更新 settings
+			String indexName = String.join(",", indices);
+			Request request = new Request("PUT", "/" + indexName + "/_settings");
+			String jsonBody = JacksonUtils.toJson(settings);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
 	public static ForceMergeResponse forceMerge(RestHighLevelClient client, String index) {
 		try {
 			ForceMergeRequest request = new ForceMergeRequest(index);
