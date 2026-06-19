@@ -1,9 +1,11 @@
 package com.awesomecopilot.search8x;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.indices.AnalyzeResponse;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.common.lang.transformer.Transformers;
-import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
@@ -60,77 +62,65 @@ import com.awesomecopilot.search8x.cache.ElasticCacheUtils;
 import com.awesomecopilot.search8x.constants.ElasticConstants;
 import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.Dynamic;
-import com.awesomecopilot.search8x.enums.IndexState;
+import com.awesomecopilot.search8x.exception.DocumentSaveException;
 import com.awesomecopilot.search8x.exception.IndexTemplateException;
 import com.awesomecopilot.search8x.exception.PutMappingException;
 import com.awesomecopilot.search8x.exception.PutSettingsException;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
-import com.awesomecopilot.search8x.support.SearchRequestSupport;
 import com.awesomecopilot.search8x.support.BulkResult;
+import com.awesomecopilot.search8x.support.DocumentOperationResult;
 import com.awesomecopilot.search8x.support.DocumentRestSupport;
 import com.awesomecopilot.search8x.support.IndexSupport;
-import com.awesomecopilot.search8x.support.IndicesRestSupport;
 import com.awesomecopilot.search8x.support.IndicesClientSupport;
+import com.awesomecopilot.search8x.support.IndicesRestSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
 import com.awesomecopilot.search8x.support.RestSupport;
+import com.awesomecopilot.search8x.support.SearchRequestSupport;
 import com.awesomecopilot.search8x.support.SettingsSupport;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.DocWriteResponse;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequest;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
-import org.elasticsearch.client.indices.AnalyzeRequest;
-import org.elasticsearch.client.indices.AnalyzeResponse;
-import org.elasticsearch.client.indices.AnalyzeResponse.AnalyzeToken;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import java.io.IOException;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.index.reindex.DeleteByQueryRequest;
-import org.elasticsearch.index.reindex.UpdateByQueryRequest;
 import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
 import org.elasticsearch.search.suggest.phrase.PhraseSuggestionBuilder;
 import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
+import org.elasticsearch.xcontent.XContentType;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -254,8 +244,12 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, doc, false);
-        return response.getId();
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.indexWithResult(QUERY_CLIENT, index, id, doc, false);
+        if (!result.isSuccess()) {
+            throw new DocumentSaveException("Failed to index document: " + result.getErrorMessage());
+        }
+        return result.getId();
     }
 
     /**
@@ -287,8 +281,12 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, doc, true);
-        return response.getId();
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.indexWithResult(QUERY_CLIENT, index, id, doc, true);
+        if (!result.isSuccess()) {
+            throw new DocumentSaveException("Failed to create document: " + result.getErrorMessage());
+        }
+        return result.getId();
     }
 
     /**
@@ -328,8 +326,12 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, toJson(doc), false);
-        return response.getId();
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.indexWithResult(QUERY_CLIENT, index, id, toJson(doc), false);
+        if (!result.isSuccess()) {
+            throw new DocumentSaveException("Failed to index document: " + result.getErrorMessage());
+        }
+        return result.getId();
     }
 
     /**
@@ -370,8 +372,12 @@ public final class ElasticUtils {
         if (doc == null) {
             return null;
         }
-        IndexResponse response = DocumentRestSupport.index(QUERY_CLIENT, index, id, toJson(doc), true);
-        return response.getId();
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.indexWithResult(QUERY_CLIENT, index, id, toJson(doc), true);
+        if (!result.isSuccess()) {
+            throw new DocumentSaveException("Failed to create document: " + result.getErrorMessage());
+        }
+        return result.getId();
     }
 
     /**
@@ -604,7 +610,7 @@ public final class ElasticUtils {
      * @return
      */
     public static ElasticMultiGetBuilder mget() {
-        return new ElasticMultiGetBuilder(CLIENT);
+        return new ElasticMultiGetBuilder(QUERY_CLIENT);
     }
 
     /**
@@ -616,8 +622,9 @@ public final class ElasticUtils {
      */
     public static boolean delete(String index, Integer id) {
         Objects.requireNonNull(id, "id cannot be null!");
-        DeleteResponse response = DocumentRestSupport.delete(CLIENT, index, id.toString());
-        return response.getResult() == DocWriteResponse.Result.DELETED;
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.deleteWithResult(QUERY_CLIENT, index, id.toString());
+        return result.isSuccess() && "deleted".equals(result.getResult());
     }
 
     /**
@@ -628,8 +635,9 @@ public final class ElasticUtils {
      * @return Result
      */
     public static boolean delete(String index, String id) {
-        DeleteResponse response = DocumentRestSupport.delete(CLIENT, index, id);
-        return response.getResult() == DocWriteResponse.Result.DELETED;
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.deleteWithResult(QUERY_CLIENT, index, id);
+        return result.isSuccess() && "deleted".equals(result.getResult());
     }
 
     /**
@@ -642,7 +650,33 @@ public final class ElasticUtils {
      * @return long
      */
     public static long deleteBy(String index, String field, String value) {
-        return DocumentRestSupport.deleteByQuery(CLIENT, index, QueryBuilders.termQuery(field, value));
+        // 使用底层 RestClient 执行 delete-by-query 请求
+        try {
+            RestClientTransport transport =
+                    (RestClientTransport) QUERY_CLIENT._transport();
+            RestClient restClient = transport.restClient();
+            
+            // 构建查询条件
+            JSONObject queryObj = new JSONObject();
+            JSONObject termObj = new JSONObject();
+            termObj.put(field, value);
+            JSONObject queryTermObj = new JSONObject();
+            queryTermObj.put("term", termObj);
+            queryObj.put("query", queryTermObj);
+            
+            // 执行 HTTP 请求
+            Request request = new Request("POST", "/" + index + "/_delete_by_query");
+            request.setJsonEntity(queryObj.toString());
+            
+            Response response = restClient.performRequest(request);
+            String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+            
+            // 解析响应获取删除数量
+            JSONObject root = new JSONObject(jsonResponse);
+            return root.optLong("deleted", 0);
+        } catch (Exception e) {
+            throw new com.awesomecopilot.search8x.exception.DocumentDeleteException(e);
+        }
     }
 
     /**
@@ -678,8 +712,9 @@ public final class ElasticUtils {
      * @return Result 更新结果(更新了? 没更新?)
      */
     public static UpdateResult update(String index, String id, String doc) {
-        UpdateResponse response = DocumentRestSupport.update(CLIENT, index, id, doc, false);
-        return UpdateResult.from(response);
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult result = DocumentRestSupport.updateWithResult(QUERY_CLIENT, index, id, doc, false);
+        return UpdateResult.from(result);
     }
 
     /**
@@ -739,7 +774,8 @@ public final class ElasticUtils {
      * @return Result 创建? 更新? 没更新?
      */
     public static UpdateResult upsert(String index, String id, String doc) {
-        UpdateResponse updateResponse = DocumentRestSupport.update(CLIENT, index, id, doc, true);
+        // 使用新的方法，避免版本兼容性问题
+        DocumentOperationResult updateResponse = DocumentRestSupport.updateWithResult(QUERY_CLIENT, index, id, doc, true);
         return UpdateResult.from(updateResponse);
     }
 
@@ -921,12 +957,16 @@ public final class ElasticUtils {
             throw new IllegalArgumentException("analyzer cannot be null");
         }
 
-        AnalyzeRequest analyzeRequest = AnalyzeRequest.withGlobalAnalyzer(analyzer.toString(), texts);
         try {
-            AnalyzeResponse response = CLIENT.indices().analyze(analyzeRequest, RequestOptions.DEFAULT);
-            return response.getTokens()
+            // 使用 Elasticsearch 8.x Java Client 的 analyze API
+            AnalyzeResponse response = QUERY_CLIENT.indices().analyze(a -> a
+                    .analyzer(analyzer.toString())
+                    .text(java.util.Arrays.asList(texts))
+            );
+            
+            return response.tokens()
                     .stream()
-                    .map(AnalyzeToken::getTerm)
+                    .map(token -> token.token())
                     .distinct()
                     .collect(toList());
         } catch (IOException e) {
@@ -942,14 +982,86 @@ public final class ElasticUtils {
      * @return BulkByScrollResponse
      */
     public static BulkByScrollResponse updateByQuery(String... indices) {
-        UpdateByQueryRequest updateByQuery = new UpdateByQueryRequest(indices);
-        updateByQuery.setAbortOnVersionConflict(false);
+        // 使用底层 RestClient 执行 update-by-query 请求
         try {
-            BulkByScrollResponse bulkByScrollResponse = CLIENT.updateByQuery(updateByQuery, RequestOptions.DEFAULT);
-            log.info(bulkByScrollResponse.toString());
-            return bulkByScrollResponse;
+            RestClientTransport transport =
+                    (RestClientTransport) QUERY_CLIENT._transport();
+            RestClient restClient = transport.restClient();
+            
+            // 构建请求体 - 匹配所有文档
+            JSONObject queryObj = new JSONObject();
+            JSONObject matchAllObj = new JSONObject();
+            matchAllObj.put("match_all", new JSONObject());
+            queryObj.put("query", matchAllObj);
+            
+            // 执行 HTTP 请求
+            Request request = new Request("POST", "/" + String.join(",", indices) + "/_update_by_query");
+            request.addParameter("conflicts", "proceed"); // 相当于 abortOnVersionConflict(false)
+            request.setJsonEntity(queryObj.toString());
+            
+            Response response = restClient.performRequest(request);
+            String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+            
+            log.info("Update by query response: {}", jsonResponse);
+            
+            // 解析响应为 BulkByScrollResponse
+            return parseBulkByScrollResponse(jsonResponse);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+    
+    /**
+     * 从 JSON 响应解析为 BulkByScrollResponse
+     */
+    private static BulkByScrollResponse parseBulkByScrollResponse(String jsonResponse) {
+        try {
+            JSONObject root = new JSONObject(jsonResponse);
+            
+            // 使用反射创建 BulkByScrollResponse
+            java.lang.reflect.Constructor<BulkByScrollResponse> constructor = 
+                    BulkByScrollResponse.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            BulkByScrollResponse response = constructor.newInstance();
+            
+            // 设置 updated 字段
+            long updated = root.optLong("updated", 0);
+            java.lang.reflect.Field updatedField = BulkByScrollResponse.class.getDeclaredField("updated");
+            updatedField.setAccessible(true);
+            updatedField.set(response, updated);
+            
+            // 设置 noops 字段
+            long noops = root.optLong("noops", 0);
+            java.lang.reflect.Field noopsField = BulkByScrollResponse.class.getDeclaredField("noops");
+            noopsField.setAccessible(true);
+            noopsField.set(response, noops);
+            
+            // 设置 versionConflicts 字段
+            long versionConflicts = root.optLong("version_conflicts", 0);
+            java.lang.reflect.Field versionConflictsField = BulkByScrollResponse.class.getDeclaredField("versionConflicts");
+            versionConflictsField.setAccessible(true);
+            versionConflictsField.set(response, versionConflicts);
+            
+            // 设置 bulkFailures 字段
+            java.lang.reflect.Field bulkFailuresField = BulkByScrollResponse.class.getDeclaredField("bulkFailures");
+            bulkFailuresField.setAccessible(true);
+            bulkFailuresField.set(response, java.util.Collections.emptyList());
+            
+            // 设置 searchFailures 字段
+            java.lang.reflect.Field searchFailuresField = BulkByScrollResponse.class.getDeclaredField("searchFailures");
+            searchFailuresField.setAccessible(true);
+            searchFailuresField.set(response, java.util.Collections.emptyList());
+            
+            // 设置 timedOut 字段
+            boolean timedOut = root.optBoolean("timed_out", false);
+            java.lang.reflect.Field timedOutField = BulkByScrollResponse.class.getDeclaredField("timedOut");
+            timedOutField.setAccessible(true);
+            timedOutField.set(response, timedOut);
+            
+            return response;
+        } catch (Exception e) {
+            log.error("Failed to parse update-by-query response: {}", jsonResponse, e);
+            throw new RuntimeException("Failed to parse update-by-query response", e);
         }
     }
 
@@ -998,7 +1110,8 @@ public final class ElasticUtils {
                 index = IndexSupport.indexName(entityClass);
             }
 
-            ElasticIndexBuilder indexBuilder = new ElasticIndexBuilder(CLIENT, index);
+            // 使用 ES 8.x Java Client
+            ElasticIndexBuilder indexBuilder = new ElasticIndexBuilder(QUERY_CLIENT, index);
             boolean created = indexBuilder.settings(settingsBuilder)
                     .mapping(putMappingBuilder)
                     .create();
@@ -1013,7 +1126,8 @@ public final class ElasticUtils {
          * @return boolean 创建成功失败标识
          */
         public static ElasticIndexBuilder createIndex(String index) {
-            return new ElasticIndexBuilder(CLIENT, index);
+            // 使用 ES 8.x Java Client
+            return new ElasticIndexBuilder(QUERY_CLIENT, index);
         }
 
         /**
@@ -1046,7 +1160,7 @@ public final class ElasticUtils {
          * @return List<String>
          */
         public static List<String> listIndexNames() {
-            return IndicesRestSupport.listIndexNames(CLIENT);
+            return IndicesRestSupport.listIndexNames(QUERY_CLIENT);
         }
 
         /**
@@ -1054,21 +1168,7 @@ public final class ElasticUtils {
          * @return List<Index>
          */
         public static List<Index> listIndices() {
-            GetIndexResponse indexResponse = IndicesRestSupport.getIndices(CLIENT, "*");
-            List<Index> indexList = new ArrayList<>();
-            for (String indexName : indexResponse.getIndices()) {
-                Index index = new Index();
-                index.setName(indexName);
-                org.elasticsearch.common.settings.Settings esSettings = indexResponse.getSettings().get(indexName);
-                if (esSettings != null) {
-                    index.setNumberOfShards(esSettings.getAsInt("index.number_of_shards",
-                            esSettings.getAsInt("number_of_shards", 1)));
-                    index.setNumberOfReplicas(esSettings.getAsInt("index.number_of_replicas",
-                            esSettings.getAsInt("number_of_replicas", 0)));
-                }
-                indexList.add(index);
-            }
-            return indexList;
+            return IndicesRestSupport.listIndices(QUERY_CLIENT);
         }
 
         /**
@@ -1326,7 +1426,7 @@ public final class ElasticUtils {
          * @return
          */
         public static Map<String, Object> getMapping(String index) {
-            return IndicesRestSupport.getMapping(CLIENT, index);
+            return IndicesRestSupport.getMapping(QUERY_CLIENT, index);
         }
 
         /**

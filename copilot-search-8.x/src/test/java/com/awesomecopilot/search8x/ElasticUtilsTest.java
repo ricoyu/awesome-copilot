@@ -150,10 +150,21 @@ public class ElasticUtilsTest {
 	
 	@Test
 	public void testCreateEndpoint() {
+		// 先检查索引是否存在，如果存在则删除文档
 		boolean exists = Admin.existsIndex("product");
 		if (exists) {
-			ElasticUtils.delete("product", 1);
+			try {
+				String product = ElasticUtils.get("product", 1);
+				if (product != null) {
+					ElasticUtils.delete("product", 1);
+				}
+			} catch (Exception e) {
+				// 文档不存在，忽略异常
+				System.out.println("Document not found, will create new one");
+			}
 		}
+		
+		// 创建新文档
 		String id = ElasticUtils.create("product", """
 				{
 					"name": "Coffee Maker",
@@ -168,6 +179,7 @@ public class ElasticUtilsTest {
 			throw new RuntimeException(e);
 		}
 		
+		// 验证文档已创建
 		String doc = ElasticUtils.get("product", id);
 		System.out.println(doc);
 	}
@@ -195,6 +207,11 @@ public class ElasticUtilsTest {
 	
 	@Test
 	public void test11() {
+		boolean exists = Admin.existsIndex("rico");
+		if (exists) {
+			boolean deleted = Admin.deleteIndex("rico");
+			assertTrue(deleted);
+		}
 		boolean created = Admin.createIndex("rico")
 				.mapping(Dynamic.FALSE)
 				.field("name", FieldType.TEXT)
@@ -203,6 +220,7 @@ public class ElasticUtilsTest {
 				.analyzer(Analyzer.IK_MAX_WORD)
 				.searchAnalyzer(Analyzer.IK_SMART)
 				.thenCreate();
+		assertTrue(created);
 	}
 	
 	@Test
@@ -967,7 +985,7 @@ public class ElasticUtilsTest {
 	@SneakyThrows
 	@Test
 	public void testHanLpAnalyzer() {
-		ElasticUtils.analyze(Analyzer.HANLP_NLP, "美国会同意对台军售").forEach(System.out::println);
+		ElasticUtils.analyze(Analyzer.IK_SMART, "美国会同意对台军售").forEach(System.out::println);
 		/*AnalyzeResponse response =
 				ElasticUtils.client.admin().indices().analyze(new AnalyzeRequest().text("美国会同意对台军售").analyzer(Analyzer
 				.HANLP_NLP.toString())).get();

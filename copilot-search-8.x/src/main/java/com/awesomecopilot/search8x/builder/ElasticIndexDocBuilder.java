@@ -12,7 +12,7 @@ import java.io.IOException;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
-import static com.awesomecopilot.search8x.ElasticUtils.CLIENT;
+import static com.awesomecopilot.search8x.ElasticUtils.QUERY_CLIENT;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
@@ -95,22 +95,13 @@ public class ElasticIndexDocBuilder {
 	 * @return docId
 	 */
 	public String execute() {
-		IndexRequest indexRequest = new IndexRequest(index);
-		if (isNotBlank(id)) {
-			indexRequest.id(id);
+		// 使用 Elasticsearch 8.x ElasticsearchClient API
+		boolean createMode = false; // 默认是索引模式（存在则更新）
+		com.awesomecopilot.search8x.support.DocumentOperationResult result = 
+			DocumentRestSupport.indexWithResult(QUERY_CLIENT, index, id, doc, createMode, pipeline, refresh);
+		if (!result.isSuccess()) {
+			throw new RuntimeException("Failed to index document: " + result.getErrorMessage());
 		}
-		indexRequest.source(doc, XContentType.JSON);
-		if (isNotBlank(pipeline)) {
-			indexRequest.setPipeline(pipeline);
-		}
-		if (refresh) {
-			indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-		}
-		try {
-			IndexResponse response = CLIENT.index(indexRequest, RequestOptions.DEFAULT);
-			return response.getId();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		return result.getId();
 	}
 }

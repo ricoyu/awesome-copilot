@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x.builder.query;
 
+import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils;
 import com.awesomecopilot.search8x.exception.DocumentUpdateException;
 import com.awesomecopilot.search8x.support.UpdateResult;
@@ -9,6 +10,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -150,29 +152,80 @@ public class ElasticUpdateBuilder {
 		} else {
 			document = toJson(doc);
 		}
-		UpdateRequest updateRequest = new UpdateRequest(index, id);
-		updateRequest.doc(document, XContentType.JSON);
-		if (refresh != null && refresh.booleanValue()) {
-			updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-		}
-		if (upsert != null && upsert.booleanValue()) {
-			updateRequest.docAsUpsert(true);
-		}
-		if (ifSeqNo != null) {
-			updateRequest.setIfSeqNo(ifSeqNo);
-		}
-		if (ifPrimaryTerm != null) {
-			updateRequest.setIfPrimaryTerm(ifPrimaryTerm);
-		}
+		
+		// 使用底层 RestClient 执行更新请求
 		try {
-			UpdateResponse response = ElasticUtils.CLIENT.update(updateRequest, RequestOptions.DEFAULT);
-			return UpdateResult.from(response);
+			co.elastic.clients.transport.rest_client.RestClientTransport transport = 
+					(co.elastic.clients.transport.rest_client.RestClientTransport) ElasticUtils.QUERY_CLIENT._transport();
+			org.elasticsearch.client.RestClient restClient = transport.restClient();
+			
+			String endpoint = "/" + index + "/_doc/" + id;
+			org.elasticsearch.client.Request request = new org.elasticsearch.client.Request("POST", endpoint);
+			
+			// 添加 refresh 参数
+			if (refresh != null && refresh.booleanValue()) {
+				request.addParameter("refresh", "true");
+			}
+			
+			// 构建更新请求体
+			JSONObject requestBody = new JSONObject();
+			JSONObject docObj = new JSONObject(document);
+			requestBody.put("doc", docObj);
+			if (upsert != null && upsert.booleanValue()) {
+				requestBody.put("doc_as_upsert", true);
+			}
+			
+			request.setJsonEntity(requestBody.toString());
+			
+			org.elasticsearch.client.Response response = restClient.performRequest(request);
+			String jsonResponse = org.apache.http.util.EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应
+			return parseUpdateResponse(jsonResponse);
 		} catch (VersionConflictEngineException e) {
 			UpdateResult updateResult = new UpdateResult();
 			updateResult.setResult(VERSION_CONFLICT);
 			return updateResult;
 		} catch (IOException e) {
 			throw new DocumentUpdateException(e);
+		}
+	}
+	
+	/**
+	 * 解析更新操作的 JSON 响应为 UpdateResult
+	 */
+	private UpdateResult parseUpdateResponse(String jsonResponse) {
+		try {
+			org.json.JSONObject root = new org.json.JSONObject(jsonResponse);
+			
+			String resultStr = root.optString("result", "noop");
+			
+			UpdateResult updateResult = new UpdateResult();
+			// 根据 result 字符串设置对应的枚举值
+			if ("updated".equals(resultStr)) {
+				updateResult.setResult(UpdateResult.Result.UPDATED);
+			} else if ("created".equals(resultStr)) {
+				updateResult.setResult(UpdateResult.Result.CREATED);
+			} else {
+				updateResult.setResult(UpdateResult.Result.NOOP);
+			}
+			
+			// 从响应中提取 version, seq_no, primary_term
+			Long version = root.optLong("_version", 0);
+			Long seqNo = root.optLong("_seq_no", 0);
+			Long primaryTerm = root.optLong("_primary_term", 1);
+			
+			// 使用反射设置私有字段（因为 UpdateResult 没有提供 setter）
+			java.lang.reflect.Field versionField = UpdateResult.class.getDeclaredField("version");
+			versionField.setAccessible(true);
+			versionField.set(updateResult, version);
+			
+			updateResult.setIfSeqNo(seqNo);
+			updateResult.setIfPrimaryTerm(primaryTerm);
+			
+			return updateResult;
+		} catch (Exception e) {
+			throw new com.awesomecopilot.search8x.exception.DocumentUpdateException("Failed to parse update response: " + jsonResponse, e);
 		}
 	}
 }

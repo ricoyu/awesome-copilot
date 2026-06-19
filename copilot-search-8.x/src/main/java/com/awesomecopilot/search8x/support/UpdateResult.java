@@ -98,4 +98,29 @@ public class UpdateResult {
 		updateResult.setIfPrimaryTerm(ifPrimaryTerm);
 		return updateResult;
 	}
+
+	/**
+	 * 从 DocumentOperationResult 创建 UpdateResult（用于 ES 8.x）
+	 * @param result DocumentOperationResult
+	 * @return UpdateResult
+	 */
+	public static UpdateResult from(DocumentOperationResult result) {
+		UpdateResult updateResult = new UpdateResult();
+		updateResult.version = result.getVersion();
+		// 解析 result 字符串为枚举
+		String resultStr = result.getResult();
+		if ("created".equals(resultStr)) {
+			updateResult.result = Result.CREATED;
+		} else if ("updated".equals(resultStr)) {
+			updateResult.result = Result.UPDATED;
+		} else if ("noop".equals(resultStr)) {
+			updateResult.result = Result.NOOP;
+		} else {
+			updateResult.result = Result.NOOP;
+		}
+		// ifSeqNo 和 ifPrimaryTerm 在自定义结果中暂不支持，设置为默认值
+		updateResult.setIfSeqNo(0L);
+		updateResult.setIfPrimaryTerm(1L);
+		return updateResult;
+	}
 }

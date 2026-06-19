@@ -4,10 +4,8 @@ import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils;
 import com.awesomecopilot.search8x.enums.Dynamic;
 import com.awesomecopilot.search8x.exception.PutMappingException;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.client.RequestOptions;
+import com.awesomecopilot.search8x.support.IndicesRestSupport;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
@@ -50,14 +48,7 @@ public class ElasticPutMappingBuilder extends AbstractMappingBuilder {
 		if (log.isDebugEnabled()) {
 			log.debug("Mapping:\n{}", JacksonUtils.toPrettyJson(source));
 		}
-		PutMappingRequest request = new PutMappingRequest(index);
-		// ES 7.x 需要设置 type 为 _doc，虽然 type 已被废弃
-		request.type(ElasticUtils.ONLY_TYPE);
-		request.source(source);
-		try {
-			return ElasticUtils.CLIENT.indices().putMapping(request, RequestOptions.DEFAULT).isAcknowledged();
-		} catch (IOException e) {
-			throw new PutMappingException(e);
-		}
+		// 使用 ES 8.x ElasticsearchClient
+		return IndicesRestSupport.putMapping(ElasticUtils.QUERY_CLIENT, index, source);
 	}
 }

@@ -165,7 +165,9 @@ public final class ElasticIndexTemplateBuilder {
 			request.version(version);
 		}
 		if (mappingBuilder != null) {
-			request.mapping(ElasticUtils.ONLY_TYPE, mappingBuilder.build());
+			// ES 8.x: 将 mapping 转为 JSON 字符串
+			String mappingJson = com.awesomecopilot.json.jackson.JacksonUtils.toJson(mappingBuilder.build());
+			request.mapping(mappingJson, org.elasticsearch.xcontent.XContentType.JSON);
 		}
 		if (settings != null) {
 			request.settings((org.elasticsearch.common.settings.Settings) ReflectionUtils.invokeMethod("build", settings));

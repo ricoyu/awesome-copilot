@@ -46,11 +46,12 @@
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
+            <version>2.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>
-            <version>1.1.5</version>
+            <version>1.0.5</version>
         </dependency>
 
         <!-- REST High Level Client: 兼容原 QueryBuilder/聚合 DSL, 通过 REST 访问 ES 8.x -->

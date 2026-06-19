@@ -1,19 +1,19 @@
 package com.awesomecopilot.search8x.builder.bulk;
 
+import co.elastic.clients.elasticsearch._types.ErrorCause;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import com.awesomecopilot.search8x.support.BulkResult;
-import com.awesomecopilot.search8x.support.DocumentRestSupport;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.update.UpdateRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.awesomecopilot.search8x.ElasticUtils.CLIENT;
+import static com.awesomecopilot.search8x.ElasticUtils.QUERY_CLIENT;
 
 /**
  * 批量更新
@@ -28,12 +28,29 @@ import static com.awesomecopilot.search8x.ElasticUtils.CLIENT;
  */
 public class ElasticBulkUpdateBuilder {
 	
+	private static final Logger log = LoggerFactory.getLogger(ElasticBulkUpdateBuilder.class);
+	
 	/**
 	 * 是否要立即刷新
 	 */
 	private Boolean refresh;
 	
-	private List<UpdateRequest> updateRequests = new ArrayList<>();
+	private List<UpdateDoc> updateDocs = new ArrayList<>();
+	
+	/**
+	 * 内部类：封装更新文档的信息
+	 */
+	private static class UpdateDoc {
+		String index;
+		String id;
+		Map<String, Object> doc;
+		
+		UpdateDoc(String index, String id, Map<String, Object> doc) {
+			this.index = index;
+			this.id = id;
+			this.doc = doc;
+		}
+	}
 	
 	public ElasticBulkUpdateBuilder() {
 	}
@@ -46,7 +63,7 @@ public class ElasticBulkUpdateBuilder {
 	 * @return ElasticBulkUpdateBuilder
 	 */
 	public ElasticBulkUpdateBuilder doc(String index, String id, Map<String, Object> doc) {
-		updateRequests.add(new UpdateRequest(index, id).doc(doc));
+		updateDocs.add(new UpdateDoc(index, id, doc));
 		return this;
 	}
 	
@@ -58,7 +75,17 @@ public class ElasticBulkUpdateBuilder {
 	 * @return ElasticBulkUpdateBuilder
 	 */
 	public ElasticBulkUpdateBuilder doc(String index, String id, Object... doc) {
-		updateRequests.add(new UpdateRequest(index, id).doc(doc));
+		// 将可变参数转换为 Map
+		if (doc.length % 2 != 0) {
+			throw new IllegalArgumentException("doc parameters must be in pairs: field, value, field, value...");
+		}
+		Map<String, Object> docMap = new java.util.HashMap<>();
+		for (int i = 0; i < doc.length; i += 2) {
+			String field = String.valueOf(doc[i]);
+			Object value = doc[i + 1];
+			docMap.put(field, value);
+		}
+		updateDocs.add(new UpdateDoc(index, id, docMap));
 		return this;
 	}
 	
@@ -73,22 +100,70 @@ public class ElasticBulkUpdateBuilder {
 	}
 	
 	public BulkResult execute() {
-		BulkRequest bulkRequest = new BulkRequest();
-		if (refresh != null && refresh.booleanValue()) {
-			bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+		try {
+			// 构建 BulkOperation 列表
+			List<BulkOperation> bulkOperations = new ArrayList<>();
+			
+			for (UpdateDoc updateDoc : updateDocs) {
+				BulkOperation operation =
+						BulkOperation.of(op -> op
+								.update(update -> update
+										.index(updateDoc.index)
+										.id(updateDoc.id)
+										.action(action -> action
+												.doc(updateDoc.doc)
+										)
+								)
+						);
+				bulkOperations.add(operation);
+			}
+			
+			// 构建 BulkRequest
+			BulkRequest.Builder bulkRequestBuilder = new BulkRequest.Builder()
+					.operations(bulkOperations);
+			
+			// 设置刷新策略
+			if (refresh != null && refresh) {
+				bulkRequestBuilder.refresh(co.elastic.clients.elasticsearch._types.Refresh.True);
+			}
+			
+			BulkRequest bulkRequest = bulkRequestBuilder.build();
+			
+			// 执行 bulk 请求
+			BulkResponse bulkResponse = QUERY_CLIENT.bulk(bulkRequest);
+			
+			// 解析响应
+			return parseBulkResponse(bulkResponse);
+		} catch (Exception e) {
+			log.error("Bulk update failed", e);
+			throw new RuntimeException("Bulk update failed", e);
 		}
-		updateRequests.forEach(bulkRequest::add);
-		BulkResponse itemResponses = DocumentRestSupport.bulk(CLIENT, bulkRequest);
+	}
+	
+	private BulkResult parseBulkResponse(BulkResponse bulkResponse) {
 		BulkResult bulkResult = new BulkResult();
 		
-		for (Iterator<BulkItemResponse> iterator = itemResponses.iterator(); iterator.hasNext(); ) {
-			BulkItemResponse itemResponse = iterator.next();
-			if (itemResponse.isFailed()) {
+		if (bulkResponse.errors()) {
+			log.warn("Bulk update has errors");
+		}
+		
+		List<BulkResponseItem> items = bulkResponse.items();
+		for (BulkResponseItem item : items) {
+			String id = item.id();
+			
+			if (item.error() != null) {
+				// 失败
 				bulkResult.fail();
-				bulkResult.addFailMessage(itemResponse.getFailureMessage());
+				ErrorCause error = item.error();
+				String failureMessage = error.reason() != null ? error.reason() : "Unknown error";
+				bulkResult.addFailMessage(failureMessage);
+				log.error("Bulk update failed for id {}: {}", id, failureMessage);
 			} else {
+				// 成功
 				bulkResult.success();
-				bulkResult.addId(itemResponse.getId());
+				if (id != null && !id.isEmpty()) {
+					bulkResult.addId(id);
+				}
 			}
 		}
 		
