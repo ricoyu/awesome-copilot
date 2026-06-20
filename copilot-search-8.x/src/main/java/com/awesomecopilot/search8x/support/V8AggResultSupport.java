@@ -4,6 +4,8 @@ import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.StringTermsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.LongTermsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.RangeAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.HistogramAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -212,6 +214,94 @@ public final class V8AggResultSupport {
 			}
 		} else {
 			log.warn("Aggregation [{}] is not a Range aggregation, type: {}", aggName, aggregate._kind());
+		}
+		
+		return result;
+	}
+
+	/**
+	 * 解析 Histogram 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Map<String, Object> 聚合结果，key 为桶的 key（数值），value 为文档数量
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Map<String, T> histogramResult(Map<String, Aggregate> aggregations, String aggName) {
+		Map<String, T> result = new HashMap<>();
+		
+		if (aggregations == null || aggregations.isEmpty()) {
+			return result;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return result;
+		}
+		
+		// 处理 Histogram 聚合
+		if (aggregate.isHistogram()) {
+			HistogramAggregate histogramAggregate = aggregate.histogram();
+			List<?> buckets = histogramAggregate.buckets().array();
+			
+			for (Object obj : buckets) {
+				var bucket = (co.elastic.clients.elasticsearch._types.aggregations.HistogramBucket) obj;
+				
+				// Histogram bucket 的 key 是 double 类型
+				Double key = bucket.key();
+				long docCount = bucket.docCount();
+				
+				log.debug("Histogram Bucket [{}]: Key={}, DocCount={}", 
+						aggName, key, docCount);
+				result.put(String.valueOf(key), (T) Long.valueOf(docCount));
+			}
+		} else {
+			log.warn("Aggregation [{}] is not a Histogram aggregation, type: {}", aggName, aggregate._kind());
+		}
+		
+		return result;
+	}
+
+	/**
+	 * 解析 Date Histogram 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Map<String, Object> 聚合结果，key 为桶的 key（日期字符串或时间戳），value 为文档数量
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Map<String, T> dateHistogramResult(Map<String, Aggregate> aggregations, String aggName) {
+		Map<String, T> result = new HashMap<>();
+		
+		if (aggregations == null || aggregations.isEmpty()) {
+			return result;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return result;
+		}
+		
+		// 处理 Date Histogram 聚合
+		if (aggregate.isDateHistogram()) {
+			DateHistogramAggregate dateHistogramAggregate = aggregate.dateHistogram();
+			List<?> buckets = dateHistogramAggregate.buckets().array();
+			
+			for (Object obj : buckets) {
+				var bucket = (co.elastic.clients.elasticsearch._types.aggregations.DateHistogramBucket) obj;
+				
+				// Date Histogram bucket 的 key 是 long 类型的时间戳（毫秒）
+				Long timestamp = bucket.key();
+				long docCount = bucket.docCount();
+				
+				log.debug("Date Histogram Bucket [{}]: Timestamp={}, DocCount={}", 
+						aggName, timestamp, docCount);
+				result.put(String.valueOf(timestamp), (T) Long.valueOf(docCount));
+			}
+		} else {
+			log.warn("Aggregation [{}] is not a Date Histogram aggregation, type: {}", aggName, aggregate._kind());
 		}
 		
 		return result;

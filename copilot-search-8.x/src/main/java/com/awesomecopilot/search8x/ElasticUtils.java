@@ -35,6 +35,8 @@ import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8RangeAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8HistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8DateHistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ESBulkProcessor;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkUpdateBuilder;
@@ -2219,6 +2221,28 @@ public final class ElasticUtils {
          */
         public static V8RangeAggregationBuilder range(String... indices) {
             return V8RangeAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Histogram 聚合 (ES 8.x 原生 API)
+         * 基于数值字段按固定间隔创建分桶，适用于统计分布分析
+         *
+         * @param indices 索引名称
+         * @return V8HistogramAggregationBuilder
+         */
+        public static V8HistogramAggregationBuilder histogram(String... indices) {
+            return V8HistogramAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Date Histogram 聚合 (ES 8.x 原生 API)
+         * 基于日期字段按时间间隔创建分桶，支持日历间隔和固定间隔，适用于时间序列分析
+         *
+         * @param indices 索引名称
+         * @return V8DateHistogramAggregationBuilder
+         */
+        public static V8DateHistogramAggregationBuilder dateHistogram(String... indices) {
+            return V8DateHistogramAggregationBuilder.instance(indices);
         }
     }
 
