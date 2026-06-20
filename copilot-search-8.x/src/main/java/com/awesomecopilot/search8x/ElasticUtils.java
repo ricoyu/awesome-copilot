@@ -33,6 +33,8 @@ import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8RangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ESBulkProcessor;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkUpdateBuilder;
@@ -1176,7 +1178,7 @@ public final class ElasticUtils {
          * @return 创建成功与否
          */
         public static boolean createIndexAlias(String index, String alias) {
-            return IndicesRestSupport.addAlias(CLIENT, index, alias);
+            return IndicesRestSupport.addAlias(QUERY_CLIENT, index, alias);
         }
 
         /**
@@ -1188,7 +1190,7 @@ public final class ElasticUtils {
          * @return
          */
         public static boolean createIndexAlias(String[] indices, String alias, QueryBuilder queryBuilder) {
-            return IndicesRestSupport.addAlias(CLIENT, indices, alias, queryBuilder);
+            return IndicesRestSupport.addAlias(QUERY_CLIENT, indices, alias, queryBuilder);
         }
 
         /**
@@ -1199,7 +1201,7 @@ public final class ElasticUtils {
          * @return 删除成功与否
          */
         public static boolean deleteIndexAlias(String index, String alias) {
-            return IndicesRestSupport.removeAlias(CLIENT, index, alias);
+            return IndicesRestSupport.removeAlias(QUERY_CLIENT, index, alias);
         }
 
 
@@ -1209,7 +1211,7 @@ public final class ElasticUtils {
          * @param templateName
          */
         public static ElasticIndexTemplateBuilder putIndexTemplateByFile(String templateName) {
-            return ElasticIndexTemplateBuilder.newInstance(CLIENT, templateName);
+            return ElasticIndexTemplateBuilder.newInstance(QUERY_CLIENT, templateName);
         }
 
         /**
@@ -2193,8 +2195,30 @@ public final class ElasticUtils {
          * @param indices 索引名称
          * @return V8TermsAggregationBuilder
          */
-        public static com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder terms(String... indices) {
-            return com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder.instance(indices);
+        public static V8TermsAggregationBuilder terms(String... indices) {
+            return V8TermsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Multi Terms 聚合 (ES 8.x 原生 API)
+         * 基于多个字段的组合来计算分桶
+         *
+         * @param indices 索引名称
+         * @return V8MultiTermsAggregationBuilder
+         */
+        public static com.awesomecopilot.search8x.builder.agg.v8.V8MultiTermsAggregationBuilder multiTerms(String... indices) {
+            return com.awesomecopilot.search8x.builder.agg.v8.V8MultiTermsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Range 聚合 (ES 8.x 原生 API)
+         * 基于数值范围进行分桶，支持自定义范围和边界
+         *
+         * @param indices 索引名称
+         * @return V8RangeAggregationBuilder
+         */
+        public static V8RangeAggregationBuilder range(String... indices) {
+            return V8RangeAggregationBuilder.instance(indices);
         }
     }
 

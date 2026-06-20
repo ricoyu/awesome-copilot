@@ -289,6 +289,161 @@ public final class IndicesRestSupport {
 		return updateAliases(client, request);
 	}
 
+	/**
+	 * 使用 ES 8.x Java Client 为索引添加别名
+	 *
+	 * @param client ElasticsearchClient
+	 * @param index  索引名称
+	 * @param alias  别名
+	 * @return boolean 是否添加成功
+	 */
+	public static boolean addAlias(ElasticsearchClient client, String index, String alias) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求，避免 API 兼容性问题
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求体
+			Map<String, Object> requestBody = new HashMap<>();
+			List<Map<String, Object>> actions = new ArrayList<>();
+			Map<String, Object> addAction = new HashMap<>();
+			Map<String, Object> addParams = new HashMap<>();
+			addParams.put("index", index);
+			addParams.put("alias", alias);
+			addAction.put("add", addParams);
+			actions.add(addAction);
+			requestBody.put("actions", actions);
+			
+			// 执行 HTTP POST 请求
+			Request request = new Request("POST", "/_aliases");
+			String jsonBody = JacksonUtils.toJson(requestBody);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 为多个索引添加带过滤条件的别名
+	 *
+	 * @param client   ElasticsearchClient
+	 * @param indices  索引名称数组
+	 * @param alias    别名
+	 * @param filter   过滤条件（QueryBuilder）
+	 * @return boolean 是否添加成功
+	 */
+	public static boolean addAlias(ElasticsearchClient client, String[] indices, String alias, QueryBuilder filter) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求体
+			Map<String, Object> requestBody = new HashMap<>();
+			List<Map<String, Object>> actions = new ArrayList<>();
+			Map<String, Object> addAction = new HashMap<>();
+			Map<String, Object> addParams = new HashMap<>();
+			addParams.put("indices", Arrays.asList(indices));
+			addParams.put("alias", alias);
+			
+			// 如果有过滤条件，添加到请求中
+			if (filter != null) {
+				// 将 QueryBuilder 转换为 JSON
+				String filterJson = filter.toString();
+				@SuppressWarnings("unchecked")
+				Map<String, Object> filterMap = JacksonUtils.toObject(filterJson, Map.class);
+				addParams.put("filter", filterMap);
+			}
+			
+			addAction.put("add", addParams);
+			actions.add(addAction);
+			requestBody.put("actions", actions);
+			
+			// 执行 HTTP POST 请求
+			Request request = new Request("POST", "/_aliases");
+			String jsonBody = JacksonUtils.toJson(requestBody);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 删除索引别名
+	 *
+	 * @param client ElasticsearchClient
+	 * @param index  索引名称
+	 * @param alias  别名
+	 * @return boolean 是否删除成功
+	 */
+	public static boolean removeAlias(ElasticsearchClient client, String index, String alias) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求体
+			Map<String, Object> requestBody = new HashMap<>();
+			List<Map<String, Object>> actions = new ArrayList<>();
+			Map<String, Object> removeAction = new HashMap<>();
+			Map<String, Object> removeParams = new HashMap<>();
+			removeParams.put("index", index);
+			removeParams.put("alias", alias);
+			removeAction.put("remove", removeParams);
+			actions.add(removeAction);
+			requestBody.put("actions", actions);
+			
+			// 执行 HTTP POST 请求
+			Request request = new Request("POST", "/_aliases");
+			String jsonBody = JacksonUtils.toJson(requestBody);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
 	public static GetIndexTemplatesResponse getIndexTemplates(RestHighLevelClient client, String templateName) {
 		try {
 			GetIndexTemplatesRequest request = new GetIndexTemplatesRequest(templateName);
@@ -313,6 +468,68 @@ public final class IndicesRestSupport {
 			AcknowledgedResponse response = client.indices().putTemplate(request, RequestOptions.DEFAULT);
 			return response.isAcknowledged();
 		} catch (IOException e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 创建或更新 Index Template
+	 *
+	 * @param client         ElasticsearchClient
+	 * @param templateName   模板名称
+	 * @param indexPatterns  索引模式列表
+	 * @param order          模板优先级顺序
+	 * @param version        版本号（可为 null）
+	 * @param settings       索引配置（可为 null）
+	 * @param mappings       映射定义（可为 null）
+	 * @return boolean 是否创建/更新成功
+	 */
+	public static boolean putIndexTemplate(ElasticsearchClient client,
+	                                       String templateName,
+	                                       List<String> indexPatterns,
+	                                       int order,
+	                                       Integer version,
+	                                       Map<String, Object> settings,
+	                                       Map<String, Object> mappings) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求，避免 API 兼容性问题
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求体
+			Map<String, Object> requestBody = new HashMap<>();
+			requestBody.put("index_patterns", indexPatterns);
+			requestBody.put("order", order);
+			if (version != null) {
+				requestBody.put("version", version);
+			}
+			if (settings != null && !settings.isEmpty()) {
+				requestBody.put("settings", settings);
+			}
+			if (mappings != null && !mappings.isEmpty()) {
+				requestBody.put("mappings", mappings);
+			}
+			
+			// 执行 HTTP PUT 请求
+			String endpoint = "/_template/" + templateName;
+			Request request = new Request("PUT", endpoint);
+			String jsonBody = JacksonUtils.toJson(requestBody);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
 			throw new ListIndicesException(e);
 		}
 	}

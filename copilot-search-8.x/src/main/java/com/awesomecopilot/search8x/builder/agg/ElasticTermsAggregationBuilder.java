@@ -1,25 +1,26 @@
 package com.awesomecopilot.search8x.builder.agg;
 
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.search8x.builder.agg.sub.ElasticBucketSortSubAggregation;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregation;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregationSupport;
 import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search8x.enums.SortOrder;
-import com.awesomecopilot.search8x.support.AggResultSupport;
 import com.awesomecopilot.search8x.support.SortSupport;
+import com.awesomecopilot.search8x.support.V8AggResultSupport;
 import com.awesomecopilot.search8x.vo.ElasticPage;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -184,6 +185,30 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		return aggregationBuilder;
 	}
 	
+	/**
+	 * 构建 ES 8.x 原生 Terms Aggregation
+	 *
+	 * @return ES 8.x Aggregation 对象
+	 */
+	private Aggregation buildV8Aggregation() {
+		co.elastic.clients.elasticsearch._types.aggregations.TermsAggregation.Builder builder = 
+				new co.elastic.clients.elasticsearch._types.aggregations.TermsAggregation.Builder();
+		builder.field(field);
+		
+		if (size != null) {
+			builder.size(size);
+		}
+		if (shardSize != null) {
+			builder.shardSize(shardSize);
+		}
+
+		// TODO: 支持排序和子聚合（后续实现）
+		
+		return new Aggregation.Builder()
+				.terms(builder.build())
+				.build();
+	}
+	
 	@Override
 	public ElasticCompositeAggregationBuilder and() {
 		compositeAggregationBuilder.add(build());
@@ -200,13 +225,19 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	 * @return 聚合结果列表，每个元素是一个桶的统计信息
 	 */
 	public <T> List<Map<String, T>> get() {
-		AggregationBuilder aggregationBuilder = build();
-		
-		SearchResponse searchResponse = search(aggregationBuilder);
+		// 构建 ES 8.x 聚合
+		Map<String, Aggregation> aggregations = new HashMap<>();
+		aggregations.put(name, buildV8Aggregation());
+
+		// 使用 ES 8.x 客户端执行查询
+		SearchResponse searchResponse = searchWithV8Client(aggregations);
 		addTotalHitsToThreadLocal(searchResponse);
-		Aggregations aggregations = searchResponse.getAggregations();
 		
-		return AggResultSupport.termsResult(aggregations);
+		// 使用 ES 8.x 原生结果解析器
+		if (searchResponse.aggregations() != null) {
+			return V8AggResultSupport.termsResult(searchResponse.aggregations());
+		}
+		return new ArrayList<>();
 	}
 	
 	
@@ -227,17 +258,27 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 	 * @return ElasticPage 分页结果对象，包含当前页数据和分页信息
 	 */
 	public ElasticPage getPage() {
-		TermsAggregationBuilder arrregationBuilder = (TermsAggregationBuilder) build();
-		
-		SearchResponse searchResponse = search(arrregationBuilder);
+		// 构建 ES 8.x 聚合
+		Map<String, Aggregation> aggregations = new HashMap<>();
+		aggregations.put(name, buildV8Aggregation());
+
+		// 使用 ES 8.x 客户端执行查询
+		SearchResponse searchResponse = searchWithV8Client(aggregations);
 		addTotalHitsToThreadLocal(searchResponse);
-		Aggregations aggregations = searchResponse.getAggregations();
 		
-		List<Map<String, Object>> results = AggResultSupport.termsResult(aggregations);
+		// 使用 ES 8.x 原生结果解析器
+		List<Map<String, Object>> results = new ArrayList<>();
+		if (searchResponse.aggregations() != null) {
+			results = V8AggResultSupport.termsResult(searchResponse.aggregations());
+		}
+		
+		// 计算总数
+		long total = termsTotalBucketsFromResponse(searchResponse);
 		
 		ElasticPage elasticPage = ElasticPage.<Map<String, Object>>builder()
 				.results(results)
 				.build();
+		elasticPage.setTotalCount((int) total);
 		elasticPage.setPageSize(page.getPageSize());
 		elasticPage.setPageNum(page.getPageNum());
 		return elasticPage;
@@ -288,6 +329,35 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		List<SortOrder> sortOrders = SortSupport.sort(sort);
 		this.sortOrders.addAll(sortOrders);
 		return this;
+	}
+	
+	/**
+	 * 从 ES 8.x SearchResponse 中获取 Terms 聚合的总桶数
+	 *
+	 * @param searchResponse ES 8.x SearchResponse
+	 * @return 总桶数
+	 */
+	private long termsTotalBucketsFromResponse(SearchResponse searchResponse) {
+		if (searchResponse.aggregations() == null) {
+			return 0;
+		}
+		
+		Aggregate agg =
+			(Aggregate) searchResponse.aggregations().get(name);
+		if (agg == null) {
+			return 0;
+		}
+		
+		// 处理 StringTerms 聚合
+		if (agg.isSterms()) {
+			return agg.sterms().buckets().array().size();
+		}
+		// 处理 LongTerms 聚合
+		else if (agg.isLterms()) {
+			return agg.lterms().buckets().array().size();
+		}
+		
+		return 0;
 	}
 	
 }

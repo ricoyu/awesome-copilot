@@ -773,6 +773,15 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <compilerVersion>${jdk.version}</compilerVersion>
+                    <compilerArgs>
+                        <!-- 给 javac 子进程的 JVM 全局编码，替代外部 JAVA_TOOL_OPTIONS -->
+                        <arg>-J-Dfile.encoding=UTF-8</arg>
+                        <arg>-J-Dstdout.encoding=UTF-8</arg>
+                        <arg>-J-Dstderr.encoding=UTF-8</arg>
+                        <!-- 核心：强制 javac 编译器自身的诊断日志输出 UTF-8 -->
+                        <arg>-encoding</arg>
+                        <arg>UTF-8</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

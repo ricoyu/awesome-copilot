@@ -1,6 +1,7 @@
 package com.awesomecopilot.search8x.builder.agg;
 
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.search8x.ElasticUtils;
@@ -9,9 +10,7 @@ import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search8x.constants.ElasticConstants;
 import com.awesomecopilot.search8x.support.AggregationBridge;
 import com.awesomecopilot.search8x.support.SearchRequestSupport;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.json.JSONObject;
@@ -19,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,7 +77,13 @@ public abstract class AbstractAggregationBuilder{
 		}
 	}
 	
-	protected AbstractAggregationBuilder setQuery(BaseQueryBuilder queryBuilder) {
+	/**
+	 * 设置查询条件
+	 *
+	 * @param queryBuilder 查询构建器
+	 * @return 当前聚合构建器实例
+	 */
+	public AbstractAggregationBuilder setQuery(BaseQueryBuilder queryBuilder) {
 		this.baseQueryBuilder = queryBuilder;
 		return this;
 	}
@@ -94,40 +98,57 @@ public abstract class AbstractAggregationBuilder{
 		return sourceBuilder;
 	}
 
-	protected SearchResponse search(AggregationBuilder... aggregations) {
+	protected org.elasticsearch.action.search.SearchResponse search(AggregationBuilder... aggregations) {
 		SearchSourceBuilder sourceBuilder = searchSourceBuilder();
 		for (AggregationBuilder aggregation : aggregations) {
 			sourceBuilder.aggregation(aggregation);
 		}
-		return executeSearch(sourceBuilder);
+		return SearchRequestSupport.search(ElasticUtils.QUERY_CLIENT, indices, sourceBuilder);
+	}
+
+	/**
+	 * 执行搜索
+	 */
+	protected org.elasticsearch.action.search.SearchResponse executeSearch(SearchSourceBuilder sourceBuilder) {
+		return SearchRequestSupport.search(ElasticUtils.QUERY_CLIENT, indices, sourceBuilder);
 	}
 
 	/**
 	 * 使用 ES 8.x ElasticsearchClient 执行聚合查询
 	 *
 	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregation)
-	 * @return SearchResponse
+	 * @return ES 8.x SearchResponse
 	 */
 	protected SearchResponse searchWithV8Client(Map<String, Aggregation> aggregations) {
 		String queryJson = null;
 		if (baseQueryBuilder != null) {
-			QueryBuilder queryBuilder = ReflectionUtils.invokeMethod("builder", baseQueryBuilder);
-			queryJson = queryBuilder.toString();
+			// TODO: 将 BaseQueryBuilder 转换为 ES 8.x Query
+			// 暂时跳过，后续实现
 		}
 		return AggregationBridge.search(ElasticUtils.QUERY_CLIENT, indices, aggregations, queryJson);
 	}
 
-	protected SearchResponse executeSearch(SearchSourceBuilder sourceBuilder) {
-		sourceBuilder.size(0);
-		logDsl(sourceBuilder);
-		return SearchRequestSupport.search(ElasticUtils.CLIENT, indices, sourceBuilder);
-	}
-	
-	protected void addTotalHitsToThreadLocal(SearchResponse searchResponse) {
+	/**
+	 * 从 ES 7.x SearchResponse 中提取 total hits
+	 */
+	protected void addTotalHitsToThreadLocal(org.elasticsearch.action.search.SearchResponse searchResponse) {
 		if (fetchTotalHits) {
-			SearchHits hits = searchResponse.getHits();
-			if (hits != null) {
+			org.elasticsearch.search.SearchHits hits = searchResponse.getHits();
+			if (hits != null && hits.getTotalHits() != null) {
 				ThreadContext.put(ElasticConstants.TOTAL_HITS, hits.getTotalHits().value);
+			}
+		} else {
+			ThreadContext.remove(ElasticConstants.TOTAL_HITS);
+		}
+	}
+
+	/**
+	 * 从 ES 8.x SearchResponse 中提取 total hits
+	 */
+	protected void addTotalHitsToThreadLocal(co.elastic.clients.elasticsearch.core.SearchResponse searchResponse) {
+		if (fetchTotalHits) {
+			if (searchResponse.hits() != null && searchResponse.hits().total() != null) {
+				ThreadContext.put(ElasticConstants.TOTAL_HITS, searchResponse.hits().total().value());
 			}
 		} else {
 			ThreadContext.remove(ElasticConstants.TOTAL_HITS);

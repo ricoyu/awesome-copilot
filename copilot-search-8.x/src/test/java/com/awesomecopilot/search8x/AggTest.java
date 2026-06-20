@@ -1,6 +1,7 @@
 package com.awesomecopilot.search8x;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.search8x.ElasticUtils.Aggs;
 import com.awesomecopilot.search8x.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
@@ -47,11 +48,12 @@ public class AggTest {
 	
 	@Test
 	public void testBankAddressTerms() {
-		ElasticUtils.Aggs.terms("bank")
+		List<Map<String, Object>> maps = Aggs.terms("bank")
 				.of("age_agg", "age")
 				.size(20)
 				.sort("key:asc")
 				.get();
+		System.out.println(toPrettyJson(maps));
 	}
 	@Test
 	public void test() {

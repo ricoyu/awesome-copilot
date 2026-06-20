@@ -3,9 +3,9 @@ package com.awesomecopilot.search8x.builder.agg.v8;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.aggregations.TermsAggregation;
 import com.awesomecopilot.search8x.builder.agg.AbstractAggregationBuilder;
-import com.awesomecopilot.search8x.support.AggResultSupport;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.aggregations.Aggregations;
+import com.awesomecopilot.search8x.support.V8AggResultSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +27,8 @@ import java.util.Map;
  * @author Rico Yu ricoyu520@gmail.com
  */
 public class V8TermsAggregationBuilder extends AbstractAggregationBuilder {
+
+	private static final Logger log = LoggerFactory.getLogger(V8TermsAggregationBuilder.class);
 
 	private Integer size;
 	private Integer shardSize;
@@ -93,11 +95,10 @@ public class V8TermsAggregationBuilder extends AbstractAggregationBuilder {
 		aggregations.put(name, buildV8Aggregation());
 
 		// 使用 ES 8.x 客户端执行查询
-		SearchResponse searchResponse = searchWithV8Client(aggregations);
+		co.elastic.clients.elasticsearch.core.SearchResponse searchResponse = searchWithV8Client(aggregations);
 		addTotalHitsToThreadLocal(searchResponse);
 		
-		// 复用现有的结果解析逻辑
-		Aggregations aggregations7x = searchResponse.getAggregations();
-		return AggResultSupport.termsResult(aggregations7x);
+		// 使用 ES 8.x 原生解析器解析结果
+		return V8AggResultSupport.termsResult(searchResponse.aggregations());
 	}
 }

@@ -18,6 +18,7 @@ import org.elasticsearch.search.sort.SortBuilder;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 搜索请求执行：查询走 elasticsearch-java 8.x，聚合仍走 RestHighLevelClient。
@@ -30,7 +31,7 @@ public final class SearchRequestSupport {
 	// ---------- 查询模块 (elasticsearch-java 8.x) ----------
 
 	public static SearchResponse search(ElasticsearchClient client, String index,
-			java.util.function.Consumer<SearchSourceBuilder> configurer) {
+			Consumer<SearchSourceBuilder> configurer) {
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		configurer.accept(sourceBuilder);
 		return search(client, new String[] {index}, sourceBuilder);
@@ -60,7 +61,7 @@ public final class SearchRequestSupport {
 	// ---------- 聚合模块 (RestHighLevelClient，暂保留) ----------
 
 	public static SearchResponse search(RestHighLevelClient client, String index,
-			java.util.function.Consumer<SearchSourceBuilder> configurer) {
+			Consumer<SearchSourceBuilder> configurer) {
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		configurer.accept(sourceBuilder);
 		return search(client, new String[] {index}, sourceBuilder);

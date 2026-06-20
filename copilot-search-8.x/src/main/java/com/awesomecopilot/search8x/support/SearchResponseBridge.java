@@ -129,7 +129,10 @@ public final class SearchResponseBridge {
 		}
 	}
 
-	private static SearchResponse parseSearchResponseJson(String json) throws IOException {
+	/**
+	 * 解析 JSON 字符串为 7.x SearchResponse
+	 */
+	public static SearchResponse parseSearchResponseJson(String json) throws IOException {
 		return SearchResponse.fromXContent(
 				XContentFactory.xContent(XContentType.JSON).createParser(
 						NamedXContentRegistry.EMPTY,
