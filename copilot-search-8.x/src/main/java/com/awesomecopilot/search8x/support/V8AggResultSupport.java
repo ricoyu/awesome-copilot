@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.LongTermsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.RangeAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.HistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.MinAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,5 +306,36 @@ public final class V8AggResultSupport {
 		}
 		
 		return result;
+	}
+
+	/**
+	 * 解析 Min 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Double 最小值，如果聚合不存在或没有数据则返回 null
+	 */
+	public static Double minResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Min 聚合
+		if (aggregate.isMin()) {
+			MinAggregate minAggregate = aggregate.min();
+			Double value = minAggregate.value();
+			
+			log.debug("Min Aggregation [{}]: Value={}", aggName, value);
+			return value;
+		} else {
+			log.warn("Aggregation [{}] is not a Min aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
 	}
 }

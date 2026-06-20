@@ -37,6 +37,7 @@ import com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8RangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8HistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8DateHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8MinAggregationBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ESBulkProcessor;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkUpdateBuilder;
@@ -2243,6 +2244,17 @@ public final class ElasticUtils {
          */
         public static V8DateHistogramAggregationBuilder dateHistogram(String... indices) {
             return V8DateHistogramAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Min 聚合 (ES 8.x 原生 API)
+         * 计算数值字段的最小值，适用于价格、年龄等数值字段的统计分析
+         *
+         * @param indices 索引名称
+         * @return V8MinAggregationBuilder
+         */
+        public static V8MinAggregationBuilder min(String... indices) {
+            return V8MinAggregationBuilder.instance(indices);
         }
     }
 
