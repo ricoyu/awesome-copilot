@@ -135,7 +135,9 @@ public final class ElasticIndexBuilder {
 		}
 		
 		if (settings != null) {
-			settingsMap = (Map<String, Object>) ReflectionUtils.invokeMethod("build", settings);
+			// ES 7.x Settings 对象需要转换为 Map
+			Settings es7Settings = (Settings) ReflectionUtils.invokeMethod("build", settings);
+			settingsMap = convertSettingsToMap(es7Settings);
 		}
 		
 		return IndicesRestSupport.createIndex(es8Client, index, settingsMap, mappings);
@@ -169,6 +171,51 @@ public final class ElasticIndexBuilder {
 			createIndexRequest.settings((Settings) ReflectionUtils.invokeMethod("build", settings));
 		}
 		return IndicesRestSupport.createIndex(client, createIndexRequest);
+	}
+	
+	/**
+	 * 将 ES 7.x Settings 对象转换为 Map
+	 * 
+	 * @param settings ES 7.x Settings 对象
+	 * @return Map<String, Object> 设置的键值对
+	 */
+	private Map<String, Object> convertSettingsToMap(Settings settings) {
+		Map<String, Object> settingsMap = new java.util.HashMap<>();
+		// 使用 keySet() 遍历所有设置项
+		for (String key : settings.keySet()) {
+			String value = settings.get(key);
+			
+			// 尝试将字符串值转换为合适的类型
+			Object convertedValue = convertStringValue(value);
+			settingsMap.put(key, convertedValue);
+		}
+		return settingsMap;
+	}
+	
+	/**
+	 * 将字符串值转换为合适的类型（Integer、Long、Boolean 或 String）
+	 */
+	private Object convertStringValue(String value) {
+		// 尝试转换为 Boolean
+		if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+			return Boolean.valueOf(value);
+		}
+		
+		// 尝试转换为 Integer
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			// 不是整数，继续尝试其他类型
+		}
+		
+		// 尝试转换为 Long
+		try {
+			return Long.parseLong(value);
+		} catch (NumberFormatException e) {
+			// 不是长整数，返回原始字符串
+		}
+		
+		return value;
 	}
 	
 }

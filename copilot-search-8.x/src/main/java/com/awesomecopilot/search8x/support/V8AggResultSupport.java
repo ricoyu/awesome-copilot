@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.RangeAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.HistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.MinAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.MaxAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -335,6 +336,37 @@ public final class V8AggResultSupport {
 			return value;
 		} else {
 			log.warn("Aggregation [{}] is not a Min aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
+	 * 解析 Max 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Double 最大值，如果聚合不存在或没有数据则返回 null
+	 */
+	public static Double maxResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Max 聚合
+		if (aggregate.isMax()) {
+			MaxAggregate maxAggregate = aggregate.max();
+			Double value = maxAggregate.value();
+			
+			log.debug("Max Aggregation [{}]: Value={}", aggName, value);
+			return value;
+		} else {
+			log.warn("Aggregation [{}] is not a Max aggregation, type: {}", aggName, aggregate._kind());
 			return null;
 		}
 	}

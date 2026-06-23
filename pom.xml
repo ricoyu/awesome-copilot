@@ -33,6 +33,9 @@
         <encoding>UTF-8</encoding>
         <jdk.version>21</jdk.version>
 
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
         <springframework.version>6.1.5</springframework.version>
         <springsecurity.version>6.2.3</springsecurity.version>
 
@@ -90,7 +93,7 @@
 
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-source-plugin.version>2.4</maven-source-plugin.version>
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-war-plugin.version>2.6</maven-war-plugin.version>
     </properties>
 
@@ -768,20 +771,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <fork>true</fork>
-                    <encoding>${encoding}</encoding>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                    <compilerVersion>${jdk.version}</compilerVersion>
-                    <compilerArgs>
-                        <!-- 给 javac 子进程的 JVM 全局编码，替代外部 JAVA_TOOL_OPTIONS -->
-                        <arg>-J-Dfile.encoding=UTF-8</arg>
-                        <arg>-J-Dstdout.encoding=UTF-8</arg>
-                        <arg>-J-Dstderr.encoding=UTF-8</arg>
-                        <!-- 核心：强制 javac 编译器自身的诊断日志输出 UTF-8 -->
-                        <arg>-encoding</arg>
-                        <arg>UTF-8</arg>
-                    </compilerArgs>
+                    <source>21</source>
+                    <target>21</target>
+                    <!-- 或使用 <release>21</release> -->
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
         </plugins>
