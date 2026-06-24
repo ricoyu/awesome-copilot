@@ -118,7 +118,7 @@ public class MappingTest {
 	@Test
 	public void testCreateIndexWithExplictMapping() {
 		boolean create = ElasticUtils.Admin.createIndex("my-index-000001")
-				.mapping()
+				.mappings()
 				.field("age", FieldType.INTEGER)
 				.field("email", KEYWORD)
 				.field("name", TEXT)

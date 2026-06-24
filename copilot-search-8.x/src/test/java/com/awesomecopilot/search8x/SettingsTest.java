@@ -25,7 +25,7 @@ public class SettingsTest {
 				.numberOfShards(1)
 				.numberOfReplicas(1)
 				.and()
-				.mapping()
+				.mappings()
 				.field("name", FieldType.KEYWORD)
 				.thenCreate();
 	}

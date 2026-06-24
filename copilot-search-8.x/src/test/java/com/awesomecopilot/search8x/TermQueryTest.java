@@ -27,7 +27,7 @@ public class TermQueryTest {
 	public void testTermQuery() {
 		ElasticUtils.Admin.deleteIndex("products");
 		boolean created = ElasticUtils.Admin.createIndex("products")
-				.mapping()
+				.mappings()
 				.field("desc", FieldType.KEYWORD)
 				.thenCreate();
 		if (!created) {

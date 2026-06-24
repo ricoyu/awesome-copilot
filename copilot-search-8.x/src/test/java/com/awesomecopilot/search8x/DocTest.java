@@ -13,7 +13,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DocTest {
-
+    
+    @Test
+    public void testCreateDocWithId() {
+        String id = ElasticUtils.index("test", """
+                {
+                  "name": "三少爷",\s
+                  "age": 18
+                }""", 1);
+        assertEquals("1", id);
+    }
+    
+    @Test
+    public void testPostCreate() {
+        String id = ElasticUtils.index("test")
+                .doc("""
+                        {
+                          "name": "郑智",\s
+                          "age": 35
+                        }""")
+                .id(3)
+                .execute();
+        assertEquals("3", id);
+    }
     /**
      * 对应 GET product/_search
      */

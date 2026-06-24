@@ -10,19 +10,17 @@ import com.awesomecopilot.search8x.pojo.Movie;
 import com.awesomecopilot.search8x.pojo.NetLog;
 import com.awesomecopilot.search8x.support.FieldDef;
 import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -128,7 +126,7 @@ public class ElasticUtilsIndexTest {
 		
 		Admin.deleteIndex("titles");
 		boolean acknowledged = Admin.createIndex("titles")
-				.mapping()
+				.mappings()
 				.field("title", FieldType.TEXT)
 				.fields(FieldDef.builder("std", FieldType.TEXT).analyzer(Analyzer.STANDARD))
 				.thenCreate();

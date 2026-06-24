@@ -8,6 +8,12 @@ import co.elastic.clients.elasticsearch._types.aggregations.HistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.MinAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.MaxAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.AvgAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.SumAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -369,5 +375,181 @@ public final class V8AggResultSupport {
 			log.warn("Aggregation [{}] is not a Max aggregation, type: {}", aggName, aggregate._kind());
 			return null;
 		}
+	}
+
+	/**
+	 * 解析 Avg 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Double 平均值，如果聚合不存在或没有数据则返回 null
+	 */
+	public static Double avgResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Avg 聚合
+		if (aggregate.isAvg()) {
+			AvgAggregate avgAggregate = aggregate.avg();
+			Double value = avgAggregate.value();
+			
+			log.debug("Avg Aggregation [{}]: Value={}", aggName, value);
+			return value;
+		} else {
+			log.warn("Aggregation [{}] is not an Avg aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
+	 * 解析 Sum 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Double 总和值，如果聚合不存在或没有数据则返回 null
+	 */
+	public static Double sumResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Sum 聚合
+		if (aggregate.isSum()) {
+			SumAggregate sumAggregate = aggregate.sum();
+			Double value = sumAggregate.value();
+			
+			log.debug("Sum Aggregation [{}]: Value={}", aggName, value);
+			return value;
+		} else {
+			log.warn("Aggregation [{}] is not a Sum aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+	public static com.awesomecopilot.search8x.support.StatsAggResult statsResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Stats 聚合
+		if (aggregate.isStats()) {
+			StatsAggregate statsAggregate = aggregate.stats();
+			
+			long count = statsAggregate.count();
+			Double min = statsAggregate.min();
+			Double max = statsAggregate.max();
+			Double avg = statsAggregate.avg();
+			Double sum = statsAggregate.sum();
+			
+			log.debug("Stats Aggregation [{}]: Count={}, Min={}, Max={}, Avg={}, Sum={}", 
+					aggName, count, min, max, avg, sum);
+			
+			return com.awesomecopilot.search8x.support.StatsAggResult.builder()
+					.name(aggName)
+					.count(count)
+					.min(min != null ? min : 0.0)
+					.max(max != null ? max : 0.0)
+					.avg(avg != null ? avg : 0.0)
+					.sum(sum != null ? sum : 0.0)
+					.build();
+		} else {
+			log.warn("Aggregation [{}] is not a Stats aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
+	 * 解析 Cardinality 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Long 去重后的唯一值数量
+	 */
+	public static Long cardinalityResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Cardinality 聚合
+		if (aggregate.isCardinality()) {
+			CardinalityAggregate cardinalityAggregate = aggregate.cardinality();
+			Long value = cardinalityAggregate.value();
+			
+			log.debug("Cardinality Aggregation [{}]: Value={}", aggName, value);
+			return value;
+		} else {
+			log.warn("Aggregation [{}] is not a Cardinality aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
+	 * 解析 Composite 聚合结果（多个子聚合的组合）
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @return Map<String, Object> 包含所有子聚合结果的 Map
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> Map<String, T> compositeResult(Map<String, Aggregate> aggregations) {
+		Map<String, T> result = new HashMap<>();
+		
+		if (aggregations == null || aggregations.isEmpty()) {
+			return result;
+		}
+		
+		// 遍历所有聚合，根据类型分别解析
+		for (Map.Entry<String, Aggregate> entry : aggregations.entrySet()) {
+			String aggName = entry.getKey();
+			Aggregate aggregate = entry.getValue();
+			
+			if (aggregate == null) {
+				continue;
+			}
+			
+			// 根据聚合类型调用相应的解析方法
+			if (aggregate.isStats()) {
+				result.put(aggName, (T) statsResult(aggregations, aggName));
+			} else if (aggregate.isCardinality()) {
+				result.put(aggName, (T) cardinalityResult(aggregations, aggName));
+			} else if (aggregate.isSum()) {
+				result.put(aggName, (T) sumResult(aggregations, aggName));
+			} else if (aggregate.isAvg()) {
+				result.put(aggName, (T) avgResult(aggregations, aggName));
+			} else if (aggregate.isMin()) {
+				result.put(aggName, (T) minResult(aggregations, aggName));
+			} else if (aggregate.isMax()) {
+				result.put(aggName, (T) maxResult(aggregations, aggName));
+			} else if (aggregate.isSterms() || aggregate.isLterms()) {
+				result.put(aggName, (T) termsResult(aggregate));
+			} else {
+				log.warn("Unsupported aggregation type [{}] in composite result", aggregate._kind());
+			}
+		}
+		
+		return result;
 	}
 }

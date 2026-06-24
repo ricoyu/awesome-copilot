@@ -39,6 +39,11 @@ import com.awesomecopilot.search8x.builder.agg.v8.V8HistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8DateHistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8MinAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8MaxAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8AvgAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8SumAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8StatsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8CardinalityAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8CompositeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ESBulkProcessor;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkUpdateBuilder;
@@ -257,17 +262,22 @@ public final class ElasticUtils {
 
     /**
      * 返回索引的文档数量
-     * @param index
+     * 使用 Elasticsearch 8.x 原生 count API
+     * @param index 索引名称
      * @return 索引的文档数量
      */
     public static long docCount(String index) {
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        sourceBuilder.query(QueryBuilders.matchAllQuery());
-        sourceBuilder.size(0);
-        SearchResponse response = SearchRequestSupport.search(QUERY_CLIENT, new String[] {index}, sourceBuilder);
-        long totalHits = response.getHits().getTotalHits().value;
-        log.debug("索引 {} 中的文档总数: {}", index, totalHits);
-        return totalHits;
+        try {
+            co.elastic.clients.elasticsearch.core.CountResponse response = QUERY_CLIENT.count(c -> c
+                    .index(index)
+                    .query(q -> q.matchAll(m -> m))
+            );
+            long count = response.count();
+            log.debug("索引 {} 中的文档总数: {}", index, count);
+            return count;
+        } catch (IOException e) {
+            throw new com.awesomecopilot.search8x.exception.ElasticQueryException("Failed to count documents in index: " + index, e);
+        }
     }
 
     /**
@@ -1992,201 +2002,7 @@ public final class ElasticUtils {
         }
     }
 
-    /**
-     * 聚合查询相关API<p/>
-     * 聚合分两大类
-     * <ol>
-     *     <li/>Bucket 聚合<br/>
-     *          按照一定的规则, 将文档分配到不同的桶中, 从而达到分类的目的. ES提供了一些常见的Bucket Aggregation
-     *          <ul>
-     *              <li/>Terms
-     *              <li/>Range / Date Range
-     *              <li/>Histogram / Date Histogram
-     *              <li/>支持嵌套, 也就是在桶里再做分桶
-     *          </ul>
-     *     <li/>Metric 聚合<br/>
-     *          主要是对数据做一些统计分析, 分为两大类
-     *          <ul>
-     *              <li/>单值分析: 只输出一个统计结果
-     *              <ul>
-     *                  <li/>min max avg sum
-     *                  <li/>Cardinality(类似distinct count)
-     *              </ul>
-     *              <li/>多值分析:输出多个分析结果
-     *              <ul>
-     *                  <li/>stats, extended stats
-     *                  <li/>percentile, percentile rank
-     *                  <li/>top_hits(排在前面的示例)
-     *              </ul>
-     *          </ul>
-     * </ol>
-     */
-    public static class Aggs {
 
-        /**
-         * 返回总命中数
-         *
-         * @return Long
-         */
-        public static Long totalHits() {
-            return ThreadContext.get(ElasticConstants.TOTAL_HITS);
-        }
-
-        // ---------------------- Bucket 聚合 ----------------------
-
-        /**
-         * terms聚合, Bucket聚合的一种
-         * https://www.elastic.co/guide/en/elasticsearch/client/java-api/7.x/java-aggs.html
-         *
-         * @param indices
-         * @return ElasticTermsAggregationBuilder
-         */
-        public static ElasticTermsAggregationBuilder terms(String... indices) {
-            return ElasticTermsAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * multi terms聚合, Bucket聚合的一种, 使用painless script实现
-         * https://www.elastic.co/guide/en/elasticsearch/client/java-api/7.x/java-aggs.html
-         *
-         * @param indices
-         * @return ElasticTermsAggregationBuilder
-         */
-        public static ElasticMultiTermsAggregationBuilder multiTerms(String... indices) {
-            return ElasticMultiTermsAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * Range Aggregation
-         * <p>
-         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-histogram-aggregation.html
-         *
-         * @param indices
-         * @return ElasticRangeAggregationBuilder
-         */
-        public static ElasticRangeAggregationBuilder range(String... indices) {
-            return ElasticRangeAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * Histogram Aggregation
-         * <p>
-         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-histogram-aggregation.html
-         *
-         * @param indices
-         * @return ElasticHistogramAggregationBuilder
-         */
-        public static ElasticHistogramAggregationBuilder histogram(String... indices) {
-            return ElasticHistogramAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-datehistogram-aggregation.html
-         *
-         * @param indices
-         * @return ElasticDateHistogramAggregationBuilder
-         */
-        public static ElasticDateHistogramAggregationBuilder dateHistogram(String... indices) {
-            return ElasticDateHistogramAggregationBuilder.instance(indices);
-        }
-
-        // ---------------------- Metric 聚合 ----------------------
-
-        /**
-         * min聚合, Metric聚合的一种
-         *
-         * @param indices
-         * @return ElasticMinAggregationBuilder
-         */
-        public static ElasticMinAggregationBuilder min(String... indices) {
-            return ElasticMinAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * max聚合, Bucket聚合的一种
-         *
-         * @param indices
-         * @return ElasticMaxAggregationBuilder
-         */
-        public static ElasticMaxAggregationBuilder max(String... indices) {
-            return ElasticMaxAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * avg聚合
-         *
-         * @param indices
-         * @return ElasticMaxAggregationBuilder
-         */
-        public static ElasticAvgAggregationBuilder avg(String... indices) {
-            return ElasticAvgAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * sum聚合
-         *
-         * @param indices
-         * @return ElasticSumAggregationBuilder
-         */
-        public static ElasticSumAggregationBuilder sum(String... indices) {
-            return ElasticSumAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * stats聚合
-         *
-         * @param indices
-         * @return ElasticSumAggregationBuilder
-         */
-        public static ElasticStatsAggregationBuilder stats(String... indices) {
-            return ElasticStatsAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * Cardinality聚合, 对字段去重后统计数量 <br/>
-         * 比如你想通过聚合分析知道, 每天网站中的访客来自多少个不同的IP
-         * <p>
-         *
-         * @param indices
-         * @return ElasticCardinalityAggregationBuilder
-         */
-        public static ElasticCardinalityAggregationBuilder cardinality(String... indices) {
-            return ElasticCardinalityAggregationBuilder.instance(indices);
-        }
-
-        /**
-         * 组合多个聚合, 就像这个, 一个查询中包含两个聚合
-         * <pre>
-         * POST bank/_search
-         * {
-         *   "query": {
-         *     "match": {
-         *       "address": "mill"
-         *     }
-         *   },
-         *   "size": 0,
-         *   "aggs": {
-         *     "age_agg": {
-         *       "terms": {
-         *         "field": "age"
-         *       }
-         *     },
-         *     "age_avg":{
-         *       "avg": {
-         *         "field": "age"
-         *       }
-         *     }
-         *   }
-         * }
-         * </pre>
-         *
-         * @param indices
-         * @return ElasticCompositeAggregationBuilder
-         */
-        public static ElasticCompositeAggregationBuilder composite(String... indices) {
-            return ElasticCompositeAggregationBuilder.instance(indices);
-        }
-    }
 
     /**
      * ES 8.x 原生 API 聚合入口 (使用 co.elastic.clients)
@@ -2267,6 +2083,61 @@ public final class ElasticUtils {
          */
         public static V8MaxAggregationBuilder max(String... indices) {
             return V8MaxAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Avg 聚合 (ES 8.x 原生 API)
+         * 计算数值字段的平均值，适用于价格、年龄等数值字段的统计分析
+         *
+         * @param indices 索引名称
+         * @return V8AvgAggregationBuilder
+         */
+        public static V8AvgAggregationBuilder avg(String... indices) {
+            return V8AvgAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Sum 聚合 (ES 8.x 原生 API)
+         * 计算数值字段的总和，适用于销售额、数量等数值字段的累加统计
+         *
+         * @param indices 索引名称
+         * @return V8SumAggregationBuilder
+         */
+        public static V8SumAggregationBuilder sum(String... indices) {
+            return V8SumAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Stats 聚合 (ES 8.x 原生 API)
+         * 一次性返回 count、min、max、avg、sum 五个统计指标，适用于综合统计分析
+         *
+         * @param indices 索引名称
+         * @return V8StatsAggregationBuilder
+         */
+        public static V8StatsAggregationBuilder stats(String... indices) {
+            return V8StatsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Cardinality 聚合 (ES 8.x 原生 API)
+         * 对字段去重后统计唯一值数量，适用于 UV 统计、独立用户数等场景
+         *
+         * @param indices 索引名称
+         * @return V8CardinalityAggregationBuilder
+         */
+        public static V8CardinalityAggregationBuilder cardinality(String... indices) {
+            return V8CardinalityAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Composite 聚合 (ES 8.x 原生 API)
+         * 将多个聚合作为一个整体返回，支持组合多种聚合类型
+         *
+         * @param indices 索引名称
+         * @return V8CompositeAggregationBuilder
+         */
+        public static V8CompositeAggregationBuilder composite(String... indices) {
+            return V8CompositeAggregationBuilder.instance(indices);
         }
     }
 

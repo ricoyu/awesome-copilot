@@ -762,7 +762,7 @@ public class ElasticUtilsTest {
 	public void testCompletionSuggestion() {
 		Admin.deleteIndex("articles");
 		boolean created = Admin.createIndex("articles")
-				.mapping()
+				.mappings()
 				.field("title_completion", COMPLETION)
 				.thenCreate();
 		assertTrue(created);
@@ -792,7 +792,7 @@ public class ElasticUtilsTest {
 				.addContext(ContextType.CATEGORY, "comment_category");
 		
 		Admin.createIndex("comments")
-				.mapping()
+				.mappings()
 				.field(fieldDefBuilder)
 				.thenCreate();
 		
@@ -1108,7 +1108,7 @@ public class ElasticUtilsTest {
 	@Test
 	public void testReindexHuge() {
 		boolean created = Admin.createIndex("event_xxx")
-				.mapping()
+				.mappings()
 				.copy("event_2021_03_08")
 				.thenCreate();
 		long begin = System.currentTimeMillis();

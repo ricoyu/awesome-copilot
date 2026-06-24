@@ -27,7 +27,7 @@ public class CompleteSuggestTest {
 	public void testCompletionSuggestion() throws InterruptedException {
 		ElasticUtils.Admin.deleteIndex("articles");
 		boolean created = ElasticUtils.Admin.createIndex("articles")
-				.mapping()
+				.mappings()
 				.field("title_completion", FieldType.COMPLETION)
 				.thenCreate();
 		assertTrue(created);

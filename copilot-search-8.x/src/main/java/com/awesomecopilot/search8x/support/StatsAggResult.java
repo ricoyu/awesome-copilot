@@ -25,5 +25,7 @@ public class StatsAggResult {
 	
 	private double max;
 	
+	private double avg;
+	
 	private double sum;
 }

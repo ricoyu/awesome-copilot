@@ -1,7 +1,6 @@
 package com.awesomecopilot.search8x.builder.admin;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import com.awesomecopilot.search8x.ElasticUtils;
 import com.awesomecopilot.search8x.enums.Dynamic;
 import com.awesomecopilot.search8x.support.IndicesRestSupport;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -53,7 +52,7 @@ public final class ElasticIndexBuilder {
 	 *
 	 * @return IndexBuilder
 	 */
-	public ElasticIndexMappingBuilder mapping() {
+	public ElasticIndexMappingBuilder mappings() {
 		ElasticIndexMappingBuilder builder = new ElasticIndexMappingBuilder(this, Dynamic.TRUE);
 		this.mappingBuilder = builder;
 		return builder;
