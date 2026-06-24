@@ -316,43 +316,64 @@ public final class ElasticSuggestBuilder {
 		if (log.isDebugEnabled()) {
 			log.debug("Suggest DSL:\n {}", suggestBuilder.toString());
 		}
-		SearchResponse searchResponse = SearchRequestSupport.search(ElasticUtils.QUERY_CLIENT, indices,
-				sourceBuilder -> sourceBuilder.suggest(suggestBuilder));
-
-		Suggest suggest = searchResponse.getSuggest();
-		Set<String> suggesters = new HashSet<>();
-
-		if (suggest == null) {
-			return suggesters;
-		}
-
-		Suggestion suggestion = suggest.getSuggestion(name);
-
-		if (suggestion instanceof TermSuggestion) {
-			List<TermSuggestion.Entry> entries = ((TermSuggestion) suggestion).getEntries();
-			for (TermSuggestion.Entry entry : entries) {
-				entry.getOptions().forEach(option -> suggesters.add(option.getText().string()));
+		
+		// 使用 ES 8.x 原生 API，通过底层 RestClient 执行搜索
+		try {
+			org.elasticsearch.client.RestClient restClient = 
+					((co.elastic.clients.transport.rest_client.RestClientTransport) ElasticUtils.QUERY_CLIENT._transport()).restClient();
+			
+			// 构建搜索请求体
+			org.json.JSONObject searchBody = new org.json.JSONObject();
+			searchBody.put("size", 0);
+			
+			// 将 SuggestBuilder 转换为 JSON
+			org.elasticsearch.xcontent.XContentBuilder builder = org.elasticsearch.xcontent.XContentFactory.jsonBuilder();
+			suggestBuilder.toXContent(builder, org.elasticsearch.xcontent.ToXContent.EMPTY_PARAMS);
+			String suggestJson = org.elasticsearch.common.Strings.toString(builder);
+			org.json.JSONObject suggestObj = new org.json.JSONObject(suggestJson);
+			searchBody.put("suggest", suggestObj);
+			
+			// 执行 POST 请求
+			org.elasticsearch.client.Request request = new org.elasticsearch.client.Request("POST", 
+					"/" + String.join(",", indices) + "/_search");
+			request.setJsonEntity(searchBody.toString());
+			
+			org.elasticsearch.client.Response response = restClient.performRequest(request);
+			String jsonResponse = org.apache.http.util.EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应
+			org.json.JSONObject jsonObject = new org.json.JSONObject(jsonResponse);
+			Set<String> suggesters = new HashSet<>();
+			
+			if (!jsonObject.has("suggest")) {
+				return suggesters;
 			}
-			return suggesters;
-		}
-
-		if (suggestion instanceof PhraseSuggestion) {
-			List<PhraseSuggestion.Entry> entries = ((PhraseSuggestion) suggestion).getEntries();
-			for (PhraseSuggestion.Entry entry : entries) {
-				entry.getOptions().forEach(option -> suggesters.add(option.getHighlighted().string()));
+			
+			org.json.JSONObject suggestResult = jsonObject.getJSONObject("suggest");
+			if (!suggestResult.has(name)) {
+				return suggesters;
 			}
-			return suggesters;
-		}
-
-		if (suggestion instanceof CompletionSuggestion) {
-			List<CompletionSuggestion.Entry> entries = ((CompletionSuggestion) suggestion).getEntries();
-			for (CompletionSuggestion.Entry entry : entries) {
-				entry.getOptions().forEach(option -> suggesters.add(option.getText().string()));
+			
+			org.json.JSONArray suggestions = suggestResult.getJSONArray(name);
+			for (int i = 0; i < suggestions.length(); i++) {
+				org.json.JSONObject entry = suggestions.getJSONObject(i);
+				if (entry.has("options")) {
+					org.json.JSONArray options = entry.getJSONArray("options");
+					for (int j = 0; j < options.length(); j++) {
+						org.json.JSONObject option = options.getJSONObject(j);
+						// 优先取 highlighted，如果没有则取 text
+						String text = option.optString("highlighted", option.optString("text", ""));
+						if (!text.isEmpty()) {
+							suggesters.add(text);
+						}
+					}
+				}
 			}
+			
 			return suggesters;
+		} catch (Exception e) {
+			throw new com.awesomecopilot.search8x.exception.ElasticQueryException("Failed to execute suggest query", e);
 		}
-
-		return suggesters;
 	}
 
 	/**
