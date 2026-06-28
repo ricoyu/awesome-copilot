@@ -3,6 +3,7 @@ package com.awesomecopilot.search8x;
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.networking.utils.HttpUtils;
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.support.RestSupport;
 import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequest;
 import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
@@ -130,12 +131,12 @@ public class ScriptTest {
 		//boolean acknowaged = ElasticUtils.Cluster.createMultiFieldAgg();
 		//Assert.assertTrue(acknowaged);
 		
-		List<Map<String, Object>> resultMap = ElasticUtils.Aggs.multiTerms("netlog_2021-07-19")
+		List<Map<String, Object>> resultMap = Aggsv8.multiTerms("netlog_2021-07-19")
 				.of("script_agg", "src_ip", "src_port", "action")
 				.fetchTotalHits(true)
 				.get();
 		
 		JacksonUtils.toPrettyJson(resultMap);
-		System.out.println(ElasticUtils.Aggs.totalHits());
+		System.out.println(Aggsv8.totalHits());
 	}
 }

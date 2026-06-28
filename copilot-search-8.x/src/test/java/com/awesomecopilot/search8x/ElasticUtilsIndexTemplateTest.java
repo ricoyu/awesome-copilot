@@ -1,7 +1,6 @@
 package com.awesomecopilot.search8x;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -35,7 +34,7 @@ public class ElasticUtilsIndexTemplateTest {
 	
 	@Test
 	public void testGetIndexTemplate() {
-		Map<String, IndexTemplateMetadata> eventTemplate = ElasticUtils.Admin.getIndexTemplate("event_template");
+		Map<String, Object> eventTemplate = ElasticUtils.Admin.getIndexTemplate("event_template");
 		System.out.println(eventTemplate);
 	}
 }

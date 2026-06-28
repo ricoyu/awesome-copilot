@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search8x.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search8x.enums.CalendarInterval;
@@ -131,7 +132,7 @@ public class ElasticUtilsProductTest {
 	
 	@Test
 	public void testDateHistogram() {
-		Map<String, Object> resultMap = ElasticUtils.Aggs.dateHistogram("products")
+		Map<String, Object> resultMap = Aggsv8.dateHistogram("products")
 				.of("date_histogram", "created_at")
 				.calendarInterval(CalendarInterval.MONTH)
 				.format("yyyy-MM")
@@ -142,7 +143,7 @@ public class ElasticUtilsProductTest {
 	@Test
 	public void testQueryWithAgg() {
 		ElasticTermQueryBuilder queryBuilder = ElasticUtils.Query.termQuery("products").query("categories", "computers");
-		List<Map<String, Object>> resultMap = ElasticUtils.Aggs
+		List<Map<String, Object>> resultMap = Aggsv8
 				.terms("products")
 				.of("categories", "categories")
 				.subAggregation(SubAggregations.avg("avg_price", "price"))
@@ -156,7 +157,7 @@ public class ElasticUtilsProductTest {
 
 	@Test
 	public void testNestedAgg() {
-		List<Map<String, Object>> resultMap = ElasticUtils.Aggs.terms("products")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("products")
 				.nestedPath("variants", "variants")
 				.of("colors", "variants.color")
 				.get();

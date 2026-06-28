@@ -190,25 +190,48 @@ public class V8HistogramAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前聚合构建器实例
+	 */
+	@Override
+	public V8HistogramAggregationBuilder subAggregation(com.awesomecopilot.search8x.builder.agg.sub.SubAggregation subAggregation) {
+		super.subAggregation(subAggregation);
+		return this;
+	}
+	
+	/**
 	 * 构建 ES 8.x 原生 Histogram Aggregation
 	 */
 	private Aggregation buildV8Aggregation() {
-		HistogramAggregation.Builder builder = new HistogramAggregation.Builder();
-		builder.field(field);
-		builder.interval(interval);
+		HistogramAggregation.Builder histogramBuilder = new HistogramAggregation.Builder();
+		histogramBuilder.field(field);
+		histogramBuilder.interval(interval);
 		
 		if (minDocCount != null) {
-			builder.minDocCount(minDocCount);
+			histogramBuilder.minDocCount(minDocCount);
 		}
 		
 		if (minBound != null && maxBound != null) {
-			builder.extendedBounds(bounds -> bounds
+			histogramBuilder.extendedBounds(bounds -> bounds
 				.min(minBound.doubleValue())
 				.max(maxBound.doubleValue())
 			);
 		}
 		
-		return new Aggregation.Builder().histogram(builder.build()).build();
+		// 添加子聚合支持（转换 ES 7.x SubAggregation 到 ES 8.x Aggregation）
+		if (!subAggregations.isEmpty()) {
+			Map<String, Aggregation> subAggs = com.awesomecopilot.search8x.builder.agg.sub.SubAggregationToV8Converter.convert(subAggregations);
+			if (!subAggs.isEmpty()) {
+				return new Aggregation.Builder()
+					.histogram(histogramBuilder.build())
+					.aggregations(subAggs)
+					.build();
+			}
+		}
+		
+		return new Aggregation.Builder().histogram(histogramBuilder.build()).build();
 	}
 	
 	/**

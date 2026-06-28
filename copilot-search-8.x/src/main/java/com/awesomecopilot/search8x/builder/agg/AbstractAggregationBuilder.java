@@ -88,6 +88,28 @@ public abstract class AbstractAggregationBuilder{
 		return this;
 	}
 	
+	/**
+	 * 设置是否获取总命中数
+	 *
+	 * @param fetchTotalHits 是否获取总命中数
+	 * @return 当前聚合构建器实例
+	 */
+	public AbstractAggregationBuilder fetchTotalHits(boolean fetchTotalHits) {
+		this.fetchTotalHits = fetchTotalHits;
+		return this;
+	}
+	
+	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前聚合构建器实例
+	 */
+	public AbstractAggregationBuilder subAggregation(SubAggregation subAggregation) {
+		this.subAggregations.add(subAggregation);
+		return this;
+	}
+	
 	protected SearchSourceBuilder searchSourceBuilder() {
 		SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
 		if (baseQueryBuilder != null) {

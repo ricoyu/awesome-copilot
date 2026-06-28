@@ -76,6 +76,13 @@ public class V8RangeAggregationBuilder extends AbstractAggregationBuilder {
 	/**
 	 * 添加一个范围（不指定 key）
 	 */
+	public V8RangeAggregationBuilder addRange(int from, int to) {
+		return addRange(null, Double.valueOf(from), Double.valueOf(to));
+	}
+	
+	/**
+	 * 添加一个范围（不指定 key）
+	 */
 	public V8RangeAggregationBuilder addRange(Double from, Double to) {
 		return addRange(null, from, to);
 	}
@@ -93,6 +100,13 @@ public class V8RangeAggregationBuilder extends AbstractAggregationBuilder {
 	/**
 	 * 添加一个只有上界的范围（不指定 key）
 	 */
+	public V8RangeAggregationBuilder addUnboundedTo(int to) {
+		return addUnboundedTo(null, Double.valueOf(to));
+	}
+	
+	/**
+	 * 添加一个只有上界的范围（不指定 key）
+	 */
 	public V8RangeAggregationBuilder addUnboundedTo(Double to) {
 		return addUnboundedTo(null, to);
 	}
@@ -103,8 +117,25 @@ public class V8RangeAggregationBuilder extends AbstractAggregationBuilder {
 	 * @param key  范围的键名（可选）
 	 * @param from 下界
 	 */
+	public V8RangeAggregationBuilder addUnboundedFrom(String key, int from) {
+		return addRange(key, Double.valueOf(from), null);
+	}
+	
+	/**
+	 * 添加一个只有下界的范围（从 from 到正无穷）
+	 *
+	 * @param key  范围的键名（可选）
+	 * @param from 下界
+	 */
 	public V8RangeAggregationBuilder addUnboundedFrom(String key, Double from) {
 		return addRange(key, from, null);
+	}
+	
+	/**
+	 * 添加一个只有下界的范围（不指定 key）
+	 */
+	public V8RangeAggregationBuilder addUnboundedFrom(int from) {
+		return addUnboundedFrom(null, Double.valueOf( from));
 	}
 	
 	/**
@@ -154,6 +185,18 @@ public class V8RangeAggregationBuilder extends AbstractAggregationBuilder {
 	 */
 	public V8RangeAggregationBuilder fetchTotalHits(boolean fetchTotalHits) {
 		this.fetchTotalHits = fetchTotalHits;
+		return this;
+	}
+	
+	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前聚合构建器实例
+	 */
+	@Override
+	public V8RangeAggregationBuilder subAggregation(com.awesomecopilot.search8x.builder.agg.sub.SubAggregation subAggregation) {
+		super.subAggregation(subAggregation);
 		return this;
 	}
 	

@@ -1,8 +1,9 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.ElasticRangeQueryBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticMultiTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
+import com.awesomecopilot.search8x.builder.agg.v8.V8MultiTermsAggregationBuilder;
 import com.awesomecopilot.search8x.vo.ElasticPage;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +25,7 @@ public class MultiTermsTest {
 				.field("create_time")
 				.gte(1632418220000L)
 				.lte(1632454220000L);
-		ElasticMultiTermsAggregationBuilder aggregationBuilder = ElasticUtils.Aggs
+		V8MultiTermsAggregationBuilder aggregationBuilder = Aggsv8
 				.multiTerms("netlog_2021-09*")
 				.setQuery(queryBuilder)
 				.of("multi-field", new String[]{"src_ip", "dst_ip"})

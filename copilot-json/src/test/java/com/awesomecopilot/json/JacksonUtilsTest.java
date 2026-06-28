@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,6 +42,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @version 1.0
  */
 public class JacksonUtilsTest {
+	
+	@Test
+	public void testToJsonObject() {
+		String json = """
+				{"merchant_info": {"bank_account": "686888888761", "bank_name": "招商银行", "account_name": "俞雪华", "open_bank": "招商银行园区分行营业部"} }""";
+		ObjectNode objectNode = JacksonUtils.parseObject(json);
+		JsonNode merchantInfo = objectNode.get("merchant_info");
+		String bankAccount = merchantInfo.get("bank_account").toString();
+		System.out.println(JacksonUtils.toPrettyJson(objectNode));
+		assertEquals("686888888761", bankAccount);
+	}
 	
 	@Test
 	public void testSerDeserPlainString() throws JsonProcessingException {

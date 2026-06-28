@@ -263,6 +263,18 @@ public class V8DateHistogramAggregationBuilder extends AbstractAggregationBuilde
 	}
 	
 	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前聚合构建器实例
+	 */
+	@Override
+	public V8DateHistogramAggregationBuilder subAggregation(com.awesomecopilot.search8x.builder.agg.sub.SubAggregation subAggregation) {
+		super.subAggregation(subAggregation);
+		return this;
+	}
+	
+	/**
 	 * 聚合返回的结果中是否要包含总命中数
 	 *
 	 * @param fetchTotalHits 是否获取总命中数
@@ -276,65 +288,76 @@ public class V8DateHistogramAggregationBuilder extends AbstractAggregationBuilde
 	 * 构建 ES 8.x 原生 Date Histogram Aggregation
 	 */
 	private Aggregation buildV8Aggregation() {
-		DateHistogramAggregation.Builder builder = new DateHistogramAggregation.Builder();
-		builder.field(field);
+		DateHistogramAggregation.Builder dateHistogramBuilder = new DateHistogramAggregation.Builder();
+		dateHistogramBuilder.field(field);
 		
 		if (fixedInterval != null) {
 			// TODO: ES 8.x fixedInterval 需要 Time 类型，待修复
 			// co.elastic.clients.elasticsearch._types.Time time = new co.elastic.clients.elasticsearch._types.Time.Builder()
 			// 	.string(fixedInterval)
 			// 	.build();
-			// builder.fixedInterval(time);
+			// dateHistogramBuilder.fixedInterval(time);
 		}
 		if (calendarInterval != null) {
 			// TODO: ES 8.x calendarInterval 需要 CalendarInterval 枚举，待修复
 			// switch (calendarInterval) {
 			// 	case "minute":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Minute);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Minute);
 			// 		break;
 			// 	case "hour":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Hour);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Hour);
 			// 		break;
 			// 	case "day":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Day);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Day);
 			// 		break;
 			// 	case "week":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Week);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Week);
 			// 		break;
 			// 	case "month":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Month);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Month);
 			// 		break;
 			// 	case "quarter":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Quarter);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Quarter);
 			// 		break;
 			// 	case "year":
-			// 		builder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Year);
+			// 		dateHistogramBuilder.calendarInterval(co.elastic.clients.elasticsearch._types.aggregations.CalendarInterval.Year);
 			// 		break;
 			// }
 		}
 		if (minDocCount != null) {
-			builder.minDocCount(minDocCount);
+			dateHistogramBuilder.minDocCount(minDocCount);
 		}
 		
 		if (minBound != null && maxBound != null) {
 			// ES 8.x ExtendedBounds 使用 FieldDateMath 类型，支持数值或日期表达式
-			builder.extendedBounds(bounds -> bounds
+			dateHistogramBuilder.extendedBounds(bounds -> bounds
 				.min(co.elastic.clients.elasticsearch._types.aggregations.FieldDateMath.of(m -> m.value(minBound.doubleValue())))
 				.max(co.elastic.clients.elasticsearch._types.aggregations.FieldDateMath.of(m -> m.value(maxBound.doubleValue())))
 			);
 		}
 		
 		if (format != null) {
-			builder.format(format);
+			dateHistogramBuilder.format(format);
 		}
 		
 		if (timezone != null) {
-			builder.timeZone(timezone.getId());
+			dateHistogramBuilder.timeZone(timezone.getId());
 		} else {
-			builder.timeZone(DateConstants.CHINA.toZoneId().getId());
+			dateHistogramBuilder.timeZone(DateConstants.CHINA.toZoneId().getId());
 		}
 		
-		return new Aggregation.Builder().dateHistogram(builder.build()).build();
+		// 添加子聚合支持（转换 ES 7.x SubAggregation 到 ES 8.x Aggregation）
+		if (!subAggregations.isEmpty()) {
+			Map<String, Aggregation> subAggs = com.awesomecopilot.search8x.builder.agg.sub.SubAggregationToV8Converter.convert(subAggregations);
+			if (!subAggs.isEmpty()) {
+				return new Aggregation.Builder()
+					.dateHistogram(dateHistogramBuilder.build())
+					.aggregations(subAggs)
+					.build();
+			}
+		}
+		
+		return new Aggregation.Builder().dateHistogram(dateHistogramBuilder.build()).build();
 	}
 	
 	/**

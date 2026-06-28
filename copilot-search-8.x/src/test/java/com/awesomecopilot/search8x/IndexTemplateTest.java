@@ -54,7 +54,8 @@ public class IndexTemplateTest {
 	
 	@Test
 	public void testGetIndexTemplate() {
-		Map<String, IndexTemplateMetadata> indexTemplates = ElasticUtils.Admin.getIndexTemplate("template_default");
+		// ES 8.x 返回 Map<String, Object> 而非 IndexTemplateMetadata
+		Map<String, Object> indexTemplates = ElasticUtils.Admin.getIndexTemplate("template_default");
 		indexTemplates.entrySet().forEach((entry) -> {
 			System.out.println(entry.getKey());
 			System.out.println(toPrettyJson(entry.getValue()));

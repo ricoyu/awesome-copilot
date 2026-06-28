@@ -45,6 +45,12 @@ public abstract class SubAggregation {
 	}
 	
 	/**
+	 * 获取聚合名称
+	 * @return 聚合名称
+	 */
+	public abstract String getName();
+	
+	/**
 	 * 真正开始构建Elasticsearch的AggregationBuilder, 子聚合关系都建立起来了
 	 * @return AggregationBuilder
 	 */

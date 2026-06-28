@@ -44,6 +44,11 @@ public class ElasticSumSubAggregation extends SubAggregation {
 	}
 	
 	@Override
+	public String getName() {
+		return name;
+	}
+	
+	@Override
 	public SubAggregation and() {
 		return parentAggregation;
 	}

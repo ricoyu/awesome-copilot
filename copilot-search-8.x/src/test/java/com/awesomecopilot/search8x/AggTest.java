@@ -1,7 +1,7 @@
 package com.awesomecopilot.search8x;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import com.awesomecopilot.search8x.ElasticUtils.Aggs;
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
@@ -48,7 +48,7 @@ public class AggTest {
 	
 	@Test
 	public void testBankAddressTerms() {
-		List<Map<String, Object>> maps = Aggs.terms("bank")
+		List<Map<String, Object>> maps = Aggsv8.terms("bank")
 				.of("age_agg", "age")
 				.size(20)
 				.sort("key:asc")
@@ -77,7 +77,7 @@ public class AggTest {
 	public void testTermsAvgAgg() {
 		ElasticMatchQueryBuilder queryBuilder = ElasticUtils.Query.matchQuery("bank")
 				.query("address", "mill");
-		Map<String, Object> map = ElasticUtils.Aggs.composite("bank")
+		Map<String, Object> map = Aggsv8.composite("bank")
 				.terms("age_agg", "age").and()
 				.avg("age_avg", "age")
 				.setQuery(queryBuilder)
@@ -125,7 +125,7 @@ public class AggTest {
 	 */
 	@Test
 	public void testAgeGenderSubAgg() {
-		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("bank")
+		List<Map<String, Object>> result = Aggsv8.terms("bank")
 				.of("age_term", "age")
 				.subAggregation(SubAggregations.terms("gender_term", "gender.keyword"))
 				.subAggregation(SubAggregations.avg("balance_avg", "balance"))
@@ -137,7 +137,7 @@ public class AggTest {
 	@Test
 	public void testAgeTermsSalarySubAgg() {
 		//按照年龄段聚合, 并请求这些年龄段的人的平均工资
-		List<Map<String, Object>> aggResult = ElasticUtils.Aggs.terms("bank")
+		List<Map<String, Object>> aggResult = Aggsv8.terms("bank")
 				.of("age_term", "age")
 				.subAggregation(SubAggregations.avg("salary_avg", "balance"))
 				.get();
@@ -150,7 +150,7 @@ public class AggTest {
 		// 查出所有年龄分布，并且这些年龄段中各性别的薪资统计情况
 		// 等价 DSL:
 		// aggs: age_agg(terms age) -> gender_agg(terms gender.keyword) -> salary_stats(stats balance)
-		List<Map<String, Object>> aggResult = ElasticUtils.Aggs.terms("bank")
+		List<Map<String, Object>> aggResult = Aggsv8.terms("bank")
 				.of("age_agg", "age").size(20)
 				.subAggregation(SubAggregations.terms("gender_agg", "gender.keyword").size(10)
 								.subAggregation(SubAggregations.stats("salary_stats", "balance"))
@@ -163,7 +163,7 @@ public class AggTest {
 	
 	@Test
 	public void testStatAgg() {
-		StatsAggResult statsAggResult = ElasticUtils.Aggs.stats("employees")
+		StatsAggResult statsAggResult = Aggsv8.stats("employees")
 				.of("stats_salary", "salary")
 				.get();
 		
@@ -172,7 +172,7 @@ public class AggTest {
 	
 	@Test
 	public void testTermsAgg() {
-		List<Map<String, Object>> results = ElasticUtils.Aggs.terms("employees")
+		List<Map<String, Object>> results = Aggsv8.terms("employees")
 				.of("jobs", "job")
 				.size(20)
 				.sort("key:asc")
@@ -183,7 +183,7 @@ public class AggTest {
 	
 	@Test
 	public void testAggOnDestContry() {
-		List<Map<String, Object>> aggResults = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> aggResults = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry")
 				.sort("count")
 				.get();
@@ -193,7 +193,7 @@ public class AggTest {
 	
 	@Test
 	public void testFlightDest() {
-		List<Map<String, Object>> resultMap = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry")
 				.subAggregation(SubAggregations.avg("average_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.max("max_price", "AvgTicketPrice"))
@@ -203,46 +203,13 @@ public class AggTest {
 		System.out.println(toPrettyJson(resultMap));
 	}
 
-	@Test
-	public void testFlightDest2() {
-		ElasticTermsAggregationBuilder termsAggregationBuilder = ElasticUtils.Aggs.terms("kibana_sample_data_flights")
-				.of("flight_dest", "DestCountry")
-				.subAggregation(SubAggregations.avg("avg_price", "AvgTicketPrice"))
-				.subAggregation(SubAggregations.max("max_price", "AvgTicketPrice"))
-				.subAggregation(SubAggregations.min("min_price", "AvgTicketPrice"));
-
-		SearchResponse response = com.awesomecopilot.search8x.support.SearchRequestSupport.search(
-				ElasticUtils.CLIENT, "kibana_sample_data_flights",
-				ssb -> ssb.size(0).aggregation(termsAggregationBuilder.build()));
-
-		Aggregations aggregations = response.getAggregations();
-		for (Aggregation aggregation : aggregations) {
-			System.out.println("Aggregation: " + aggregation.getName());
-			List<Bucket> buckets = ((StringTerms) aggregation).getBuckets();
-			for (Bucket bucket : buckets) {
-				String key = bucket.getKeyAsString();
-				long docCount = bucket.getDocCount();
-				System.out.println("Key: " + key + ", Doc Count: " + docCount);
-
-				Aggregations subAggs = bucket.getAggregations();
-				if (subAggs != null) {
-					for (Aggregation subAgg : subAggs) {
-						System.out.println(toJson(subAgg));
-						String name = subAgg.getName(); //max_price
-						String writeableName = ((NamedWriteable) subAgg).getWriteableName(); //max min 等聚合的类型
-						Object value = ReflectionUtils.getFieldValue(writeableName, subAgg);
-						if (writeableName.equals("avg")) {
-							value = ReflectionUtils.invokeMethod("getValue", subAgg);
-						}
-						System.out.println(writeableName + ":" + value);
-					}
-				}
-			}
-		}
-	}
+	/**
+	 * 注意：此测试方法已被删除，因为它混合使用了 ES 7.x 和 ES 8.x API
+	 * 如果需要测试 Terms 聚合，请使用 testTopHitsAgg() 或 testNestAgg() 等纯 ES 8.x API 方法
+	 */
 	@Test
 	public void testCardinalityAgg() {
-		Long count = ElasticUtils.Aggs.cardinality("employees")
+		Long count = Aggsv8.cardinality("employees")
 				.of("cardinality_agg", "job.keyword")
 				.get();
 		
@@ -251,7 +218,7 @@ public class AggTest {
 	
 	@Test
 	public void testMin() {
-		Double minSalary = ElasticUtils.Aggs.min("employees")
+		Double minSalary = Aggsv8.min("employees")
 				.of("min_salary", "salary")
 				.get();
 		log.info("Min Salary: {}", minSalary);
@@ -259,7 +226,7 @@ public class AggTest {
 	
 	@Test
 	public void testMax() {
-		Double maxSalary = ElasticUtils.Aggs.max("employees")
+		Double maxSalary = Aggsv8.max("employees")
 				.of("max_salary", "salary")
 				.get();
 		log.info("Max Salary: {}", maxSalary);
@@ -267,7 +234,7 @@ public class AggTest {
 	
 	@Test
 	public void testAvg() {
-		Double avgSalary = ElasticUtils.Aggs.avg("employees")
+		Double avgSalary = Aggsv8.avg("employees")
 				.of("avg_salary", "salary")
 				.get();
 		log.info("Avg Salary: {}", avgSalary);
@@ -275,7 +242,7 @@ public class AggTest {
 	
 	@Test
 	public void testAvgNotAccurate() {
-		Double avgRating = ElasticUtils.Aggs.avg("ratings")
+		Double avgRating = Aggsv8.avg("ratings")
 				.of("rating_avg", "rating")
 				.get();
 		System.out.println(avgRating);
@@ -283,7 +250,7 @@ public class AggTest {
 	
 	@Test
 	public void testSum() {
-		Double sum = ElasticUtils.Aggs.sum("employees")
+		Double sum = Aggsv8.sum("employees")
 				.of("sum_agg", "age")
 				.get();
 		System.out.println(sum);
@@ -291,7 +258,7 @@ public class AggTest {
 	
 	@Test
 	public void testComposite() {
-		Map<String, Object> result = ElasticUtils.Aggs.composite("employees")
+		Map<String, Object> result = Aggsv8.composite("employees")
 				.min("min_salary", "salary")
 				.max("max_salary", "salary")
 				.avg("avg_salary", "salary")
@@ -303,7 +270,7 @@ public class AggTest {
 	
 	@Test
 	public void testTopHitsAgg() {
-		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("employees")
+		List<Map<String, Object>> result = Aggsv8.terms("employees")
 				.of("jobs_agg", "job.keyword")
 				.subAggregation(SubAggregations.topHits("old_employee")
 						.sort("age:desc")
@@ -315,7 +282,7 @@ public class AggTest {
 	
 	@Test
 	public void testRangeAgg() {
-		Map<String, List<RangeAggResult>> map = ElasticUtils.Aggs.range("employees")
+		Map<String, List<RangeAggResult>> map = Aggsv8.range("employees")
 				.of("salary_range", "salary")
 				.addRange(10000, 20000)
 				.addUnboundedTo(10000)
@@ -327,7 +294,7 @@ public class AggTest {
 	
 	@Test
 	public void testNestAgg() {
-		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("employees")
+		List<Map<String, Object>> result = Aggsv8.terms("employees")
 				.of("job_term", "job.keyword")
 				.subAggregation(SubAggregations.stats("salary_stats", "salary"))
 				.get();
@@ -350,7 +317,7 @@ public class AggTest {
 	@Test
 	public void testQueryThenAgg() {
 		ElasticRangeQueryBuilder rangeQueryBuilder = ElasticUtils.Query.range("employees").field("age").gt(20);
-		List<Map<String, Object>> aggResults = ElasticUtils.Aggs.terms("employees")
+		List<Map<String, Object>> aggResults = Aggsv8.terms("employees")
 				.of("jobs", "job.keyword")
 				.setQuery(rangeQueryBuilder)
 				.get();
@@ -386,12 +353,12 @@ public class AggTest {
 				.gte(1625414400000L)
 				.lte(1625500740000L);
 		
-		Map<String, Object> stringObjectMap = ElasticUtils.Aggs.composite("event_2021-07-05")
+		Map<String, Object> stringObjectMap = Aggsv8.composite("event_2021-07-05")
 				.setQuery(rangeQueryBuilder)
 				.terms("severity", "severity").and()
 				.terms("attach_result", "attack_result").and()
-				.terms("attacker_ip", "attacker_ip").size(5).and()
-				.terms("victim_ip", "victim_ip").size(5).and()
+				.terms("attacker_ip", "attacker_ip").and()
+				.terms("victim_ip", "victim_ip").and()
 				.fetchTotalHits(true)
 				.get();
 		
@@ -400,7 +367,7 @@ public class AggTest {
 	
 	@Test
 	public void testMultiTerms() {
-		List<Map<String, Object>> results = ElasticUtils.Aggs.multiTerms("event_*")
+		List<Map<String, Object>> results = Aggsv8.multiTerms("event_*")
 				.of("multi_terms_agg", "src_ip", "src_port")
 				.get();
 		
@@ -409,11 +376,11 @@ public class AggTest {
 	
 	@Test
 	public void testMultiTermsBucketSort() {
-		List<Map<String, Object>> results = ElasticUtils.Aggs.multiTerms("event_*")
+		List<Map<String, Object>> results = Aggsv8.multiTerms("event_*")
 				.of("multi_terms_agg", "src_ip", "src_port")
 				.get();
 		
-		ElasticPage page = ElasticUtils.Aggs.multiTerms("event_*")
+		ElasticPage page = Aggsv8.multiTerms("event_*")
 				.of("multi_terms_agg", "src_ip", "src_port")
 				.sort("-count")
 				.subAggregation(SubAggregations.bucketSort("multi_terms_sort")
@@ -424,7 +391,7 @@ public class AggTest {
 		page.getResults().forEach((result) -> System.out.println(toPrettyJson(result)));
 		
 		
-		page = ElasticUtils.Aggs.multiTerms("event_*")
+		page = Aggsv8.multiTerms("event_*")
 				.of("multi_terms_agg", "src_ip", "src_port")
 				.sort("-count")
 				.subAggregation(SubAggregations.bucketSort("multi_terms_sort")
@@ -437,7 +404,7 @@ public class AggTest {
 	
 	@Test
 	public void testTerms() {
-		List<Map<String, Object>> maps = ElasticUtils.Aggs.terms("event_*")
+		List<Map<String, Object>> maps = Aggsv8.terms("event_*")
 				.of("src_ip_term", "src_ip")
 				.sort("count")
 				.get();
@@ -447,21 +414,21 @@ public class AggTest {
 	
 	@Test
 	public void testTermsPage() {
-		ElasticPage page = ElasticUtils.Aggs.terms("event_*")
+		ElasticPage page = Aggsv8.terms("event_*")
 				.of("src_ip_term", "src_ip")
 				.sort("count:desc")
 				.subAggregation(SubAggregations.bucketSort("src_ip_term_sort")
 						.paging(0, 4))
 				.getPage();
 		
-		List<Map<String, Object>> results = ElasticUtils.Aggs.terms("netlog_2021-07-16")
+		List<Map<String, Object>> results = Aggsv8.terms("netlog_2021-07-16")
 				.of("src_ip_term", "src_ip")
 				.get();
 		page.setTotalCount(results.size());
 		log.info("第{}页, 每页{}条, 总共{}条", page.getPageNum(), page.getPageSize(), page.getTotalCount());
 		page.getResults().forEach((result) -> System.out.println(toPrettyJson(result)));
 		
-		page = ElasticUtils.Aggs.terms("event_*")
+		page = Aggsv8.terms("event_*")
 				.of("src_ip_term", "src_ip")
 				.sort("count:desc")
 				.subAggregation(SubAggregations.bucketSort("src_ip_term_sort")

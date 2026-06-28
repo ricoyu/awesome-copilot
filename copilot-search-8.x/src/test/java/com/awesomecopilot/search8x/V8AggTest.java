@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ public class V8AggTest {
 	 */
 	@Test
 	public void testV8TermsAgg() {
-		List<Map<String, Object>> results = ElasticUtils.AggsV8.terms("employees")
+		List<Map<String, Object>> results = Aggsv8.terms("employees")
 				.of("jobs", "job")
 				.size(20)
 				.get();
@@ -36,7 +37,7 @@ public class V8AggTest {
 	 */
 	@Test
 	public void testV8BankAgeTerms() {
-		List<Map<String, Object>> results = ElasticUtils.AggsV8.terms("bank")
+		List<Map<String, Object>> results = Aggsv8.terms("bank")
 				.of("age_agg", "age")
 				.size(20)
 				.get();

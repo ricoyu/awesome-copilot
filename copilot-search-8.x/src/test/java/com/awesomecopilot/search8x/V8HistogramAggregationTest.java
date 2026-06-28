@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -20,7 +21,7 @@ public class V8HistogramAggregationTest {
      */
     @Test
     public void testBasicHistogramAggregation() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)
@@ -37,7 +38,7 @@ public class V8HistogramAggregationTest {
      */
     @Test
     public void testHistogramWithMinDocCount() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)
@@ -54,7 +55,7 @@ public class V8HistogramAggregationTest {
      */
     @Test
     public void testHistogramWithExtendedBounds() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)
@@ -72,7 +73,7 @@ public class V8HistogramAggregationTest {
      */
     @Test
     public void testAgeDistributionHistogram() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .histogram("users")
                 .of("age_distribution", "age")
                 .interval(10.0)
@@ -92,7 +93,7 @@ public class V8HistogramAggregationTest {
     @Test
     public void testHistogramWithQuery() {
         // TODO: 待实现查询条件转换后启用
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)
@@ -108,7 +109,7 @@ public class V8HistogramAggregationTest {
     @Test
     public void testOldHistogramAggregation() {
         // 旧的方式（仍在使用 RestHighLevelClient）
-        Map<String, Long> oldResult = ElasticUtils.Aggs
+        Map<String, Long> oldResult = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)
@@ -117,7 +118,7 @@ public class V8HistogramAggregationTest {
         System.out.println("Old API Result: " + oldResult);
         
         // 新的方式（使用 ElasticsearchClient 8.x）
-        Map<String, Long> newResult = ElasticUtils.AggsV8
+        Map<String, Long> newResult = Aggsv8
                 .histogram("products")
                 .of("price_histogram", "price")
                 .interval(100.0)

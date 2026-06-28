@@ -161,6 +161,11 @@ public class ElsticHistogramSubAggregation extends SubAggregation implements Avg
 	}
 	
 	@Override
+	public String getName() {
+		return name;
+	}
+	
+	@Override
 	public SubAggregation and() {
 		return parentAggregation;
 	}

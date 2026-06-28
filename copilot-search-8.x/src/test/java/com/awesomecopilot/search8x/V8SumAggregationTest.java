@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.agg.v8.V8SumAggregationBuilder;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -25,7 +26,7 @@ public class V8SumAggregationTest {
     @Test
     public void testBasicSumAggregation() {
         // 创建 Sum 聚合 Builder
-        V8SumAggregationBuilder builder = ElasticUtils.AggsV8.sum("test_index");
+        V8SumAggregationBuilder builder = Aggsv8.sum("test_index");
         
         assertNotNull(builder, "Sum aggregation builder should not be null");
         
@@ -41,7 +42,7 @@ public class V8SumAggregationTest {
      */
     @Test
     public void testSumAggregationWithQuery() {
-        V8SumAggregationBuilder builder = ElasticUtils.AggsV8.sum("test_index");
+        V8SumAggregationBuilder builder = Aggsv8.sum("test_index");
         
         // 可以添加查询条件（示例）
         // builder.setQuery(ElasticUtils.Query.matchQuery("test_index").of("status", "active"));
@@ -57,7 +58,7 @@ public class V8SumAggregationTest {
      */
     @Test
     public void testSumAggregationMultipleIndices() {
-        V8SumAggregationBuilder builder = ElasticUtils.AggsV8.sum("index1", "index2", "index3");
+        V8SumAggregationBuilder builder = Aggsv8.sum("index1", "index2", "index3");
         
         builder.of("cross_index_sum", "value");
         

@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,7 +19,7 @@ public class V8MinAggregationTest {
      */
     @Test
     public void testBasicMinAggregation() {
-        Double minPrice = ElasticUtils.AggsV8
+        Double minPrice = Aggsv8
                 .min("products")
                 .of("min_price", "price")
                 .get();
@@ -34,7 +35,7 @@ public class V8MinAggregationTest {
      */
     @Test
     public void testMinAgeAggregation() {
-        Double minAge = ElasticUtils.AggsV8
+        Double minAge = Aggsv8
                 .min("users")
                 .of("min_age", "age")
                 .get();
@@ -50,7 +51,7 @@ public class V8MinAggregationTest {
      */
     @Test
     public void testMinOrderAmountAggregation() {
-        Double minAmount = ElasticUtils.AggsV8
+        Double minAmount = Aggsv8
                 .min("orders")
                 .of("min_amount", "amount")
                 .get();
@@ -65,7 +66,7 @@ public class V8MinAggregationTest {
      */
     @Test
     public void testMinWithFetchTotalHits() {
-        Double minValue = ElasticUtils.AggsV8
+        Double minValue = Aggsv8
                 .min("products")
                 .of("min_price", "price")
                 .fetchTotalHits(true)
@@ -83,7 +84,7 @@ public class V8MinAggregationTest {
     @Test
     public void testOldMinAggregation() {
         // 旧的方式（仍在使用 RestHighLevelClient）
-        Double oldResult = ElasticUtils.Aggs
+        Double oldResult = Aggsv8
                 .min("products")
                 .of("min_price", "price")
                 .get();
@@ -91,7 +92,7 @@ public class V8MinAggregationTest {
         System.out.println("Old API Result: " + oldResult);
         
         // 新的方式（使用 ElasticsearchClient 8.x）
-        Double newResult = ElasticUtils.AggsV8
+        Double newResult = Aggsv8
                 .min("products")
                 .of("min_price", "price")
                 .get();
@@ -107,7 +108,7 @@ public class V8MinAggregationTest {
      */
     @Test
     public void testProductPriceAnalysis() {
-        Double minPrice = ElasticUtils.AggsV8
+        Double minPrice = Aggsv8
                 .min("products")
                 .of("min_electronics_price", "price")
                 .get();

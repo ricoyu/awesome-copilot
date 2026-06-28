@@ -43,12 +43,12 @@ public class ElasticDateHistogramSubAggregation extends SubAggregation implement
 	/**
 	 * 可以识别 夏令时, 不同月份有不同的天数, 特定年份的润秒
 	 */
-	private DateHistogramInterval calendarInterval;
+	protected DateHistogramInterval calendarInterval;
 	
 	/**
 	 * 就是固定的时间间隔, 不管上面说的日历上的差异
 	 */
-	private DateHistogramInterval fixedInterval;
+	protected DateHistogramInterval fixedInterval;
 	
 	/**
 	 * min_doc_count: 0 <br/>
@@ -300,6 +300,11 @@ public class ElasticDateHistogramSubAggregation extends SubAggregation implement
 		
 		SubAggregationSupport.addSubAggregations(aggregationBuilder, subAggregations);
 		return aggregationBuilder;
+	}
+
+	@Override
+	public String getName() {
+		return name;
 	}
 
 	@Override

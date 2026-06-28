@@ -1,14 +1,12 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.agg.v8.V8CardinalityAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8CompositeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8StatsAggregationBuilder;
-import com.awesomecopilot.search8x.support.StatsAggResult;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,7 +26,7 @@ public class V8AdvancedAggregationTest {
      */
     @Test
     public void testBasicStatsAggregation() {
-        V8StatsAggregationBuilder builder = ElasticUtils.AggsV8.stats("test_index");
+        V8StatsAggregationBuilder builder = Aggsv8.stats("test_index");
         assertNotNull(builder, "Stats aggregation builder should not be null");
 
         builder.of("price_stats", "price");
@@ -40,7 +38,7 @@ public class V8AdvancedAggregationTest {
      */
     @Test
     public void testBasicCardinalityAggregation() {
-        V8CardinalityAggregationBuilder builder = ElasticUtils.AggsV8.cardinality("test_index");
+        V8CardinalityAggregationBuilder builder = Aggsv8.cardinality("test_index");
         assertNotNull(builder, "Cardinality aggregation builder should not be null");
 
         builder.of("unique_users", "user_id");
@@ -52,7 +50,7 @@ public class V8AdvancedAggregationTest {
      */
     @Test
     public void testBasicCompositeAggregation() {
-        V8CompositeAggregationBuilder builder = ElasticUtils.AggsV8.composite("test_index");
+        V8CompositeAggregationBuilder builder = Aggsv8.composite("test_index");
         assertNotNull(builder, "Composite aggregation builder should not be null");
 
         // 添加多个子聚合
@@ -69,7 +67,7 @@ public class V8AdvancedAggregationTest {
     @Test
     public void testStatsAggregationReturnType() {
         // 验证返回类型是 StatsAggResult
-        V8StatsAggregationBuilder builder = ElasticUtils.AggsV8.stats("test_index")
+        V8StatsAggregationBuilder builder = Aggsv8.stats("test_index")
                 .of("stats_agg", "value");
 
         // 注意：这里不执行 get()，因为没有真实的 ES 连接
@@ -84,7 +82,7 @@ public class V8AdvancedAggregationTest {
     @Test
     public void testCardinalityAggregationReturnType() {
         // 验证返回类型是 Long
-        V8CardinalityAggregationBuilder builder = ElasticUtils.AggsV8.cardinality("test_index")
+        V8CardinalityAggregationBuilder builder = Aggsv8.cardinality("test_index")
                 .of("cardinality_agg", "field");
 
         // 注意：这里不执行 get()，因为没有真实的 ES 连接
@@ -99,7 +97,7 @@ public class V8AdvancedAggregationTest {
     @Test
     public void testCompositeAggregationReturnType() {
         // 验证返回类型是 Map
-        V8CompositeAggregationBuilder builder = ElasticUtils.AggsV8.composite("test_index")
+        V8CompositeAggregationBuilder builder = Aggsv8.composite("test_index")
                 .addTerms("terms_agg", "field1")
                 .addAvg("avg_agg", "field2");
 
@@ -115,19 +113,19 @@ public class V8AdvancedAggregationTest {
     @Test
     public void testChainedCalls() {
         // 测试 Stats 聚合的链式调用
-        V8StatsAggregationBuilder statsBuilder = ElasticUtils.AggsV8.stats("index1")
+        V8StatsAggregationBuilder statsBuilder = Aggsv8.stats("index1")
                 .of("stats", "price")
                 .fetchTotalHits(true);
         assertNotNull(statsBuilder);
 
         // 测试 Cardinality 聚合的链式调用
-        V8CardinalityAggregationBuilder cardinalityBuilder = ElasticUtils.AggsV8.cardinality("index2")
+        V8CardinalityAggregationBuilder cardinalityBuilder = Aggsv8.cardinality("index2")
                 .of("cardinality", "user_id")
                 .fetchTotalHits(false);
         assertNotNull(cardinalityBuilder);
 
         // 测试 Composite 聚合的链式调用
-        V8CompositeAggregationBuilder compositeBuilder = ElasticUtils.AggsV8.composite("index3")
+        V8CompositeAggregationBuilder compositeBuilder = Aggsv8.composite("index3")
                 .addTerms("term1", "field1")
                 .addAvg("avg1", "field2")
                 .fetchTotalHits(true);

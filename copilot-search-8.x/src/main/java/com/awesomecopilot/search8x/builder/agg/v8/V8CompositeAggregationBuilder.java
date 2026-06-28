@@ -69,6 +69,16 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加 Terms 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder terms(String name, String field) {
+		return addTerms(name, field);
+	}
+	
+	/**
 	 * 添加 Avg 子聚合
 	 *
 	 * @param name  聚合名称
@@ -80,6 +90,16 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 			.build();
 		subAggregations.put(name, avgAgg);
 		return this;
+	}
+	
+	/**
+	 * 添加 Avg 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder avg(String name, String field) {
+		return addAvg(name, field);
 	}
 	
 	/**
@@ -97,6 +117,16 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加 Sum 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder sum(String name, String field) {
+		return addSum(name, field);
+	}
+	
+	/**
 	 * 添加 Min 子聚合
 	 *
 	 * @param name  聚合名称
@@ -108,6 +138,16 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 			.build();
 		subAggregations.put(name, minAgg);
 		return this;
+	}
+	
+	/**
+	 * 添加 Min 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder min(String name, String field) {
+		return addMin(name, field);
 	}
 	
 	/**
@@ -125,6 +165,16 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加 Max 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder max(String name, String field) {
+		return addMax(name, field);
+	}
+	
+	/**
 	 * 添加 Cardinality 子聚合
 	 *
 	 * @param name  聚合名称
@@ -139,12 +189,32 @@ public class V8CompositeAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加 Cardinality 子聚合（别名方法）
+	 *
+	 * @param name  聚合名称
+	 * @param field 字段名
+	 */
+	public V8CompositeAggregationBuilder cardinality(String name, String field) {
+		return addCardinality(name, field);
+	}
+	
+	/**
 	 * 聚合返回的结果中是否要包含总命中数
 	 *
 	 * @param fetchTotalHits 是否获取总命中数
 	 */
 	public V8CompositeAggregationBuilder fetchTotalHits(boolean fetchTotalHits) {
 		this.fetchTotalHits = fetchTotalHits;
+		return this;
+	}
+	
+	/**
+	 * and() 方法用于链式调用（别名方法）
+	 *
+	 * @return 当前聚合构建器实例
+	 */
+	public V8CompositeAggregationBuilder and() {
+		// and() 在 composite 聚合中没有实际作用，仅用于链式调用的语法糖
 		return this;
 	}
 	

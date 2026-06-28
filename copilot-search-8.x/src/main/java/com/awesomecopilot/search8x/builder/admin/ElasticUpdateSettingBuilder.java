@@ -53,6 +53,36 @@ public class ElasticUpdateSettingBuilder extends ElasticSettingsBuilder {
 	 */
 	public boolean thenUpdate() {
 		Settings settings = ReflectionUtils.invokeMethod("build", this);
-		return IndicesRestSupport.updateIndexSettings(ElasticUtils.CLIENT, indices, settings);
+		// 将 Settings 对象转换为 Map
+		java.util.Map<String, Object> settingsMap = settingsToMap(settings);
+		return IndicesRestSupport.updateIndexSettings(ElasticUtils.QUERY_CLIENT, indices, settingsMap);
+	}
+	
+	/**
+	 * 将 Settings 对象转换为 Map<String, Object>
+	 * 
+	 * @param settings Settings 对象
+	 * @return Map 表示的设置
+	 */
+	private java.util.Map<String, Object> settingsToMap(Settings settings) {
+		if (settings == null) {
+			return null;
+		}
+		
+		java.util.Map<String, Object> map = new java.util.HashMap<>();
+		// 通过 getAsMap() 方法获取 Settings 的 Map 表示
+		try {
+			java.lang.reflect.Method method = settings.getClass().getMethod("getAsMap");
+			method.setAccessible(true);
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, String> settingsMap = (java.util.Map<String, String>) method.invoke(settings);
+			if (settingsMap != null) {
+				map.putAll(settingsMap);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to convert Settings to Map", e);
+		}
+		
+		return map;
 	}
 }

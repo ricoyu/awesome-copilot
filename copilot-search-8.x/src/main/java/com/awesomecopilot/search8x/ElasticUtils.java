@@ -1,7 +1,10 @@
 package com.awesomecopilot.search8x;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.BulkRequest.Builder;
+import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.indices.AnalyzeResponse;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
@@ -21,30 +24,17 @@ import com.awesomecopilot.search8x.builder.admin.ElasticPutMappingBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticReindexBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticSettingsBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticUpdateSettingBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticAvgAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticCardinalityAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticCompositeAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticDateHistogramAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticHistogramAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticMaxAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticMinAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticMultiTermsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8RangeAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8HistogramAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8DateHistogramAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8MinAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8MaxAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8AvgAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8SumAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.v8.V8StatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8CardinalityAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.v8.V8CompositeAggregationBuilder;
-import com.awesomecopilot.search8x.builder.bulk.ESBulkProcessor;
+import com.awesomecopilot.search8x.builder.agg.v8.V8DateHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8HistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8MaxAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8MinAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8RangeAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8StatsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8SumAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.v8.V8TermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.bulk.ElasticBulkUpdateBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
@@ -86,39 +76,25 @@ import com.awesomecopilot.search8x.support.IndicesClientSupport;
 import com.awesomecopilot.search8x.support.IndicesRestSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
 import com.awesomecopilot.search8x.support.RestSupport;
-import com.awesomecopilot.search8x.support.SearchRequestSupport;
 import com.awesomecopilot.search8x.support.SettingsSupport;
+import com.awesomecopilot.search8x.support.StoredScriptSupport;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.storedscripts.DeleteStoredScriptRequest;
-import org.elasticsearch.action.admin.cluster.storedscripts.PutStoredScriptRequest;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.template.get.GetIndexTemplatesResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
@@ -140,13 +116,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toObject;
 import static java.util.Arrays.asList;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -179,8 +153,6 @@ public final class ElasticUtils {
      */
     public static final RestHighLevelClient CLIENT = ElasticsearchClientFactory.createHighLevelClient();
 
-    private static final ESBulkProcessor BULK_PROCESSOR = new ESBulkProcessor();
-    
     private static final String USERNAME = "elastic.username";
     private static final String PASSWORD = "elastic.password";
     
@@ -438,24 +410,83 @@ public final class ElasticUtils {
     }
 
     /**
-     * 基于BulkProcessor批量创建文档, 该方式本身已经集成了多线程<p>
+     * 基于 ES 8.x Java Client 批量创建文档，使用并行流处理提升性能<p>
      *
-     * @param index
-     * @param docs
-     * @return void
+     * @param index 索引名称
+     * @param docs  文档列表
      */
     public static void bulkIndexConcurrent(String index, List<?> docs) {
-        BulkProcessor bulkProcessor = BULK_PROCESSOR.bulkProcessor();
-        for (Object doc : docs) {
-            IndexRequest indexRequest = new IndexRequest(index).source(doc, XContentType.JSON);
-            bulkProcessor.add(indexRequest);
+        if (docs == null || docs.isEmpty()) {
+            return;
         }
-        bulkProcessor.flush();
-        try {
-            bulkProcessor.awaitClose(30, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            log.error("", e);
+        
+        // 将文档分批处理，每批 1000 条
+        int batchSize = 1000;
+        List<List<?>> batches = partition(docs, batchSize);
+        
+        // 并行处理每个批次
+        batches.parallelStream().forEach(batch -> {
+            try {
+                Builder bulkBuilder = new Builder();
+                
+                for (Object doc : batch) {
+                    String id = ElasticCacheUtils.getIdValue(doc);
+                    String docJson = toJson(doc);
+                    
+                    BulkOperation operation;
+                    if (id != null) {
+                        operation = BulkOperation.of(op -> op
+                                .index(idx -> idx
+                                        .index(index)
+                                        .id(id)
+                                        .document(JsonData.of(docJson))
+                                )
+                        );
+                    } else {
+                        operation = BulkOperation.of(op -> op
+                                .index(idx -> idx
+                                        .index(index)
+                                        .document(JsonData.of(docJson))
+                                )
+                        );
+                    }
+                    bulkBuilder.operations(operation);
+                }
+                
+                // 执行批量请求
+                co.elastic.clients.elasticsearch.core.BulkResponse response =
+                        QUERY_CLIENT.bulk(bulkBuilder.build());
+                
+                if (response.errors()) {
+                    log.error("Bulk indexing has errors for index: {}", index);
+                    for (co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem item : response.items()) {
+                        if (item.error() != null) {
+                            log.error("Document {} failed: {}", item.id(), item.error().reason());
+                        }
+                    }
+                } else {
+                    log.debug("Bulk indexed {} documents to index {}", batch.size(), index);
+                }
+            } catch (Exception e) {
+                log.error("Failed to bulk index to index: {}", index, e);
+                throw new DocumentSaveException("Failed to bulk index documents", e);
+            }
+        });
+    }
+    
+    /**
+     * 将列表分批
+     *
+     * @param list      原始列表
+     * @param batchSize 每批大小
+     * @return 分批后的列表
+     */
+    private static List<List<?>> partition(List<?> list, int batchSize) {
+        List<List<?>> partitions = new java.util.ArrayList<>();
+        for (int i = 0; i < list.size(); i += batchSize) {
+            partitions.add(list.subList(i, Math.min(i + batchSize, list.size())));
         }
+        return partitions;
     }
 
     /**
@@ -1292,13 +1323,10 @@ public final class ElasticUtils {
          * 获取指定的Index Template
          *
          * @param templateName
-         * @return IndexTemplateMetaData
+         * @return Map<String, Object> Index Template 信息
          */
-        public static Map<String, IndexTemplateMetadata> getIndexTemplate(String templateName) {
-            GetIndexTemplatesResponse response = IndicesRestSupport.getIndexTemplates(CLIENT, templateName);
-            List<IndexTemplateMetadata> indexTemplates = response.getIndexTemplates();
-            return indexTemplates.stream()
-                    .collect(toMap(IndexTemplateMetadata::getName, identity()));
+        public static Map<String, Object> getIndexTemplate(String templateName) {
+            return IndicesRestSupport.getIndexTemplate(QUERY_CLIENT, templateName);
         }
 
         /**
@@ -1309,8 +1337,8 @@ public final class ElasticUtils {
          */
         public static boolean deleteIndexTemplate(String templateName) {
             try {
-                return IndicesRestSupport.deleteIndexTemplate(CLIENT, templateName);
-            } catch (IndexTemplateMissingException e) {
+                return IndicesRestSupport.deleteIndexTemplate(QUERY_CLIENT, templateName);
+            } catch (Exception e) {
                 log.info("Index Template [{}] 不存在", templateName);
                 return false;
             }
@@ -1344,43 +1372,29 @@ public final class ElasticUtils {
         /**
          * 创建 Search Template
          *
-         * @param templateName
-         * @return boolean
+         * @param templateName     模板名称
+         * @param templateFileName 模板文件名（classpath路径）
+         * @return boolean 是否创建成功
          */
         public static boolean createSearchTemplate(String templateName, String templateFileName) {
             String templateContent = IOUtils.readClassPathFileAsString(templateFileName);
-
-            Map<String, Object> rootNode = new HashMap<>();
-            Map<String, Object> scriptNode = new HashMap<>();
-            rootNode.put("script", scriptNode);
-            scriptNode.put("lang", "mustache");
-            scriptNode.put("source", templateContent);
-
-            try {
-                PutStoredScriptRequest request = new PutStoredScriptRequest();
-                request.id(templateName);
-                request.content(new BytesArray(toJson(rootNode)), XContentType.JSON);
-                AcknowledgedResponse response = CLIENT.putScript(request, RequestOptions.DEFAULT);
-                return response.isAcknowledged();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            
+            // 构建 script JSON
+            String scriptJson = StoredScriptSupport.buildScriptJson(templateContent);
+            
+            // 使用 ES 8.x ElasticsearchClient
+            return StoredScriptSupport.putStoredScript(QUERY_CLIENT, templateName, scriptJson);
         }
 
         /**
          * 删除 Search Template
          *
-         * @param templateName
-         * @return boolean
+         * @param templateName 模板名称
+         * @return boolean 是否删除成功
          */
         public static boolean deleteSearchTemplate(String templateName) {
-            try {
-                DeleteStoredScriptRequest request = new DeleteStoredScriptRequest(templateName);
-                AcknowledgedResponse response = CLIENT.deleteScript(request, RequestOptions.DEFAULT);
-                return response.isAcknowledged();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            // 使用 ES 8.x ElasticsearchClient
+            return StoredScriptSupport.deleteStoredScript(QUERY_CLIENT, templateName);
         }
 
         /**
@@ -1399,11 +1413,11 @@ public final class ElasticUtils {
         /**
          * 执行段合并, 可以先设为只读, 然后进行段合并
          *
-         * @param indices
-         * @return ForceMergeResponse
+         * @param indices 索引名称
+         * @return boolean 是否执行成功
          */
-        public ForceMergeResponse forceMerge(String indices) {
-            return IndicesRestSupport.forceMerge(CLIENT, indices);
+        public static boolean forceMerge(String indices) {
+            return IndicesRestSupport.forceMerge(QUERY_CLIENT, indices);
         }
     }
 
@@ -1463,12 +1477,26 @@ public final class ElasticUtils {
          * }
          * </pre>
          *
-         * @param index
-         * @param fields
-         * @return Map<String, Object>
+         * @param index  索引名称
+         * @param fields 字段名称列表
+         * @return Map<String, Map<String, Object>> 字段 Mapping 定义
          */
         public static Map<String, Map<String, Object>> getMapping(String index, String... fields) {
-            return IndicesRestSupport.getFieldMapping(CLIENT, index, fields);
+            return IndicesRestSupport.getFieldMapping(QUERY_CLIENT, index, fields);
+        }
+
+        /**
+         * 设置索引的Mapping, index必须先创建, 可以为index增加字段定义, 但是不能删除已有的字段定义<p/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/mapping.html<br/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/dynamic-mapping.html<br/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/mapping-params.html
+         *
+         * @param index
+         * @param dynamic
+         * @return boolean Mapping创建成功失败标识
+         */
+        public static ElasticPutMappingBuilder putMapping(String index, boolean dynamic) {
+            return new ElasticPutMappingBuilder(index, dynamic? Dynamic.TRUE :Dynamic.FALSE);
         }
 
         /**
@@ -1635,9 +1663,8 @@ public final class ElasticUtils {
          * @return String
          */
         public static String health() {
-            ClusterHealthResponse response = IndicesRestSupport.clusterHealth(CLIENT);
-            ClusterHealthStatus status = response.getStatus();
-            return status.toString();
+            // 使用 ES 8.x ElasticsearchClient
+            return IndicesRestSupport.clusterHealth(QUERY_CLIENT);
         }
 
         public static ClusterSettingBuilder settings() {
@@ -1672,7 +1699,7 @@ public final class ElasticUtils {
          * System.out.println(JacksonUtils.toPrettyJson(scriptAgg.toString()));
          * }</pre>
          *
-         * @return
+         * @return boolean 是否创建成功
          */
         public static boolean createMultiFieldAgg() {
             String script = "{  \"script\": { " +
@@ -1700,15 +1727,8 @@ public final class ElasticUtils {
                     "}" +
                     "return fieldName;\" }}";
 
-            try {
-                PutStoredScriptRequest request = new PutStoredScriptRequest();
-                request.id("multi_fields");
-                request.content(new BytesArray(script), XContentType.JSON);
-                AcknowledgedResponse response = CLIENT.putScript(request, RequestOptions.DEFAULT);
-                return response.isAcknowledged();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            // 使用 ES 8.x ElasticsearchClient
+            return StoredScriptSupport.putStoredScript(QUERY_CLIENT, "multi_fields", script);
         }
     }
 
@@ -2007,7 +2027,16 @@ public final class ElasticUtils {
     /**
      * ES 8.x 原生 API 聚合入口 (使用 co.elastic.clients)
      */
-    public static class AggsV8 {
+    public static class Aggsv8 {
+
+        /**
+         * 返回总命中数
+         *
+         * @return Long
+         */
+        public static Long totalHits() {
+            return ThreadContext.get(ElasticConstants.TOTAL_HITS);
+        }
 
         /**
          * Terms 聚合 (ES 8.x 原生 API)

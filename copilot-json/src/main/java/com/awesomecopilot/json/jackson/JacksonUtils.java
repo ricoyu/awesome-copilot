@@ -233,6 +233,21 @@ public final class JacksonUtils {
 	}
 	
 	/**
+	 * 根据JSON字符串生成ObjectNode
+	 * @param jsonStr
+	 * @return
+	 * @throws Exception
+	 */
+	public static ObjectNode toJsonNode(String jsonStr) throws Exception {
+		JsonNode jsonNode = objectMapper.readTree(jsonStr);
+		// 校验顶层是否为对象，防止数组/基础类型报错
+		if (!jsonNode.isObject()) {
+			throw new IllegalArgumentException("传入JSON顶层不是对象，无法转为ObjectNode");
+		}
+		return (ObjectNode) jsonNode;
+	}
+	
+	/**
 	 * 将JSON字符串解析成 ObjectNode JSON对象
 	 * @param json
 	 * @return ObjectNode

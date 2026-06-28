@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -18,7 +19,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testBasicMaxAggregation() {
-        Double maxPrice = ElasticUtils.AggsV8
+        Double maxPrice = Aggsv8
                 .max("products")
                 .of("max_price", "price")
                 .get();
@@ -34,7 +35,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testMaxAgeAggregation() {
-        Double maxAge = ElasticUtils.AggsV8
+        Double maxAge = Aggsv8
                 .max("users")
                 .of("max_age", "age")
                 .get();
@@ -50,7 +51,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testMaxOrderAmountAggregation() {
-        Double maxAmount = ElasticUtils.AggsV8
+        Double maxAmount = Aggsv8
                 .max("orders")
                 .of("max_amount", "amount")
                 .get();
@@ -65,7 +66,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testMaxWithFetchTotalHits() {
-        Double maxValue = ElasticUtils.AggsV8
+        Double maxValue = Aggsv8
                 .max("products")
                 .of("max_price", "price")
                 .fetchTotalHits(true)
@@ -83,7 +84,7 @@ public class V8MaxAggregationTest {
     @Test
     public void testOldMaxAggregation() {
         // 旧的方式（仍在使用 RestHighLevelClient）
-        Double oldResult = ElasticUtils.Aggs
+        Double oldResult = Aggsv8
                 .max("products")
                 .of("max_price", "price")
                 .get();
@@ -91,7 +92,7 @@ public class V8MaxAggregationTest {
         System.out.println("Old API Result: " + oldResult);
         
         // 新的方式（使用 ElasticsearchClient 8.x）
-        Double newResult = ElasticUtils.AggsV8
+        Double newResult = Aggsv8
                 .max("products")
                 .of("max_price", "price")
                 .get();
@@ -107,7 +108,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testProductPriceAnalysis() {
-        Double maxPrice = ElasticUtils.AggsV8
+        Double maxPrice = Aggsv8
                 .max("products")
                 .of("max_electronics_price", "price")
                 .get();
@@ -127,7 +128,7 @@ public class V8MaxAggregationTest {
      */
     @Test
     public void testMaxTemperatureAggregation() {
-        Double maxTemp = ElasticUtils.AggsV8
+        Double maxTemp = Aggsv8
                 .max("weather")
                 .of("max_temperature", "temperature")
                 .get();

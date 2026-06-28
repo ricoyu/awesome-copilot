@@ -444,11 +444,51 @@ public final class IndicesRestSupport {
 		}
 	}
 
+	/**
+	 * 使用 ES 7.x RestHighLevelClient 获取 Index Templates（已废弃）
+	 * @deprecated 请使用 getIndexTemplate(ElasticsearchClient, String) 方法
+	 */
+	@Deprecated
 	public static GetIndexTemplatesResponse getIndexTemplates(RestHighLevelClient client, String templateName) {
 		try {
 			GetIndexTemplatesRequest request = new GetIndexTemplatesRequest(templateName);
 			return client.indices().getTemplate(request, RequestOptions.DEFAULT);
 		} catch (IOException e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 获取 Index Template
+	 *
+	 * @param client       ElasticsearchClient
+	 * @param templateName 模板名称
+	 * @return Map<String, Object> 模板信息（JSON 格式）
+	 */
+	public static Map<String, Object> getIndexTemplate(ElasticsearchClient client, String templateName) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 执行 HTTP GET 请求获取 index template
+			String endpoint = "/_template/" + templateName;
+			Request request = new Request("GET", endpoint);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析 JSON 响应
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			
+			if (responseMap == null || responseMap.isEmpty()) {
+				return new HashMap<>();
+			}
+			
+			return responseMap;
+		} catch (Exception e) {
 			throw new ListIndicesException(e);
 		}
 	}
@@ -459,6 +499,41 @@ public final class IndicesRestSupport {
 			AcknowledgedResponse response = client.indices().deleteTemplate(request, RequestOptions.DEFAULT);
 			return response.isAcknowledged();
 		} catch (IOException e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 删除 Index Template
+	 *
+	 * @param client       ElasticsearchClient
+	 * @param templateName 模板名称
+	 * @return boolean 是否删除成功
+	 */
+	public static boolean deleteIndexTemplate(ElasticsearchClient client, String templateName) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 执行 HTTP DELETE 请求删除 index template
+			String endpoint = "/_template/" + templateName;
+			Request request = new Request("DELETE", endpoint);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
 			throw new ListIndicesException(e);
 		}
 	}
@@ -593,6 +668,43 @@ public final class IndicesRestSupport {
 		}
 	}
 
+	/**
+	 * 使用 ES 8.x Java Client 执行索引段合并（Force Merge）
+	 *
+	 * @param client ElasticsearchClient
+	 * @param index  索引名称
+	 * @return boolean 是否执行成功
+	 */
+	public static boolean forceMerge(ElasticsearchClient client, String index) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求，避免 API 兼容性问题
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 执行 HTTP POST 请求进行段合并
+			// POST /{index}/_forcemerge?max_num_segments=1
+			Request request = new Request("POST", "/" + index + "/_forcemerge");
+			request.addParameter("max_num_segments", "1");
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			// 如果没有 acknowledged 字段，检查 HTTP 状态码
+			return response.getStatusLine().getStatusCode() == 200;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
 	public static Map<String, Object> getMapping(RestHighLevelClient client, String index) {
 		try {
 			GetMappingsRequest request = new GetMappingsRequest().indices(index);
@@ -723,10 +835,140 @@ public final class IndicesRestSupport {
 		}
 	}
 
+	/**
+	 * 使用 ES 8.x Java Client 获取索引中指定字段的 Mapping
+	 *
+	 * @param client ElasticsearchClient
+	 * @param index  索引名称
+	 * @param fields 字段名称列表
+	 * @return Map<String, Map<String, Object>> 字段 Mapping 定义
+	 */
+	public static Map<String, Map<String, Object>> getFieldMapping(ElasticsearchClient client, String index, String... fields) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求路径：GET /{index}/_mapping/field/{fields}
+			String fieldsPath = String.join(",", fields);
+			Request request = new Request("GET", "/" + index + "/_mapping/field/" + fieldsPath);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析 JSON 响应
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			
+			if (responseMap == null || responseMap.isEmpty()) {
+				return Map.of();
+			}
+			
+			// 提取指定索引的 mapping 信息
+			// 响应格式: { "index_name": { "mappings": { "fields": { ... } } } }
+			Object indexData = responseMap.get(index);
+			if (indexData instanceof Map) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> indexMap = (Map<String, Object>) indexData;
+				Object mappings = indexMap.get("mappings");
+				if (mappings instanceof Map) {
+					@SuppressWarnings("unchecked")
+					Map<String, Object> mappingsMap = (Map<String, Object>) mappings;
+					Object fieldsObj = mappingsMap.get("fields");
+					if (fieldsObj instanceof Map) {
+						@SuppressWarnings("unchecked")
+						Map<String, Object> fieldsMap = (Map<String, Object>) fieldsObj;
+						
+						// 转换为返回格式
+						Map<String, Map<String, Object>> result = new HashMap<>(fieldsMap.size());
+						for (Map.Entry<String, Object> entry : fieldsMap.entrySet()) {
+							String fieldName = entry.getKey();
+							Object fieldDef = entry.getValue();
+							if (fieldDef instanceof Map) {
+								@SuppressWarnings("unchecked")
+								Map<String, Object> fieldMap = (Map<String, Object>) fieldDef;
+								result.put(fieldName, fieldMap);
+							}
+						}
+						return result;
+					}
+				}
+			}
+			
+			return Map.of();
+		} catch (Exception e) {
+			throw new MappingException(e);
+		}
+	}
+
 	public static ClusterHealthResponse clusterHealth(RestHighLevelClient client) {
 		try {
 			return client.cluster().health(new ClusterHealthRequest(), RequestOptions.DEFAULT);
 		} catch (IOException e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 获取集群健康状态
+	 *
+	 * @param client ElasticsearchClient
+	 * @return String 集群健康状态 (GREEN, YELLOW, RED)
+	 */
+	public static String clusterHealth(ElasticsearchClient client) {
+		try {
+			// 使用 ES 8.x Java Client 的 cluster.health API
+			co.elastic.clients.elasticsearch.cluster.HealthResponse response = 
+					client.cluster().health(h -> h);
+			
+			// 获取健康状态并转换为字符串
+			String status = response.status().toString();
+			return status;
+		} catch (Exception e) {
+			throw new ListIndicesException(e);
+		}
+	}
+
+	/**
+	 * 使用 ES 8.x Java Client 更新集群设置（Cluster Settings）
+	 *
+	 * @param client             ElasticsearchClient
+	 * @param persistentSettings 持久化集群设置（可为 null）
+	 * @return boolean 是否更新成功
+	 */
+	public static boolean updateClusterSettings(ElasticsearchClient client, Map<String, Object> persistentSettings) {
+		try {
+			// 使用底层 RestClient 执行 HTTP 请求，避免 API 兼容性问题
+			RestClientTransport transport =
+					(RestClientTransport) client._transport();
+			RestClient restClient = transport.restClient();
+			
+			// 构建请求体
+			Map<String, Object> requestBody = new HashMap<>();
+			if (persistentSettings != null && !persistentSettings.isEmpty()) {
+				requestBody.put("persistent", persistentSettings);
+			}
+			
+			// 执行 HTTP PUT 请求更新集群设置
+			// PUT /_cluster/settings
+			Request request = new Request("PUT", "/_cluster/settings");
+			String jsonBody = JacksonUtils.toJson(requestBody);
+			request.setJsonEntity(jsonBody);
+			
+			Response response = restClient.performRequest(request);
+			String jsonResponse = EntityUtils.toString(response.getEntity(), "UTF-8");
+			
+			// 解析响应获取 acknowledged 状态
+			@SuppressWarnings("unchecked")
+			Map<String, Object> responseMap = JacksonUtils.toObject(jsonResponse, Map.class);
+			if (responseMap != null && responseMap.containsKey("acknowledged")) {
+				Object acknowledged = responseMap.get("acknowledged");
+				return Boolean.TRUE.equals(acknowledged);
+			}
+			
+			return false;
+		} catch (Exception e) {
 			throw new ListIndicesException(e);
 		}
 	}

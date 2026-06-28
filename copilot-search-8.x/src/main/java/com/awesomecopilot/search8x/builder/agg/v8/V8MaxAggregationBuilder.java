@@ -73,6 +73,18 @@ public class V8MaxAggregationBuilder extends AbstractAggregationBuilder {
 	}
 	
 	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return 当前聚合构建器实例
+	 */
+	@Override
+	public V8MaxAggregationBuilder subAggregation(com.awesomecopilot.search8x.builder.agg.sub.SubAggregation subAggregation) {
+		super.subAggregation(subAggregation);
+		return this;
+	}
+	
+	/**
 	 * 构建 ES 8.x 原生 Max Aggregation
 	 */
 	private Aggregation buildV8Aggregation() {

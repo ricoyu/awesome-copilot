@@ -35,12 +35,12 @@ public class ElasticTopHitsSubAggregation extends SubAggregation {
 	/**
 	 * The offset from the first result you want to fetch
 	 */
-	private Integer from;
+	protected Integer from;
 	
 	/**
 	 *  The maximum number of top matching hits to return per bucket. By default the top three matching hits are returned.
 	 */
-	private Integer size;
+	protected Integer size;
 	
 	/**
 	 * 是否要获取_source
@@ -232,6 +232,11 @@ public class ElasticTopHitsSubAggregation extends SubAggregation {
 		
 		sortOrders.forEach(sortOrder -> sortOrder.addTo(topHitsAggregationBuilder));
 		return topHitsAggregationBuilder;
+	}
+	
+	@Override
+	public String getName() {
+		return name;
 	}
 	
 	@Override

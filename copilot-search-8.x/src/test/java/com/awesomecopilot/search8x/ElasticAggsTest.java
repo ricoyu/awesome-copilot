@@ -1,7 +1,7 @@
 package com.awesomecopilot.search8x;
 
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import com.awesomecopilot.search8x.ElasticUtils.Aggs;
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.builder.ElasticRangeQueryBuilder;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search8x.enums.CalendarInterval;
@@ -73,7 +73,7 @@ public class ElasticAggsTest {
 		//assertThat(aggResults.size()).isEqualTo(3);
 		//System.out.println(toPrettyJson(aggResults));
 		
-		List<Map<String, Object>> aggResults1 = Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> aggResults1 = Aggsv8.terms("kibana_sample_data_flights")
 				.of("dest-country", "DestCountry")
 				//.sort("count")
 				.get();
@@ -122,7 +122,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testHistogramAgg() {
-		Map<String, Object> resultMap = Aggs.histogram("employees")
+		Map<String, Object> resultMap = Aggsv8.histogram("employees")
 				.of("salary_histogram", "salary")
 				.interval(5000)
 				.extendedBounds(0L, 100000L)
@@ -145,7 +145,7 @@ public class ElasticAggsTest {
 				.gte(min)
 				.lte(max);
 		
-		Map<String, Object> resultMap = Aggs.histogram("event_2021-07-07")
+		Map<String, Object> resultMap = Aggsv8.histogram("event_2021-07-07")
 				.of("event_count_agg", "create_time")
 				.setQuery(rangeQueryBuilder)
 				.interval(2000)
@@ -170,7 +170,7 @@ public class ElasticAggsTest {
 				.gte(min)
 				.lte(max);
 		
-		Map<String, Object> resultMap = Aggs.dateHistogram("event_2021-07-07")
+		Map<String, Object> resultMap = Aggsv8.dateHistogram("event_2021-07-07")
 				.of("event_count_agg", "create_time")
 				.setQuery(rangeQueryBuilder)
 				.calendarInterval(CalendarInterval.MINUTE)
@@ -183,7 +183,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testSubAgg() {
-		List<Map<String, Object>> resultMap = Aggs.terms("event_2021-08-02")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("event_2021-08-02")
 				.of("event_engine_agg", "event_engine")
 				.subAggregation(SubAggregations.histogram("create_time_agg", "create_time")
 						.interval(1000)
@@ -204,7 +204,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testSubDateAgg() {
-		List<Map<String, Object>> resultMap = Aggs.terms("event_2021-08-02")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("event_2021-08-02")
 				.of("event_engine_agg", "event_engine")
 				.subAggregation(dateHistogram("create_time_agg", "create_time")
 						.calendarInterval(CalendarInterval.MINUTE)
@@ -217,7 +217,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testDateHistogramSubAvgAgg() {
-		Map<String, Object> resultMap = Aggs.dateHistogram("event_2021-08-02")
+		Map<String, Object> resultMap = Aggsv8.dateHistogram("event_2021-08-02")
 				.of("date_his_agg", "create_time")
 				.fixedInterval(5, FixedInterval.MINUTES)
 				.subAggregation(avg("event_count_avg", "event_count"))
@@ -232,7 +232,7 @@ public class ElasticAggsTest {
 				ElasticSubAggregation.instance(AggregationBuilders.dateHistogram("time_agg").field("timestamp").fixedInterval(DateHistogramInterval.DAY))
 						.subAggregation(AggregationBuilders.avg("in_bytes_avg").field("in_bytes"));*/
 		
-		List<Map<String, Object>> results = Aggs.terms("flow_2021-08-18")
+		List<Map<String, Object>> results = Aggsv8.terms("flow_2021-08-18")
 				.of("tags_agg", "tags")
 				.subAggregation(dateHistogram("time_agg", "timestamp")
 					.fixedInterval(5, FixedInterval.DAYS)
@@ -244,7 +244,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testElasticTopHitsSubAggregation() {
-		List<Map<String, Object>> resultMap = Aggs.terms("flow_*")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("flow_*")
 				.of("agg_data", "tags")
 				.subAggregation(SubAggregations.topHits("top_hits")
 						.sort("-timestamp")
@@ -282,7 +282,7 @@ public class ElasticAggsTest {
 	 */
 	@Test
 	public void testDestCountrythenAvgThenWeather() {
-		List<Map<String, Object>> resultMap = Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry").size(2)
 				.subAggregation(avg("average_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.terms("weather", "DestWeather"))
@@ -292,7 +292,7 @@ public class ElasticAggsTest {
 	
 	@Test
 	public void testDestCountrythenStatsThenWeather() {
-		List<Map<String, Object>> resultMap = Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> resultMap = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry").size(2)
 				.subAggregation(SubAggregations.stats("state_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.terms("weather", "DestWeather").size(5))
@@ -302,7 +302,7 @@ public class ElasticAggsTest {
 
 	@Test
 	public void testSubAgg2() {
-		List<Map<String, Object>> aggResult = Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> aggResult = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry")
 				.size(2)
 				.subAggregation(avg("average_price", "AvgTicketPrice"))
@@ -345,7 +345,7 @@ public class ElasticAggsTest {
 	 */
 	@Test
 	public void testSubAgg3() {
-		List<Map<String, Object>> results = Aggs.terms("kibana_sample_data_flights").of("flight_dest", "DestCountry").size(3)
+		List<Map<String, Object>> results = Aggsv8.terms("kibana_sample_data_flights").of("flight_dest", "DestCountry").size(3)
 				.subAggregation(avg("average_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.max("max_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.min("min_price", "AvgTicketPrice"))
@@ -383,7 +383,7 @@ public class ElasticAggsTest {
 	 */
 	@Test
 	public void testBucketMixMetric() {
-		List<Map<String, Object>> results = Aggs.terms("kibana_sample_data_flights")
+		List<Map<String, Object>> results = Aggsv8.terms("kibana_sample_data_flights")
 				.of("flight_dest", "DestCountry").size(2)
 				.subAggregation(avg("average_price", "AvgTicketPrice"))
 				.subAggregation(SubAggregations.terms("weather", "DestWeather").size(5))
@@ -393,7 +393,7 @@ public class ElasticAggsTest {
 
 	@Test
 	public void testRangeAgg() {
-		Map<String, Object> resultMap = Aggs.range("products")
+		Map<String, Object> resultMap = Aggsv8.range("products")
 				.of("price_ranges", "price")
 				.addUnboundedTo(100)
 				.addRange(100, 500)

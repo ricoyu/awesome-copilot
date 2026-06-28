@@ -22,6 +22,10 @@ public class ClusterHealthTest {
     @Test
     public void testMakeClusterYellow() {
         ElasticUtils.ping();
+        boolean exists = ElasticUtils.Admin.existsIndex("test002");
+        if (exists) {
+            ElasticUtils.Admin.deleteIndex("test002");
+        }
         boolean created = ElasticUtils.Admin.createIndex("test002")
                 .settings()
                 .numberOfShards(5)
@@ -34,6 +38,6 @@ public class ClusterHealthTest {
             throw new RuntimeException(e);
         }
         String health = ElasticUtils.Cluster.health();
-        assertEquals(health, "YELLOW");
+        assertEquals("Yellow", health);
     }
 }

@@ -72,7 +72,13 @@ public final class V8AggResultSupport {
 						log.debug("Terms Bucket [{}]: Key={}, DocCount={}", aggName, key, docCount);
 						result.put(key, (T) Long.valueOf(docCount));
 						
-						// TODO: 处理子聚合（如果需要）
+						// 处理子聚合
+						if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
+							Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
+							if (!subAggResults.isEmpty()) {
+								result.put("_sub_aggregations", (T) subAggResults);
+							}
+						}
 						
 						aggResults.add(result);
 					}
@@ -95,7 +101,13 @@ public final class V8AggResultSupport {
 						log.debug("Terms Bucket [{}]: Key={}, DocCount={}", aggName, key, docCount);
 						result.put(key, (T) Long.valueOf(docCount));
 						
-						// TODO: 处理子聚合（如果需要）
+						// 处理子聚合
+						if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
+							Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
+							if (!subAggResults.isEmpty()) {
+								result.put("_sub_aggregations", (T) subAggResults);
+							}
+						}
 						
 						aggResults.add(result);
 					}
@@ -136,7 +148,13 @@ public final class V8AggResultSupport {
 					log.debug("Terms Bucket: Key={}, DocCount={}", key, docCount);
 					result.put(key, (T) Long.valueOf(docCount));
 					
-					// TODO: 处理子聚合（如果需要）
+					// 处理子聚合
+					if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
+						Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
+						if (!subAggResults.isEmpty()) {
+							result.put("_sub_aggregations", (T) subAggResults);
+						}
+					}
 					
 					aggResults.add(result);
 				}
@@ -159,7 +177,13 @@ public final class V8AggResultSupport {
 					log.debug("Terms Bucket: Key={}, DocCount={}", key, docCount);
 					result.put(key, (T) Long.valueOf(docCount));
 					
-					// TODO: 处理子聚合（如果需要）
+					// 处理子聚合
+					if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
+						Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
+						if (!subAggResults.isEmpty()) {
+							result.put("_sub_aggregations", (T) subAggResults);
+						}
+					}
 					
 					aggResults.add(result);
 				}
@@ -551,5 +575,102 @@ public final class V8AggResultSupport {
 		}
 		
 		return result;
+	}
+
+	/**
+	 * 解析子聚合结果（通用方法）
+	 *
+	 * @param subAggregations 子聚合 Map (name -> Aggregate)
+	 * @return 包含所有子聚合结果的 Map
+	 */
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> parseSubAggregations(Map<String, Aggregate> subAggregations) {
+		Map<String, Object> result = new HashMap<>();
+		
+		if (subAggregations == null || subAggregations.isEmpty()) {
+			return result;
+		}
+		
+		// 遍历所有子聚合，根据类型分别解析
+		for (Map.Entry<String, Aggregate> entry : subAggregations.entrySet()) {
+			String aggName = entry.getKey();
+			Aggregate aggregate = entry.getValue();
+			
+			if (aggregate == null) {
+				continue;
+			}
+			
+			// 根据聚合类型调用相应的解析方法
+			if (aggregate.isStats()) {
+				result.put(aggName, statsResult(subAggregations, aggName));
+			} else if (aggregate.isCardinality()) {
+				result.put(aggName, cardinalityResult(subAggregations, aggName));
+			} else if (aggregate.isSum()) {
+				result.put(aggName, sumResult(subAggregations, aggName));
+			} else if (aggregate.isAvg()) {
+				result.put(aggName, avgResult(subAggregations, aggName));
+			} else if (aggregate.isMin()) {
+				result.put(aggName, minResult(subAggregations, aggName));
+			} else if (aggregate.isMax()) {
+				result.put(aggName, maxResult(subAggregations, aggName));
+			} else if (aggregate.isSterms() || aggregate.isLterms()) {
+				result.put(aggName, termsResult(aggregate));
+			} else if (aggregate.isRange()) {
+				result.put(aggName, rangeResult(subAggregations, aggName));
+			} else if (aggregate.isHistogram()) {
+				result.put(aggName, histogramResult(subAggregations, aggName));
+			} else if (aggregate.isDateHistogram()) {
+				result.put(aggName, dateHistogramResult(subAggregations, aggName));
+			} else if (aggregate.isTopHits()) {
+				// TopHits 需要特殊处理，返回原始文档
+				log.debug("TopHits aggregation [{}] found, needs special handling", aggName);
+				result.put(aggName, "TopHits aggregation (not yet fully parsed)");
+			} else {
+				log.warn("Unsupported sub-aggregation type [{}] in composite result", aggregate._kind());
+			}
+		}
+		
+		return result;
+	}
+
+	/**
+	 * 获取 Terms 聚合的总桶数
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @return 总桶数
+	 */
+	public static Integer termsTotalBuckets(Map<String, Aggregate> aggregations) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return 0;
+		}
+		
+		for (Map.Entry<String, Aggregate> entry : aggregations.entrySet()) {
+			Aggregate aggregate = entry.getValue();
+			
+			if (aggregate == null) {
+				continue;
+			}
+			
+			// 处理 StringTerms 聚合
+			if (aggregate.isSterms()) {
+				StringTermsAggregate stringTerms = aggregate.sterms();
+				Buckets buckets = stringTerms.buckets();
+				
+				if (buckets.isArray()) {
+					return buckets.array().size();
+				}
+			}
+			// 处理 LongTerms 聚合
+			else if (aggregate.isLterms()) {
+				LongTermsAggregate longTerms = aggregate.lterms();
+				Buckets buckets = longTerms.buckets();
+				
+				if (buckets.isArray()) {
+					return buckets.array().size();
+				}
+			}
+		}
+		
+		return 0;
 	}
 }

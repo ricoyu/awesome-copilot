@@ -45,6 +45,11 @@ public class ElasticMaxSubAggregation extends SubAggregation {
 	}
 	
 	@Override
+	public String getName() {
+		return name;
+	}
+	
+	@Override
 	public SubAggregation and() {
 		return parentAggregation;
 	}

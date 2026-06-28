@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -18,7 +19,7 @@ public class V8RangeAggregationTest {
     @Test
     public void testBasicRangeAggregation() {
         // 使用 ES 8.x 原生 API
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .range("products")  // 索引名
                 .of("price_ranges", "price")  // 聚合名称和字段
                 .addRange(0.0, 100.0)         // 0-100
@@ -35,7 +36,7 @@ public class V8RangeAggregationTest {
         // }
         
         System.out.println("Range Aggregation Result: " + result);
-        System.out.println("Total Hits: " + ElasticUtils.Aggs.totalHits());
+        System.out.println("Total Hits: " + Aggsv8.totalHits());
     }
 
     /**
@@ -43,7 +44,7 @@ public class V8RangeAggregationTest {
      */
     @Test
     public void testRangeAggregationWithKeys() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .range("products")
                 .of("price_levels", "price")
                 .addRange("budget", 0.0, 100.0)      // 经济型
@@ -66,7 +67,7 @@ public class V8RangeAggregationTest {
      */
     @Test
     public void testAgeRangeAggregation() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .range("users")
                 .of("age_groups", "age")
                 .addUnboundedTo("under_18", 18.0)           // < 18
@@ -86,7 +87,7 @@ public class V8RangeAggregationTest {
     public void testRangeAggregationWithQuery() {
         // 注意：V8RangeAggregationBuilder 目前还不支持 setQuery（因为需要将 7.x QueryBuilder 转换为 8.x Query）
         // 这里仅演示 API 签名，实际使用时需要先过滤数据再聚合
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .range("products")
                 .of("price_by_category", "price")
                 .addRange(0.0, 100.0)
@@ -103,7 +104,7 @@ public class V8RangeAggregationTest {
     @Test
     public void testOldRangeAggregation() {
         // 旧的方式（仍在使用 RestHighLevelClient）
-        Map<String, Long> oldResult = ElasticUtils.Aggs
+        Map<String, Long> oldResult = Aggsv8
                 .range("products")
                 .of("price_ranges", "price")
                 .addRange(0.0, 100.0)
@@ -114,7 +115,7 @@ public class V8RangeAggregationTest {
         System.out.println("Old API Result: " + oldResult);
         
         // 新的方式（使用 ElasticsearchClient 8.x）
-        Map<String, Long> newResult = ElasticUtils.AggsV8
+        Map<String, Long> newResult = Aggsv8
                 .range("products")
                 .of("price_ranges", "price")
                 .addRange(0.0, 100.0)

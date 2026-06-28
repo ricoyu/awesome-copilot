@@ -85,6 +85,22 @@ public class SortOrder {
 	}
 	
 	/**
+	 * 获取排序字段
+	 * @return 字段名
+	 */
+	public String getField() {
+		return field;
+	}
+	
+	/**
+	 * 是否是升序
+	 * @return true=升序, false=降序
+	 */
+	public boolean isAsc() {
+		return direction == Direction.ASC;
+	}
+	
+	/**
 	 * 根据权重排序
 	 */
 	public static SortOrderBuilder scoreSort() {

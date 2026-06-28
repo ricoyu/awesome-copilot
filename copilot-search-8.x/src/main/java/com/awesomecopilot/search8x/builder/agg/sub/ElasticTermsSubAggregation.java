@@ -29,7 +29,7 @@ public class ElasticTermsSubAggregation extends SubAggregation {
 	 */
 	protected String field;
 	
-	private Integer size;
+	protected Integer size;
 	
 	public ElasticTermsSubAggregation(String name, String field) {
 		this.name = name;
@@ -47,6 +47,17 @@ public class ElasticTermsSubAggregation extends SubAggregation {
 		return this;
 	}
 	
+	/**
+	 * 添加子聚合
+	 *
+	 * @param subAggregation 子聚合
+	 * @return ElasticTermsSubAggregation
+	 */
+	public ElasticTermsSubAggregation subAggregation(SubAggregation subAggregation) {
+		super.subAggregation(subAggregation);
+		return this;
+	}
+	
 	@Override
 	public AggregationBuilder build() {
 		TermsAggregationBuilder builder = AggregationBuilders.terms(name).field(field);
@@ -54,6 +65,11 @@ public class ElasticTermsSubAggregation extends SubAggregation {
 			builder.size(this.size);
 		}
 		return builder;
+	}
+	
+	@Override
+	public String getName() {
+		return name;
 	}
 	
 	@Override

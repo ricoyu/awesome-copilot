@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import com.awesomecopilot.search8x.enums.CalendarInterval;
 import com.awesomecopilot.search8x.enums.FixedInterval;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testBasicDateHistogramAggregation() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)
@@ -40,7 +41,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testDateHistogramWithCalendarInterval() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("sales")
                 .of("sales_by_month", "sale_date")
                 .calendarInterval(CalendarInterval.MONTH)
@@ -56,7 +57,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testDateHistogramWithMinDocCount() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_hour", "order_date")
                 .fixedInterval(1, FixedInterval.HOURS)
@@ -76,7 +77,7 @@ public class V8DateHistogramAggregationTest {
         long startTime = 1640995200000L; // 2022-01-01 00:00:00
         long endTime = 1643673600000L;   // 2022-02-01 00:00:00
         
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)
@@ -94,7 +95,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testDateHistogramWithFormat() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)
@@ -112,7 +113,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testDateHistogramWithTimezone() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)
@@ -129,7 +130,7 @@ public class V8DateHistogramAggregationTest {
      */
     @Test
     public void testUserRegistrationTrend() {
-        Map<String, Long> result = ElasticUtils.AggsV8
+        Map<String, Long> result = Aggsv8
                 .dateHistogram("users")
                 .of("registrations_by_week", "registration_date")
                 .calendarInterval(CalendarInterval.WEEK)
@@ -145,7 +146,7 @@ public class V8DateHistogramAggregationTest {
     @Test
     public void testOldDateHistogramAggregation() {
         // 旧的方式（仍在使用 RestHighLevelClient）
-        Map<String, Long> oldResult = ElasticUtils.Aggs
+        Map<String, Long> oldResult = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)
@@ -154,7 +155,7 @@ public class V8DateHistogramAggregationTest {
         System.out.println("Old API Result: " + oldResult);
         
         // 新的方式（使用 ElasticsearchClient 8.x）
-        Map<String, Long> newResult = ElasticUtils.AggsV8
+        Map<String, Long> newResult = Aggsv8
                 .dateHistogram("orders")
                 .of("orders_by_day", "order_date")
                 .fixedInterval(1, FixedInterval.DAYS)

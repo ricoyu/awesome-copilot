@@ -102,6 +102,11 @@ public class ElasticBucketSortSubAggregation extends SubAggregation {
 		return bucketSortPipelineAggregationBuilder;
 	}
 	
+	@Override
+	public String getName() {
+		return name;
+	}
+	
 	public Page toPage() {
 		Page page = new Page();
 		int size = this.size == null ? 10 : this.size;

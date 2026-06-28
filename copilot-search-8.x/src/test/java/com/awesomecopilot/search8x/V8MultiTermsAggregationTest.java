@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.ElasticUtils.Aggsv8;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +21,7 @@ public class V8MultiTermsAggregationTest {
      */
     @Test
     public void testV8MultiTermsSingleField() {
-        List<Map<String, Object>> results = ElasticUtils.AggsV8.multiTerms("bank")
+        List<Map<String, Object>> results = Aggsv8.multiTerms("bank")
                 .of("age_agg", "age")
                 .size(20)
                 .get();
@@ -40,7 +41,7 @@ public class V8MultiTermsAggregationTest {
         // 注意：这个测试需要一个包含多个字段的索引
         // 如果 bank 索引没有合适的多字段，可以跳过或修改索引名
         try {
-            List<Map<String, Object>> results = ElasticUtils.AggsV8.multiTerms("employees")
+            List<Map<String, Object>> results = Aggsv8.multiTerms("employees")
                     .of("job_dept_agg", "job", "department")
                     .size(20)
                     .get();
@@ -59,7 +60,7 @@ public class V8MultiTermsAggregationTest {
      */
     @Test
     public void testV8MultiTermsWithShardSize() {
-        List<Map<String, Object>> results = ElasticUtils.AggsV8.multiTerms("bank")
+        List<Map<String, Object>> results = Aggsv8.multiTerms("bank")
                 .of("age_agg", "age")
                 .size(10)
                 .shardSize(50)  // 提高精确度
@@ -78,7 +79,7 @@ public class V8MultiTermsAggregationTest {
     @Test
     public void testCompareOldAndNewMultiTerms() {
         // 使用新的 AggsV8 API
-        List<Map<String, Object>> newResults = ElasticUtils.AggsV8.multiTerms("bank")
+        List<Map<String, Object>> newResults = Aggsv8.multiTerms("bank")
                 .of("age_agg", "age")
                 .size(5)
                 .get();
