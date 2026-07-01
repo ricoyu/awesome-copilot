@@ -1,0 +1,137 @@
+Picked up JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:commons-lang:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:commons-lang:${project.parent.version}, D:\Learning\awesome-copilot\commons-lang\pom.xml, line 6, column 14
+[WARNING] 'dependencyManagement.dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: jakarta.annotation:jakarta.annotation-api:jar -> duplicate declaration of version 2.1.1 @ com.awesomecopilot:awesome-copilot:21.0.8, D:\Learning\awesome-copilot\pom.xml, line 637, column 25
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:commons-spring:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:commons-spring:${project.parent.version}, D:\Learning\awesome-copilot\commons-spring\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-json:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-json:${project.parent.version}, D:\Learning\awesome-copilot\copilot-json\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-web:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-web:${project.parent.version}, D:\Learning\awesome-copilot\copilot-web\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-validation:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-validation:${project.parent.version}, D:\Learning\awesome-copilot\copilot-validation\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-cache:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-cache:${project.parent.version}, D:\Learning\awesome-copilot\copilot-cache\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-bigdata:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-bigdata:${project.parent.version}, D:\Learning\awesome-copilot\copilot-bigdata\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-orm:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-orm:${project.parent.version}, D:\Learning\awesome-copilot\copilot-orm\pom.xml, line 6, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-codec:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-codec:${project.parent.version}, D:\Learning\awesome-copilot\copilot-codec\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-networking:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-networking:${project.parent.version}, D:\Learning\awesome-copilot\copilot-networking\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-search:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-search:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search\pom.xml, line 6, column 14
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.apache.logging.log4j:log4j-api:jar -> version (?) vs 2.15.0 @ com.awesomecopilot:copilot-search:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search\pom.xml, line 182, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.apache.logging.log4j:log4j-core:jar -> version (?) vs 2.15.0 @ com.awesomecopilot:copilot-search:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search\pom.xml, line 187, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.apache.logging.log4j:log4j-to-slf4j:jar -> version (?) vs 2.15.0 @ com.awesomecopilot:copilot-search:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search\pom.xml, line 197, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-search-8.x:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-search-8.x:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search-8.x\pom.xml, line 6, column 14
+[WARNING] 'build.plugins.plugin.version' for org.apache.maven.plugins:maven-surefire-plugin is missing. @ com.awesomecopilot:copilot-search-8.x:${project.parent.version}, D:\Learning\awesome-copilot\copilot-search-8.x\pom.xml, line 151, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-workbook:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-workbook:${project.parent.version}, D:\Learning\awesome-copilot\copilot-workbook\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-netty:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-netty:${project.parent.version}, D:\Learning\awesome-copilot\copilot-netty\pom.xml, line 6, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-security:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-security:${project.parent.version}, D:\Learning\awesome-copilot\copilot-security\pom.xml, line 7, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:commons-cloud:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:commons-cloud:${project.parent.version}, D:\Learning\awesome-copilot\commons-cloud\pom.xml, line 6, column 14
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:copilot-test:jar:21.0.8
+[WARNING] 'version' contains an expression but should be a constant. @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 6, column 14
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: ch.qos.logback:logback-core:jar -> duplicate declaration of version (?) @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 38, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: ch.qos.logback:logback-classic:jar -> duplicate declaration of version (?) @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 42, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: org.junit.jupiter:junit-jupiter-api:jar -> version 5.7.0 vs (?) @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 166, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: cglib:cglib:jar -> duplicate declaration of version (?) @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 214, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: com.alibaba:fastjson:jar -> version 1.2.72 vs 1.2.70 @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 376, column 21
+[WARNING] 'dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: cglib:cglib:jar -> version (?) vs 3.3.0 @ com.awesomecopilot:copilot-test:${project.parent.version}, D:\Learning\awesome-copilot\copilot-test\pom.xml, line 395, column 21
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for com.awesomecopilot:awesome-copilot:pom:21.0.8
+[WARNING] 'dependencyManagement.dependencies.dependency.(groupId:artifactId:type:classifier)' must be unique: jakarta.annotation:jakarta.annotation-api:jar -> duplicate declaration of version 2.1.1 @ line 637, column 25
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] 
+[INFO] ---------------< com.awesomecopilot:copilot-search-8.x >----------------
+[INFO] Building Elasticsearch 8.x Search API 21.0.8
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ copilot-search-8.x ---
+[INFO] Deleting D:\Learning\awesome-copilot\copilot-search-8.x\target
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ copilot-search-8.x ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 0 resource
+[INFO] skip non existing resourceDirectory D:\Learning\awesome-copilot\copilot-search-8.x\src\main\resources\named-sql
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ copilot-search-8.x ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 54 source files with javac [debug target 21] to target\classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] /D:/Learning/awesome-copilot/copilot-search-8.x/src/main/java/com/awesomecopilot/search8x/ElasticUtils.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/Learning/awesome-copilot/copilot-search-8.x/src/main/java/com/awesomecopilot/search8x/ElasticUtils.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 
+[INFO] --- resources:3.2.0:resources (default-resources) @ copilot-search-8.x ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 0 resource
+[INFO] skip non existing resourceDirectory D:\Learning\awesome-copilot\copilot-search-8.x\src\main\resources\named-sql
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ copilot-search-8.x ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ copilot-search-8.x ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] Copying 13 resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ copilot-search-8.x ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 10 source files with javac [debug target 21] to target\test-classes
+[INFO] 由于在类路径中发现了一个或多个处理程序，因此启用了
+  批注处理。未来发行版的 javac 可能会禁用批注处理，
+  除非至少按名称指定了一个处理程序 (-processor)，
+  或指定了搜索路径 (--processor-path, --processor-module-path)，
+  或显式启用了批注处理 (-proc:only, -proc:full)。
+  可使用 -Xlint:-options 隐藏此消息。
+  可使用 -proc:none 禁用批注处理。
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.400 s
+[INFO] Finished at: 2026-06-29T19:51:21+08:00
+[INFO] ------------------------------------------------------------------------
+[WARNING] 
+[WARNING] Plugin validation issues were detected in 1 plugin(s)
+[WARNING] 
+[WARNING]  * org.apache.maven.plugins:maven-resources-plugin:3.2.0
+[WARNING] 
+[WARNING] For more or less details, use 'maven.plugin.validation' property with one of the values (case insensitive): [BRIEF, DEFAULT, VERBOSE]
+[WARNING] 

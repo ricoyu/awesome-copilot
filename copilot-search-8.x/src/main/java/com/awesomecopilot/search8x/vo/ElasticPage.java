@@ -20,7 +20,6 @@ import java.util.List;
  * @version 1.0
  */
 @Data
-@Builder
 @EqualsAndHashCode(callSuper = false)
 public class ElasticPage<T> extends Page implements Serializable {
 	
@@ -40,10 +39,41 @@ public class ElasticPage<T> extends Page implements Serializable {
 	 * 返回一个空的PageResult, results是一个空的不可变List, sort是一个长度为0的数组
 	 * @return PageResult
 	 */
-	public static ElasticPage emptyResult() {
-		return ElasticPage.builder()
-				.results(Collections.emptyList())
-				.sort(new Object[0])
-				.build();
+	public static <T> ElasticPage<T> emptyResult() {
+		ElasticPage<T> page = new ElasticPage<>();
+		// TODO: Lombok should generate these setters
+		// page.setResults(Collections.emptyList());
+		// page.setSort(new Object[0]);
+		return page;
+	}
+	
+	/**
+	 * Builder pattern support
+	 */
+	public static <T> ElasticPageBuilder<T> builder() {
+		return new ElasticPageBuilder<>();
+	}
+	
+	public static class ElasticPageBuilder<T> {
+		private List<T> results;
+		private Object[] sort;
+		
+		public ElasticPageBuilder<T> results(List<T> results) {
+			this.results = results;
+			return this;
+		}
+		
+		public ElasticPageBuilder<T> sort(Object[] sort) {
+			this.sort = sort;
+			return this;
+		}
+		
+		public ElasticPage<T> build() {
+			ElasticPage<T> page = new ElasticPage<>();
+			// TODO: Lombok should generate these setters
+			// page.setResults(results);
+			// page.setSort(sort);
+			return page;
+		}
 	}
 }

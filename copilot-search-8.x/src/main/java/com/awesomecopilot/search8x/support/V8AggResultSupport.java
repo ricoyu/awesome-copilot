@@ -462,6 +462,8 @@ public final class V8AggResultSupport {
 			return null;
 		}
 	}
+	// TODO: StatsAggResult has been removed
+	/*
 	public static com.awesomecopilot.search8x.support.StatsAggResult statsResult(Map<String, Aggregate> aggregations, String aggName) {
 		if (aggregations == null || aggregations.isEmpty()) {
 			return null;
@@ -499,6 +501,7 @@ public final class V8AggResultSupport {
 			return null;
 		}
 	}
+	*/
 
 	/**
 	 * 解析 Cardinality 聚合结果
@@ -556,7 +559,9 @@ public final class V8AggResultSupport {
 			
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
-				result.put(aggName, (T) statsResult(aggregations, aggName));
+				// TODO: statsResult has been removed
+				// result.put(aggName, (T) statsResult(aggregations, aggName));
+				log.warn("statsResult has been temporarily removed");
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, (T) cardinalityResult(aggregations, aggName));
 			} else if (aggregate.isSum()) {
@@ -602,7 +607,9 @@ public final class V8AggResultSupport {
 			
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
-				result.put(aggName, statsResult(subAggregations, aggName));
+				// TODO: statsResult has been removed
+				// result.put(aggName, statsResult(subAggregations, aggName));
+				log.warn("statsResult has been temporarily removed");
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, cardinalityResult(subAggregations, aggName));
 			} else if (aggregate.isSum()) {

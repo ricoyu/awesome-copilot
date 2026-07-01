@@ -1,16 +1,17 @@
 package com.awesomecopilot.search8x.builder.query;
 
+import java.util.List;
+
 /**
- * <p>
- * Copyright: (C), 2021-06-13 15:33
- * <p>
- * <p>
- * Company: Sexy Uncle Inc.
- *
- * @author Rico Yu ricoyu520@gmail.com
- * @version 1.0
+ * Bool查询中Term查询的链式调用接口
  */
 public interface BoolTermQuery extends BoolQuery {
-	
-	public BoolTermQuery boost(float boost);
+    BoolTermQuery query(String field, Object value);
+    BoolTermQuery boost(float boost);
+    BoolTermQuery constantScore(boolean constantScore);
+    BoolTermQuery nestedPath(String path);
+    
+    // 执行方法
+    <T> List<T> queryForList();
+    <T> T queryForObject();
 }

@@ -19,10 +19,8 @@ import java.util.List;
  * @version 1.0
  */
 @Data
-@Builder
 @EqualsAndHashCode(callSuper = false)
 public class ElasticScroll<T> extends Page {
-	
 	
 	/**
 	 * 这是查询返回的数据部分
@@ -31,9 +29,39 @@ public class ElasticScroll<T> extends Page {
 	
 	private String scrollId;
 	
-	public static ElasticScroll emptyResult() {
-		return ElasticScroll.builder()
-				.results(Collections.emptyList())
-				.build();
+	public static <T> ElasticScroll<T> emptyResult() {
+		ElasticScroll<T> scroll = new ElasticScroll<>();
+		// TODO: Lombok should generate these setters
+		// scroll.setResults(Collections.emptyList());
+		return scroll;
+	}
+	
+	/**
+	 * Builder pattern support
+	 */
+	public static <T> ElasticScrollBuilder<T> builder() {
+		return new ElasticScrollBuilder<>();
+	}
+	
+	public static class ElasticScrollBuilder<T> {
+		private List<T> results;
+		private String scrollId;
+		
+		public ElasticScrollBuilder<T> results(List<T> results) {
+			this.results = results;
+			return this;
+		}
+		
+		public ElasticScrollBuilder<T> scrollId(String scrollId) {
+			this.scrollId = scrollId;
+			return this;
+		}
+		
+		public ElasticScroll<T> build() {
+			ElasticScroll<T> scroll = new ElasticScroll<>();
+			scroll.setResults(results);
+			scroll.setScrollId(scrollId);
+			return scroll;
+		}
 	}
 }

@@ -1,43 +1,25 @@
 package com.awesomecopilot.search8x.support;
 
-import org.elasticsearch.action.update.UpdateResponse;
+import co.elastic.clients.elasticsearch.core.UpdateResponse;
+import lombok.Data;
+
+import java.util.Map;
 
 /**
- * <p>
- * Copyright: (C), 2021-01-01 20:13
- * <p>
- * <p>
- * Company: Information & Data Security Solutions Co., Ltd.
- *
+ * ES 8.x 更新结果封装
+ * 
  * @author Rico Yu ricoyu520@gmail.com
- * @version 1.0
  */
+@Data
 public class UpdateResult {
 	
 	private Long version;
-	
 	
 	private Long ifSeqNo;
 	
 	private Long ifPrimaryTerm;
 	
 	private Result result;
-	
-	public Long getIfSeqNo() {
-		return ifSeqNo;
-	}
-	
-	public void setIfSeqNo(Long ifSeqNo) {
-		this.ifSeqNo = ifSeqNo;
-	}
-	
-	public Long getIfPrimaryTerm() {
-		return ifPrimaryTerm;
-	}
-	
-	public void setIfPrimaryTerm(Long ifPrimaryTerm) {
-		this.ifPrimaryTerm = ifPrimaryTerm;
-	}
 	
 	public static enum Result {
 		
@@ -62,65 +44,31 @@ public class UpdateResult {
 		VERSION_CONFLICT;
 	}
 	
-	public Long getVersion() {
-		return version;
-	}
-	
-	public void setResult(Result result) {
-		this.result = result;
-	}
-	
-	public Result getResult() {
-		return result;
-	}
-	
 	/**
-	 * 封装UpdateResult, 避免业务代码直接操作Elasticsearch底层API
-	 * @param response
+	 * 从 ES 8.x UpdateResponse 封装 UpdateResult
+	 * @param response ES 8.x UpdateResponse
 	 * @return UpdateResult
 	 */
-	public static UpdateResult from(UpdateResponse response) {
+	public static UpdateResult from(UpdateResponse<Map<String, Object>> response) {
 		UpdateResult updateResult = new UpdateResult();
-		updateResult.version = response.getVersion();
-		long ifSeqNo = response.getSeqNo();
-		long ifPrimaryTerm = response.getPrimaryTerm();
-		switch (response.getResult()) {
-			case CREATED:
+		updateResult.version = response.version();
+		updateResult.ifSeqNo = response.seqNo();
+		updateResult.ifPrimaryTerm = response.primaryTerm();
+		
+		switch (response.result()) {
+			case Created:
 				updateResult.result = Result.CREATED;
 				break;
-			case UPDATED:
+			case Updated:
 				updateResult.result = Result.UPDATED;
+				break;
+			case NoOp:
+				updateResult.result = Result.NOOP;
 				break;
 			default:
 				updateResult.result = Result.NOOP;
 		}
-		updateResult.setIfSeqNo(ifSeqNo);
-		updateResult.setIfPrimaryTerm(ifPrimaryTerm);
-		return updateResult;
-	}
-
-	/**
-	 * 从 DocumentOperationResult 创建 UpdateResult（用于 ES 8.x）
-	 * @param result DocumentOperationResult
-	 * @return UpdateResult
-	 */
-	public static UpdateResult from(DocumentOperationResult result) {
-		UpdateResult updateResult = new UpdateResult();
-		updateResult.version = result.getVersion();
-		// 解析 result 字符串为枚举
-		String resultStr = result.getResult();
-		if ("created".equals(resultStr)) {
-			updateResult.result = Result.CREATED;
-		} else if ("updated".equals(resultStr)) {
-			updateResult.result = Result.UPDATED;
-		} else if ("noop".equals(resultStr)) {
-			updateResult.result = Result.NOOP;
-		} else {
-			updateResult.result = Result.NOOP;
-		}
-		// ifSeqNo 和 ifPrimaryTerm 在自定义结果中暂不支持，设置为默认值
-		updateResult.setIfSeqNo(0L);
-		updateResult.setIfPrimaryTerm(1L);
+		
 		return updateResult;
 	}
 }

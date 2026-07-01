@@ -107,6 +107,7 @@ public class ElasticUtilsTest {
 		assertTrue(acknowlodged);
 	}
 	
+	
 	@BeforeAll
 	public static void testInitialize() {
 		Class<ElasticUtils> elasticUtilsClass = ElasticUtils.class;
@@ -988,7 +989,7 @@ public class ElasticUtilsTest {
 	
 	@Test
 	public void testFunctionScoreQuery() {
-		Admin.deleteIndex("blogs");
+		ElasticUtils.Admin.deleteIndex("blogs");
 		ElasticUtils.index("blogs", "{\"title\": \"About popularity\", \"content\": \"In this post we will talk about." +
 				"..\", \"votes\": 0 }", "1");
 		ElasticUtils.index("blogs", "{\"title\": \"About popularity\", \"content\": \"In this post we will talk about." +

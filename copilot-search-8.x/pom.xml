@@ -54,36 +54,7 @@
             <version>1.0.5</version>
         </dependency>
 
-        <!-- REST High Level Client: 兼容原 QueryBuilder/聚合 DSL, 通过 REST 访问 ES 8.x -->
-        <dependency>
-            <groupId>org.elasticsearch.client</groupId>
-            <artifactId>elasticsearch-rest-high-level-client</artifactId>
-            <exclusions>
-                <!-- 排除 7.x 版本的 rest-client，使用我们指定的 8.x 版本 -->
-                <exclusion>
-                    <groupId>org.elasticsearch.client</groupId>
-                    <artifactId>elasticsearch-rest-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>log4j-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.elasticsearch</groupId>
-            <artifactId>elasticsearch-x-content</artifactId>
-        </dependency>
+        <!-- REST High Level Client (ES 7.x) - 已完全迁移到 ES 8.x Java Client -->
         <!-- elasticsearch-java 的 JacksonJsonpMapper 基于 Jackson2 (com.fasterxml), 与项目统一 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
