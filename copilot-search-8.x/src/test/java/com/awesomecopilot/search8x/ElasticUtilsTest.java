@@ -5,10 +5,12 @@ import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.search8x.ElasticUtils.Admin;
 import com.awesomecopilot.search8x.ElasticUtils.Query;
+import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.SuggestMode;
 import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreBuilders;
+import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
@@ -1119,6 +1121,20 @@ public class ElasticUtilsTest {
         suggests.forEach(System.out::println);
     }
     
+    @Test
+    public void testContextSuggestion() {
+        Set<String> suggests = ElasticUtils.contextSuggest("comments")
+                .name("contextSuggestName")
+                .category("movies")
+                .categoryName("comment_category")
+                .field("comment_autocomplete")
+                .prefix("sta")
+                .suggest();
+        
+        suggests.forEach(System.out::println);
+    }
+    
+    
     // ==================== 内部类定义 ====================
     
     @Data
@@ -1149,5 +1165,37 @@ public class ElasticUtilsTest {
         public void setUser(String user) { this.user = user; }
         public String getComment() { return comment; }
         public void setComment(String comment) { this.comment = comment; }
+    }
+
+    // ==================== analyze() 相关测试 ====================
+
+    /**
+     * 测试 HanLP 分词器分析文本 - 从 copilot-search 迁移
+     * 对应原版 testHanLpAnalyzer()
+     */
+    @Test
+    public void testHanLpAnalyzer() {
+        ElasticUtils.analyze(Analyzer.HANLP_NLP, "美国会同意对台军售").forEach(System.out::println);
+        System.out.println("------------------------");
+
+        ElasticUtils.analyze(Analyzer.HANLP_STANDARD, "美国会同意对台军售").forEach(System.out::println);
+        System.out.println("------------------------");
+        ElasticUtils.analyze(Analyzer.HANLP, "美国会同意对台军售").forEach(System.out::println);
+        System.out.println("------------------------");
+        ElasticUtils.analyze(Analyzer.HANLP_N_SHORT, "美国会同意对台军售").forEach(System.out::println);
+        System.out.println("------------------------");
+    }
+
+    // ==================== updateByQuery ====================
+
+    /**
+     * 测试 updateByQuery - 从 copilot-search 迁移
+     * 对应原版 testUpdateByQuery()
+     */
+    @Test
+    public void testUpdateByQuery() {
+        UpdateByQueryResponse response = ElasticUtils.updateByQuery("blogs");
+        log.info("UpdateByQuery total: {}, updated: {}, versionConflicts: {}",
+                response.total(), response.updated(), response.versionConflicts());
     }
 }

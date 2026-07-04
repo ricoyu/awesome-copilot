@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.pojo.Movie;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -56,17 +57,45 @@ public class AdminTest {
      */
     @Test
     public void testCreateIndex() {
-        String testIndex = "test_admin_create_" + System.currentTimeMillis();
-        
         try {
-            // 先删除(如果存在)
-            ElasticUtils.Admin.deleteIndex(testIndex);
-            
-            // TODO: createIndex 方法还未实现,待后续完善
-            log.info("Create index test pending for: {}", testIndex);
-            
+            ElasticUtils.Admin.deleteIndex("movie");
+            boolean created = ElasticUtils.Admin.createIndex(Movie.class);
+            assertTrue(created);
         } catch (Exception e) {
             log.error("Failed to test create index", e);
+        }
+    }
+    
+    /**
+     * 测试基于注解创建索引 - 从 copilot-search 迁移
+     * 对应原版 ElasticUtilsIndexTest.testCreateIndexByAnnotation()
+     */
+    @Test
+    public void testCreateIndexByAnnotation() {
+        try {
+            ElasticUtils.Admin.deleteIndex("movie");
+            boolean created = ElasticUtils.Admin.createIndex(Movie.class);
+            assertTrue(created);
+        } catch (Exception e) {
+            log.error("Failed to create index from annotation", e);
+        }
+    }
+    
+    /**
+     * 测试基于注解创建索引并指定索引名 - 从 copilot-search 迁移
+     * 对应原版 createIndex(Class, String)
+     */
+    @Test
+    public void testCreateIndexByAnnotationWithExplicitName() {
+        try {
+            String explicitIndex = "movie_explicit";
+            ElasticUtils.Admin.deleteIndex(explicitIndex);
+            boolean created = ElasticUtils.Admin.createIndex(Movie.class, explicitIndex);
+            assertTrue(created);
+            // 清理
+            ElasticUtils.Admin.deleteIndex(explicitIndex);
+        } catch (Exception e) {
+            log.error("Failed to create index with explicit name", e);
         }
     }
     

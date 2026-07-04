@@ -9,8 +9,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectBody;
-import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,13 +69,12 @@ public class SqlUtils {
 
 			if (statement instanceof Select) {
 				Select selectStatement = (Select) statement;
-				SelectBody selectBody = selectStatement.getSelectBody();
 
-				if (selectBody instanceof PlainSelect) {
-					PlainSelect plainSelect = (PlainSelect) selectBody;
+				if (selectStatement instanceof PlainSelect) {
+					PlainSelect plainSelect = (PlainSelect) selectStatement;
 
 					// 构建新的COUNT(*)查询
-					SelectExpressionItem countItem = new SelectExpressionItem(new Column("COUNT(*)"));
+					SelectItem countItem = new SelectItem(new Column("COUNT(*)"));
 					plainSelect.setSelectItems(Arrays.asList(countItem));
 
 					// 转换为字符串形式的COUNT(*)查询
@@ -127,10 +125,8 @@ public class SqlUtils {
 	}
 
 	private static String handleSelectStatement(Select select, String sqlCacheKey, String originalQuerySql) {
-		SelectBody selectBody = select.getSelectBody();
-
-		if (selectBody instanceof PlainSelect) {
-			PlainSelect plainSelect = (PlainSelect) selectBody;
+		if (select instanceof PlainSelect) {
+			PlainSelect plainSelect = (PlainSelect) select;
 			String newCondition =
 					buildNewCondition(plainSelect.getWhere() != null ? plainSelect.getWhere().toString() : "");
 

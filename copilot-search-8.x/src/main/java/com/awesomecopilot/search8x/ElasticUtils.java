@@ -1,6 +1,8 @@
 package com.awesomecopilot.search8x;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.Conflicts;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
@@ -15,17 +17,29 @@ import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
+import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.indices.AnalyzeResponse;
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
+import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
+import co.elastic.clients.elasticsearch.indices.IndexSettingBlocks;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.analyze.AnalyzeToken;
+import co.elastic.clients.json.JsonData;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.builder.ElasticBulkIndexBuilder;
-import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticBulkUpdateBuilder;
+import com.awesomecopilot.search8x.builder.ElasticContextSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticIndexDocBuilder;
 import com.awesomecopilot.search8x.builder.ElasticMultiGetBuilder;
+import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticUpdateBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticExistsQueryBuilder;
@@ -45,9 +59,17 @@ import com.awesomecopilot.search8x.builder.query.ElasticTemplateQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticTermsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticUriQueryBuilder;
+import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.Dynamic;
 import com.awesomecopilot.search8x.enums.SuggestMode;
+import com.awesomecopilot.search8x.enums.FieldType;
 import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
+import com.awesomecopilot.search8x.annotation.Field;
+import com.awesomecopilot.search8x.annotation.Index;
+import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.search8x.support.IndexSupport;
+import com.awesomecopilot.search8x.support.MappingSupport;
+import com.awesomecopilot.search8x.support.SettingsSupport;
 import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
@@ -58,6 +80,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,6 +91,8 @@ import java.util.stream.Collectors;
 
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toObject;
+import static com.awesomecopilot.common.lang.utils.Assert.notNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static java.util.Arrays.asList;
 
 /**
@@ -803,7 +829,69 @@ public final class ElasticUtils {
                 .suggest();
     }
 
-
+    /**
+     * 基于上下文的自动完成
+     *
+     * @param indices
+     */
+    public static ElasticContextSuggestBuilder contextSuggest(String... indices) {
+        return new ElasticContextSuggestBuilder(indices);
+    }
+    
+    /**
+     * 用指定分词器分析文本
+     *
+     * @param analyzer
+     * @param texts
+     * @return List<String> 分析后的文本
+     */
+    public static List<String> analyze(Analyzer analyzer, String... texts) {
+        if (texts == null || texts.length == 0) {
+            return Collections.emptyList();
+        }
+        
+        if (analyzer == null) {
+            throw new IllegalArgumentException("analyzer cannot be null");
+        }
+        
+        try {
+            AnalyzeResponse response = QUERY_CLIENT.indices().analyze(r -> r
+                    .analyzer(analyzer.toString())
+                    .text(Arrays.asList(texts))
+            );
+            
+            return response.tokens()
+                    .stream()
+                    .map(AnalyzeToken::token)
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to analyze text with analyzer: " + analyzer, e);
+        }
+    }
+    
+    /**
+     * 在更新索引的mapping后, 在原索引上重建索引<p>
+     * https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-update-by-query.html
+     *
+     * @param indices
+     * @return UpdateByQueryResponse
+     */
+    public static UpdateByQueryResponse updateByQuery(String... indices) {
+        try {
+            UpdateByQueryRequest request = UpdateByQueryRequest.of(builder -> builder
+                    .index(asList(indices))
+                    .conflicts(Conflicts.Proceed)
+            );
+            UpdateByQueryResponse response = QUERY_CLIENT.updateByQuery(request);
+            log.info("UpdateByQuery took: {}ms, total: {}, updated: {}, versionConflicts: {}",
+                    response.took(), response.total(), response.updated(), response.versionConflicts());
+            return response;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to execute updateByQuery", e);
+        }
+    }
+    
     // ==================== 内部工具方法 ====================
     
     @SuppressWarnings("unchecked")
@@ -892,8 +980,229 @@ public final class ElasticUtils {
                 throw new RuntimeException("Failed to list indices", e);
             }
         }
-    }
+        /**
+         * 基于Entity上的注解信息创建索引
+         *
+         * @param entityClass 标注了@Index注解的POJO
+         * @return boolean 索引是否创建成功
+         */
+        public static boolean createIndex(Class entityClass) {
+            return createIndex(entityClass, null);
+        }
 
+        /**
+         * 基于Entity上的注解信息创建索引
+         *
+         * @param entityClass 标注了@Index注解的POJO
+         * @param index       显式指定的索引名
+         * @return boolean 索引是否创建成功
+         */
+        public static boolean createIndex(Class entityClass, String index) {
+            notNull(entityClass, "entityClass cannot be null!");
+            //抽取索引的Mapping信息
+            Map<String, Object> mappingMap = MappingSupport.extractIndexMapping(entityClass);
+            //抽取索引的Setting信息
+            Map<String, Object> settingsMap = SettingsSupport.extractIndexSettings(entityClass);
+            //抽取索引名
+            if (isBlank(index)) {
+                index = IndexSupport.indexName(entityClass);
+            }
+            final String indexName = index;
+
+            try {
+                TypeMapping typeMapping = buildTypeMapping(mappingMap);
+                IndexSettings indexSettings = buildIndexSettings(settingsMap);
+
+                CreateIndexRequest request = CreateIndexRequest.of(b -> b
+                        .index(indexName)
+                        .mappings(typeMapping)
+                        .settings(indexSettings)
+                );
+                CreateIndexResponse response = QUERY_CLIENT.indices().create(request);
+                boolean created = response.acknowledged();
+                log.info("Index {} {}", indexName, (created ? "created" : "not created"));
+                return created;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create index: " + indexName, e);
+            }
+        }
+
+        private static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {
+            return IndexSettings.of(b -> {
+                if (settingsMap != null) {
+                    if (settingsMap.containsKey("number_of_shards")) {
+                        b.numberOfShards(String.valueOf(settingsMap.get("number_of_shards")));
+                    }
+                    if (settingsMap.containsKey("number_of_replicas")) {
+                        b.numberOfReplicas(String.valueOf(settingsMap.get("number_of_replicas")));
+                    }
+                    if (settingsMap.containsKey("index.default_pipeline")) {
+                        b.defaultPipeline(settingsMap.get("index.default_pipeline").toString());
+                    }
+                    if (Boolean.TRUE.equals(settingsMap.get("index.blocks.write"))) {
+                        b.blocks(bl -> bl.write(true));
+                    }
+                    // routing allocation require settings
+                    Map<String, JsonData> otherSettings = new HashMap<>();
+                    for (Map.Entry<String, Object> entry : settingsMap.entrySet()) {
+                        if (entry.getKey().startsWith("index.routing.allocation.require.")) {
+                            otherSettings.put(entry.getKey(), JsonData.of(entry.getValue().toString()));
+                        }
+                    }
+                    if (!otherSettings.isEmpty()) {
+                        b.otherSettings(otherSettings);
+                    }
+                }
+                return b;
+            });
+        }
+
+        @SuppressWarnings("unchecked")
+        private static TypeMapping buildTypeMapping(Map<String, Object> mappingMap) {
+            return TypeMapping.of(b -> {
+                if (mappingMap == null) {
+                    return b;
+                }
+                String dynamic = (String) mappingMap.get("dynamic");
+                if ("true".equals(dynamic)) {
+                    b.dynamic(DynamicMapping.True);
+                } else if ("strict".equals(dynamic)) {
+                    b.dynamic(DynamicMapping.Strict);
+                } else {
+                    b.dynamic(DynamicMapping.False);
+                }
+
+                Map<String, Object> source = (Map<String, Object>) mappingMap.get("_source");
+                if (source != null && Boolean.FALSE.equals(source.get("enabled"))) {
+                    b.source(s -> s.enabled(false));
+                }
+
+                Map<String, Object> propsMap = (Map<String, Object>) mappingMap.get("properties");
+                if (propsMap != null) {
+                    for (Map.Entry<String, Object> entry : propsMap.entrySet()) {
+                        Map<String, Object> fieldMapping = (Map<String, Object>) entry.getValue();
+                        b.properties(entry.getKey(), buildProperty(fieldMapping));
+                    }
+                }
+                return b;
+            });
+        }
+
+        @SuppressWarnings("unchecked")
+        private static Property buildProperty(Map<String, Object> fieldMapping) {
+            String type = (String) fieldMapping.get("type");
+            if (type == null) {
+                type = "keyword";
+            }
+            switch (type) {
+                case "text":
+                    return Property.of(p -> p.text(t -> {
+                        if (fieldMapping.containsKey("analyzer")) {
+                            t.analyzer(fieldMapping.get("analyzer").toString());
+                        }
+                        if (fieldMapping.containsKey("search_analyzer")) {
+                            t.searchAnalyzer(fieldMapping.get("search_analyzer").toString());
+                        }
+                        if (fieldMapping.containsKey("copy_to")) {
+                            t.copyTo(Collections.singletonList(fieldMapping.get("copy_to").toString()));
+                        }
+                        if (Boolean.TRUE.equals(fieldMapping.get("eager_global_ordinals"))) {
+                            t.eagerGlobalOrdinals(true);
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) {
+                            t.index(false);
+                        }
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) {
+                            t.store(true);
+                        }
+                        return t;
+                    }));
+                case "keyword":
+                    return Property.of(p -> p.keyword(k -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            k.nullValue(fieldMapping.get("null_value").toString());
+                        }
+                        if (Boolean.TRUE.equals(fieldMapping.get("eager_global_ordinals"))) {
+                            k.eagerGlobalOrdinals(true);
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) {
+                            k.index(false);
+                        }
+                        if (fieldMapping.containsKey("copy_to")) {
+                            k.copyTo(Collections.singletonList(fieldMapping.get("copy_to").toString()));
+                        }
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) {
+                            k.store(true);
+                        }
+                        return k;
+                    }));
+                case "long":
+                    return Property.of(p -> p.long_(l -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            l.nullValue(Long.parseLong(fieldMapping.get("null_value").toString()));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) l.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) l.store(true);
+                        return l;
+                    }));
+                case "integer":
+                    return Property.of(p -> p.integer(i -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            i.nullValue(Integer.parseInt(fieldMapping.get("null_value").toString()));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) i.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) i.store(true);
+                        return i;
+                    }));
+                case "double":
+                    return Property.of(p -> p.double_(d -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            d.nullValue(Double.parseDouble(fieldMapping.get("null_value").toString()));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) d.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) d.store(true);
+                        return d;
+                    }));
+                case "float":
+                    return Property.of(p -> p.float_(f -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            f.nullValue(Float.parseFloat(fieldMapping.get("null_value").toString()));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) f.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) f.store(true);
+                        return f;
+                    }));
+                case "date":
+                    return Property.of(p -> p.date(d -> {
+                        if (fieldMapping.containsKey("format")) {
+                            d.format(fieldMapping.get("format").toString());
+                        }
+                        if (fieldMapping.containsKey("null_value")) {
+                            d.nullValue(co.elastic.clients.util.DateTime.ofEpochMilli(
+                                    Long.parseLong(fieldMapping.get("null_value").toString())));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) d.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) d.store(true);
+                        return d;
+                    }));
+                case "boolean":
+                    return Property.of(p -> p.boolean_(bl -> {
+                        if (fieldMapping.containsKey("null_value")) {
+                            bl.nullValue(Boolean.parseBoolean(fieldMapping.get("null_value").toString()));
+                        }
+                        if (Boolean.FALSE.equals(fieldMapping.get("index"))) bl.index(false);
+                        if (Boolean.TRUE.equals(fieldMapping.get("store"))) bl.store(true);
+                        return bl;
+                    }));
+                case "object":
+                    return Property.of(p -> p.object(o -> o));
+                case "nested":
+                    return Property.of(p -> p.nested(n -> n));
+                default:
+                    return Property.of(p -> p.keyword(k -> k));
+            }
+        }
+    }
     // ==================== Mappings 内部类 ====================
     
     /**
@@ -1286,4 +1595,5 @@ public final class ElasticUtils {
             return new ElasticTemplateQueryBuilder(indices);
         }
     }
+
 }
