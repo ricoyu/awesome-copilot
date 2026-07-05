@@ -128,7 +128,7 @@ public final class ElasticIndexBuilder {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static TypeMapping buildTypeMapping(Map<String, Object> mappingMap) {
+	static TypeMapping buildTypeMapping(Map<String, Object> mappingMap) {
 		return TypeMapping.of(b -> {
 			if (mappingMap == null) {
 				return b;
@@ -159,7 +159,7 @@ public final class ElasticIndexBuilder {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static Property buildProperty(Map<String, Object> fieldMapping) {
+	static Property buildProperty(Map<String, Object> fieldMapping) {
 		String type = (String) fieldMapping.get("type");
 		if (type == null) {
 			type = "keyword";
@@ -279,7 +279,7 @@ public final class ElasticIndexBuilder {
 		}
 	}
 	
-	private static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {
+	static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {
 		return IndexSettings.of(b -> {
 			if (settingsMap != null) {
 				if (settingsMap.containsKey("number_of_shards")) {

@@ -207,6 +207,34 @@ public class AdminTest {
     
     // ==================== IndexTemplate 相关测试 ====================
     
+    
+    @Test
+    public void testCreateIndexTemplate() {
+        boolean created = ElasticUtils.Admin.putIndexTemplateByFile("template_default")
+                .patterns("*")
+                .order(0)
+                .version(1)
+                .settings(1)
+                .numberOfReplicas(1)
+                .thenCreate();
+        assertTrue(created);
+    }
+    
+    @Test
+    public void testCreateIndexTemplateTest() {
+        ElasticUtils.Admin.putIndexTemplateByFile("tempalate_test")
+                .patterns("test*")
+                .order(1)
+                .settings(1)
+                .numberOfReplicas(1)
+                .and()
+                .mappings()
+                .sourceEnabled(true)
+                .dateDetection(false)
+                .numericDetection(true)
+                .thenCreate();
+    }
+    
     /**
      * 测试删除索引模板 - 从 copilot-search 迁移
      * 对应原版 ElasticUtilsIndexTemplateTest.testDeleteIndexTemplate()

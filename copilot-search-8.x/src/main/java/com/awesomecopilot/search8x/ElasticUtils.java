@@ -30,10 +30,15 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.PutIndexTemplateRequest;
+import co.elastic.clients.elasticsearch.indices.PutIndexTemplateResponse;
 import co.elastic.clients.elasticsearch.indices.analyze.AnalyzeToken;
+import co.elastic.clients.elasticsearch.indices.put_index_template.IndexTemplateMapping;
 import co.elastic.clients.json.JsonData;
 import com.awesomecopilot.common.lang.utils.EnumUtils;
+import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.search8x.exception.IndexTemplateException;
 import com.awesomecopilot.search8x.builder.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.ElasticBulkUpdateBuilder;
 import com.awesomecopilot.search8x.builder.ElasticContextSuggestBuilder;
@@ -42,6 +47,7 @@ import com.awesomecopilot.search8x.builder.ElasticMultiGetBuilder;
 import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticUpdateBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticIndexBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticIndexTemplateBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticExistsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticGeoDistanceQueryBuilder;
@@ -1126,6 +1132,97 @@ public final class ElasticUtils {
                 return response.acknowledged();
             } catch (IOException e) {
                 throw new RuntimeException("Failed to create index alias with filter", e);
+            }
+        }
+
+        /**
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/indices-templates.html
+         *
+         * @param templateName
+         */
+        public static ElasticIndexTemplateBuilder putIndexTemplateByFile(String templateName) {
+            return ElasticIndexTemplateBuilder.newInstance(templateName);
+        }
+
+        /**
+         * 从classpath读取指定的Index Template文件, 然后创建Index Template
+         *
+         * @param templateName
+         * @param templateFileName
+         * @return boolean
+         */
+        public static boolean putIndexTemplateByFile(String templateName, String templateFileName) {
+            return putIndexTemplate(templateName, IOUtils.readClassPathFileAsString(templateFileName));
+        }
+
+        /**
+         * 从classpath读取指定的Index Template文件, 然后创建Index Template
+         *
+         * @param templateName
+         * @param templateContent
+         * @return boolean
+         */
+        @SuppressWarnings("unchecked")
+        public static boolean putIndexTemplate(String templateName, String templateContent) {
+            try {
+                Map<String, Object> template = toObject(templateContent, Map.class);
+
+                PutIndexTemplateRequest.Builder reqBuilder = new PutIndexTemplateRequest.Builder();
+                reqBuilder.name(templateName);
+
+                // index_patterns
+                List<String> indexPatterns = (List<String>) template.get("index_patterns");
+                if (indexPatterns != null) {
+                    reqBuilder.indexPatterns(indexPatterns);
+                }
+
+                // priority (composable template) or order (legacy)
+                Object priority = template.get("priority");
+                if (priority == null) {
+                    priority = template.get("order");
+                }
+                if (priority instanceof Number) {
+                    reqBuilder.priority(((Number) priority).longValue());
+                }
+
+                // version
+                Object version = template.get("version");
+                if (version instanceof Number) {
+                    reqBuilder.version(((Number) version).longValue());
+                }
+
+                // template (composable format) or top-level settings/mappings (legacy format)
+                Map<String, Object> templateBody = (Map<String, Object>) template.get("template");
+                if (templateBody == null) {
+                    templateBody = template;
+                }
+
+                IndexTemplateMapping.Builder templateMappingBuilder = new IndexTemplateMapping.Builder();
+                boolean hasTemplateContent = false;
+
+                Map<String, Object> settingsMap = (Map<String, Object>) templateBody.get("settings");
+                if (settingsMap != null) {
+                    templateMappingBuilder.settings(buildIndexSettings(settingsMap));
+                    hasTemplateContent = true;
+                }
+
+                Map<String, Object> mappingsMap = (Map<String, Object>) templateBody.get("mappings");
+                if (mappingsMap != null) {
+                    templateMappingBuilder.mappings(buildTypeMapping(mappingsMap));
+                    hasTemplateContent = true;
+                }
+
+                if (hasTemplateContent) {
+                    reqBuilder.template(templateMappingBuilder.build());
+                }
+
+                PutIndexTemplateResponse response = QUERY_CLIENT.indices().putIndexTemplate(reqBuilder.build());
+                boolean acknowledged = response.acknowledged();
+                log.info("acknowledged: {}", acknowledged);
+                return acknowledged;
+            } catch (Exception e) {
+                log.error("PUT index template failed, templateName: [{}]", templateName, e);
+                throw new IndexTemplateException(e.getMessage());
             }
         }
 
