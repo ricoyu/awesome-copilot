@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -275,9 +276,8 @@ public class AdminTest {
     @Test
     public void testGetIndexTemplate() {
         try {
-            // TODO: getIndexTemplate 方法还未实现
-            // Map<String, ?> eventTemplate = ElasticUtils.Admin.getIndexTemplate("event_template");
-            // log.info("Index template: {}", eventTemplate);
+             Map<String, ?> eventTemplate = ElasticUtils.Admin.getIndexTemplate("event_template");
+             log.info("Index template: {}", eventTemplate);
             log.info("Get index template test pending - not yet implemented in 8.x");
         } catch (Exception e) {
             log.error("Failed to get index template", e);

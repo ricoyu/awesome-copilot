@@ -28,11 +28,17 @@ import co.elastic.clients.elasticsearch.indices.AnalyzeResponse;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexTemplateRequest;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexTemplateResponse;
+import co.elastic.clients.elasticsearch.indices.GetIndexTemplateRequest;
+import co.elastic.clients.elasticsearch.indices.GetIndexTemplateResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.IndexTemplate;
 import co.elastic.clients.elasticsearch.indices.PutIndexTemplateRequest;
 import co.elastic.clients.elasticsearch.indices.PutIndexTemplateResponse;
 import co.elastic.clients.elasticsearch.indices.analyze.AnalyzeToken;
+import co.elastic.clients.elasticsearch.indices.get_index_template.IndexTemplateItem;
 import co.elastic.clients.elasticsearch.indices.put_index_template.IndexTemplateMapping;
 import co.elastic.clients.json.JsonData;
 import com.awesomecopilot.common.lang.utils.EnumUtils;
@@ -1223,6 +1229,40 @@ public final class ElasticUtils {
             } catch (Exception e) {
                 log.error("PUT index template failed, templateName: [{}]", templateName, e);
                 throw new IndexTemplateException(e.getMessage());
+            }
+        }
+
+        /**
+         * 获取指定的Index Template
+         *
+         * @param templateName
+         * @return IndexTemplateMetaData
+         */
+        public static Map<String, IndexTemplate> getIndexTemplate(String templateName) {
+            try {
+                GetIndexTemplateRequest request = GetIndexTemplateRequest.of(b -> b.name(templateName));
+                GetIndexTemplateResponse response = QUERY_CLIENT.indices().getIndexTemplate(request);
+                return response.indexTemplates().stream()
+                        .collect(Collectors.toMap(IndexTemplateItem::name, IndexTemplateItem::indexTemplate));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to get index template: " + templateName, e);
+            }
+        }
+
+        /**
+         * 删除Index Template
+         *
+         * @param templateName
+         * @return boolean
+         */
+        public static boolean deleteIndexTemplate(String templateName) {
+            try {
+                DeleteIndexTemplateRequest request = DeleteIndexTemplateRequest.of(b -> b.name(templateName));
+                DeleteIndexTemplateResponse response = QUERY_CLIENT.indices().deleteIndexTemplate(request);
+                return response.acknowledged();
+            } catch (Exception e) {
+                log.info("Index Template [{}] 不存在", templateName);
+                return false;
             }
         }
 
