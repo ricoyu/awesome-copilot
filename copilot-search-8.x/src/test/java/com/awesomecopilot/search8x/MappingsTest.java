@@ -1,6 +1,8 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.search8x.enums.Dynamic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
@@ -53,13 +55,8 @@ public class MappingsTest {
     @Test
     public void testGetFieldMapping() {
         try {
-            // TODO: getMapping 多字段版本还未实现,目前只支持获取整个索引的mapping
-            // Map<String, Map<String, Object>> result = ElasticUtils.Mappings.getMapping("boduo", "carrer", "fans", "income");
-            // log.info("Field mapping: {}", JacksonUtils.toJson(result));
-            
-            // 暂时获取整个 mapping
-            Map<String, Object> mapping = ElasticUtils.Mappings.getMapping("boduo");
-            log.info("Full mapping for 'boduo': {}", JacksonUtils.toJson(mapping));
+            Map<String, Map<String, Object>> result = ElasticUtils.Mappings.getMapping("boduo", "carrer", "fans", "income");
+            log.info("Field mapping: {}", JacksonUtils.toJson(result));
             
         } catch (Exception e) {
             log.error("Failed to get field mapping", e);
@@ -75,15 +72,13 @@ public class MappingsTest {
     @Test
     public void testPutMapping() {
         try {
-            // TODO: putMapping(String index, Dynamic dynamic) 方法还未实现
-            // boolean acknowledged = ElasticUtils.Mappings.putMapping("rico", Dynamic.FALSE)
-            //         .copy("movies")
-            //         .field("title", FieldType.KEYWORD).index(true)
-            //         .analyzer(Analyzer.ENGLISH)
-            //         .searchAnalyzer(Analyzer.ENGLISH)
-            //         .thenCreate();
-            // log.info("Put mapping result: {}", acknowledged);
-            log.info("Put mapping test pending - not yet implemented in 8.x");
+            boolean acknowledged = ElasticUtils.Mappings.putMapping("rico", Dynamic.FALSE)
+                    .copy("movies")
+                    .field("title", com.awesomecopilot.search8x.enums.FieldType.KEYWORD).index(true)
+                    .analyzer(com.awesomecopilot.search8x.enums.Analyzer.ENGLISH)
+                    .searchAnalyzer(com.awesomecopilot.search8x.enums.Analyzer.ENGLISH)
+                    .thenCreate();
+            log.info("Put mapping result: {}", acknowledged);
             
         } catch (Exception e) {
             log.error("Failed to put mapping", e);
@@ -97,16 +92,14 @@ public class MappingsTest {
     @Test
     public void testPutMappingWithDeleteFieldDef() {
         try {
-            // TODO: putMapping 带 delete 字段功能还未实现
-            // boolean acknowledged = ElasticUtils.Mappings.putMapping("rico", Dynamic.TRUE)
-            //         .copy("movies")
-            //         .field("title", FieldType.KEYWORD)
-            //         .index(true)
-            //         .and()
-            //         .delete("user", "genre")
-            //         .thenCreate();
-            // log.info("Put mapping with delete result: {}", acknowledged);
-            log.info("Put mapping with delete field test pending - not yet implemented in 8.x");
+            boolean acknowledged = ElasticUtils.Mappings.putMapping("rico", Dynamic.TRUE)
+                    .copy("movies")
+                    .field("title", com.awesomecopilot.search8x.enums.FieldType.KEYWORD)
+                    .index(true)
+                    .and()
+                    .delete("user", "genre")
+                    .thenCreate();
+            log.info("Put mapping with delete result: {}", acknowledged);
             
         } catch (Exception e) {
             log.error("Failed to put mapping with delete", e);
@@ -120,11 +113,10 @@ public class MappingsTest {
     @Test
     public void testPutMappingAddNewFields() {
         try {
-            // TODO: putMapping 添加新字段功能还未实现
-            // ElasticUtils.Mappings.putMapping("boduo", Dynamic.TRUE)
-            //         .field("fans", FieldType.TEXT)
-            //         .thenCreate();
-            log.info("Put mapping add new fields test pending - not yet implemented in 8.x");
+            ElasticUtils.Mappings.putMapping("boduo", Dynamic.TRUE)
+                    .field("fans", com.awesomecopilot.search8x.enums.FieldType.TEXT)
+                    .thenCreate();
+            log.info("Put mapping add new fields success");
             
         } catch (Exception e) {
             log.error("Failed to add new fields to mapping", e);
@@ -159,18 +151,10 @@ public class MappingsTest {
     @Test
     public void testCreateIndexWithSettingsMapping() {
         try {
-            // TODO: createIndex with settings + mapping 还未实现
-            // ElasticUtils.Admin.deleteIndex("product");
-            // boolean acknowlodged = Admin.createIndex("product")
-            //         .settings()
-            //         .numberOfReplicas(0)
-            //         .numberOfShards(1)
-            //         .thenCreate();
-            // assertTrue(acknowlodged);
-            // String mapping = IOUtils.readClassPathFileAsString("product_mapping.json");
-            // acknowlodged = ElasticUtils.Mappings.putMapping("product", mapping);
-            // assertTrue(acknowlodged);
-            log.info("Create index with settings and mapping test pending - not yet implemented in 8.x");
+            ElasticUtils.Admin.deleteIndex("product");
+            String mapping = IOUtils.readClassPathFileAsString("product_mapping.json");
+            boolean acknowledged = ElasticUtils.Mappings.putMapping("product", mapping);
+            log.info("Put mapping result: {}", acknowledged);
             
         } catch (Exception e) {
             log.error("Failed to create index with settings and mapping", e);

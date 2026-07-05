@@ -50,7 +50,28 @@ public class QueryTest {
             log.warn("Search failed (ES may not be running): {}", e.getMessage());
         }
     }
-
+    
+    
+    @Test
+    public void test() {
+        List<Object> banks = ElasticUtils.Query.matchQuery("bank")
+                .query("address", "mill")
+                .queryForList();
+        banks.forEach(System.out::println);
+    }
+    
+    
+    @Test
+    public void testAddressAgeCount() {
+        long count = ElasticUtils.Query.bool("bank")
+                .match("address", "mill").must()
+                .term("age", 32)
+                .must()
+                .queryForCount();
+        
+        assertEquals(52, count);
+    }
+    
     /**
      * 对应原版 ElasticUtilsMatchQueryTest.testMatchWithOperator()
      */

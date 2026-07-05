@@ -1,0 +1,45 @@
+package com.awesomecopilot.search8x.builder.agg.sub;
+
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
+
+/**
+ * min子聚合
+ * <p>
+ * Copyright: (C), 2021-08-23 15:54
+ * <p>
+ * <p>
+ * Company: Sexy Uncle Inc.
+ *
+ * @author Rico Yu ricoyu520@gmail.com
+ * @version 1.0
+ */
+public class ElasticMinSubAggregation extends SubAggregation {
+
+	private SubAggregation parentAggregation;
+
+	/**
+	 * 要对哪个字段聚合
+	 */
+	protected String field;
+
+	public ElasticMinSubAggregation(String name, String field) {
+		this.name = name;
+		this.field = field;
+	}
+
+	public ElasticMinSubAggregation(SubAggregation parentAggregation, String name, String field) {
+		this.parentAggregation = parentAggregation;
+		this.name = name;
+		this.field = field;
+	}
+	
+	@Override
+	public Aggregation build() {
+		return Aggregation.of(a -> a.min(m -> m.field(field)));
+	}
+	
+	@Override
+	public SubAggregation and() {
+		return parentAggregation;
+	}
+}

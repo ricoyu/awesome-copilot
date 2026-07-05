@@ -6,6 +6,7 @@ import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore;
+import co.elastic.clients.elasticsearch.cluster.GetClusterSettingsResponse;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.CountRequest;
@@ -14,13 +15,18 @@ import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
 import co.elastic.clients.elasticsearch.core.DeleteByQueryResponse;
 import co.elastic.clients.elasticsearch.core.DeleteRequest;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
+import co.elastic.clients.elasticsearch.core.DeleteScriptRequest;
+import co.elastic.clients.elasticsearch.core.DeleteScriptResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.PutScriptRequest;
+import co.elastic.clients.elasticsearch.core.PutScriptResponse;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
@@ -30,6 +36,8 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexTemplateRequest;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexTemplateResponse;
+import co.elastic.clients.elasticsearch.indices.ForcemergeRequest;
+import co.elastic.clients.elasticsearch.indices.ForcemergeResponse;
 import co.elastic.clients.elasticsearch.indices.GetIndexTemplateRequest;
 import co.elastic.clients.elasticsearch.indices.GetIndexTemplateResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
@@ -37,14 +45,19 @@ import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import co.elastic.clients.elasticsearch.indices.IndexTemplate;
 import co.elastic.clients.elasticsearch.indices.PutIndexTemplateRequest;
 import co.elastic.clients.elasticsearch.indices.PutIndexTemplateResponse;
+import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsRequest;
+import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsResponse;
+import co.elastic.clients.elasticsearch.indices.PutMappingRequest;
 import co.elastic.clients.elasticsearch.indices.analyze.AnalyzeToken;
 import co.elastic.clients.elasticsearch.indices.get_index_template.IndexTemplateItem;
 import co.elastic.clients.elasticsearch.indices.put_index_template.IndexTemplateMapping;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
+import com.awesomecopilot.common.lang.context.ThreadContext;
+import com.awesomecopilot.search8x.constants.ElasticConstants;
 import com.awesomecopilot.json.jackson.JacksonUtils;
-import com.awesomecopilot.search8x.exception.IndexTemplateException;
 import com.awesomecopilot.search8x.builder.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.ElasticBulkUpdateBuilder;
 import com.awesomecopilot.search8x.builder.ElasticContextSuggestBuilder;
@@ -52,8 +65,25 @@ import com.awesomecopilot.search8x.builder.ElasticIndexDocBuilder;
 import com.awesomecopilot.search8x.builder.ElasticMultiGetBuilder;
 import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticUpdateBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticAvgAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticCardinalityAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticCompositeAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticDateHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticMaxAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticMinAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticMultiTermsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.admin.ClusterSettingBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticIndexBuilder;
 import com.awesomecopilot.search8x.builder.admin.ElasticIndexTemplateBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticPipelineBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticPutMappingBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticReindexBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticUpdateSettingBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticExistsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticGeoDistanceQueryBuilder;
@@ -76,6 +106,7 @@ import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.Dynamic;
 import com.awesomecopilot.search8x.enums.IndexState;
 import com.awesomecopilot.search8x.enums.SuggestMode;
+import com.awesomecopilot.search8x.exception.IndexTemplateException;
 import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
 import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.IndexSupport;
@@ -84,6 +115,7 @@ import com.awesomecopilot.search8x.support.SettingsSupport;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
+import jakarta.json.stream.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -737,6 +769,65 @@ public final class ElasticUtils {
     }
 
     /**
+     * 更新文档的一部分
+     * <ol>
+     * <li/>如果ID对应的文档在ES中还不存在, 那么报错
+     * <li/>如果docPiece对应的字段在文档中还不存在, 那么在原文档中插入这个字段
+     * <li/>如果docPiece对应的字段在文档中存在, 并且值不一样, 那么执行更新
+     * <li/>docPiece对应的字段在文档中存在, 但是值是一样的, 那么不执行更新
+     * </ol>
+     * https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.6/java-rest-high-document-update.html
+     *
+     * @param index
+     * @param id
+     * @param doc   整篇文档或者文档的一部分
+     * @return Result 更新结果(更新了? 没更新?)
+     */
+    public static UpdateResult update(String index, String id, Map<String, Object> doc) {
+        Objects.requireNonNull(index, "index cannot be null!");
+        Objects.requireNonNull(id, "id cannot be null!");
+        if (doc == null) {
+            return null;
+        }
+
+        try {
+            UpdateRequest<Map<String, Object>, Map<String, Object>> request = UpdateRequest.of(builder -> builder
+                    .index(index)
+                    .id(id)
+                    .doc(doc)
+                    .refresh(Refresh.True)
+            );
+
+            var response = INDEX_CLIENT.update(request, Map.class);
+            return UpdateResult.from(response);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update document", e);
+        }
+    }
+
+    /**
+     * 更新文档的一部分
+     * <ol>
+     * <li/>如果ID对应的文档在ES中还不存在, 那么报错
+     * <li/>如果docPiece对应的字段在文档中还不存在, 那么在原文档中插入这个字段
+     * <li/>如果docPiece对应的字段在文档中存在, 并且值不一样, 那么执行更新
+     * <li/>docPiece对应的字段在文档中存在, 但是值是一样的, 那么不执行更新
+     * </ol>
+     * https://www.elastic.co/guide/en/elasticsearch/client/java-rest/7.6/java-rest-high-document-update.html
+     *
+     * @param index 索引名
+     * @param id Integer 文档的id
+     * @param doc   整篇文档或者文档的一部分
+     * @return Result 更新结果(更新了? 没更新?)
+     */
+    public static UpdateResult update(String index, Integer id, Map<String, Object> doc) {
+        if (id == null) {
+            return null;
+        }
+        return update(index, id.toString(), doc);
+    }
+
+    /**
      * 更新文档, 如果不存在则创建(Upsert)
      * <ol>
      * <li/>如果ID对应的文档在ES中还不存在, 那么创建文档
@@ -1266,6 +1357,103 @@ public final class ElasticUtils {
             }
         }
 
+        /**
+         * 创建 Search Template
+         *
+         * @param templateName
+         * @return boolean
+         */
+        public static boolean createSearchTemplate(String templateName, String templateFileName) {
+            try {
+                String templateContent = IOUtils.readClassPathFileAsString(templateFileName);
+                PutScriptRequest request = PutScriptRequest.of(b -> b
+                        .id(templateName)
+                        .script(s -> s.lang("mustache").source(templateContent))
+                );
+                PutScriptResponse response = QUERY_CLIENT.putScript(request);
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create search template: " + templateName, e);
+            }
+        }
+
+        /**
+         * 删除 Search Template
+         *
+         * @param templateName
+         * @return boolean
+         */
+        public static boolean deleteSearchTemplate(String templateName) {
+            try {
+                DeleteScriptRequest request = DeleteScriptRequest.of(b -> b.id(templateName));
+                DeleteScriptResponse response = QUERY_CLIENT.deleteScript(request);
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete search template: " + templateName, e);
+            }
+        }
+
+        /**
+         * 将索引设为只读, 不再写入的索引设为只读后, 可以提升索引的读性能
+         *
+         * @param indices
+         * @return boolean
+         */
+        public static boolean setReadOnly(String... indices) {
+            try {
+                PutIndicesSettingsRequest request = PutIndicesSettingsRequest.of(b -> b
+                        .index(Arrays.asList(indices))
+                        .settings(s -> s.blocks(bl -> bl.readOnly(true)))
+                );
+                PutIndicesSettingsResponse response = QUERY_CLIENT.indices().putSettings(request);
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to set read only on indices: " + Arrays.toString(indices), e);
+            }
+        }
+
+        /**
+         * 执行段合并, 可以先设为只读, 然后进行段合并
+         *
+         * @param indices
+         * @return ForcemergeResponse
+         */
+        public static ForcemergeResponse forceMerge(String indices) {
+            try {
+                ForcemergeRequest request = ForcemergeRequest.of(b -> b
+                        .index(indices)
+                        .maxNumSegments(1L)
+                );
+                return QUERY_CLIENT.indices().forcemerge(request);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to force merge index: " + indices, e);
+            }
+        }
+
+        /**
+         * 创建pipeline
+         *
+         * @param pipelineName
+         * @return ElasticPipelineBuilder
+         */
+        public static ElasticPipelineBuilder pipeline(String pipelineName) {
+            ElasticPipelineBuilder elasticPipelineBuilder = new ElasticPipelineBuilder(pipelineName);
+            return elasticPipelineBuilder;
+        }
+
+        /**
+         * 重建索引<p>
+         * https://www.elastic.co/guide/en/elasticsearch/client/java-api/current/java-docs-reindex.html
+         * https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html
+         *
+         * @param srcIndex
+         * @param destIndex
+         * @return ElasticReindexBuilder
+         */
+        public static ElasticReindexBuilder reindex(String srcIndex, String destIndex) {
+            return new ElasticReindexBuilder(srcIndex, destIndex);
+        }
+
         private static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {
             return IndexSettings.of(b -> {
                 if (settingsMap != null) {
@@ -1451,6 +1639,25 @@ public final class ElasticUtils {
         
         /**
          * 获取所有的Mapping信息
+         * 返回的Map是Map套Map, 输出成JSON大概是这样子
+         * <pre> {@code
+         * {
+         *   "properties": {
+         *     "title": {
+         *       "type": "text",
+         *       "fields": {
+         *         "keyword": {
+         *           "type": "keyword",
+         *           "ignore_above": 256
+         *         }
+         *       }
+         *     },
+         *     "year": {
+         *       "type": "long"
+         *     }
+         *   }
+         * }
+         * }</pre>
          *
          * @param index 索引名
          * @return Map<String, Object> mapping信息
@@ -1470,27 +1677,100 @@ public final class ElasticUtils {
         }
 
         /**
-         * 设置索引的Mapping
+         * 获取索引中某个字段的mapping定义, 返回的Map格式类似这样:
+         * <pre>
+         * {
+         *   "income": {
+         *     "type": "long",
+         *     "index": false
+         *   },
+         *   "carrer": {
+         *     "type": "text",
+         *     "analyzer": "ik_max_word",
+         *     "search_analyzer": "ik_smart"
+         *   },
+         *   "fans": {
+         *     "type": "text"
+         *   }
+         * }
+         * </pre>
+         *
+         * @param index  索引名
+         * @param fields 字段名
+         * @return Map<String, Map<String, Object>>
+         */
+        public static Map<String, Map<String, Object>> getMapping(String index, String... fields) {
+            try {
+                var request = co.elastic.clients.elasticsearch.indices.GetFieldMappingRequest.of(b -> b
+                        .index(index)
+                        .fields(Arrays.asList(fields))
+                );
+                var response = QUERY_CLIENT.indices().getFieldMapping(request);
+                
+                Map<String, Map<String, Object>> result = new HashMap<>();
+                var typeFieldMappings = response.result().get(index);
+                if (typeFieldMappings != null) {
+                    for (var entry : typeFieldMappings.mappings().entrySet()) {
+                        String fieldName = entry.getKey();
+                        var fieldMapping = entry.getValue();
+                        Map<String, Object> mappingMap = JacksonUtils.toMap(JacksonUtils.toJson(fieldMapping.mapping()));
+                        result.put(fieldName, mappingMap);
+                    }
+                }
+                return result;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to get field mapping for index: " + index, e);
+            }
+        }
+
+        /**
+         * 设置索引的Mapping, index必须先创建, 可以为index增加字段定义, 但是不能删除已有的字段定义<p/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/mapping.html<br/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/dynamic-mapping.html<br/>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/mapping-params.html
          *
          * @param index   索引名
          * @param dynamic Dynamic枚举值
-         * @return boolean Mapping创建成功失败标识
+         * @return ElasticPutMappingBuilder Mapping创建成功失败标识
          */
-        public static boolean putMapping(String index, Dynamic dynamic) {
-            // TODO: 需要实现完整的mapping逻辑
-            throw new UnsupportedOperationException("putMapping needs implementation");
+        public static ElasticPutMappingBuilder putMapping(String index, Dynamic dynamic) {
+            return new ElasticPutMappingBuilder(index, dynamic);
         }
         
         /**
          * 为已有的Index设置Mapping
-         *
+         * mapping 格式类似这样:
+         * <pre>
+         * {
+         *   "properties": {
+         *     "title": {
+         *       "type": "text",
+         *       "boost": 2.0
+         *     },
+         *     "content": {
+         *       "type": "text"
+         *     }
+         *   }
+         * }
+         * </pre>
          * @param index   索引名
          * @param mapping mapping JSON串
          * @return boolean
          */
         public static boolean putMapping(String index, String mapping) {
-            // TODO: 需要通过HTTP请求发送mapping JSON
-            throw new UnsupportedOperationException("putMapping with JSON string needs HTTP implementation");
+            try {
+                JacksonJsonpMapper mapper = new JacksonJsonpMapper();
+                JsonParser parser = mapper.jsonProvider().createParser(
+                        new java.io.ByteArrayInputStream(mapping.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                
+                PutMappingRequest.Builder reqBuilder = new PutMappingRequest.Builder();
+                reqBuilder.withJson(parser, mapper);
+                reqBuilder.index(index);
+                
+                return QUERY_CLIENT.indices().putMapping(reqBuilder.build()).acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to put mapping for index: " + index, e);
+            }
         }
     }
 
@@ -1502,15 +1782,44 @@ public final class ElasticUtils {
     public static class Settings {
 
         /**
-         * 设置索引的Settings
+         * 更新索引的Settings
          *
+         * @param indices 索引名
+         * @return ElasticUpdateSettingBuilder
+         */
+        public static ElasticUpdateSettingBuilder update(String... indices) {
+            return new ElasticUpdateSettingBuilder(indices);
+        }
+        
+        /**
+         * 设置索引的Settings, 比如
+         * <pre>
+         * {
+         *   "number_of_replicas": 2,          // 修改副本数（最常用）
+         *   "refresh_interval": "30s",        // 修改数据刷新间隔
+         *   "index.max_result_window": 20000, // 修改分页查询最大条数
+         *   "index.unassigned.node_left.delayed_timeout": "5m" // 分片延迟分配
+         * }
+         * </pre>
          * @param index    索引名
          * @param settings settings JSON串
          * @return 是否设置成功
          */
         public static boolean putSettings(String index, String settings) {
-            // TODO: 需要通过HTTP请求发送settings JSON
-            throw new UnsupportedOperationException("putSettings needs HTTP implementation");
+            try {
+                JacksonJsonpMapper mapper = new JacksonJsonpMapper();
+                JsonParser parser = mapper.jsonProvider().createParser(
+                        new java.io.ByteArrayInputStream(settings.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                
+                PutIndicesSettingsRequest.Builder reqBuilder = new PutIndicesSettingsRequest.Builder();
+                reqBuilder.withJson(parser, mapper);
+                reqBuilder.index(index);
+                
+                PutIndicesSettingsResponse response = QUERY_CLIENT.indices().putSettings(reqBuilder.build());
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to put settings for index: " + index, e);
+            }
         }
     }
 
@@ -1532,6 +1841,105 @@ public final class ElasticUtils {
                 return response.status().name().toLowerCase();
             } catch (IOException e) {
                 throw new RuntimeException("Failed to get cluster health", e);
+            }
+        }
+
+        /**
+         * 获取集群设置构建器
+         *
+         * @return ClusterSettingBuilder
+         */
+        public static ClusterSettingBuilder settings() {
+            return new ClusterSettingBuilder();
+        }
+
+        /**
+         * 返回所有cluster setting, 包括persistent, transient
+         *
+         * @return Map<String, Object> 集群设置
+         */
+        public static Map<String, Object> allSettings() {
+            try {
+                GetClusterSettingsResponse response = QUERY_CLIENT.cluster().getSettings(b -> b);
+                
+                Map<String, Object> result = new HashMap<>();
+                
+                Map<String, Object> persistent = new HashMap<>();
+                for (var entry : response.persistent().entrySet()) {
+                    persistent.put(entry.getKey(), entry.getValue().to(String.class));
+                }
+                result.put("persistent", persistent);
+                
+                Map<String, Object> transientSettings = new HashMap<>();
+                for (var entry : response.transient_().entrySet()) {
+                    transientSettings.put(entry.getKey(), entry.getValue().to(String.class));
+                }
+                result.put("transient", transientSettings);
+                
+                Map<String, Object> defaults = new HashMap<>();
+                for (var entry : response.defaults().entrySet()) {
+                    defaults.put(entry.getKey(), entry.getValue().to(String.class));
+                }
+                result.put("defaults", defaults);
+                
+                return result;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to get cluster settings", e);
+            }
+        }
+
+        /**
+         * 创建多字段聚合, 用法:
+         * <pre> {@code
+         * Map<String, Object> params = new HashMap<>();
+         * params.put("fields", new String[]{"src_ip", "src_port"});
+         *
+         * Script painless = new Script(ScriptType.STORED, null, "multi_field_agg", params);
+         * SearchResponse response = ElasticUtils.client.prepareSearch("events")
+         * 		.addAggregation(AggregationBuilders.terms("script_agg").script(painless))
+         * 		.get();
+         * Aggregations aggregations = response.getAggregations();
+         * Aggregation scriptAgg = aggregations.get("script_agg");
+         * System.out.println(JacksonUtils.toPrettyJson(scriptAgg.toString()));
+         * }</pre>
+         *
+         * @return boolean
+         */
+        public static boolean createMultiFieldAgg() {
+            String script = "String fieldName = ''; " +
+                    "for(int i=0; i<params.fields.length; i++) {" +
+                    "String field = params.fields[i];" +
+                    "if(!''.equals(fieldName) && (doc.containsKey(field+'.keyword') || doc.containsKey(field))) {" +
+                    "fieldName +='|';" +
+                    "}" +
+                    "if(doc.containsKey(field+'.keyword')) {" +
+                    "if(doc[field+'.keyword'].size() != 0) {" +
+                    "fieldName += doc[field+'.keyword'].value;" +
+                    "} else {" +
+                    "fieldName += 'null';" +
+                    "}" +
+                    "} else if(doc.containsKey(field)){" +
+                    "if(doc[field].size() != 0) {" +
+                    "fieldName += doc[field].value;" +
+                    "} else {" +
+                    "fieldName += 'null';" +
+                    "}" +
+                    "}" +
+                    "}" +
+                    "return fieldName;";
+
+            try {
+                PutScriptRequest request = PutScriptRequest.of(b -> b
+                        .id("multi_fields")
+                        .script(s -> s
+                                .lang("painless")
+                                .source(script)
+                        )
+                );
+                PutScriptResponse response = QUERY_CLIENT.putScript(request);
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create multi field agg script", e);
             }
         }
     }
@@ -1832,6 +2240,178 @@ public final class ElasticUtils {
          */
         public static ElasticTemplateQueryBuilder templateQuery(String... indices) {
             return new ElasticTemplateQueryBuilder(indices);
+        }
+    }
+
+    // ==================== Aggs 内部类 ====================
+
+    /**
+     * 聚合分析相关API
+     */
+    public static class Aggs {
+
+        /**
+         * 返回总命中数
+         *
+         * @return Long
+         */
+        public static Long totalHits() {
+            return ThreadContext.get(ElasticConstants.TOTAL_HITS);
+        }
+
+        // ---------------------- Bucket 聚合 ----------------------
+
+        /**
+         * terms聚合, Bucket聚合的一种
+         * https://www.elastic.co/guide/en/elasticsearch/client/java-api/7.x/java-aggs.html
+         *
+         * @param indices
+         * @return ElasticTermsAggregationBuilder
+         */
+        public static ElasticTermsAggregationBuilder terms(String... indices) {
+            return ElasticTermsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * multi terms聚合, Bucket聚合的一种, 使用painless script实现
+         * https://www.elastic.co/guide/en/elasticsearch/client/java-api/7.x/java-aggs.html
+         *
+         * @param indices
+         * @return ElasticMultiTermsAggregationBuilder
+         */
+        public static ElasticMultiTermsAggregationBuilder multiTerms(String... indices) {
+            return ElasticMultiTermsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Range Aggregation
+         * <p>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-histogram-aggregation.html
+         *
+         * @param indices
+         * @return ElasticRangeAggregationBuilder
+         */
+        public static ElasticRangeAggregationBuilder range(String... indices) {
+            return ElasticRangeAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Histogram Aggregation
+         * <p>
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-histogram-aggregation.html
+         *
+         * @param indices
+         * @return ElasticHistogramAggregationBuilder
+         */
+        public static ElasticHistogramAggregationBuilder histogram(String... indices) {
+            return ElasticHistogramAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/search-aggregations-bucket-datehistogram-aggregation.html
+         *
+         * @param indices
+         * @return ElasticDateHistogramAggregationBuilder
+         */
+        public static ElasticDateHistogramAggregationBuilder dateHistogram(String... indices) {
+            return ElasticDateHistogramAggregationBuilder.instance(indices);
+        }
+
+        // ---------------------- Metric 聚合 ----------------------
+
+        /**
+         * min聚合, Metric聚合的一种
+         *
+         * @param indices
+         * @return ElasticMinAggregationBuilder
+         */
+        public static ElasticMinAggregationBuilder min(String... indices) {
+            return ElasticMinAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * max聚合, Bucket聚合的一种
+         *
+         * @param indices
+         * @return ElasticMaxAggregationBuilder
+         */
+        public static ElasticMaxAggregationBuilder max(String... indices) {
+            return ElasticMaxAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * avg聚合
+         *
+         * @param indices
+         * @return ElasticAvgAggregationBuilder
+         */
+        public static ElasticAvgAggregationBuilder avg(String... indices) {
+            return ElasticAvgAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * sum聚合
+         *
+         * @param indices
+         * @return ElasticSumAggregationBuilder
+         */
+        public static ElasticSumAggregationBuilder sum(String... indices) {
+            return ElasticSumAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * stats聚合
+         *
+         * @param indices
+         * @return ElasticStatsAggregationBuilder
+         */
+        public static ElasticStatsAggregationBuilder stats(String... indices) {
+            return ElasticStatsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Cardinality聚合, 对字段去重后统计数量 <br/>
+         * 比如你想通过聚合分析知道, 每天网站中的访客来自多少个不同的IP
+         * <p>
+         *
+         * @param indices
+         * @return ElasticCardinalityAggregationBuilder
+         */
+        public static ElasticCardinalityAggregationBuilder cardinality(String... indices) {
+            return ElasticCardinalityAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * 组合多个聚合, 就像这个, 一个查询中包含两个聚合
+         * <pre>
+         * POST bank/_search
+         * {
+         *   "query": {
+         *     "match": {
+         *       "address": "mill"
+         *     }
+         *   },
+         *   "size": 0,
+         *   "aggs": {
+         *     "age_agg": {
+         *       "terms": {
+         *         "field": "age"
+         *       }
+         *     },
+         *     "age_avg":{
+         *       "avg": {
+         *         "field": "age"
+         *       }
+         *     }
+         *   }
+         * }
+         * </pre>
+         *
+         * @param indices
+         * @return ElasticCompositeAggregationBuilder
+         */
+        public static ElasticCompositeAggregationBuilder composite(String... indices) {
+            return ElasticCompositeAggregationBuilder.instance(indices);
         }
     }
 

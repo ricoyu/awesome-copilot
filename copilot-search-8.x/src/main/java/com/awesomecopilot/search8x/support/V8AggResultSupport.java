@@ -12,8 +12,6 @@ import co.elastic.clients.elasticsearch._types.aggregations.AvgAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.SumAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
-import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
-import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -462,8 +460,13 @@ public final class V8AggResultSupport {
 			return null;
 		}
 	}
-	// TODO: StatsAggResult has been removed
-	/*
+	/**
+	 * 解析 Stats 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return StatsAggResult 包含 count, min, max, avg, sum 的结果对象
+	 */
 	public static com.awesomecopilot.search8x.support.StatsAggResult statsResult(Map<String, Aggregate> aggregations, String aggName) {
 		if (aggregations == null || aggregations.isEmpty()) {
 			return null;
@@ -501,7 +504,6 @@ public final class V8AggResultSupport {
 			return null;
 		}
 	}
-	*/
 
 	/**
 	 * 解析 Cardinality 聚合结果
@@ -559,9 +561,7 @@ public final class V8AggResultSupport {
 			
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
-				// TODO: statsResult has been removed
-				// result.put(aggName, (T) statsResult(aggregations, aggName));
-				log.warn("statsResult has been temporarily removed");
+				result.put(aggName, (T) statsResult(aggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, (T) cardinalityResult(aggregations, aggName));
 			} else if (aggregate.isSum()) {
@@ -607,9 +607,7 @@ public final class V8AggResultSupport {
 			
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
-				// TODO: statsResult has been removed
-				// result.put(aggName, statsResult(subAggregations, aggName));
-				log.warn("statsResult has been temporarily removed");
+				result.put(aggName, statsResult(subAggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, cardinalityResult(subAggregations, aggName));
 			} else if (aggregate.isSum()) {

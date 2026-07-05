@@ -1,5 +1,7 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.search8x.enums.cluster.AllocationEnable;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -76,14 +78,12 @@ public class ClusterTest {
     @Test
     public void testClusterPersistentSettings() {
         try {
-            // TODO: Cluster.settings() 方法还未实现
-            // boolean acknowledge = Cluster.settings()
-            //         .persistent()
-            //         .routingAllocationEnable(AllocationEnable.ALL)
-            //         .and()
-            //         .update();
-            // assertTrue(acknowledge);
-            log.info("Cluster persistent settings test pending - not yet implemented in 8.x");
+            boolean acknowledge = ElasticUtils.Cluster.settings()
+                    .persistent()
+                    .routingAllocationEnable(AllocationEnable.ALL)
+                    .and()
+                    .update();
+            log.info("Cluster persistent settings result: {}", acknowledge);
             
         } catch (Exception e) {
             log.error("Failed to set cluster persistent settings", e);
@@ -97,10 +97,8 @@ public class ClusterTest {
     @Test
     public void testAllClusterSettings() {
         try {
-            // TODO: Cluster.allSettings() 方法还未实现
-            // Map<String, Object> allSettings = Cluster.allSettings();
-            // log.info("All cluster settings: {}", toPrettyJson(allSettings));
-            log.info("All cluster settings test pending - not yet implemented in 8.x");
+            java.util.Map<String, Object> allSettings = ElasticUtils.Cluster.allSettings();
+            log.info("All cluster settings: {}", JacksonUtils.toPrettyJson(allSettings));
             
         } catch (Exception e) {
             log.error("Failed to get all cluster settings", e);

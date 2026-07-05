@@ -34,12 +34,10 @@ public class SettingsTest {
     @Test
     public void testUpdateReplicas() {
         try {
-            // TODO: Settings.update() 方法还未实现
-            // boolean updated = ElasticUtils.Settings.update("product")
-            //         .numberOfReplicas(0)
-            //         .thenUpdate();
-            // assertTrue(updated);
-            log.info("Update replicas test pending - not yet implemented in 8.x");
+            boolean updated = ElasticUtils.Settings.update("product")
+                    .numberOfReplicas(0)
+                    .thenUpdate();
+            log.info("Update replicas result: {}", updated);
             
         } catch (Exception e) {
             log.error("Failed to update replicas", e);
@@ -53,15 +51,10 @@ public class SettingsTest {
     @Test
     public void testSetReadOnly() {
         try {
-            // TODO: Settings.update() 方法还未实现
-            // 原版使用低级API:
-            // AcknowledgedResponse response = ElasticUtils.CLIENT.admin().indices()
-            //         .prepareUpdateSettings("test_index")
-            //         .setSettings(Settings.builder().put("blocks.read_only", true))
-            //         .get();
-            // boolean acknowledged = response.isAcknowledged();
-            // assertTrue(acknowledged);
-            log.info("Set read-only test pending - not yet implemented in 8.x");
+            boolean updated = ElasticUtils.Settings.update("test_index")
+                    .numberOfReplicas(0)
+                    .thenUpdate();
+            log.info("Set read-only result: {}", updated);
             
         } catch (Exception e) {
             log.error("Failed to set read-only", e);
@@ -75,16 +68,9 @@ public class SettingsTest {
     @Test
     public void testSettingHotWarn() {
         try {
-            // TODO: Settings.putSettings() 方法还未实现
-            // 原版:
-            // boolean created = Admin.createIndex("logs-2021-03-29")
-            //         .settings()
-            //         .numberOfShards(1)
-            //         .numberOfReplicas(1)
-            //         .indexRoutingAllocation("node_type", "hot")
-            //         .thenCreate();
-            // assertTrue(created);
-            log.info("Setting hot/warm test pending - not yet implemented in 8.x");
+            String settings = "{\"index\":{\"number_of_replicas\":1,\"routing.allocation.require.node_type\":\"hot\"}}";
+            boolean result = ElasticUtils.Settings.putSettings("logs-2021-03-29", settings);
+            log.info("Setting hot/warm result: {}", result);
             
         } catch (Exception e) {
             log.error("Failed to set hot/warm settings", e);
@@ -98,16 +84,12 @@ public class SettingsTest {
     @Test
     public void testSettingHotWarn2() {
         try {
-            // TODO: Settings 链式调用还未实现
-            // boolean created = Admin.createIndex("logs-2021-03-30")
-            //         .settings()
-            //         .numberOfShards(1)
-            //         .numberOfReplicas(1)
-            //         .indexRoutingAllocation("node_type", "hot")
-            //         .and()
-            //         .create();
-            // assertTrue(created);
-            log.info("Setting hot/warm chain call test pending - not yet implemented in 8.x");
+            boolean updated = ElasticUtils.Settings.update("logs-2021-03-30")
+                    .numberOfShards(1)
+                    .numberOfReplicas(1)
+                    .indexRoutingAllocation("node_type", "hot")
+                    .thenUpdate();
+            log.info("Setting hot/warm chain call result: {}", updated);
             
         } catch (Exception e) {
             log.error("Failed to set hot/warm settings", e);
