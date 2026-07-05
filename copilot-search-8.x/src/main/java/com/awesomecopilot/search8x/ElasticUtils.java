@@ -2,7 +2,9 @@ package com.awesomecopilot.search8x;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Conflicts;
+import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
@@ -20,8 +22,6 @@ import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
-import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
-import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.indices.AnalyzeResponse;
@@ -29,10 +29,10 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.GetMappingRequest;
-import co.elastic.clients.elasticsearch.indices.IndexSettingBlocks;
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import co.elastic.clients.elasticsearch.indices.analyze.AnalyzeToken;
 import co.elastic.clients.json.JsonData;
+import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.builder.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.ElasticBulkUpdateBuilder;
@@ -62,17 +62,13 @@ import com.awesomecopilot.search8x.builder.query.ElasticTermsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticUriQueryBuilder;
 import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.Dynamic;
-import com.awesomecopilot.search8x.enums.SuggestMode;
-import com.awesomecopilot.search8x.enums.FieldType;
-import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
-import com.awesomecopilot.search8x.annotation.Field;
-import com.awesomecopilot.common.lang.utils.EnumUtils;
-import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.search8x.enums.IndexState;
+import com.awesomecopilot.search8x.enums.SuggestMode;
+import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
+import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.IndexSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
 import com.awesomecopilot.search8x.support.SettingsSupport;
-import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
@@ -92,11 +88,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toJson;
 import static com.awesomecopilot.json.jackson.JacksonUtils.toObject;
-import static com.awesomecopilot.common.lang.utils.Assert.notNull;
-import static org.apache.commons.lang3.StringUtils.isBlank;
 import static java.util.Arrays.asList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * Elasticsearch 8.x 工具类, 使用 ES 8.x Java Client API
@@ -1080,6 +1076,57 @@ public final class ElasticUtils {
          */
         public static ElasticIndexBuilder createIndex(String index) {
             return new ElasticIndexBuilder(index);
+        }
+
+        /**
+         * 为Index创建别名
+         *
+         * @param index
+         * @param alias
+         * @return 创建成功与否
+         */
+        public static boolean createIndexAlias(String index, String alias) {
+            try {
+                var response = QUERY_CLIENT.indices().updateAliases(b -> b
+                        .actions(a -> a
+                                .add(add -> add
+                                        .index(index)
+                                        .alias(alias)
+                                )
+                        )
+                );
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create index alias", e);
+            }
+        }
+
+        /**
+         * 为Index创建别名
+         *
+         * @param indices
+         * @param alias
+         * @param queryBuilder
+         * @return
+         */
+        public static boolean createIndexAlias(String[] indices, String alias, co.elastic.clients.elasticsearch._types.query_dsl.Query queryBuilder) {
+            try {
+                var response = QUERY_CLIENT.indices().updateAliases(b -> {
+                    for (String idx : indices) {
+                        b.actions(a -> a
+                                .add(add -> add
+                                        .index(idx)
+                                        .alias(alias)
+                                        .filter(queryBuilder)
+                                )
+                        );
+                    }
+                    return b;
+                });
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create index alias with filter", e);
+            }
         }
 
         private static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {

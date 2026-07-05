@@ -192,15 +192,13 @@ public class AdminTest {
             boolean indexDeleted = ElasticUtils.Admin.deleteIndex("test-2021-01-28");
             log.info("Index deleted: {}", indexDeleted);
             
-            // TODO: createIndex 方法还未实现
-            // boolean indexCreated = ElasticUtils.Admin.createIndex("test-2021-01-28").create();
-            // assertTrue(indexCreated);
-            // boolean created = ElasticUtils.Admin.createIndexAlias("test-2021-01-28", "test");
-            // assertTrue(created);
+            boolean indexCreated = ElasticUtils.Admin.createIndex("test-2021-01-28").create();
+            assertTrue(indexCreated);
+            boolean created = ElasticUtils.Admin.createIndexAlias("test-2021-01-28", "test666");
+            assertTrue(created);
+            // TODO: deleteIndexAlias 方法还未实现
             // boolean deleted = ElasticUtils.Admin.deleteIndexAlias("test-2021-01-28", "test");
             // assertTrue(deleted);
-            
-            log.info("Alias test pending - createIndex/createIndexAlias not yet implemented in 8.x");
             
         } catch (Exception e) {
             log.error("Failed to test alias operations", e);
