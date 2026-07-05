@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x;
 
+import com.awesomecopilot.search8x.enums.FieldType;
 import com.awesomecopilot.search8x.pojo.Movie;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +100,19 @@ public class AdminTest {
         }
     }
     
+    @Test
+    public void testCreateIndexwithBuilder() {
+        boolean exists = ElasticUtils.Admin.existsIndex("articles");
+        if (exists) {
+            boolean deldeted = ElasticUtils.Admin.deleteIndex("articles");
+            assertTrue(deldeted);
+        }
+        boolean created = ElasticUtils.Admin.createIndex("articles")
+                .mapping()
+                .field("title_completion", FieldType.COMPLETION)
+                .thenCreate();
+        assertTrue(created);
+    }
     // ==================== existsIndex() 相关测试 ====================
     
     /**

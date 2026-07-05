@@ -41,6 +41,7 @@ import com.awesomecopilot.search8x.builder.ElasticIndexDocBuilder;
 import com.awesomecopilot.search8x.builder.ElasticMultiGetBuilder;
 import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticUpdateBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticIndexBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticExistsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticGeoDistanceQueryBuilder;
@@ -1025,6 +1026,16 @@ public final class ElasticUtils {
             } catch (IOException e) {
                 throw new RuntimeException("Failed to create index: " + indexName, e);
             }
+        }
+
+        /**
+         * 创建索引, 默认1个分片, 0个副本
+         *
+         * @param index 索引名
+         * @return boolean 创建成功失败标识
+         */
+        public static ElasticIndexBuilder createIndex(String index) {
+            return new ElasticIndexBuilder(index);
         }
 
         private static IndexSettings buildIndexSettings(Map<String, Object> settingsMap) {
