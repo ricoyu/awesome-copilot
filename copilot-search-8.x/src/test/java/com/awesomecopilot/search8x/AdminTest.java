@@ -2,6 +2,7 @@ package com.awesomecopilot.search8x;
 
 import com.awesomecopilot.search8x.enums.FieldType;
 import com.awesomecopilot.search8x.pojo.Movie;
+import com.awesomecopilot.search8x.vo.Index;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -147,7 +148,7 @@ public class AdminTest {
         }
     }
     
-    // ==================== listIndexNames() 相关测试 ====================
+    // ==================== listIndexNames() / listIndices() 相关测试 ====================
     
     /**
      * 测试列出所有索引 - 从 copilot-search 迁移
@@ -164,6 +165,19 @@ public class AdminTest {
         } catch (Exception e) {
             log.error("Failed to list indices", e);
         }
+    }
+    
+    /**
+     * 测试列出所有索引详情 - 从 copilot-search 迁移
+     * 对应原版 IndexTest.testListIndices()
+     */
+    @Test
+    public void testListIndices() {
+        List<String> indices = ElasticUtils.Admin.listIndexNames();
+        indices.forEach(System.out::println);
+
+        List<Index> indices2 = ElasticUtils.Admin.listIndices();
+        indices2.forEach(System.out::println);
     }
     
     // ==================== createIndexAlias() 相关测试 ====================

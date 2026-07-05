@@ -66,13 +66,15 @@ import com.awesomecopilot.search8x.enums.SuggestMode;
 import com.awesomecopilot.search8x.enums.FieldType;
 import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
 import com.awesomecopilot.search8x.annotation.Field;
-import com.awesomecopilot.search8x.annotation.Index;
+import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
+import com.awesomecopilot.search8x.enums.IndexState;
 import com.awesomecopilot.search8x.support.IndexSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
 import com.awesomecopilot.search8x.support.SettingsSupport;
 import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.UpdateResult;
+import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -981,6 +983,48 @@ public final class ElasticUtils {
                 throw new RuntimeException("Failed to list indices", e);
             }
         }
+
+        /**
+         * 列出所有索引, 包含索引名, 主分片数, 副本数, uuid
+         * @return List<Index>
+         */
+        public static List<Index> listIndices() {
+            try {
+                // 通过get API获取索引元数据(名称, uuid, 主分片数, 副本数)
+                var indexResponse = QUERY_CLIENT.indices().get(b -> b.index("*"));
+                // 通过cat API获取索引状态(open/close)
+                var catResponse = QUERY_CLIENT.cat().indices(c -> c);
+                Map<String, String> indexStatusMap = new HashMap<>();
+                for (var record : catResponse.valueBody()) {
+                    indexStatusMap.put(record.index(), record.status());
+                }
+
+                List<Index> indexList = new ArrayList<>();
+                indexResponse.result().forEach((indexName, indexState) -> {
+                    Index index = new Index();
+                    index.setName(indexName);
+                    var settings = indexState.settings();
+                    if (settings != null) {
+                        index.setUuid(settings.uuid());
+                        if (settings.numberOfShards() != null) {
+                            index.setNumberOfShards(Integer.parseInt(settings.numberOfShards()));
+                        }
+                        if (settings.numberOfReplicas() != null) {
+                            index.setNumberOfReplicas(Integer.parseInt(settings.numberOfReplicas()));
+                        }
+                    }
+                    String status = indexStatusMap.get(indexName);
+                    if (status != null) {
+                        index.setState(EnumUtils.lookupEnum(IndexState.class, status));
+                    }
+                    indexList.add(index);
+                });
+                return indexList;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to list indices", e);
+            }
+        }
+
         /**
          * 基于Entity上的注解信息创建索引
          *
