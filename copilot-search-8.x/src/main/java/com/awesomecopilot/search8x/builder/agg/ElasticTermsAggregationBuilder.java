@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x.builder.agg;
 
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -167,7 +168,7 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 					t.shardSize(shardSize);
 				}
 				if (!sortOrderEnums.isEmpty()) {
-					List<NamedValue<co.elastic.clients.elasticsearch._types.SortOrder>> order = 
+					List<NamedValue<SortOrder>> order =
 							sortOrderEnums.stream().map(SortOrderEnum::toBucketOrder).collect(Collectors.toList());
 					t.order(order);
 				}

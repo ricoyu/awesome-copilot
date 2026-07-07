@@ -1185,6 +1185,31 @@ public class ElasticUtilsTest {
         ElasticUtils.analyze(Analyzer.HANLP_N_SHORT, "美国会同意对台军售").forEach(System.out::println);
         System.out.println("------------------------");
     }
+    
+    /**
+     * <pre>
+     * GET _analyze
+     * {
+     *   "analyzer": "ik_max_word",
+     *   "text": "后端开发工程师"
+     * }
+     * </pre>
+     */
+    @Test
+    public void testIkAnalyzer() {
+        //后端 开发 工程师 工程 师
+        List<String> words = ElasticUtils.analyze(Analyzer.IK_MAX_WORD, "后端开发工程师");
+        for (String word : words) {
+        	System.out.print(word+" ");
+        }
+        
+        System.out.println("\n===============");
+        //后端 开发 工程师
+        words = ElasticUtils.analyze(Analyzer.IK_SMART, "后端开发工程师");
+        for (String word : words) {
+            System.out.print(word+" ");
+        }
+    }
 
     // ==================== updateByQuery ====================
 
@@ -1197,5 +1222,19 @@ public class ElasticUtilsTest {
         UpdateByQueryResponse response = ElasticUtils.updateByQuery("blogs");
         log.info("UpdateByQuery total: {}, updated: {}, versionConflicts: {}",
                 response.total(), response.updated(), response.versionConflicts());
+    }
+    
+    @Test
+    public void testDefaultField() {
+        /*
+         * query_string + default_field 多字段
+         * ES 强制统一使用：索引默认分词器（standard）
+         * 无视你字段单独配置的 IK！！！
+         */
+        List<Object> docs = Query.queryString("user_info")
+                .defaultField("name,job,city,tag")
+                .query("开发")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(0);
     }
 }

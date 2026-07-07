@@ -6,8 +6,6 @@ import com.awesomecopilot.search8x.ElasticUtils.Query;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +28,216 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @Slf4j
 public class QueryTest {
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "default_field": "name,job,city,tag",
+     *       "query": "开发"
+     *     }
+     *   }
+     * }
+     * </pre>
+     * 
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "fields": ["name","job","city","tag"],
+     *       "query": "开发"
+     *     }
+     *   }
+     * }
+     * </pre>
+     *
+     */
+    @Test
+    public void testQueryStringDefaultField2() {
+        List<Object> docs = Query.queryString("user_info")
+                .defaultField("name,job,city,tag")
+                .query("开发")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(0);
+        
+        docs = Query.queryString("user_info")
+                .fields("name","job","city","tag")
+                .query("开发")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+        
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "fields": ["name","job","city","tag"],
+     *       "query": "北京 后端"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testDuoguanjianzibingxingpipei() {
+        List<Object> docs = Query.queryString("user_info")
+                .fields("name", "job", "city", "tag")
+                .query("北京 后端") //默认 OR 关系
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * 精准短语匹配（引号包裹）
+     * 要求分词顺序、内容完全一致
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "fields": ["name","job","city","tag"],
+     *       "query": "\"后端开发工程师\""
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testQueryStringExactMatch() {
+        List<Object> docs = Query.queryString("user_info")
+                .fields("name", "job", "city", "tag")
+                .query("""
+                        \"后端开发工程师\"""")
+                .queryForList();
+        
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+        
+    }
+    
+    /**
+     * 语法：`字段名:关键词`，仅查询指定字段，精准缩小查询范围。
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "city:北京"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testSpecifyField() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("city:北京")
+                .queryForList();
+        
+        assertThat(docs.size()).isEqualTo(2);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * tag:java mysql 不加括号 语法合法能跑，但逻辑完全不一样；
+     * tag:(java mysql) 加括号才是：只在 tag 字段里匹配 java 或 mysql；
+     *   不加括号：query": "tag:java mysql" 拆解逻辑:
+     *      tag:java：必须在 tag 字段匹配 java
+     *      mysql：没有指定字段，会丢给 default_field 全部字段去匹配 mysql
+     *      tag:java OR (mysql 在 name/job/city/tag 任意字段)
+     *
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "tag:(java mysql)"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testJobcontainsKaifa() {
+        List<Object> docs = Query.queryString("user_info")
+                //.query("tag:(java mysql)")
+                .query("tag:(java mysql)")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    @Test
+    public void testQueryStringAnd() {
+        List<Object> docs = Query.queryString("user_info")
+                //.query("city:北京 AND job:后端")
+                .query("city:北京 OR city:上海")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "NOT city:北京"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testQueryStringNot() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("NOT city:北京")
+                .queryForList();
+        docs.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "job:开发 -job:前端"
+     *     }
+     *   }
+     * }
+     * </pre>
+     *
+     * job:开发:  限定只在 job 字段检索词条「开发」，只要 job 包含开发，这条文档就满足正向匹配条件。
+     * -job:前端: 负号 - 代表强制排除：文档的 job 字段不能包含「前端」
+     * 整体逻辑:  文档 `job` 字段包含「开发」**并且** `job` 字段不包含「前端」
+     */
+    @Test
+    public void testDefaultAndNot() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("job:开发 -job:前端")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    @Test
+    public void testGroup() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("(city:北京 AND job:后端) OR (city:上海 AND job:前端)")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
 
     // ==================== Match Query 相关测试 ====================
     // 对应原版 ElasticUtilsMatchQueryTest
@@ -51,6 +259,25 @@ public class QueryTest {
         }
     }
     
+    @Test
+    public void testPrefixMatch() {
+        List<Object> docs = Query.queryString("user_info")
+                //.query("name: 张*")
+                .query("name: 张*")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    @Test
+    public void testInnerMatch() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("job: *开发*")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
     
     @Test
     public void test() {
@@ -60,7 +287,18 @@ public class QueryTest {
         banks.forEach(System.out::println);
     }
     
-    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "job:*开发*"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
     @Test
     public void testAddressAgeCount() {
         long count = ElasticUtils.Query.bool("bank")
@@ -1050,11 +1288,25 @@ public class QueryTest {
                 .queryForList();
         docs.forEach(System.out::println);
     }
+    
+    /**
+     * 对应的Query String 查询
+     * <pre>
+     * POST users/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "name:Ruan"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
     @Test
     public void testQueryStringBasic() {
         try {
             List<String> users = Query.queryString("users")
-                    .query("name:ruan")
+                    .query("name:ruan") //匹配 name 字段包含 Ruan 的文档。
                     .queryForList();
             users.forEach(System.out::println);
         } catch (Exception e) {
@@ -1064,6 +1316,16 @@ public class QueryTest {
 
     /**
      * 对应原版 QueryStringQueryTest.testAndThenEmpty()
+     * <pre>
+     * POST users/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "about:(java AND lua)"
+     *     }
+     *   }
+     * }
+     * </pre>
      */
     @Test
     public void testQueryStringAndThenEmpty() {
@@ -1079,6 +1341,16 @@ public class QueryTest {
 
     /**
      * 对应原版 QueryStringQueryTest.testPhrase()
+     * <pre>
+     * POST users/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query": "name:\"Ruan Yiming\""
+     *     }
+     *   }
+     * }
+     * </pre>
      */
     @Test
     public void testQueryStringPhrase() {
@@ -2017,22 +2289,7 @@ public class QueryTest {
             log.warn("Search failed: {}", e.getMessage());
         }
     }
-
-    /**
-     * 测试 idsQuery(Collection) 重载方法
-     */
-    @Test
-    public void testIdsQueryWithCollection() {
-        try {
-            List<String> ids = Arrays.asList("-3KMqXsBnQfP0ODXFLu4", "_XKNqXsBnQfP0ODXsrtx");
-            List<Map> results = Query.idsQuery((Collection<String>) ids)
-                    .resultType(Map.class)
-                    .queryForList();
-            results.forEach(System.out::println);
-        } catch (Exception e) {
-            log.warn("Search failed: {}", e.getMessage());
-        }
-    }
+    
 
     /**
      * 测试 idsQuery 带 includeSources

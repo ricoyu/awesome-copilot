@@ -1,5 +1,9 @@
 package com.awesomecopilot.search8x;
 
+import co.elastic.clients.elasticsearch.indices.IndexTemplate;
+import com.awesomecopilot.common.lang.utils.IOUtils;
+import com.awesomecopilot.search8x.builder.admin.AbstractMappingBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticIndexMappingBuilder;
 import com.awesomecopilot.search8x.enums.FieldType;
 import com.awesomecopilot.search8x.pojo.Movie;
 import com.awesomecopilot.search8x.vo.Index;
@@ -11,6 +15,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.awesomecopilot.search8x.builder.admin.FieldDefBuilder.*;
+import static com.awesomecopilot.search8x.enums.Analyzer.ENGLISH;
+import static com.awesomecopilot.search8x.enums.FieldType.KEYWORD;
+import static com.awesomecopilot.search8x.enums.FieldType.TEXT;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -190,16 +198,22 @@ public class AdminTest {
     @Test
     public void testCreateDeleteAlias() {
         try {
+            boolean exists = ElasticUtils.Admin.existsIndex("test");
+            if (exists) {
+                ElasticUtils.Admin.deleteIndex("test");
+                ElasticUtils.Admin.deleteIndexAlias("test-2021-01-28", "test");
+            }
             boolean indexDeleted = ElasticUtils.Admin.deleteIndex("test-2021-01-28");
             log.info("Index deleted: {}", indexDeleted);
             
             boolean indexCreated = ElasticUtils.Admin.createIndex("test-2021-01-28").create();
             assertTrue(indexCreated);
-            boolean created = ElasticUtils.Admin.createIndexAlias("test-2021-01-28", "test666");
+            boolean created = ElasticUtils.Admin.createIndexAlias("test-2021-01-28", "test");
             assertTrue(created);
-            // TODO: deleteIndexAlias 方法还未实现
-            // boolean deleted = ElasticUtils.Admin.deleteIndexAlias("test-2021-01-28", "test");
-            // assertTrue(deleted);
+            log.info("Alias created: {}", created);
+            boolean deleted = ElasticUtils.Admin.deleteIndexAlias("test-2021-01-28", "test");
+            assertTrue(deleted);
+            log.info("Alias deleted: {}", deleted);
             
         } catch (Exception e) {
             log.error("Failed to test alias operations", e);
@@ -211,7 +225,7 @@ public class AdminTest {
     
     @Test
     public void testCreateIndexTemplate() {
-        boolean created = ElasticUtils.Admin.putIndexTemplateByFile("template_default")
+        boolean created = ElasticUtils.Admin.putIndexTemplate("template_default")
                 .patterns("*")
                 .order(0)
                 .version(1)
@@ -221,9 +235,29 @@ public class AdminTest {
         assertTrue(created);
     }
     
+    /**
+     * 设定index template, 指定索引的名字以test开头的自动匹配
+     * 等价于
+     * <pre>
+     * PUT _template/tempalate_test
+     * {
+     *   "index_patterns": ["test*"],
+     *   "order": 1,
+     *   "settings": {
+     *     "number_of_shards": 1,
+     *     "number_of_replicas": 2
+     *   },
+     *   "mappings": {
+     *     #关闭日期自动探测
+     *     "date_detection": false,
+     *     "numeric_detection": true
+     *   }
+     * }
+     * </pre>
+     */
     @Test
     public void testCreateIndexTemplateTest() {
-        ElasticUtils.Admin.putIndexTemplateByFile("tempalate_test")
+        ElasticUtils.Admin.putIndexTemplate("tempalate_test")
                 .patterns("test*")
                 .order(1)
                 .settings(1)
@@ -236,6 +270,12 @@ public class AdminTest {
                 .thenCreate();
     }
     
+    @Test
+    public void testCreateIndexTemplateByRestAPI3() {
+        boolean created = ElasticUtils.Admin.putIndexTemplate("event_template", IOUtils.readClassPathFileAsString("index_template.json"));
+        assertTrue(created);
+    }
+    
     /**
      * 测试删除索引模板 - 从 copilot-search 迁移
      * 对应原版 ElasticUtilsIndexTemplateTest.testDeleteIndexTemplate()
@@ -244,13 +284,14 @@ public class AdminTest {
     public void testDeleteIndexTemplate() {
         try {
             // TODO: deleteIndexTemplate 方法还未实现
-            // boolean deleted = ElasticUtils.Admin.deleteIndexTemplate("event_template2");
-            // assertTrue(deleted);
+             boolean deleted = ElasticUtils.Admin.deleteIndexTemplate("event_template2");
+             assertTrue(deleted);
             log.info("Delete index template test pending - not yet implemented in 8.x");
         } catch (Exception e) {
             log.error("Failed to delete index template", e);
         }
     }
+    
     
     /**
      * 测试通过REST API创建索引模板 - 从 copilot-search 迁移
@@ -260,13 +301,31 @@ public class AdminTest {
     public void testCreateIndexTemplateByRestAPI() {
         try {
             // TODO: putIndexTemplate 方法还未实现
-            // boolean created = ElasticUtils.Admin.putIndexTemplate("event_template",
-            //         IOUtils.readClassPathFileAsString("index_template.json"));
-            // assertTrue(created);
+             boolean created = ElasticUtils.Admin.putIndexTemplate("event_template",
+                     IOUtils.readClassPathFileAsString("index_template.json"));
+             assertTrue(created);
             log.info("Create index template test pending - not yet implemented in 8.x");
         } catch (Exception e) {
             log.error("Failed to create index template", e);
         }
+    }
+    
+    @Test
+    public void testDeleteIndexTemplate2() {
+        boolean deleted = ElasticUtils.Admin.deleteIndexTemplate("event_template2");
+        assertTrue(deleted);
+    }
+    
+    @Test
+    public void testCreateIndexTemplateByRestAPI2() {
+        boolean created = ElasticUtils.Admin.putIndexTemplate("event_template", IOUtils.readClassPathFileAsString("index_template.json"));
+        assertTrue(created);
+    }
+    
+    @Test
+    public void testGetIndexTemplate2() {
+        Map<String, IndexTemplate> eventTemplate = ElasticUtils.Admin.getIndexTemplate("event_template");
+        System.out.println(eventTemplate);
     }
     
     /**
@@ -281,6 +340,54 @@ public class AdminTest {
             log.info("Get index template test pending - not yet implemented in 8.x");
         } catch (Exception e) {
             log.error("Failed to get index template", e);
+        }
+    }
+    
+    // ==================== reindex() 相关测试 ====================
+    
+    /**
+     * 测试重建索引 - 从 copilot-search 迁移
+     * 对应原版 ElasticUtilsTest.testReindex()
+     */
+    @Test
+    public void testReindex() {
+        try {
+            ElasticUtils.Admin.deleteIndex("blogs_fix");
+            AbstractMappingBuilder mappingBuilder = ElasticIndexMappingBuilder.newInstance()
+                    .field("content", TEXT)
+                    .fields(builder("english", TEXT).analyzer(ENGLISH))
+                    .field("keyword", KEYWORD)
+                    .and();
+            
+            boolean created = ElasticUtils.Admin.createIndex("blogs_fix")
+                    .mapping(mappingBuilder)
+                    .create();
+            assertTrue(created);
+            
+            // 使用 ES 8.x Java Client API 直接构建 Query
+	        var filter =
+                    co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q
+                            .match(m -> m
+                                    .field("content")
+                                    .query("Hadoop")
+                            )
+                    );
+            
+            var response = ElasticUtils.Admin.reindex("blogs", "blogs_fix")
+                    .filter(filter)
+                    .size(1000)
+                    .slices(8)
+                    .get();
+            
+            Thread.sleep(1000);
+            
+            List<Object> blogsFix = ElasticUtils.Query.query("blogs_fix").queryForList();
+            blogsFix.forEach(System.out::println);
+            
+            log.info("Reindex completed: total={}, created={}, updated={}", 
+                    response.total(), response.created(), response.updated());
+        } catch (Exception e) {
+            log.error("Failed to test reindex", e);
         }
     }
 }

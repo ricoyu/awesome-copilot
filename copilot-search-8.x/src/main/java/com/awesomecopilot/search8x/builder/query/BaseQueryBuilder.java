@@ -2,6 +2,7 @@ package com.awesomecopilot.search8x.builder.query;
 
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -109,7 +110,7 @@ public abstract class BaseQueryBuilder {
      * <p>
      * 用于在查询结束后对每个匹配的文档进行重新算分
      */
-    protected List<co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore> scoreFunctions = new ArrayList<>();
+    protected List<FunctionScore> scoreFunctions = new ArrayList<>();
 
     /**
      * Function Score Query 的 boost_mode
@@ -269,7 +270,7 @@ public abstract class BaseQueryBuilder {
      * @param scoreFunction ES 8.x FunctionScore
      * @return T
      */
-    public <T extends BaseQueryBuilder> T addScoreFunction(co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore scoreFunction) {
+    public <T extends BaseQueryBuilder> T addScoreFunction(FunctionScore scoreFunction) {
         if (scoreFunction != null) {
             this.scoreFunctions.add(scoreFunction);
         }
@@ -311,7 +312,7 @@ public abstract class BaseQueryBuilder {
             if (resultType == null || resultType == Object.class || resultType == String.class) {
                 results.add((T) JacksonUtils.toJson(source));
             } else {
-                results.add((T) JacksonUtils.toObject(JacksonUtils.toJson(source), resultType));
+                results.add((T) JacksonUtils.mapToPojo(source, resultType));
             }
         }
         return results;
@@ -419,13 +420,13 @@ public abstract class BaseQueryBuilder {
         // function_score 包装
         if (!this.scoreFunctions.isEmpty() && query != null) {
             final Query innerQuery = query;
-            final List<co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore> functions = this.scoreFunctions;
+            final List<FunctionScore> functions = this.scoreFunctions;
             final String mode = this.boostMode;
             
             query = Query.of(q -> q.functionScore(fs -> {
                 fs.query(innerQuery);
                 // 添加所有的 score functions
-                for (co.elastic.clients.elasticsearch._types.query_dsl.FunctionScore func : functions) {
+                for (FunctionScore func : functions) {
                     fs.functions(func);
                 }
                 // 设置 boost_mode

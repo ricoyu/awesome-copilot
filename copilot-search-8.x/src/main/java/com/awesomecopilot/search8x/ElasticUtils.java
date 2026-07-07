@@ -1233,11 +1233,59 @@ public final class ElasticUtils {
         }
 
         /**
+         * 删除Index的别名
+         *
+         * @param index
+         * @param alias
+         * @return 删除成功与否
+         */
+        public static boolean deleteIndexAlias(String index, String alias) {
+            try {
+                var response = QUERY_CLIENT.indices().updateAliases(b -> b
+                        .actions(a -> a
+                                .remove(remove -> remove
+                                        .index(index)
+                                        .alias(alias)
+                                )
+                        )
+                );
+                return response.acknowledged();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete index alias", e);
+            }
+        }
+
+        /**
          * https://www.elastic.co/guide/en/elasticsearch/reference/7.6/indices-templates.html
+         * <pre>
+         * public void testCreateIndexTemplate() {
+         *     boolean created = ElasticUtils.Admin.putIndexTemplate("template_default")
+         *             .patterns("*")
+         *             .order(0)
+         *             .version(1)
+         *             .settings(1)
+         *             .numberOfReplicas(1)
+         *             .thenCreate();
+         *     assertTrue(created);
+         * }
+         * </pre>
+         * 对应的Query DSL
+         * <pre>
+         * PUT _template/template_default
+         * {
+         *   "index_patterns": ["*"],
+         *   "order": 0,
+         *   "version": 1,
+         *   "settings": {
+         *     "number_of_shards": 1,
+         *     "number_of_replicas": 1
+         *   }
+         * }
+         * </pre>
          *
          * @param templateName
          */
-        public static ElasticIndexTemplateBuilder putIndexTemplateByFile(String templateName) {
+        public static ElasticIndexTemplateBuilder putIndexTemplate(String templateName) {
             return ElasticIndexTemplateBuilder.newInstance(templateName);
         }
 
@@ -1995,12 +2043,28 @@ public final class ElasticUtils {
         public static ElasticIdsQueryBuilder idsQuery(Collection<String> indices) {
             return new ElasticIdsQueryBuilder(indices.stream().toArray(String[]::new));
         }
-
+        
         /**
-         * 指定查询语句, 使用Query String Syntax
+         * 指定查询语句, 使用Query String Syntax<p>
+         * 你可以就写查询条件: 2012<p>
+         * 也可以写完成的查询: q=2012 或者 q=2012&df=title 等<p>
+         * 有多种查询语法
+         * <ul>
+         * <li/>df查询                            GET movies/_search?q=2012&df=title
+         * <li/>指定字段查询                       GET movies/_search?q=title:2012
+         * <li/>泛查询                            GET movies/_search?q=2012              会对文档中所有字段进行查询
+         * <li/>Term Query                       GET movies/_search?q=title:Beautiful Mind     与下面的等价
+         * <li/>                                 GET movies/_search?q=title:Beautiful OR Mind
+         * <li/>Pahrase Query(引号引起来的)        GET movies/_search?q=title:"Beautiful Mind"  表示Beautiful Mind要同时出现并且按照规定的顺序, 与下面的等价
+         * <li/>                                  GET movies/_search?q=title:Beautiful AND Mind
+         * <li/>分组                              GET movies/_search?q=title:(Beautiful Mind)
+         * <li/>范围查询                          GET movies/_search?q=year:>1980
+         * <li/>包含Beautiful 不包含 Mind          GET movies/_search?q=title:(Beautiful NOT Mind)
+         * <li/>必须包含Mind, %2B是 + 号的转义字符  GET movies/_search?q=title:(Beautiful %2BMind)
+         * </ul>
          *
-         * @param index 索引名
-         * @return ElasticUriQueryBuilder
+         * @param index
+         * @return QueryStringQueryBuilder
          */
         public static ElasticUriQueryBuilder uriQuery(String index) {
             return new ElasticUriQueryBuilder(index);
@@ -2045,25 +2109,36 @@ public final class ElasticUtils {
         public static ElasticScrollQueryBuilder scrollQuery(String... indices) {
             return new ElasticScrollQueryBuilder(indices);
         }
-
+        
         /**
-         * Term查询, 对输入不做分词
+         * 在ES中, Term查询, 对输入不做分词. 会将输入作为一个整体, 在倒排索引中查找准确的词项, 并且使用相关度计算公式为每个包含该此项的文档进行相关度算分<p>
+         * <ol>
+         * <li/> Term Query 不会对查询条件做分词
+         * <li/> 如果被查询字段在文档里面是被分词的, 但是又想用Term Query对其做精确匹配, 那么可以使用Elasticsearch提供的多字段特性, 查询其keyword字段, 如productID.keyword
+         * <li/> Term Query 会算分
+         * <li/> 可以通过 Constant Score 将查询转换成一个 Filtering, 避免算分, 并利用缓存, 提高性能
+         * <li/> Avoid using the term query for text fields.
+         * </ol>
          *
-         * @param indices 索引名
+         * @param indices
          * @return ElasticTermQueryBuilder
          */
         public static ElasticTermQueryBuilder termQuery(String... indices) {
             return new ElasticTermQueryBuilder(indices);
         }
-
+        
         /**
-         * Term查询, 对输入不做分词(便捷方法)
-         * <p>
-         * 直接指定field和value, 无需先创建builder再设置field/value
+         * 在ES中, Term查询, 对输入不做分词. 会将输入作为一个整体, 在倒排索引中查找准确的词项, 并且使用相关度计算公式为每个包含该此项的文档进行相关度算分<p>
+         * <ol>
+         * <li/> Term Query 不会对查询条件做分词
+         * <li/> 如果被查询字段在文档里面是被分词的, 但是又想用Term Query对其做精确匹配, 那么可以使用Elasticsearch提供的多字段特性, 查询其keyword字段, 如productID.keyword
+         * <li/> Term Query 会算分
+         * <li/> 可以通过 Constant Score 将查询转换成一个 Filtering, 避免算分, 并利用缓存, 提高性能
+         * <li/> Avoid using the term query for text fields.
+         * </ol>
          *
-         * @param field 字段名
-         * @param value 值
-         * @return ElasticTermQueryBuilder
+         * @param indices
+         * @return ElasticTermsQueryBuilder
          */
         public static ElasticTermQueryBuilder termQuery(String field, Object value) {
             return new ElasticTermQueryBuilder().query(field, value);
