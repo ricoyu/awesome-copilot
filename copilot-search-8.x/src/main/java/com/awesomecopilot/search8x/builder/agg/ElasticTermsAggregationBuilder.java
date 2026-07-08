@@ -13,7 +13,7 @@ import com.awesomecopilot.search8x.builder.agg.sub.SubAggregation;
 import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search8x.enums.SortOrderEnum;
 import com.awesomecopilot.search8x.support.SortSupport;
-import com.awesomecopilot.search8x.support.V8AggResultSupport;
+import com.awesomecopilot.search8x.support.AggResultSupport;
 import com.awesomecopilot.search8x.vo.ElasticPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -222,7 +222,7 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		addTotalHitsToThreadLocal(searchResponse);
 		Map<String, Aggregate> aggregations = searchResponse.aggregations();
 		
-		return V8AggResultSupport.termsResult(aggregations);
+		return AggResultSupport.termsResult(aggregations);
 	}
 	
 
@@ -261,7 +261,7 @@ public class ElasticTermsAggregationBuilder extends AbstractAggregationBuilder i
 		addTotalHitsToThreadLocal(searchResponse);
 		Map<String, Aggregate> aggregations = searchResponse.aggregations();
 		
-		List<Map<String, Object>> results = V8AggResultSupport.termsResult(aggregations);
+		List<Map<String, Object>> results = AggResultSupport.termsResult(aggregations);
 		
 		ElasticPage elasticPage = ElasticPage.<Map<String, Object>>builder()
 				.results(results)

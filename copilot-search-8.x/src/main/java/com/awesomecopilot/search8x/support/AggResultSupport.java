@@ -30,11 +30,11 @@ import java.util.Map;
  *
  * @author Rico Yu ricoyu520@gmail.com
  */
-public final class V8AggResultSupport {
+public final class AggResultSupport {
 
-	private static final Logger log = LoggerFactory.getLogger(V8AggResultSupport.class);
+	private static final Logger log = LoggerFactory.getLogger(AggResultSupport.class);
 
-	private V8AggResultSupport() {
+	private AggResultSupport() {
 	}
 
 	/**

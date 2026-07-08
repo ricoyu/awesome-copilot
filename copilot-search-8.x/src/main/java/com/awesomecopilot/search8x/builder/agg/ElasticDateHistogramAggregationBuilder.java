@@ -12,7 +12,7 @@ import com.awesomecopilot.search8x.builder.agg.sub.SubAggregation;
 import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search8x.enums.CalendarInterval;
 import com.awesomecopilot.search8x.enums.FixedInterval;
-import com.awesomecopilot.search8x.support.V8AggResultSupport;
+import com.awesomecopilot.search8x.support.AggResultSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -355,7 +355,7 @@ public class ElasticDateHistogramAggregationBuilder extends AbstractAggregationB
 		addTotalHitsToThreadLocal(searchResponse);
 		Map<String, co.elastic.clients.elasticsearch._types.aggregations.Aggregate> aggregations = searchResponse.aggregations();
 		
-		return (Map<String, T>) V8AggResultSupport.dateHistogramResult(aggregations, name);
+		return (Map<String, T>) AggResultSupport.dateHistogramResult(aggregations, name);
 	}
 	
 }

@@ -7,7 +7,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.awesomecopilot.search8x.ElasticUtils;
 import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
 import com.awesomecopilot.search8x.support.ExtendedStatsAggResult;
-import com.awesomecopilot.search8x.support.V8AggResultSupport;
+import com.awesomecopilot.search8x.support.AggResultSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +93,6 @@ public class ElasticExtendedStatsAggregationBuilder extends AbstractAggregationB
 		addTotalHitsToThreadLocal(searchResponse);
 		Map<String, Aggregate> aggregations = searchResponse.aggregations();
 
-		return V8AggResultSupport.extendedStatsResult(aggregations, name);
+		return AggResultSupport.extendedStatsResult(aggregations, name);
 	}
 }

@@ -14,7 +14,7 @@ import com.awesomecopilot.search8x.builder.agg.support.Range;
 import com.awesomecopilot.search8x.builder.agg.support.UnboundFromRange;
 import com.awesomecopilot.search8x.builder.agg.support.UnboundToRange;
 import com.awesomecopilot.search8x.builder.query.BaseQueryBuilder;
-import com.awesomecopilot.search8x.support.V8AggResultSupport;
+import com.awesomecopilot.search8x.support.AggResultSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -205,6 +205,6 @@ public class ElasticRangeAggregationBuilder extends AbstractAggregationBuilder i
 		addTotalHitsToThreadLocal(searchResponse);
 		Map<String, co.elastic.clients.elasticsearch._types.aggregations.Aggregate> aggregations = searchResponse.aggregations();
 		
-		return (Map<String, T>) V8AggResultSupport.rangeResult(aggregations, name);
+		return (Map<String, T>) AggResultSupport.rangeResult(aggregations, name);
 	}
 }
