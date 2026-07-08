@@ -2439,6 +2439,158 @@ public class QueryTest {
             log.warn("Search failed: {}", e.getMessage());
         }
     }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query":"salary: [10000 TO 20000]"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testQueryStringRangequery() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("salary:[10000 TO 20000]")
+                .queryForList();
+        docs.forEach(System.out::println);
+    }
+    
+    @Test
+    public void testAgeGreater() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("age:>20")
+                .queryForList();
+        docs.forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query":"salary:[15000 TO 30000]"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testSalaryRage() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("salary:[10000 TO 20000]")
+                .queryForList();
+        docs.forEach(System.out::println);
+    }
+    
+    @Test
+    public void testFuzzyquery() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("jv~")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(0);
+        
+        docs = Query.queryString("user_info")
+                .query("jav~1")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(3);
+        docs.forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query":"tag:java^10 job:后端^5"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testWeight() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("tag:java^10 job:后端^5")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(3);
+        docs.forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query":"age:>25 AND salary:>=15000 AND (city:北京 OR city:上海) AND job:前端 -job:测试"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testAdvanced() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("age:>25 AND salary:>=15000 AND (city:北京 OR city:上海) AND job:前端 -job:测试")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(1);
+        docs.forEach(System.out::println);
+    }
+    
+    /**
+     * 查询: 内容包含开发，且标签有java，2024年新增用户
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "query":"开发 AND tag:java AND create_time:>=2024-01-01"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testAdvanced2() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("开发 AND tag:java AND create_time:>=2024-01-01")
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(2);
+        docs.forEach(System.out::println);
+    }
+    
+    /**
+     * <pre>
+     * GET user_info/_search
+     * {
+     *   "query": {
+     *     "query_string": {
+     *       "fields": ["name^5", "job^3", "city"],
+     *       "query": "开发 AND 北京",
+     *       "allow_leading_wildcard": false,
+     *       "fuzziness": 1
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testParams() {
+        List<Object> docs = Query.queryString("user_info")
+                .query("开发 AND 北京")
+                .allowLeadingWildcard(false)
+                .fuzziness(1)
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(1);
+        docs.forEach(System.out::println);
+    }
 
     /**
      * 对应原版 MatchPhraseQueryTest 的 POJO 类
