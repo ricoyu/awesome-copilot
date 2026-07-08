@@ -467,4 +467,44 @@ public class AggTest {
 				.get();
 		System.out.println(toPrettyJson(result));
 	}
+	
+	/**
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "group_by_brand": {
+	 *       "terms": {
+	 *         "field": "brand",
+	 *         "size": 10,
+	 *         "order": {
+	 *           "_count": "desc"
+	 *         }
+	 *       },
+	 *       "aggs": {
+	 *         "brand_sales": {
+	 *           "sum": {"field": "price"}
+	 *         },
+	 *         "brand_avg_price":{
+	 *           "avg": {"field": "price"}
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testSubAgg() {
+		List<Map<String, Object>> resultMap = ElasticUtils.Aggs.terms("ecommerce_order_v2")
+				.of("group_by_brand", "brand")
+				.size(10)
+				.sort("_count:desc")
+				.subAggregation(SubAggregations.sum("brand_sales", "price"))
+				.subAggregation(SubAggregations.avg("brand_avg_price", "price"))
+				.get();
+		
+		System.out.println(toPrettyJson(resultMap));
+	}
 }

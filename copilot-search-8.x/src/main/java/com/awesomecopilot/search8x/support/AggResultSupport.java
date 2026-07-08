@@ -9,6 +9,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.DateHistogramAggrega
 import co.elastic.clients.elasticsearch._types.aggregations.MinAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.MaxAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.AvgAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket;
 import co.elastic.clients.elasticsearch._types.aggregations.SumAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.ExtendedStatsAggregate;
@@ -64,7 +65,7 @@ public final class AggResultSupport {
 				if (buckets.isArray()) {
 					List<?> bucketList = buckets.array();
 					for (Object obj : bucketList) {
-						var bucket = (co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket) obj;
+						var bucket = (StringTermsBucket) obj;
 						Map<String, T> result = new HashMap<>();
 						String key = bucket.key().stringValue();
 						long docCount = bucket.docCount();
@@ -140,7 +141,7 @@ public final class AggResultSupport {
 				List<?> bucketList = buckets.array();
 				for (Object obj : bucketList) {
 					// ES 8.x StringTermsBucket 的 key() 返回 FieldValue，需要转换为字符串
-					var bucket = (co.elastic.clients.elasticsearch._types.aggregations.StringTermsBucket) obj;
+					var bucket = (StringTermsBucket) obj;
 					Map<String, T> result = new HashMap<>();
 					String key = bucket.key().stringValue();
 					long docCount = bucket.docCount();
