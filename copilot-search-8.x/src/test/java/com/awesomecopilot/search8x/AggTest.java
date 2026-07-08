@@ -583,4 +583,51 @@ public class AggTest {
 		
 		System.out.println(toPrettyJson(result));
 	}
+	
+	/**
+	 * filter聚合 + bool复合过滤: filter内嵌bool(must[term, range, range])
+	 * <pre>
+	 * GET ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "paid_order": {
+	 *       "filter": {
+	 *         "bool": {
+	 *           "must": [
+	 *             {"term": {"pay_status": 1}},
+	 *             {"range": {"price": {"gt": 100}}},
+	 *             {"range": {"create_time": {"gte": "2026-01-01 00:00:00"}}}
+	 *           ]
+	 *         }
+	 *       },
+	 *       "aggs": {
+	 *         "group_by_brand": {
+	 *           "terms": {"field": "brand"},
+	 *           "aggs": {"sales": {"sum": {"field": "price"}}}
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testFilterAggWithBoolQuery() {
+		var boolQuery = ElasticUtils.Query.bool("ecommerce_order_v2")
+				.term("pay_status", 1).must()
+				.range("price").gt(100).must()
+				.range("create_time").gte("2026-01-01 00:00:00").must();
+		
+		Map<String, Object> result = ElasticUtils.Aggs.filter("ecommerce_order_v2")
+				.of("paid_order")
+				.filter(boolQuery)
+				.subAggregation(
+						SubAggregations.terms("group_by_brand", "brand")
+								.subAggregation(SubAggregations.sum("sales", "price"))
+				)
+				.get();
+		
+		System.out.println(toPrettyJson(result));
+	}
 }
