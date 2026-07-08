@@ -81,6 +81,7 @@ import com.awesomecopilot.search8x.builder.agg.ElasticMinAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticMultiTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticExtendedStatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticValueCountAggregationBuilder;
@@ -2446,6 +2447,16 @@ public final class ElasticUtils {
          */
         public static ElasticStatsAggregationBuilder stats(String... indices) {
             return ElasticStatsAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * extended_stats聚合, 比stats聚合多了平方和、方差、标准差、标准差界限
+         *
+         * @param indices
+         * @return ElasticExtendedStatsAggregationBuilder
+         */
+        public static ElasticExtendedStatsAggregationBuilder extendedStats(String... indices) {
+            return ElasticExtendedStatsAggregationBuilder.instance(indices);
         }
 
         /**

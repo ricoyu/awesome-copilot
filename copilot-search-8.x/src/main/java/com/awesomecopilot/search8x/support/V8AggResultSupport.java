@@ -11,6 +11,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.MaxAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.AvgAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.SumAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.ExtendedStatsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.ValueCountAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
@@ -507,6 +508,86 @@ public final class V8AggResultSupport {
 	}
 
 	/**
+	 * 解析 Extended Stats 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return ExtendedStatsAggResult 包含扩展统计信息
+	 */
+	public static ExtendedStatsAggResult extendedStatsResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Extended Stats 聚合
+		if (aggregate.isExtendedStats()) {
+			ExtendedStatsAggregate extStats = aggregate.extendedStats();
+			
+			long count = extStats.count();
+			Double min = extStats.min();
+			Double max = extStats.max();
+			Double avg = extStats.avg();
+			Double sum = extStats.sum();
+			Double sumOfSquares = extStats.sumOfSquares();
+			Double variance = extStats.variance();
+			Double variancePopulation = extStats.variancePopulation();
+			Double varianceSampling = extStats.varianceSampling();
+			Double stdDeviation = extStats.stdDeviation();
+			Double stdDeviationPopulation = extStats.stdDeviationPopulation();
+			Double stdDeviationSampling = extStats.stdDeviationSampling();
+			
+			Double upper = null;
+			Double lower = null;
+			Double upperPopulation = null;
+			Double lowerPopulation = null;
+			Double upperSampling = null;
+			Double lowerSampling = null;
+			if (extStats.stdDeviationBounds() != null) {
+				upper = extStats.stdDeviationBounds().upper();
+				lower = extStats.stdDeviationBounds().lower();
+				upperPopulation = extStats.stdDeviationBounds().upperPopulation();
+				lowerPopulation = extStats.stdDeviationBounds().lowerPopulation();
+				upperSampling = extStats.stdDeviationBounds().upperSampling();
+				lowerSampling = extStats.stdDeviationBounds().lowerSampling();
+			}
+			
+			log.debug("Extended Stats Aggregation [{}]: Count={}, Min={}, Max={}, Avg={}, Sum={}, SumOfSquares={}, Variance={}, StdDeviation={}",
+					aggName, count, min, max, avg, sum, sumOfSquares, variance, stdDeviation);
+			
+			return ExtendedStatsAggResult.builder()
+					.name(aggName)
+					.count(count)
+					.min(min != null ? min : 0.0)
+					.max(max != null ? max : 0.0)
+					.avg(avg != null ? avg : 0.0)
+					.sum(sum != null ? sum : 0.0)
+					.sumOfSquares(sumOfSquares != null ? sumOfSquares : 0.0)
+					.variance(variance != null ? variance : 0.0)
+					.variancePopulation(variancePopulation)
+					.varianceSampling(varianceSampling)
+					.stdDeviation(stdDeviation != null ? stdDeviation : 0.0)
+					.stdDeviationPopulation(stdDeviationPopulation)
+					.stdDeviationSampling(stdDeviationSampling)
+					.stdDeviationBoundsUpper(upper)
+					.stdDeviationBoundsLower(lower)
+					.stdDeviationBoundsUpperPopulation(upperPopulation)
+					.stdDeviationBoundsLowerPopulation(lowerPopulation)
+					.stdDeviationBoundsUpperSampling(upperSampling)
+					.stdDeviationBoundsLowerSampling(lowerSampling)
+					.build();
+		} else {
+			log.warn("Aggregation [{}] is not an Extended Stats aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
 	 * 解析 Cardinality 聚合结果
 	 *
 	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
@@ -597,10 +678,13 @@ public final class V8AggResultSupport {
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
 				result.put(aggName, (T) statsResult(aggregations, aggName));
+			} else if (aggregate.isExtendedStats()) {
+				result.put(aggName, (T) extendedStatsResult(aggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, (T) cardinalityResult(aggregations, aggName));
 			} else if (aggregate.isValueCount()) {
-				result.put(aggName, (T) valueCountResult(aggregations, aggName));
+				ValueCountAggResult valueCountAggResult = valueCountResult(aggregations, aggName);
+				result.put(aggName, (T) Long.valueOf(valueCountAggResult.getValue()));
 			} else if (aggregate.isSum()) {
 				result.put(aggName, (T) sumResult(aggregations, aggName));
 			} else if (aggregate.isAvg()) {
@@ -645,6 +729,8 @@ public final class V8AggResultSupport {
 			// 根据聚合类型调用相应的解析方法
 			if (aggregate.isStats()) {
 				result.put(aggName, statsResult(subAggregations, aggName));
+			} else if (aggregate.isExtendedStats()) {
+				result.put(aggName, extendedStatsResult(subAggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, cardinalityResult(subAggregations, aggName));
 			} else if (aggregate.isValueCount()) {

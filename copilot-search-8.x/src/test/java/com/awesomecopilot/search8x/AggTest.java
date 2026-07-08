@@ -5,6 +5,7 @@ import com.awesomecopilot.search8x.ElasticUtils.Aggs;
 import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search8x.builder.agg.support.RangeAggResult;
 import com.awesomecopilot.search8x.builder.query.ElasticMatchQueryBuilder;
+import com.awesomecopilot.search8x.support.ExtendedStatsAggResult;
 import com.awesomecopilot.search8x.support.StatsAggResult;
 import com.awesomecopilot.search8x.support.ValueCountAggResult;
 import com.awesomecopilot.search8x.vo.ElasticPage;
@@ -411,6 +412,59 @@ public class AggTest {
 				.min("min_price", "price")
 				.get();
 
+		System.out.println(toPrettyJson(result));
+	}
+	
+	/**
+	 * **业务场景**：统计售卖的品牌总数、商品品类总数（精准去重）
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "distinct_brand": {
+	 *       "cardinality": {
+	 *         "field": "brand"
+	 *       }
+	 *     },
+	 *     "distinct_category": {
+	 *       "cardinality": {
+	 *         "field": "category"
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testCardinality() {
+		Map<String, Object> aggResult = ElasticUtils.Aggs.composite("ecommerce_order_v2")
+				.cardinality("distinct_brand", "brand")
+				.cardinality("distinct_category", "category")
+				.get();
+		System.out.println(toPrettyJson(aggResult));
+	}
+	
+	/**
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "price_full_stats": {
+	 *       "extended_stats": {
+	 *         "field": "price"
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testExtendedStats() {
+		ExtendedStatsAggResult result = ElasticUtils.Aggs.extendedStats("ecommerce_order_v2")
+				.of("price_full_stats", "price")
+				.get();
 		System.out.println(toPrettyJson(result));
 	}
 }

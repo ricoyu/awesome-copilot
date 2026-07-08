@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x.builder.agg;
 
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -117,6 +118,15 @@ public class ElasticCompositeAggregationBuilder extends AbstractAggregationBuild
 		return this;
 	}
 	
+	public ElasticCompositeAggregationBuilder extendedStats(String name, String field) {
+		ElasticAggregationBuilder builder = ElasticExtendedStatsAggregationBuilder.instance(indices).of(name, field);
+		ReflectionUtils.setField("compositeAggregationBuilder", builder, this);
+		
+		Aggregation aggregation = ((ElasticExtendedStatsAggregationBuilder) builder).build();
+		this.add(name, aggregation);
+		return this;
+	}
+	
 	/**
 	 * 聚合返回的结果中是否要包含总命中数 
 	 * @param fetchTotalHits
@@ -148,7 +158,7 @@ public class ElasticCompositeAggregationBuilder extends AbstractAggregationBuild
 		}
 		addTotalHitsToThreadLocal(searchResponse);
 		
-		Map<String, co.elastic.clients.elasticsearch._types.aggregations.Aggregate> aggregations = searchResponse.aggregations();
+		Map<String, Aggregate> aggregations = searchResponse.aggregations();
 		Map<String, Object> resultMap = V8AggResultSupport.compositeResult(aggregations);
 		
 		return (Map<String, T>) resultMap;
