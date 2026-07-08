@@ -773,6 +773,45 @@ public final class AggResultSupport {
 	}
 
 	/**
+	 * 解析 Filter 聚合结果
+	 * <p>
+	 * Filter 聚合返回单个桶, 包含 doc_count 和子聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return Map 包含 doc_count 和所有子聚合结果
+	 */
+	@SuppressWarnings("unchecked")
+	public static Map<String, Object> filterResult(Map<String, Aggregate> aggregations, String aggName) {
+		Map<String, Object> result = new HashMap<>();
+		
+		if (aggregations == null || aggregations.isEmpty()) {
+			return result;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Filter aggregation [{}] not found in response", aggName);
+			return result;
+		}
+		
+		if (aggregate.isFilter()) {
+			var filterAgg = aggregate.filter();
+			result.put("doc_count", filterAgg.docCount());
+			
+			// 解析子聚合并平铺到顶层
+			if (filterAgg.aggregations() != null && !filterAgg.aggregations().isEmpty()) {
+				Map<String, Object> subAggResults = parseSubAggregations(filterAgg.aggregations());
+				result.putAll(subAggResults);
+			}
+		} else {
+			log.warn("Aggregation [{}] is not a filter aggregation, type: {}", aggName, aggregate._kind());
+		}
+		
+		return result;
+	}
+
+	/**
 	 * 获取 Terms 聚合的总桶数
 	 *
 	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)

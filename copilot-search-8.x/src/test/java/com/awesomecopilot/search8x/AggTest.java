@@ -545,4 +545,42 @@ public class AggTest {
 		
 		System.out.println(toPrettyJson(result));
 	}
+	
+	/**
+	 * filter聚合: 先过滤再子聚合
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "paid_order": {
+	 *       "filter": {
+	 *         "term": {"pay_status": 1}
+	 *       },
+	 *       "aggs": {
+	 *         "group_by_brand": {
+	 *           "terms": {"field": "brand"},
+	 *           "aggs": {
+	 *             "sales": {"sum": {"field": "price"}}
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testFilterAgg() {
+		Map<String, Object> result = ElasticUtils.Aggs.filter("ecommerce_order_v2")
+				.of("paid_order")
+				.filter(ElasticUtils.Query.termQuery("pay_status", 1))
+				.subAggregation(
+						SubAggregations.terms("group_by_brand", "brand")
+								.subAggregation(SubAggregations.sum("sales", "price"))
+				)
+				.get();
+		
+		System.out.println(toPrettyJson(result));
+	}
 }

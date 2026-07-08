@@ -75,6 +75,7 @@ import com.awesomecopilot.search8x.builder.agg.ElasticAvgAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCardinalityAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCompositeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticDateHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticFilterAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticHistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticMaxAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticMinAggregationBuilder;
@@ -2340,6 +2341,18 @@ public final class ElasticUtils {
         }
 
         // ---------------------- Bucket 聚合 ----------------------
+
+        /**
+         * filter聚合, Bucket聚合的一种
+         * <p>
+         * 定义一个满足过滤条件的文档桶, 可以对过滤后的文档做子聚合分析
+         *
+         * @param indices
+         * @return ElasticFilterAggregationBuilder
+         */
+        public static ElasticFilterAggregationBuilder filter(String... indices) {
+            return ElasticFilterAggregationBuilder.instance(indices);
+        }
 
         /**
          * terms聚合, Bucket聚合的一种
