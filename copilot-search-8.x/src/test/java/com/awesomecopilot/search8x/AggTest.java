@@ -507,4 +507,42 @@ public class AggTest {
 		
 		System.out.println(toPrettyJson(resultMap));
 	}
+	
+	/**
+	 * **业务场景2**：多维度分组（品牌\+品类），统计细分销量
+	 * 多层嵌套子聚合: terms -> terms -> sum
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "brand_bucket": {
+	 *       "terms": {"field": "brand"},
+	 *       "aggs": {
+	 *         "category_bucket": {
+	 *           "terms": {"field": "category"},
+	 *           "aggs": {
+	 *             "total_num": {
+	 *               "sum": {"field": "num"}
+	 *             }
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedTermsWithSumSubAgg() {
+		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("ecommerce_order_v2")
+				.of("brand_bucket", "brand")
+				.subAggregation(
+						SubAggregations.terms("category_bucket", "category")
+								.subAggregation(SubAggregations.sum("total_num", "num"))
+				)
+				.get();
+		
+		System.out.println(toPrettyJson(result));
+	}
 }

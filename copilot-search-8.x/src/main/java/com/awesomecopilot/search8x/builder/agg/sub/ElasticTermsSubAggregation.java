@@ -2,6 +2,8 @@ package com.awesomecopilot.search8x.builder.agg.sub;
 
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 
+import java.util.Map;
+
 /**
  * Terms子聚合
  * <p>
@@ -42,13 +44,20 @@ public class ElasticTermsSubAggregation extends SubAggregation {
 	
 	@Override
 	public Aggregation build() {
-		return Aggregation.of(a -> a.terms(t -> {
-			t.field(field);
-			if (this.size != null) {
-				t.size(this.size);
+		Map<String, Aggregation> subAggsMap = buildSubAggregationsMap(subAggregations);
+		return Aggregation.of(a -> {
+			var cb = a.terms(t -> {
+				t.field(field);
+				if (this.size != null) {
+					t.size(this.size);
+				}
+				return t;
+			});
+			if (subAggsMap != null) {
+				cb.aggregations(subAggsMap);
 			}
-			return t;
-		}));
+			return a;
+		});
 	}
 	
 	@Override
