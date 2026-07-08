@@ -108,6 +108,15 @@ public class ElasticCompositeAggregationBuilder extends AbstractAggregationBuild
 		return this;
 	}
 	
+	public ElasticCompositeAggregationBuilder valueCount(String name, String field) {
+		ElasticAggregationBuilder builder = ElasticValueCountAggregationBuilder.instance(indices).of(name, field);
+		ReflectionUtils.setField("compositeAggregationBuilder", builder, this);
+		
+		Aggregation aggregation = ((ElasticValueCountAggregationBuilder) builder).build();
+		this.add(name, aggregation);
+		return this;
+	}
+	
 	/**
 	 * 聚合返回的结果中是否要包含总命中数 
 	 * @param fetchTotalHits

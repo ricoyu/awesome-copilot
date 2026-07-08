@@ -2,6 +2,7 @@ package com.awesomecopilot.search8x;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Conflicts;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.mapping.DynamicMapping;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
@@ -26,7 +27,6 @@ import co.elastic.clients.elasticsearch.core.PutScriptRequest;
 import co.elastic.clients.elasticsearch.core.PutScriptResponse;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
 import co.elastic.clients.elasticsearch.core.UpdateByQueryResponse;
-import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch.core.UpdateRequest;
 import co.elastic.clients.elasticsearch.core.bulk.BulkOperation;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
@@ -53,10 +53,9 @@ import co.elastic.clients.elasticsearch.indices.get_index_template.IndexTemplate
 import co.elastic.clients.elasticsearch.indices.put_index_template.IndexTemplateMapping;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.utils.EnumUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import com.awesomecopilot.common.lang.context.ThreadContext;
-import com.awesomecopilot.search8x.constants.ElasticConstants;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.builder.ElasticBulkIndexBuilder;
 import com.awesomecopilot.search8x.builder.ElasticBulkUpdateBuilder;
@@ -65,6 +64,13 @@ import com.awesomecopilot.search8x.builder.ElasticIndexDocBuilder;
 import com.awesomecopilot.search8x.builder.ElasticMultiGetBuilder;
 import com.awesomecopilot.search8x.builder.ElasticSuggestBuilder;
 import com.awesomecopilot.search8x.builder.ElasticUpdateBuilder;
+import com.awesomecopilot.search8x.builder.admin.ClusterSettingBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticIndexBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticIndexTemplateBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticPipelineBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticPutMappingBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticReindexBuilder;
+import com.awesomecopilot.search8x.builder.admin.ElasticUpdateSettingBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticAvgAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCardinalityAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCompositeAggregationBuilder;
@@ -77,13 +83,7 @@ import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.admin.ClusterSettingBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticIndexBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticIndexTemplateBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticPipelineBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticPutMappingBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticReindexBuilder;
-import com.awesomecopilot.search8x.builder.admin.ElasticUpdateSettingBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticValueCountAggregationBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticBoolQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticExistsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticGeoDistanceQueryBuilder;
@@ -102,6 +102,7 @@ import com.awesomecopilot.search8x.builder.query.ElasticTemplateQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticTermQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticTermsQueryBuilder;
 import com.awesomecopilot.search8x.builder.query.ElasticUriQueryBuilder;
+import com.awesomecopilot.search8x.constants.ElasticConstants;
 import com.awesomecopilot.search8x.enums.Analyzer;
 import com.awesomecopilot.search8x.enums.Dynamic;
 import com.awesomecopilot.search8x.enums.IndexState;
@@ -253,6 +254,9 @@ public final class ElasticUtils {
     
     /**
      * 返回索引的文档数量
+     * <pre>
+     * GET es_agg_order/_count
+     * </pre>
      * <p>
      * 使用ES 8.x Count API, 比 SearchRequest + size(0) 更高效
      *
@@ -2454,6 +2458,18 @@ public final class ElasticUtils {
          */
         public static ElasticCardinalityAggregationBuilder cardinality(String... indices) {
             return ElasticCardinalityAggregationBuilder.instance(indices);
+        }
+
+        /**
+         * Value Count聚合, 统计某个字段的非空值数量(不做去重) <br/>
+         * 区别于 cardinality 聚合, value_count 不做去重, 只统计非空值数量
+         * <p>
+         *
+         * @param indices
+         * @return ElasticValueCountAggregationBuilder
+         */
+        public static ElasticValueCountAggregationBuilder valueCount(String... indices) {
+            return ElasticValueCountAggregationBuilder.instance(indices);
         }
 
         /**

@@ -6,6 +6,7 @@ import com.awesomecopilot.search8x.builder.agg.sub.SubAggregations;
 import com.awesomecopilot.search8x.builder.agg.support.RangeAggResult;
 import com.awesomecopilot.search8x.builder.query.ElasticMatchQueryBuilder;
 import com.awesomecopilot.search8x.support.StatsAggResult;
+import com.awesomecopilot.search8x.support.ValueCountAggResult;
 import com.awesomecopilot.search8x.vo.ElasticPage;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,17 @@ import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
  */
 @Slf4j
 public class AggTest {
+	
+	/**
+	 * 基础单值指标（value_count/sum/avg/max/min/count）
+	 */
+	@Test
+	public void testBasicValue() {
+		ValueCountAggResult result = ElasticUtils.Aggs.valueCount("ecommerce_order_v2")
+				.of("total_order_count", "order_no")
+				.get();
+		System.out.println(toPrettyJson(result));
+	}
 
 	@Test
 	public void testBankAgeTerms() {
@@ -369,5 +381,36 @@ public class AggTest {
 		page.setTotalCount(results.size());
 		log.info("第{}页, 每页{}条, 总共{}条", page.getPageNum(), page.getPageSize(), page.getTotalCount());
 		page.getResults().forEach((result) -> System.out.println(toPrettyJson(result)));
+	}
+
+	/**
+	 * 组合多个 Metric 聚合: value_count + sum + avg + max + min
+	 * <p>
+	 * 等价 DSL:
+	 * <pre>
+	 * POST ecommerce_order_v2/_search
+	 * {
+	 *   "size": 0,
+	 *   "aggs": {
+	 *     "total_order_count": { "value_count": { "field": "order_no" } },
+	 *     "total_sales":       { "sum":         { "field": "price" } },
+	 *     "avg_price":         { "avg":         { "field": "price" } },
+	 *     "max_price":         { "max":         { "field": "price" } },
+	 *     "min_price":         { "min":         { "field": "price" } }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testCompositeMetricAggs() {
+		Map<String, Object> result = ElasticUtils.Aggs.composite("ecommerce_order_v2")
+				.valueCount("total_order_count", "order_no")
+				.sum("total_sales", "price")
+				.avg("avg_price", "price")
+				.max("max_price", "price")
+				.min("min_price", "price")
+				.get();
+
+		System.out.println(toPrettyJson(result));
 	}
 }

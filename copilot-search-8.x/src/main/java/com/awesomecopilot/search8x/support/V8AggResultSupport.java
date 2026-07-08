@@ -12,6 +12,7 @@ import co.elastic.clients.elasticsearch._types.aggregations.AvgAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.SumAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.StatsAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.CardinalityAggregate;
+import co.elastic.clients.elasticsearch._types.aggregations.ValueCountAggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Buckets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -537,6 +538,40 @@ public final class V8AggResultSupport {
 	}
 
 	/**
+	 * 解析 Value Count 聚合结果
+	 *
+	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
+	 * @param aggName      聚合名称
+	 * @return ValueCountAggResult 包含聚合名称和非空值数量（不做去重）
+	 */
+	public static ValueCountAggResult valueCountResult(Map<String, Aggregate> aggregations, String aggName) {
+		if (aggregations == null || aggregations.isEmpty()) {
+			return null;
+		}
+		
+		Aggregate aggregate = aggregations.get(aggName);
+		if (aggregate == null) {
+			log.warn("Aggregation [{}] not found in response", aggName);
+			return null;
+		}
+		
+		// 处理 Value Count 聚合
+		if (aggregate.isValueCount()) {
+			ValueCountAggregate valueCountAggregate = aggregate.valueCount();
+			long value = (long) valueCountAggregate.value();
+			
+			log.debug("Value Count Aggregation [{}]: Value={}", aggName, value);
+			return ValueCountAggResult.builder()
+					.name(aggName)
+					.value(value)
+					.build();
+		} else {
+			log.warn("Aggregation [{}] is not a Value Count aggregation, type: {}", aggName, aggregate._kind());
+			return null;
+		}
+	}
+
+	/**
 	 * 解析 Composite 聚合结果（多个子聚合的组合）
 	 *
 	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
@@ -564,6 +599,8 @@ public final class V8AggResultSupport {
 				result.put(aggName, (T) statsResult(aggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, (T) cardinalityResult(aggregations, aggName));
+			} else if (aggregate.isValueCount()) {
+				result.put(aggName, (T) valueCountResult(aggregations, aggName));
 			} else if (aggregate.isSum()) {
 				result.put(aggName, (T) sumResult(aggregations, aggName));
 			} else if (aggregate.isAvg()) {
@@ -610,6 +647,8 @@ public final class V8AggResultSupport {
 				result.put(aggName, statsResult(subAggregations, aggName));
 			} else if (aggregate.isCardinality()) {
 				result.put(aggName, cardinalityResult(subAggregations, aggName));
+			} else if (aggregate.isValueCount()) {
+				result.put(aggName, valueCountResult(subAggregations, aggName));
 			} else if (aggregate.isSum()) {
 				result.put(aggName, sumResult(subAggregations, aggName));
 			} else if (aggregate.isAvg()) {
