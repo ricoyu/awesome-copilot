@@ -71,13 +71,15 @@ public final class AggResultSupport {
 						long docCount = bucket.docCount();
 						
 						log.debug("Terms Bucket [{}]: Key={}, DocCount={}", aggName, key, docCount);
-						result.put(key, (T) Long.valueOf(docCount));
+						// 使用与 DSL 对齐的格式: key 和 doc_count 作为独立字段
+						result.put("key", (T) key);
+						result.put("doc_count", (T) Long.valueOf(docCount));
 						
-						// 处理子聚合
+						// 处理子聚合，直接平铺到顶层（与 DSL 输出格式对齐）
 						if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
 							Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
-							if (!subAggResults.isEmpty()) {
-								result.put("_sub_aggregations", (T) subAggResults);
+							for (Map.Entry<String, Object> subEntry : subAggResults.entrySet()) {
+								result.put(subEntry.getKey(), (T) subEntry.getValue());
 							}
 						}
 						
@@ -100,13 +102,15 @@ public final class AggResultSupport {
 						long docCount = bucket.docCount();
 						
 						log.debug("Terms Bucket [{}]: Key={}, DocCount={}", aggName, key, docCount);
-						result.put(key, (T) Long.valueOf(docCount));
+						// 使用与 DSL 对齐的格式: key 和 doc_count 作为独立字段
+						result.put("key", (T) key);
+						result.put("doc_count", (T) Long.valueOf(docCount));
 						
-						// 处理子聚合
+						// 处理子聚合，直接平铺到顶层（与 DSL 输出格式对齐）
 						if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
 							Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
-							if (!subAggResults.isEmpty()) {
-								result.put("_sub_aggregations", (T) subAggResults);
+							for (Map.Entry<String, Object> subEntry : subAggResults.entrySet()) {
+								result.put(subEntry.getKey(), (T) subEntry.getValue());
 							}
 						}
 						
@@ -147,13 +151,15 @@ public final class AggResultSupport {
 					long docCount = bucket.docCount();
 					
 					log.debug("Terms Bucket: Key={}, DocCount={}", key, docCount);
-					result.put(key, (T) Long.valueOf(docCount));
+					// 使用与 DSL 对齐的格式: key 和 doc_count 作为独立字段
+					result.put("key", (T) key);
+					result.put("doc_count", (T) Long.valueOf(docCount));
 					
-					// 处理子聚合
+					// 处理子聚合，直接平铺到顶层（与 DSL 输出格式对齐）
 					if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
 						Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
-						if (!subAggResults.isEmpty()) {
-							result.put("_sub_aggregations", (T) subAggResults);
+						for (Map.Entry<String, Object> subEntry : subAggResults.entrySet()) {
+							result.put(subEntry.getKey(), (T) subEntry.getValue());
 						}
 					}
 					
@@ -176,13 +182,15 @@ public final class AggResultSupport {
 					long docCount = bucket.docCount();
 					
 					log.debug("Terms Bucket: Key={}, DocCount={}", key, docCount);
-					result.put(key, (T) Long.valueOf(docCount));
+					// 使用与 DSL 对齐的格式: key 和 doc_count 作为独立字段
+					result.put("key", (T) key);
+					result.put("doc_count", (T) Long.valueOf(docCount));
 					
-					// 处理子聚合
+					// 处理子聚合，直接平铺到顶层（与 DSL 输出格式对齐）
 					if (bucket.aggregations() != null && !bucket.aggregations().isEmpty()) {
 						Map<String, Object> subAggResults = parseSubAggregations(bucket.aggregations());
-						if (!subAggResults.isEmpty()) {
-							result.put("_sub_aggregations", (T) subAggResults);
+						for (Map.Entry<String, Object> subEntry : subAggResults.entrySet()) {
+							result.put(subEntry.getKey(), (T) subEntry.getValue());
 						}
 					}
 					
