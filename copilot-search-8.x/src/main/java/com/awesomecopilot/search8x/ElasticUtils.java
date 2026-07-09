@@ -2151,7 +2151,7 @@ public final class ElasticUtils {
         }
 
         /**
-         * Terms查询, 匹配多个精确值中的任意一个
+         * Terms查询, 匹配多个精确值中的任意一个, 相当于SQL中的 in 逻辑
          *
          * @param indices 索引名
          * @return ElasticTermsQueryBuilder

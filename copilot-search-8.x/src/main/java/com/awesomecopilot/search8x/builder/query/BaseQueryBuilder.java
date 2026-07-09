@@ -308,6 +308,8 @@ public abstract class BaseQueryBuilder {
             Map<String, Object> source = hit.source();
             if (source == null) {
                 continue;
+            }else {
+                source.put("_id", hit.id());
             }
             if (resultType == null || resultType == Object.class || resultType == String.class) {
                 results.add((T) JacksonUtils.toJson(source));

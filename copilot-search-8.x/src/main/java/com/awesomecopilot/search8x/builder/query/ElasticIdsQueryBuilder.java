@@ -22,6 +22,20 @@ public class ElasticIdsQueryBuilder extends BaseQueryBuilder {
         super(indices);
     }
 
+    public ElasticIdsQueryBuilder ids(Long... ids) {
+        Objects.requireNonNull(ids, "ids cannot be null!");
+        this.ids = Arrays.stream(ids).map(String::valueOf).toArray(String[]::new);
+        this.size = ids.length;
+        return this;
+    }
+
+    public ElasticIdsQueryBuilder ids(Integer... ids) {
+        Objects.requireNonNull(ids, "ids cannot be null!");
+        this.ids = Arrays.stream(ids).map(String::valueOf).toArray(String[]::new);
+        this.size = ids.length;
+        return this;
+    }
+
     public ElasticIdsQueryBuilder ids(String... ids) {
         Objects.requireNonNull(ids, "ids cannot be null!");
         this.ids = ids;

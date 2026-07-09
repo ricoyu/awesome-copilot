@@ -3,6 +3,7 @@ package com.awesomecopilot.search8x;
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import com.awesomecopilot.search8x.ElasticUtils.Query;
+import com.awesomecopilot.search8x.pojo.GoodsEs;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,49 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @Slf4j
 public class QueryTest {
+    
+    @Test
+    public void testShopGoodsTermQuery() {
+        List<GoodsEs> goods = ElasticUtils.Query.termQuery("shop_goods")
+                .query("category", "手机数码")
+                .size(100)
+                .resultType(GoodsEs.class)
+                .queryForList();
+        assertThat(goods.size()).isEqualTo(20);
+        goods.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * terms 查询（多关键词精准匹配，in 逻辑）
+     * <pre>
+     * POST shop_goods/_search
+     * {
+     *   "query": {
+     *     "terms": {
+     *       "category": ["手机数码", "家用电器"]
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testGoodsTermsQuery() {
+        List<Object> docs = ElasticUtils.Query.termsQuery("shop_goods")
+                .query("category", "手机数码", "电脑")
+                .size(100).queryForList();
+        docs.stream().forEach(System.out::println);
+    }
+    
+    @Test
+    public void testGoodsIdsquery() {
+        List<Object> docs = Query.idsQuery("shop_goods")
+                .ids("Sn-fRJ8Bu9b8NT5bPKe5", "S3-fRJ8Bu9b8NT5bPKe6", "TH-fRJ8Bu9b8NT5bPKe6")
+                //.ids(1,2,3)
+                .size(10)
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(3);
+        docs.stream().forEach(System.out::println);
+    }
     
     /**
      * <pre>

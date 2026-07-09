@@ -5,6 +5,7 @@ import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.common.lang.vo.Result;
 import com.awesomecopilot.common.lang.vo.Results;
 import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.json.pojo.GoodsEs;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,6 +44,50 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class JacksonUtilsTest {
 	
+	@Test
+	public void testMap2Object() {
+		String json = """
+				{
+				  "goods_id": "G001",
+				  "goods_name": "华为Mate70 Pro 5G智能手机",
+				  "goods_desc": "搭载麒麟芯片，超长续航，国产旗舰手机，支持快充拍照",
+				  "category": "手机数码",
+				  "price": 5999.0,
+				  "stock": 1280,
+				  "sales": 3690,
+				  "online": true,
+				  "publishing_time": "2026-01-15 09:20:00",
+				  "tags": [
+				    "旗舰",
+				    "5G",
+				    "国产"
+				  ],
+				  "brand": {
+				    "brand_id": "B001",
+				    "brand_name": "华为",
+				    "brand_addr": "深圳"
+				  },
+				  "skuList": [
+				    {
+				      "sku_id": "S00101",
+				      "spec_name": "12G+512G",
+				      "sku_price": 5999,
+				      "sku_stock": 420,
+				      "color": "黑色"
+				    },
+				    {
+				      "sku_id": "S00102",
+				      "spec_name": "16G+1T",
+				      "sku_price": 6799,
+				      "sku_stock": 860,
+				      "color": "银色"
+				    }
+				  ]
+				}""";
+		Map<String, Object> map = JacksonUtils.toMap(json);
+		GoodsEs goods = JacksonUtils.mapToPojo(map, GoodsEs.class);
+		assertThat(goods.getSkuList()).isNotNull();
+	}
 	@Test
 	public void testToJsonObject() {
 		String json = """
