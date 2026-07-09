@@ -75,6 +75,7 @@ import com.awesomecopilot.search8x.builder.agg.ElasticAvgAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCardinalityAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticCompositeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticDateHistogramAggregationBuilder;
+import com.awesomecopilot.search8x.builder.agg.ElasticExtendedStatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticFilterAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticHistogramAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticMaxAggregationBuilder;
@@ -82,7 +83,6 @@ import com.awesomecopilot.search8x.builder.agg.ElasticMinAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticMultiTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticRangeAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticStatsAggregationBuilder;
-import com.awesomecopilot.search8x.builder.agg.ElasticExtendedStatsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticSumAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticTermsAggregationBuilder;
 import com.awesomecopilot.search8x.builder.agg.ElasticValueCountAggregationBuilder;
@@ -111,6 +111,7 @@ import com.awesomecopilot.search8x.enums.IndexState;
 import com.awesomecopilot.search8x.enums.SuggestMode;
 import com.awesomecopilot.search8x.exception.IndexTemplateException;
 import com.awesomecopilot.search8x.factory.ElasticsearchClientFactory;
+import com.awesomecopilot.search8x.introspector.DocIdAnnotationIntrospector;
 import com.awesomecopilot.search8x.support.BulkResult;
 import com.awesomecopilot.search8x.support.IndexSupport;
 import com.awesomecopilot.search8x.support.MappingSupport;
@@ -118,6 +119,9 @@ import com.awesomecopilot.search8x.support.SettingsSupport;
 import com.awesomecopilot.search8x.support.UpdateResult;
 import com.awesomecopilot.search8x.vo.Index;
 import com.awesomecopilot.search8x.vo.VersionedDoc;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import jakarta.json.stream.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,6 +174,17 @@ public final class ElasticUtils {
      */
     public static final ElasticsearchClient INDEX_CLIENT = QUERY_CLIENT;
     
+    static {
+        ObjectMapper mapper = JacksonUtils.objectMapper();
+        mapper.registerModule(new SimpleModule("docIdIntrospector") {
+            @Override
+            public void setupModule(SetupContext context) {
+                // 把自定义 introspector 加到链的最后（优先级高）
+                AnnotationIntrospector introspector = new DocIdAnnotationIntrospector();
+                context.appendAnnotationIntrospector(introspector);
+            }
+        });
+    }
     /**
      * 初始化客户端连接
      */
@@ -2191,7 +2206,7 @@ public final class ElasticUtils {
         }
 
         /**
-         * exists Query
+         * exists Query, 判断字段是否存在、不为 null
          *
          * @param indices 索引名
          * @return ElasticExistsQueryBuilder

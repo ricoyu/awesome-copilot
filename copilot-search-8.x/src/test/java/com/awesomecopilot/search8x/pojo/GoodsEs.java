@@ -1,5 +1,6 @@
 package com.awesomecopilot.search8x.pojo;
 
+import com.awesomecopilot.search8x.annotation.DocId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import lombok.ToString;
@@ -14,7 +15,10 @@ import java.util.List;
 @Data
 @ToString
 public class GoodsEs {
-
+    
+    @DocId
+    private String id;
+    
     /** 商品ID，keyword精确检索 */
     private String goodsId;
 

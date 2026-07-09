@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * ElasticUtils.Query 查询单元测试类
@@ -38,6 +39,7 @@ public class QueryTest {
                 .resultType(GoodsEs.class)
                 .queryForList();
         assertThat(goods.size()).isEqualTo(20);
+        assertNotNull(goods.get(0).getId());
         goods.stream().forEach(System.out::println);
     }
     
@@ -70,6 +72,40 @@ public class QueryTest {
                 .size(10)
                 .queryForList();
         assertThat(docs.size()).isEqualTo(3);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    /**
+     * 查询没有下架标记（online字段存在）
+     * <pre>
+     * POST shop_goods/_search
+     * {
+     *   "query": {
+     *     "exists": {
+     *       "field": "online"
+     *     }
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testGoodsExistsQuery() {
+        List<Object> docs = Query.exists("shop_goods")
+                .field("online")
+                .queryForList();
+        assertThat(docs.size()).isGreaterThan(0);
+        docs.stream().forEach(System.out::println);
+    }
+    
+    @Test
+    public void testGoodsRangeQuery() {
+        List<Object> docs = Query.range("shop_goods")
+                .field("price")
+                .gte(3000.0)
+                .lte(8000.0)
+                .size(100)
+                .queryForList();
+        assertThat(docs.size()).isEqualTo(31);
         docs.stream().forEach(System.out::println);
     }
     

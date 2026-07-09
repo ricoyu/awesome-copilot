@@ -14,6 +14,8 @@ import java.util.List;
 @Data
 @ToString
 public class GoodsEs {
+    
+    private String id;
 
     /** 商品ID，keyword精确检索 */
     private String goodsId;
