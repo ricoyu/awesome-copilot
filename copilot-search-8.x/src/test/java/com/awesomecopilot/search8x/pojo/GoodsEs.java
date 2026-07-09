@@ -2,6 +2,7 @@ package com.awesomecopilot.search8x.pojo;
 
 import com.awesomecopilot.search8x.annotation.DocId;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.ToString;
 
@@ -20,12 +21,15 @@ public class GoodsEs {
     private String id;
     
     /** 商品ID，keyword精确检索 */
+    @JsonProperty("goods_id")
     private String goodsId;
 
     /** 商品名称，ik_max分词存储，ik_smart检索 */
+    @JsonProperty("goods_name")
     private String goodsName;
 
     /** 商品描述，ik_max分词存储，ik_smart检索 */
+    @JsonProperty("goods_desc")
     private String goodsDesc;
 
     /** 商品分类，keyword */
@@ -48,6 +52,7 @@ public class GoodsEs {
      * ES格式：yyyy-MM-dd HH:mm:ss
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonProperty("publishing_time")
     private LocalDateTime publishingTime;
 
     /** 商品标签数组，keyword多值字段 */
@@ -57,5 +62,6 @@ public class GoodsEs {
     private BrandEs brand;
 
     /** SKU规格列表，nested嵌套类型 */
+    @JsonProperty("sku_list")
     private List<SkuEs> skuList;
 }

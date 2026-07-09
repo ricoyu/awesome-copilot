@@ -2,6 +2,7 @@ package com.awesomecopilot.search8x;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils.Query;
 import com.awesomecopilot.search8x.pojo.GoodsEs;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,12 @@ public class QueryTest {
         assertThat(goods.size()).isEqualTo(20);
         assertNotNull(goods.get(0).getId());
         goods.stream().forEach(System.out::println);
+        
+        String id = goods.get(0).getId();
+        String json = JacksonUtils.toPrettyJson(goods.get(0));
+        System.out.print(json);
+        GoodsEs object = JacksonUtils.toObject(json, GoodsEs.class);
+        assertEquals(id, object.getId());
     }
     
     /**
