@@ -136,6 +136,15 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
         return existsBuilder;
     }
 
+    /**
+     * 创建 match_all 查询并返回 BoolQuery 接口
+     */
+    public com.awesomecopilot.search8x.builder.query.BoolQuery matchAll() {
+        ElasticMatchAllQueryBuilder matchAllBuilder = new ElasticMatchAllQueryBuilder();
+        matchAllBuilder.setBoolQueryBuilder(this);
+        return matchAllBuilder;
+    }
+
     public ElasticBoolQueryBuilder minimumShouldMatch(int minimumShouldMatch) {
         this.minimumShouldMatch = minimumShouldMatch;
         return this;

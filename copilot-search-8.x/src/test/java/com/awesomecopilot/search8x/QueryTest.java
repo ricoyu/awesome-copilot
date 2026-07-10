@@ -448,6 +448,7 @@ public class QueryTest {
 	@Test
 	public void testBoolShouldTermShopGoods() {
 		List<GoodsEs> docs = Query.bool("shop_goods")
+				.matchAll().must()
 				.term("brand.brand_name", "华为").should()
 				.term("brand.brand_name", "小米").should()
 				.size(200)
