@@ -31,6 +31,11 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     private String nestedPath;
     private Object minimumShouldMatch;
     private List<Node> queries = new ArrayList<>();
+    
+    /**
+     * 临时的 nestedPath，用于传递给下一个创建的子查询
+     */
+    private String pendingNestedPath;
 
     private static class Node {
         BoolQueryType type;
@@ -47,7 +52,13 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     }
 
     public ElasticBoolQueryBuilder nestedPath(String path) {
-        this.nestedPath = path;
+        // 如果还没有任何子查询，则设置整体的 nestedPath
+        // 如果已经有子查询，则设置 pendingNestedPath 给下一个子查询
+        if (queries.isEmpty()) {
+            this.nestedPath = path;
+        } else {
+            this.pendingNestedPath = path;
+        }
         return this;
     }
 
@@ -89,6 +100,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolTermQuery term(String field, Object value) {
         ElasticTermQueryBuilder termBuilder = new ElasticTermQueryBuilder();
         termBuilder.query(field, value);
+        if (pendingNestedPath != null) {
+            termBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         termBuilder.setBoolQueryBuilder(this);
         return termBuilder;
     }
@@ -102,6 +117,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
         }
         ElasticTermsQueryBuilder termsBuilder = new ElasticTermsQueryBuilder();
         termsBuilder.query(field, values);
+        if (pendingNestedPath != null) {
+            termsBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         termsBuilder.setBoolQueryBuilder(this);
         return termsBuilder;
     }
@@ -112,6 +131,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolMatchQuery match(String field, String value) {
         ElasticMatchQueryBuilder matchBuilder = new ElasticMatchQueryBuilder();
         matchBuilder.query(field, value);
+        if (pendingNestedPath != null) {
+            matchBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         matchBuilder.setBoolQueryBuilder(this);
         return matchBuilder;
     }
@@ -122,6 +145,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolRangeQuery range(String field) {
         ElasticRangeQueryBuilder rangeBuilder = new ElasticRangeQueryBuilder();
         rangeBuilder.field(field);
+        if (pendingNestedPath != null) {
+            rangeBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         rangeBuilder.setBoolQueryBuilder(this);
         return rangeBuilder;
     }
@@ -132,6 +159,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public com.awesomecopilot.search8x.builder.query.BoolQuery exists(String field) {
         ElasticExistsQueryBuilder existsBuilder = new ElasticExistsQueryBuilder();
         existsBuilder.field(field);
+        if (pendingNestedPath != null) {
+            existsBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         existsBuilder.setBoolQueryBuilder(this);
         return existsBuilder;
     }
@@ -141,6 +172,10 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      */
     public com.awesomecopilot.search8x.builder.query.BoolQuery matchAll() {
         ElasticMatchAllQueryBuilder matchAllBuilder = new ElasticMatchAllQueryBuilder();
+        if (pendingNestedPath != null) {
+            matchAllBuilder.nestedPath(pendingNestedPath);
+            pendingNestedPath = null;
+        }
         matchAllBuilder.setBoolQueryBuilder(this);
         return matchAllBuilder;
     }
@@ -190,6 +225,8 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
             return b;
         }));
 
+        // 只有当显式设置了 nestedPath 且没有子查询使用它时，才将整个 bool 查询包裹在 nested 中
+        // 这种情况适用于所有子查询都应该在同一个 nested 上下文中的场景
         if (isNotBlank(nestedPath)) {
             final Query innerQuery = query;
             query = Query.of(q -> q.nested(n -> n.path(nestedPath).query(innerQuery).scoreMode(ChildScoreMode.Avg)));

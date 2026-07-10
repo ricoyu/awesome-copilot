@@ -2,9 +2,12 @@ package com.awesomecopilot.search8x.builder.query;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Terms Query Builder for ES 8.x
@@ -15,6 +18,7 @@ import java.util.List;
  */
 public class ElasticTermsQueryBuilder extends BaseQueryBuilder implements BoolQuery {
 
+    private String nestedPath;
     private Object[] values;
     private ElasticBoolQueryBuilder boolQueryBuilder;
 
@@ -28,6 +32,11 @@ public class ElasticTermsQueryBuilder extends BaseQueryBuilder implements BoolQu
     public ElasticTermsQueryBuilder query(String field, Object... values) {
         this.field = field;
         this.values = values;
+        return this;
+    }
+
+    public ElasticTermsQueryBuilder nestedPath(String path) {
+        this.nestedPath = path;
         return this;
     }
 
@@ -86,6 +95,12 @@ public class ElasticTermsQueryBuilder extends BaseQueryBuilder implements BoolQu
                 }
             }
         }
-        return Query.of(q -> q.terms(t -> t.field(field).terms(ts -> ts.value(fieldValues))));
+        Query query = Query.of(q -> q.terms(t -> t.field(field).terms(ts -> ts.value(fieldValues))));
+
+        if (isNotBlank(nestedPath)) {
+            final Query innerQuery = query;
+            query = Query.of(q -> q.nested(n -> n.path(nestedPath).query(innerQuery).scoreMode(ChildScoreMode.Avg)));
+        }
+        return query;
     }
 }

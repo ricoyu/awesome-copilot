@@ -645,7 +645,7 @@ public class QueryTest {
 		//		.path("specs")
 		//		.query(q -> q.term(t -> t.field("specs.color").value("深空灰")))
 		//		.scoreMode(ChildScoreMode.Avg));
-		//
+
 		List<AirConditioner> results = Query.bool("air_conditioner")
 				.match("goods_name", "美的空调").must()
 				//.must(nestedQuery)
@@ -3221,6 +3221,117 @@ public class QueryTest {
 				.queryForList();
 		assertThat(docs.size()).isEqualTo(1);
 		docs.forEach(System.out::println);
+	}
+	
+	/**
+	 * 测试 ElasticTermsQueryBuilder 的 nestedPath 功能
+	 * <p>
+	 * 查询 specs 嵌套文档中 color 为 "纯净白" 或 "象牙白" 的空调
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "query": {
+	 *     "nested": {
+	 *       "path": "specs",
+	 *       "query": {
+	 *         "terms": {
+	 *           "specs.color": ["纯净白", "象牙白"]
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedTermsQuery() {
+		List<AirConditioner> results = Query.termsQuery("air_conditioner")
+				.nestedPath("specs")
+				.query("specs.color", "纯净白", "象牙白")
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		// 验证查询能够正常执行并返回结果
+		assertThat(results.size()).isEqualTo(4);
+		for (AirConditioner result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	
+	/**
+	 * 测试 ElasticExistsQueryBuilder 的 nestedPath 功能
+	 * <p>
+	 * 查询 specs 嵌套文档中 horse_power 字段存在的空调
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "query": {
+	 *     "nested": {
+	 *       "path": "specs",
+	 *       "query": {
+	 *         "exists": {
+	 *           "field": "specs.horse_power"
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedExistsQuery() {
+		List<AirConditioner> results = Query.exists("air_conditioner")
+				.nestedPath("specs")
+				.field("specs.horse_power")
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		// 验证查询能够正常执行并返回结果
+		assertThat(results.size()).isEqualTo(22);
+		for (AirConditioner result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	
+	/**
+	 * 测试 ElasticMatchAllQueryBuilder 的 nestedPath 功能
+	 * <p>
+	 * 在 nested 上下文中使用 match_all，匹配所有有 specs 嵌套文档的父文档
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "query": {
+	 *     "nested": {
+	 *       "path": "specs",
+	 *       "query": {
+	 *         "match_all": {}
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedMatchAllQuery() {
+		List<AirConditioner> results = Query.matchAllQuery("air_conditioner")
+				.nestedPath("specs")
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		// 验证查询能够正常执行并返回结果
+		assertThat(results.size()).isEqualTo(22);
+		for (AirConditioner result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	
+	@Test
+	public void testMUltiMatchAndNestedRange() {
+		ElasticUtils.Query.bool("air_conditioner")
+				.
 	}
 	
 	/**

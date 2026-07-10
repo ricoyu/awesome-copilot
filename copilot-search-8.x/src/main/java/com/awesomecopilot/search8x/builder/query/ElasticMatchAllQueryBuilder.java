@@ -1,6 +1,9 @@
 package com.awesomecopilot.search8x.builder.query;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Match All Query Builder for ES 8.x
@@ -9,6 +12,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
  */
 public class ElasticMatchAllQueryBuilder extends BaseQueryBuilder implements BoolQuery {
 
+    private String nestedPath;
     private ElasticBoolQueryBuilder boolQueryBuilder;
 
     public ElasticMatchAllQueryBuilder(String... indices) {
@@ -22,6 +26,11 @@ public class ElasticMatchAllQueryBuilder extends BaseQueryBuilder implements Boo
 
     public ElasticMatchAllQueryBuilder excludeSources(String... fields) {
         this.excludeSource = fields;
+        return this;
+    }
+
+    public ElasticMatchAllQueryBuilder nestedPath(String path) {
+        this.nestedPath = path;
         return this;
     }
 
@@ -55,6 +64,12 @@ public class ElasticMatchAllQueryBuilder extends BaseQueryBuilder implements Boo
 
     @Override
     protected Query buildQuery() {
-        return Query.of(q -> q.matchAll(ma -> ma));
+        Query query = Query.of(q -> q.matchAll(ma -> ma));
+
+        if (isNotBlank(nestedPath)) {
+            final Query innerQuery = query;
+            query = Query.of(q -> q.nested(n -> n.path(nestedPath).query(innerQuery).scoreMode(ChildScoreMode.Avg)));
+        }
+        return query;
     }
 }
