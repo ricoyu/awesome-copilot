@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils.Query;
+import com.awesomecopilot.search8x.pojo.AirConditioner;
 import com.awesomecopilot.search8x.pojo.GoodsEs;
 import com.awesomecopilot.search8x.pojo.GoodsInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,8 @@ public class QueryTest {
 		List<GoodsEs> goods = ElasticUtils.Query.termQuery("shop_goods")
 				.query("category", "手机数码")
 				.size(100)
+				.includeSources("goods_name", "goods_desc", "category", "brand.brand_name")
+				.excludeSources("_id")
 				.resultType(GoodsEs.class)
 				.queryForList();
 		assertThat(goods.size()).isEqualTo(20);
@@ -445,6 +448,29 @@ public class QueryTest {
 		}
 	}
 	
+	/**
+	 * should 多条件或逻辑（匹配华为 / 小米品牌加分）
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {"match_all": {}}
+	 *       ],
+	 *       "should": [
+	 *         {"term": {
+	 *           "brand.brand_name": "华为"
+	 *         }},
+	 *         {"term": {
+	 *           "brand.brand_name": "小米"
+	 *         }}
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
 	@Test
 	public void testBoolShouldTermShopGoods() {
 		List<GoodsEs> docs = Query.bool("shop_goods")
@@ -462,6 +488,178 @@ public class QueryTest {
 		}
 	}
 	
+	/**
+	 * must_not 排除条件：排除苹果商品
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {"match": {
+	 *           "category": "手机数码"
+	 *         }}
+	 *       ],
+	 *       "must_not": [
+	 *         {"term": {
+	 *           "brand.brand_name": "苹果"
+	 *         }}
+	 *       ]
+	 *     }
+	 *   },
+	 *   "_source": ["goods_name", "goods_desc", "category", "brand.brand_name"]
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testShopGoodBoolMustMustNot() {
+		List<GoodsEs> goods = ElasticUtils.Query.bool("shop_goods")
+				.match("category", "手机数码").must()
+				.term("brand.brand_name", "苹果").mustNot()
+				.includeSources("goods_name", "goods_desc", "category", "brand.brand_name")
+				.excludeSources("_id")
+				.size(100)
+				.resultType(GoodsEs.class)
+				.queryForList();
+		assertThat(goods.size()).isEqualTo(17);
+		goods.stream().forEach(System.out::println);
+	}
+	
+	/**
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "nested": {
+	 *       "path": "sku_list",
+	 *       "query": {
+	 *         "term": {
+	 *           "sku_list.color": "白色"
+	 *         }
+	 *       }
+	 *     }
+	 *   },
+	 *   "_source": ["goods_name", "goods_desc", "sku_list"]
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testQueryShopGoodNested() {
+		List<GoodsEs> goods = ElasticUtils.Query.termQuery("shop_goods")
+				.nestedPath("sku_list")
+				.query("sku_list.color", "白色")
+				.includeSources("goods_name", "goods_desc", "sku_list")
+				.resultType(GoodsEs.class)
+				.size(200)
+				.queryForList();
+		assertThat(goods.size()).isEqualTo(23);
+		for (GoodsEs good : goods) {
+			assertThat(good.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(good));
+		}
+	}
+
+	/**
+	 * 空调嵌套查询：筛选 specs 嵌套文档中颜色为"纯净白"且售价 >= 2400 的空调
+	 * <p>
+	 * 等价 DSL:
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "size": 10,
+	 *   "query": {
+	 *     "bool": {
+	 *       "filter": [
+	 *         {
+	 *           "nested": {
+	 *             "path": "specs",
+	 *             "query": {
+	 *               "bool": {
+	 *                 "must": [
+	 *                   { "term": { "specs.color": "纯净白" } },
+	 *                   { "range": { "specs.sale_price": { "gte": 2400 } } }
+	 *                 ]
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testAirConditionerNestedBoolFilter() {
+		List<AirConditioner> results = Query.bool("air_conditioner")
+				.nestedPath("specs")
+				.term("specs.color", "纯净白").must()
+				.range("specs.sale_price").gte(2400).must()
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		assertThat(results.size()).isEqualTo(1);
+		for (AirConditioner result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	/**
+	 * bool must 混合普通 match 查询与 nested term 查询
+	 * <p>
+	 * 外层 bool 查询的 must 中同时包含：
+	 * <ol>
+	 *   <li>对根字段 goods_name 的 match 查询</li>
+	 *   <li>对嵌套文档 specs 的 nested + term 查询</li>
+	 * </ol>
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {
+	 *           "match": {
+	 *             "goods_name": "美的空调"
+	 *           }
+	 *         },
+	 *         {
+	 *           "nested": {
+	 *             "path": "specs",
+	 *             "query": {
+	 *               "term": {
+	 *                 "specs.color": "深空灰"
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testAirConditionerBoolMustWithNestedTerm() {
+		//co.elastic.clients.elasticsearch._types.query_dsl.Query nestedQuery = QueryBuilders.nested(n -> n
+		//		.path("specs")
+		//		.query(q -> q.term(t -> t.field("specs.color").value("深空灰")))
+		//		.scoreMode(ChildScoreMode.Avg));
+		//
+		List<AirConditioner> results = Query.bool("air_conditioner")
+				.match("goods_name", "美的空调").must()
+				//.must(nestedQuery)
+				.nestedPath("specs")
+				.term("specs.color", "深空灰").must()
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		assertThat(results.size()).isEqualTo(1);
+		for (AirConditioner result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
 	/**
 	 * <pre>
 	 * GET user_info/_search
