@@ -5,7 +5,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Multi Match Query Builder for ES 8.x
@@ -48,6 +47,11 @@ public class ElasticMultiMatchQueryBuilder extends BaseQueryBuilder {
     }
 
     public ElasticMultiMatchQueryBuilder minimumShouldMatch(String minimumShouldMatch) {
+        this.minimumShouldMatch = minimumShouldMatch;
+        return this;
+    }
+
+    public ElasticMultiMatchQueryBuilder minimumShouldMatch(int minimumShouldMatch) {
         this.minimumShouldMatch = minimumShouldMatch;
         return this;
     }

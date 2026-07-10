@@ -52,8 +52,8 @@ public class GoodsEs {
      * ES格式：yyyy-MM-dd HH:mm:ss
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @JsonProperty("publishing_time")
-    private LocalDateTime publishingTime;
+    @JsonProperty("publish_time")
+    private LocalDateTime publishTime;
 
     /** 商品标签数组，keyword多值字段 */
     private List<String> tags;

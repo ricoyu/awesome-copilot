@@ -15,10 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.*;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
@@ -300,7 +302,7 @@ public abstract class BaseQueryBuilder {
         List<Hit<Map>> hits = response.hits().hits();
 
         if (hits.isEmpty()) {
-            return Collections.emptyList();
+            return emptyList();
         }
 
         List<T> results = new ArrayList<>();
@@ -434,19 +436,19 @@ public abstract class BaseQueryBuilder {
                 // 设置 boost_mode
                 switch (mode) {
                     case "sum":
-                        fs.boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Sum);
+                        fs.boostMode(Sum);
                         break;
                     case "min":
-                        fs.boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Min);
+                        fs.boostMode(Min);
                         break;
                     case "max":
-                        fs.boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Max);
+                        fs.boostMode(Max);
                         break;
                     case "replace":
-                        fs.boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Replace);
+                        fs.boostMode(Replace);
                         break;
                     default: // multiply
-                        fs.boostMode(co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode.Multiply);
+                        fs.boostMode(Multiply);
                         break;
                 }
                 return fs;
@@ -511,11 +513,11 @@ public abstract class BaseQueryBuilder {
 
             // source filtering
             if (includeSource != null && includeSource.length > 0) {
-                requestBuilder.source(src -> src.filter(f -> f.includes(java.util.Arrays.asList(includeSource))));
+                requestBuilder.source(src -> src.filter(f -> f.includes(asList(includeSource))));
             } else if (excludeSource != null && excludeSource.length > 0) {
-                requestBuilder.source(src -> src.filter(f -> f.excludes(java.util.Arrays.asList(excludeSource))));
+                requestBuilder.source(src -> src.filter(f -> f.excludes(asList(excludeSource))));
             } else if (!fetchSource) {
-                requestBuilder.source(src -> src.filter(f -> f.includes(java.util.Collections.emptyList())));
+                requestBuilder.source(src -> src.filter(f -> f.includes(emptyList())));
             }
 
             SearchRequest request = requestBuilder.build();
