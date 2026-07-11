@@ -660,6 +660,103 @@ public class QueryTest {
 			System.out.println(JacksonUtils.toPrettyJson(result));
 		}
 	}
+
+	/**
+	 * 测试 Bool 查询中使用 multiMatch 的链式调用
+	 * <p>
+	 * 验证 multiMatch 可以在 bool 查询中作为子查询使用，并支持 must/mustNot/should/filter 等布尔操作
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {
+	 *           "multi_match": {
+	 *             "query": "小米影像手机",
+	 *             "fields": ["goods_name^3", "goods_desc^1"]
+	 *           }
+	 *         }
+	 *       ],
+	 *       "filter": [
+	 *         {"term": {"online": true}}
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testBoolMultiMatchChainCall() {
+		List<GoodsEs> results = Query.bool("shop_goods")
+				.multiMatch("小米影像手机", "goods_name^3", "goods_desc^1").must()
+				.term("online", true).filter()
+				.size(200)
+				.resultType(GoodsEs.class)
+				.queryForList();
+		assertThat(results).isNotEmpty();
+		for (GoodsEs result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+
+	/**
+	 * 测试 nested bool 查询中的 range 条件
+	 * <p>
+	 * 查询 sku_list 嵌套文档中，sku_price <= 5000 且 sku_stock >= 500 的商品
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "nested": {
+	 *       "path": "sku_list",
+	 *       "query": {
+	 *         "bool": {
+	 *           "must": [
+	 *             {"range": {"sku_list.sku_price": {"lte": 5000}}},
+	 *             {"range": {"sku_list.sku_stock": {"gte": 500}}}
+	 *           ]
+	 *         }
+	 *       }
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedBoolWithRangeQuery() {
+		List<GoodsEs> results = Query.bool("shop_goods")
+				.nestedPath("sku_list")
+				.range("sku_list.sku_price").lte(5000).must()
+				.range("sku_list.sku_stock").gte(500).must()
+				.size(200)
+				.resultType(GoodsEs.class)
+				.queryForList();
+		assertThat(results.size()).isEqualTo(87);
+		for (GoodsEs result : results) {
+			assertThat(result.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	
+	@Test
+	public void testBoolNestedShopGoods() {
+		List<GoodsEs> docs = Query.bool("shop_goods")
+				.term("online", true).filter()
+				.term("category", "手机数码").filter()
+				.nestedPath("sku_list")
+				.term("sku_list.color", "黑色").must()
+				.range("sku_list.sku_price").lte(5000).must()
+				.size(200)
+				.resultType(GoodsEs.class)
+				.queryForList();
+		assertThat(docs.size()).isEqualTo(7);
+		for (GoodsEs doc : docs) {
+			assertThat(doc.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(doc));
+		}
+	}
 	/**
 	 * <pre>
 	 * GET user_info/_search
@@ -3328,10 +3425,58 @@ public class QueryTest {
 		}
 	}
 	
+	/**
+	 * 搜索「美的节能空调」，并且规格库存 > 100
+	 * <pre>
+	 * POST air_conditioner/_search
+	 * {
+	 *   "size": 200,
+	 *   "query": {
+	 *     "bool": {
+	 *       "must": [
+	 *         {
+	 *           "multi_match": {
+	 *             "query": "美的节能空调",
+	 *             "fields": [
+	 *               "goods_name",
+	 *               "goods_desc"
+	 *             ]
+	 *           }
+	 *         }
+	 *       ],
+	 *       "filter": [
+	 *         {
+	 *           "nested": {
+	 *             "path": "specs",
+	 *             "query": {
+	 *               "range": {
+	 *                 "specs.stock": {
+	 *                   "gte": 100
+	 *                 }
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
 	@Test
-	public void testMUltiMatchAndNestedRange() {
-		ElasticUtils.Query.bool("air_conditioner")
-				.
+	public void testMultiMatchAndNested() {
+		List<AirConditioner> docs = Query.bool("air_conditioner")
+				.multiMatch("美的节能空调", "goods_name", "goods_desc").must()
+				.nestedPath("specs").range("specs.stock").gt(100).filter()
+				.size(200)
+				.resultType(AirConditioner.class)
+				.queryForList();
+		
+		assertThat(docs.size()).isEqualTo(12);
+		for (AirConditioner doc : docs) {
+			assertThat(doc.getId()).isNotNull();
+			System.out.println(JacksonUtils.toPrettyJson(doc));
+		}
 	}
 	
 	/**

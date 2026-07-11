@@ -40,10 +40,17 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     private static class Node {
         BoolQueryType type;
         Query query;
+        /** 标记此节点是否属于嵌套组（在 pendingNestedPath 设置后添加） */
+        boolean nestedGroup;
 
         Node(BoolQueryType type, Query query) {
+            this(type, query, false);
+        }
+
+        Node(BoolQueryType type, Query query, boolean nestedGroup) {
             this.type = type;
             this.query = query;
+            this.nestedGroup = nestedGroup;
         }
     }
 
@@ -66,7 +73,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      * 添加 must 条件
      */
     public ElasticBoolQueryBuilder must(Query query) {
-        this.queries.add(new Node(MUST, query));
+        this.queries.add(new Node(MUST, query, isNotBlank(pendingNestedPath)));
         return this;
     }
 
@@ -74,7 +81,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      * 添加 must_not 条件
      */
     public ElasticBoolQueryBuilder mustNot(Query query) {
-        this.queries.add(new Node(MUST_NOT, query));
+        this.queries.add(new Node(MUST_NOT, query, isNotBlank(pendingNestedPath)));
         return this;
     }
 
@@ -82,7 +89,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      * 添加 should 条件
      */
     public ElasticBoolQueryBuilder should(Query query) {
-        this.queries.add(new Node(SHOULD, query));
+        this.queries.add(new Node(SHOULD, query, isNotBlank(pendingNestedPath)));
         return this;
     }
 
@@ -90,7 +97,7 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      * 添加 filter 条件
      */
     public ElasticBoolQueryBuilder filter(Query query) {
-        this.queries.add(new Node(FILTER, query));
+        this.queries.add(new Node(FILTER, query, isNotBlank(pendingNestedPath)));
         return this;
     }
 
@@ -100,10 +107,6 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolTermQuery term(String field, Object value) {
         ElasticTermQueryBuilder termBuilder = new ElasticTermQueryBuilder();
         termBuilder.query(field, value);
-        if (pendingNestedPath != null) {
-            termBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         termBuilder.setBoolQueryBuilder(this);
         return termBuilder;
     }
@@ -117,10 +120,6 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
         }
         ElasticTermsQueryBuilder termsBuilder = new ElasticTermsQueryBuilder();
         termsBuilder.query(field, values);
-        if (pendingNestedPath != null) {
-            termsBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         termsBuilder.setBoolQueryBuilder(this);
         return termsBuilder;
     }
@@ -131,10 +130,6 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolMatchQuery match(String field, String value) {
         ElasticMatchQueryBuilder matchBuilder = new ElasticMatchQueryBuilder();
         matchBuilder.query(field, value);
-        if (pendingNestedPath != null) {
-            matchBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         matchBuilder.setBoolQueryBuilder(this);
         return matchBuilder;
     }
@@ -145,10 +140,6 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public BoolRangeQuery range(String field) {
         ElasticRangeQueryBuilder rangeBuilder = new ElasticRangeQueryBuilder();
         rangeBuilder.field(field);
-        if (pendingNestedPath != null) {
-            rangeBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         rangeBuilder.setBoolQueryBuilder(this);
         return rangeBuilder;
     }
@@ -159,10 +150,6 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
     public com.awesomecopilot.search8x.builder.query.BoolQuery exists(String field) {
         ElasticExistsQueryBuilder existsBuilder = new ElasticExistsQueryBuilder();
         existsBuilder.field(field);
-        if (pendingNestedPath != null) {
-            existsBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         existsBuilder.setBoolQueryBuilder(this);
         return existsBuilder;
     }
@@ -172,12 +159,24 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
      */
     public com.awesomecopilot.search8x.builder.query.BoolQuery matchAll() {
         ElasticMatchAllQueryBuilder matchAllBuilder = new ElasticMatchAllQueryBuilder();
-        if (pendingNestedPath != null) {
-            matchAllBuilder.nestedPath(pendingNestedPath);
-            pendingNestedPath = null;
-        }
         matchAllBuilder.setBoolQueryBuilder(this);
         return matchAllBuilder;
+    }
+
+    /**
+     * 创建 multi_match 查询并返回 BoolMultiMatchQuery 接口
+     * <p>
+     * multi_match 查询用于在多个字段中搜索相同的文本，支持多种匹配类型（best_fields, most_fields, cross_fields, phrase 等）
+     *
+     * @param queryText 要搜索的文本
+     * @param fields 要搜索的字段列表，可以带权重（如 "goods_name^3", "goods_desc^1"）
+     * @return BoolMultiMatchQuery 接口，支持继续添加布尔查询条件
+     */
+    public BoolMultiMatchQuery multiMatch(String queryText, String... fields) {
+        ElasticMultiMatchQueryBuilder multiMatchBuilder = new ElasticMultiMatchQueryBuilder();
+        multiMatchBuilder.query(queryText, fields);
+        multiMatchBuilder.setBoolQueryBuilder(this);
+        return multiMatchBuilder;
     }
 
     public ElasticBoolQueryBuilder minimumShouldMatch(int minimumShouldMatch) {
@@ -207,17 +206,47 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
 
     @Override
     protected Query buildQuery() {
+        // 如果有 pendingNestedPath，需要将子查询分为两组：
+        // 1. 非嵌套组：pendingNestedPath 设置之前添加的子查询
+        // 2. 嵌套组：pendingNestedPath 设置之后添加的子查询，整体包装在一个 nested bool 查询中
+        if (isNotBlank(pendingNestedPath) && !queries.isEmpty()) {
+            int splitIndex = queries.size();
+            for (int i = 0; i < queries.size(); i++) {
+                if (queries.get(i).nestedGroup) {
+                    splitIndex = i;
+                    break;
+                }
+            }
+            List<Node> nonNestedQueries = queries.subList(0, splitIndex);
+            List<Node> nestedQueries = queries.subList(splitIndex, queries.size());
+
+            return Query.of(q -> q.bool(outerBool -> {
+                // 添加非嵌套条件
+                for (Node node : nonNestedQueries) {
+                    addClause(outerBool, node);
+                }
+                // 将嵌套条件包装在一个 nested bool 查询中
+                if (!nestedQueries.isEmpty()) {
+                    Query nestedBoolQuery = Query.of(q2 -> q2.bool(innerBool -> {
+                        for (Node node : nestedQueries) {
+                            addClause(innerBool, node);
+                        }
+                        if (minimumShouldMatch != null) {
+                            innerBool.minimumShouldMatch(minimumShouldMatch.toString());
+                        }
+                        return innerBool;
+                    }));
+                    Query wrappedNested = Query.of(q2 -> q2.nested(n -> n
+                            .path(pendingNestedPath).query(nestedBoolQuery).scoreMode(ChildScoreMode.Avg)));
+                    outerBool.must(wrappedNested);
+                }
+                return outerBool;
+            }));
+        }
+
         Query query = Query.of(q -> q.bool(b -> {
             for (Node node : queries) {
-                if (node.type == MUST) {
-                    b.must(node.query);
-                } else if (node.type == MUST_NOT) {
-                    b.mustNot(node.query);
-                } else if (node.type == SHOULD) {
-                    b.should(node.query);
-                } else if (node.type == FILTER) {
-                    b.filter(node.query);
-                }
+                addClause(b, node);
             }
             if (minimumShouldMatch != null) {
                 b.minimumShouldMatch(minimumShouldMatch.toString());
@@ -232,5 +261,20 @@ public class ElasticBoolQueryBuilder extends BaseQueryBuilder {
             query = Query.of(q -> q.nested(n -> n.path(nestedPath).query(innerQuery).scoreMode(ChildScoreMode.Avg)));
         }
         return query;
+    }
+
+    /**
+     * 将查询节点添加到 bool 查询的对应子句中
+     */
+    private void addClause(co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery.Builder boolBuilder, Node node) {
+        if (node.type == MUST) {
+            boolBuilder.must(node.query);
+        } else if (node.type == MUST_NOT) {
+            boolBuilder.mustNot(node.query);
+        } else if (node.type == SHOULD) {
+            boolBuilder.should(node.query);
+        } else if (node.type == FILTER) {
+            boolBuilder.filter(node.query);
+        }
     }
 }
