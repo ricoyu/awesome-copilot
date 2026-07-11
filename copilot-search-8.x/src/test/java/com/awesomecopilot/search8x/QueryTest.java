@@ -740,6 +740,37 @@ public class QueryTest {
 		}
 	}
 	
+	/**
+	 * 在售手机，且存在价格低于 5000 的黑色 sku
+	 * <pre>
+	 * GET /shop_goods/_search
+	 * {
+	 *   "query": {
+	 *     "bool": {
+	 *       "filter": [
+	 *         {"term": {"category": "手机数码"}},
+	 *         {"term": {"online": true}}
+	 *       ],
+	 *       "must": [
+	 *         {
+	 *           "nested": {
+	 *             "path": "sku_list",
+	 *             "query": {
+	 *               "bool": {
+	 *                 "must": [
+	 *                   {"term": {"sku_list.color": "黑色"}},
+	 *                   {"range": {"sku_list.sku_price": {"lte": 5000}}}
+	 *                 ]
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       ]
+	 *     }
+	 *   }
+	 * }
+	 * </pre>
+	 */
 	@Test
 	public void testBoolNestedShopGoods() {
 		List<GoodsEs> docs = Query.bool("shop_goods")
