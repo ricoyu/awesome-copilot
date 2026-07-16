@@ -477,6 +477,29 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return idField.getName();
 	}
 
+	private void applyLogicalDeleteFilter(JPACriteriaQuery<?> query, Class<?> entityClass,
+	                                      boolean includeDeleted) {
+		if (!logicalDeleteEnabled || includeDeleted) {
+			return;
+		}
+		query.eq(logicalDeleteField, resolveNotDeletedValue(entityClass));
+	}
+
+	private Object resolveNotDeletedValue(Class<?> entityClass) {
+		Field field = ReflectionUtils.findField(logicalDeleteField, entityClass);
+		if (field == null) {
+			return false;
+		}
+		Class<?> type = field.getType();
+		if (type == boolean.class || type == Boolean.class) {
+			return false;
+		}
+		if (Number.class.isAssignableFrom(type) || type.isPrimitive()) {
+			return 0;
+		}
+		return false;
+	}
+
 	private <T> void deleteByPKBulk(Class<T> entityClass, Collection<?> ids) {
 		if (ids.isEmpty()) {
 			return;
@@ -618,11 +641,16 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
-		jakarta.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
-		jakarta.persistence.criteria.Predicate deletedPredicate = criteriaBuilder.equal(root.get("deleted"), false);
-		criteriaQuery.select(root)
-				.where(idPredicate, deletedPredicate)
-				.distinct(true);
+		String idAttribute = resolveIdAttributeName(clazz);
+		jakarta.persistence.criteria.Predicate idPredicate =
+				criteriaBuilder.equal(root.get(idAttribute), id);
+		if (logicalDeleteEnabled) {
+			jakarta.persistence.criteria.Predicate deletedPredicate = criteriaBuilder.equal(
+					root.get(logicalDeleteField), resolveNotDeletedValue(clazz));
+			criteriaQuery.select(root).where(idPredicate, deletedPredicate).distinct(true);
+		} else {
+			criteriaQuery.select(root).where(idPredicate).distinct(true);
+		}
 		TypedQuery<T> query = em().createQuery(criteriaQuery);
 		if (hibernateUseQueryCache) {
 			query.setHint(HINT_QUERY_CACHE, true);
@@ -685,7 +713,9 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
-		jakarta.persistence.criteria.Predicate idPredicate = criteriaBuilder.equal(root.get("id"), id);
+		String idAttribute = resolveIdAttributeName(clazz);
+		jakarta.persistence.criteria.Predicate idPredicate =
+				criteriaBuilder.equal(root.get(idAttribute), id);
 		criteriaQuery.select(root)
 				.where(idPredicate)
 				.distinct(true);
@@ -732,9 +762,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
 				.in(propertyName, values);
-		if (!includeDeleted) {
-			jpaCriteriaQuery.eq("deleted", false);
-		}
+		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
 		return jpaCriteriaQuery.list();
 	}
 
@@ -746,9 +774,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
 				.in(propertyName, asList(values));
-		if (!includeDeleted) {
-			jpaCriteriaQuery.eq("deleted", false);
-		}
+		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
 		return jpaCriteriaQuery.list();
 	}
 
@@ -762,9 +788,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
 				.between(propertyName, begin, end);
-		if (!includeDeleted) {
-			jpaCriteriaQuery.eq("deleted", false);
-		}
+		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
 		return jpaCriteriaQuery.list();
 	}
 
