@@ -39,7 +39,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.Serializable;
@@ -110,9 +109,9 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	private EntityManagerFactory entityManagerFactory;
 
 	/**
-	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
+	 * 无 Spring 事务时，当前线程自建 EntityManager 的持有者
 	 */
-	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
+	private final ThreadLocal<EntityManagerHolder> entityManagerHolderThreadLocal = new ThreadLocal<>();
 
 	@PersistenceContext
 	protected EntityManager entityManager;
@@ -198,10 +197,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@PostConstruct
 	public void initialize() {
-		SqlUtils.logicalDeleteEnabled = this.logicalDeleteEnabled;
-		SqlUtils.logicalDeleteField = this.logicalDeleteField;
-		this.query("首次使用前的初始化");
-		log.info("首次使用前的初始化完成");
+		try {
+			SqlUtils.logicalDeleteEnabled = this.logicalDeleteEnabled;
+			SqlUtils.logicalDeleteField = this.logicalDeleteField;
+			this.query("首次使用前的初始化");
+			log.info("首次使用前的初始化完成");
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 	/**
@@ -974,6 +977,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
+		} finally {
+			releaseEntityManagerIfIdle();
 		}
 
 		return resultList;
@@ -1133,6 +1138,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 					JsonUtils.toJson(params));
 			log.error(msg, e);
 			throw new SQLQueryException(msg, e);
+		} finally {
+			releaseEntityManagerIfIdle();
 		}
 
 	}
@@ -1326,20 +1333,16 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	// 修改em()方法，在适当时候调用清理
 	@Override
 	public EntityManager em() {
-		if (TransactionSynchronizationManager.isActualTransactionActive()) {
-			return entityManager;
-		} else {
-			EntityManager existingEm = entityManagerThreadLocal.get();
-			if (existingEm != null && existingEm.isOpen()) {
-				return existingEm;
-			} else {
-				EntityManager noTransactionalEntityManager = entityManagerFactory.createEntityManager();
-				entityManagerThreadLocal.set(noTransactionalEntityManager);
-				// 注册清理回调
-				registerCleanupCallback();
-				return noTransactionalEntityManager;
-			}
+		return entityManagerHolder().get();
+	}
+
+	private EntityManagerHolder entityManagerHolder() {
+		EntityManagerHolder holder = entityManagerHolderThreadLocal.get();
+		if (holder == null) {
+			holder = new EntityManagerHolder(entityManager, entityManagerFactory);
+			entityManagerHolderThreadLocal.set(holder);
 		}
+		return holder;
 	}
 
 	/**
@@ -1363,6 +1366,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			return;
 		} else {
 			em().getTransaction().commit();
+			cleanupEntityManager();
 		}
 	}
 
@@ -1375,20 +1379,22 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			return;
 		} else {
 			em().getTransaction().rollback();
+			cleanupEntityManager();
 		}
 	}
-	
-	private void registerCleanupCallback() {
-		// 使用Spring的TransactionSynchronization注册清理回调
-		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.initSynchronization();
+
+	/**
+	 * 无 Spring 事务且当前无活跃本地事务时，关闭自建 EntityManager（单次读/写场景）
+	 */
+	private void releaseEntityManagerIfIdle() {
+		if (isInSpringTransaction()) {
+			return;
 		}
-		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-			@Override
-			public void afterCompletion(int status) {
-				cleanupEntityManager();
-			}
-		});
+		EntityManagerHolder holder = entityManagerHolderThreadLocal.get();
+		if (holder == null || holder.hasActiveLocalTransaction()) {
+			return;
+		}
+		cleanupEntityManager();
 	}
 
 	private boolean isSqlStatement(String queryName) {
@@ -1467,18 +1473,10 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	
 	// 在JpaDao类中添加清理方法
 	public void cleanupEntityManager() {
-		EntityManager em = entityManagerThreadLocal.get();
-		if (em != null && em.isOpen()) {
-			try {
-				if (em.getTransaction().isActive()) {
-					em.getTransaction().rollback();
-				}
-				em.close();
-			} catch (Exception e) {
-				log.warn("Error closing EntityManager", e);
-			} finally {
-				entityManagerThreadLocal.remove();
-			}
+		EntityManagerHolder holder = entityManagerHolderThreadLocal.get();
+		if (holder != null) {
+			holder.closeIfNeeded();
+			entityManagerHolderThreadLocal.remove();
 		}
 	}
 	

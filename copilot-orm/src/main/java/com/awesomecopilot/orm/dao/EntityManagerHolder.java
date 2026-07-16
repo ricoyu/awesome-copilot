@@ -61,4 +61,13 @@ final class EntityManagerHolder {
 			createdEntityManager = null;
 		}
 	}
+
+	/**
+	 * 自建 EM 上是否存在未结束的本地事务（begin 后尚未 commit/rollback）
+	 */
+	boolean hasActiveLocalTransaction() {
+		return createdEntityManager != null
+				&& createdEntityManager.isOpen()
+				&& createdEntityManager.getTransaction().isActive();
+	}
 }
