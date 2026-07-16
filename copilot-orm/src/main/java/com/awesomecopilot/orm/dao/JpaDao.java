@@ -801,7 +801,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public CriteriaDeleteBuilder deleteBy(Class entityClass) {
-		return new CriteriaDeleteBuilder(entityManager, entityClass);
+		return new CriteriaDeleteBuilder(entityManager, entityManagerFactory, entityClass);
 	}
 
 	@Override

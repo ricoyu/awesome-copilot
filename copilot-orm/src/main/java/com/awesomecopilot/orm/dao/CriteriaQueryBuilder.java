@@ -10,7 +10,6 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -24,14 +23,9 @@ public class CriteriaQueryBuilder {
 	private static final Logger log = LoggerFactory.getLogger(CriteriaQueryBuilder.class);
 	
 	private final EntityManager entityManager;
-	
-	private EntityManagerFactory entityManagerFactory;
-	
-	/**
-	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
-	 */
-	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
-	
+
+	private final EntityManagerHolder entityManagerHolder;
+
 	private CriteriaBuilder criteriaBuilder;
 	
 	private JPACriteriaQuery jpaCriteriaQuery;
@@ -40,11 +34,11 @@ public class CriteriaQueryBuilder {
 	
 	public CriteriaQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
 	                            Class entityClass) {
-		
-		this.entityManagerFactory = entityManagerFactory;
+
 		this.entityManager = entityManager;
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, entityManagerFactory);
 		this.entityClass = entityClass;
-		
+
 		this.criteriaBuilder = em().getCriteriaBuilder();
 		this.jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), false);
 	}
@@ -343,15 +337,23 @@ public class CriteriaQueryBuilder {
 	 * @return T
 	 */
 	public <T> T findOne() {
-		List results = jpaCriteriaQuery.list();
-		if (results.isEmpty()) {
-			return null;
+		try {
+			List results = jpaCriteriaQuery.list();
+			if (results.isEmpty()) {
+				return null;
+			}
+			return (T) results.get(0);
+		} finally {
+			entityManagerHolder.closeIfNeeded();
 		}
-		return (T) results.get(0);
 	}
-	
+
 	public <T> List<T> findList() {
-		return (List<T>) jpaCriteriaQuery.list();
+		try {
+			return (List<T>) jpaCriteriaQuery.list();
+		} finally {
+			entityManagerHolder.closeIfNeeded();
+		}
 	}
 	
 	/**
@@ -362,18 +364,19 @@ public class CriteriaQueryBuilder {
 	 * @return List<T>
 	 */
 	public <T> List<T> findPage(Page page) {
-		if (page != null) {
-			jpaCriteriaQuery.setPage(page);
-			/*
-			 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
-			 * 不为null才填充是因为执行多次查询时, 前一个是分页查询, 后一个不是, 那么后一个查询会把ThreadContext中的page对象给清掉
-			 */
+		try {
 			if (page != null) {
+				jpaCriteriaQuery.setPage(page);
+				/*
+				 * 这边放到ThreadContext里面是为了保证PageResultAspect能从ThreadContext拿到将Page对象并回填到最终返回的Result对象里面
+				 * 不为null才填充是因为执行多次查询时, 前一个是分页查询, 后一个不是, 那么后一个查询会把ThreadContext中的page对象给清掉
+				 */
 				ThreadContext.put("page", page);
 			}
+			return (List<T>) jpaCriteriaQuery.list();
+		} finally {
+			entityManagerHolder.closeIfNeeded();
 		}
-		List<T> data = (List<T>) jpaCriteriaQuery.list();
-		return data;
 	}
 	
 	/**
@@ -385,38 +388,24 @@ public class CriteriaQueryBuilder {
 	 * @return Result<T>
 	 */
 	public <T> List<T> findPage(int pageNum, int pageSize) {
-		Page page = new Page();
-		page.setPageNum(pageNum);
-		page.setPageSize(pageSize);
-		/*
-		 * jpaCriteriaQuery.list()方法里面会更新总页数等分页属性
-		 * 这边放到ThreadContext里面是方便PageResultAspect将Page对象回填到最终返回的Result对象里面
-		 */
-		ThreadContext.put("page", page);
-		if (page != null) {
+		try {
+			Page page = new Page();
+			page.setPageNum(pageNum);
+			page.setPageSize(pageSize);
+			/*
+			 * jpaCriteriaQuery.list()方法里面会更新总页数等分页属性
+			 * 这边放到ThreadContext里面是方便PageResultAspect将Page对象回填到最终返回的Result对象里面
+			 */
+			ThreadContext.put("page", page);
 			jpaCriteriaQuery.setPage(page);
+			return jpaCriteriaQuery.list();
+		} finally {
+			entityManagerHolder.closeIfNeeded();
 		}
-		List<T> data = jpaCriteriaQuery.list();
-		return data;
 	}
-	
-	/**
-	 * 基于是否受Spring事务管理，获取Spring管理的EntityManager或者自行通过EntityManagerFactory创建的EntityManager
-	 *
-	 * @return EntityManager
-	 */
+
 	private EntityManager em() {
-		if (TransactionSynchronizationManager.isActualTransactionActive()) {
-			return entityManager;
-		} else {
-			if (entityManagerThreadLocal.get() != null) {
-				return entityManagerThreadLocal.get();
-			} else {
-				EntityManager noTransactionalEntityManager = entityManagerFactory.createEntityManager();
-				entityManagerThreadLocal.set(noTransactionalEntityManager);
-				return noTransactionalEntityManager;
-			}
-		}
+		return entityManagerHolder.get();
 	}
 	
 	// 核心工具方法：判断并转换 long[] 为 Long[]

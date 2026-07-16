@@ -7,7 +7,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,14 +24,7 @@ import java.util.List;
  */
 public class CriteriaDeleteBuilder {
 
-	private final EntityManager entityManager;
-
-	private EntityManagerFactory entityManagerFactory;
-
-	/**
-	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
-	 */
-	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
+	private final EntityManagerHolder entityManagerHolder;
 
 	private CriteriaBuilder criteriaBuilder;
 
@@ -44,8 +36,9 @@ public class CriteriaDeleteBuilder {
 
 	List<Predicate> conditions = new ArrayList<Predicate>();
 
-	public CriteriaDeleteBuilder(EntityManager entityManager, Class entityClass) {
-		this.entityManager = entityManager;
+	public CriteriaDeleteBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
+	                             Class entityClass) {
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, entityManagerFactory);
 		this.entityClass = entityClass;
 
 		this.criteriaBuilder = em().getCriteriaBuilder();
@@ -71,29 +64,20 @@ public class CriteriaDeleteBuilder {
 		conditions.add(predicate.toPredicate(criteriaBuilder, root));
 		return this;
 	}
-
+	
 	public int execute() {
-		delete.where(conditions.toArray(new jakarta.persistence.criteria.Predicate[0]));
-		return this.em().createQuery(delete).executeUpdate();
+		try {
+			delete.where(conditions.toArray(new jakarta.persistence.criteria.Predicate[0]));
+			return em().createQuery(delete).executeUpdate();
+		} catch (Exception e) {
+			em().getTransaction().rollback();
+			throw e;
+		} finally {
+			entityManagerHolder.closeIfNeeded();
+		}
 	}
 
-
-	/**
-	 * 基于是否受Spring事务管理，获取Spring管理的EntityManager或者自行通过EntityManagerFactory创建的EntityManager
-	 *
-	 * @return EntityManager
-	 */
 	private EntityManager em() {
-		if (TransactionSynchronizationManager.isActualTransactionActive()) {
-			return entityManager;
-		} else {
-			if (entityManagerThreadLocal.get() != null) {
-				return entityManagerThreadLocal.get();
-			} else {
-				EntityManager noTransactionalEntityManager = entityManagerFactory.createEntityManager();
-				entityManagerThreadLocal.set(noTransactionalEntityManager);
-				return noTransactionalEntityManager;
-			}
-		}
+		return entityManagerHolder.get();
 	}
 }

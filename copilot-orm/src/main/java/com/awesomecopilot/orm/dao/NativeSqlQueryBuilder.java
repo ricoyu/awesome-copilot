@@ -23,7 +23,6 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -102,21 +101,16 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	private Class resultClass;
 	
 	protected final EntityManager entityManager;
-	
-	private EntityManagerFactory entityManagerFactory;
-	
+
+	private EntityManagerHolder entityManagerHolder;
+
 	private String hibernateQueryMode = "loose";
 	
 	/**
 	 * 如果类的某个属性是enum类型，并且需要根据这个enum类型的某个属性来和数据库列值匹配，那么要指明这个属性的名字
 	 */
 	private Set<String> enumLookupProperties = new HashSet<>();
-	
-	/**
-	 * Spring环境下拿到的是LocalContainerEntityManagerFactoryBean的代理类
-	 */
-	protected transient ThreadLocal<EntityManager> entityManagerThreadLocal = new ThreadLocal<>();
-	
+
 	/**
 	 * 根据contextClasses找对应的Class对象在namedSqlQuery中会把classMap中的key/value对put到VelocityContext中
 	 * 这样在SQL里面就可以用了, 示例如下:
@@ -143,23 +137,25 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	public NativeSqlQueryBuilder(EntityManager entityManager) {
 		this.entityManager = entityManager;
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, null);
 	}
-	
+
 	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory) {
 		this.entityManager = entityManager;
-		this.entityManagerFactory = entityManagerFactory;
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, entityManagerFactory);
 	}
-	
+
 	public NativeSqlQueryBuilder(EntityManager entityManager, String logicalDeleteField) {
 		this.entityManager = entityManager;
 		this.logicalDeleteField = logicalDeleteField;
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, null);
 	}
-	
+
 	public NativeSqlQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
 	                             String logicalDeleteField) {
 		this.entityManager = entityManager;
-		this.entityManagerFactory = entityManagerFactory;
 		this.logicalDeleteField = logicalDeleteField;
+		this.entityManagerHolder = new EntityManagerHolder(entityManager, entityManagerFactory);
 	}
 	
 	@Override
@@ -267,6 +263,14 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	@Override
 	public <T> List<T> findList() {
+		try {
+			return doFindList();
+		} finally {
+			entityManagerHolder.closeIfNeeded();
+		}
+	}
+
+	private <T> List<T> doFindList() {
 		String rawQuery = null;
 		org.hibernate.query.Query<T> query = null;
 		Matcher matcher = SELECT_PATTERN.matcher(sqlOrQueryName);
@@ -357,6 +361,14 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	@Override
 	public <T> List<T> findPage() {
+		try {
+			return doFindPage();
+		} finally {
+			entityManagerHolder.closeIfNeeded();
+		}
+	}
+
+	private <T> List<T> doFindPage() {
 		String rawQuery = null;
 		org.hibernate.query.Query<T> query = null;
 		Matcher matcher = SELECT_PATTERN.matcher(sqlOrQueryName);
@@ -558,23 +570,8 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		this.enumLookupProperties = enumLookupProperties;
 	}
 	
-	/**
-	 * 基于是否受Spring事务管理，获取Spring管理的EntityManager或者自行通过EntityManagerFactory创建的EntityManager
-	 *
-	 * @return EntityManager
-	 */
 	private EntityManager em() {
-		if (TransactionSynchronizationManager.isActualTransactionActive()) {
-			return entityManager;
-		} else {
-			if (entityManagerThreadLocal.get() != null) {
-				return entityManagerThreadLocal.get();
-			} else {
-				EntityManager noTransactionalEntityManager = entityManagerFactory.createEntityManager();
-				entityManagerThreadLocal.set(noTransactionalEntityManager);
-				return noTransactionalEntityManager;
-			}
-		}
+		return entityManagerHolder.get();
 	}
 	
 	
