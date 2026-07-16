@@ -12,6 +12,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import com.awesomecopilot.orm.utils.NamedQueryUtils;
 import com.awesomecopilot.orm.utils.SQLUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
@@ -924,15 +925,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (matcher.find()) {
 			rawQuery = queryName; // 这就是一个完整的查询语句,而不是定义在xml中的查询语句名
 		} else {//表示queryName是定义在xml中的查询语句名
-			query = em().createNamedQuery(queryName)
-					.unwrap(org.hibernate.query.Query.class);
-			/*
-			 * 今天(2025-07-18), 发现hibernate 5.4.32.Final下, SQL语句是放在sqlString属性里面的
-			 */
-			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
-			if (rawQuery == null) {
-				rawQuery = ReflectionUtils.getFieldValue("sqlString", query);
-			}
+			rawQuery = NamedQueryUtils.resolveNamedQueryString(em(), queryName);
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
 
@@ -1118,9 +1111,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (isSqlStatement(queryName)) {
 			rawQuery = queryName;
 		} else {
-			query =
-					em().createNamedQuery(queryName).unwrap(org.hibernate.query.Query.class);
-			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
+			rawQuery = NamedQueryUtils.resolveNamedQueryString(em(), queryName);
 		}
 
 		//建立context， 并放入数据  
@@ -1450,11 +1441,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (matcher.find()) {
 			queryString = queryName; // 这就是一个完整的查询语句,而不是定义在xml中的查询语句名
 		} else {
-			query = em()
-					.createNamedQuery(queryName)
-					.unwrap(org.hibernate.query.Query.class);
-
-			queryString = ReflectionUtils.getFieldValue("originalSqlString", query);
+			queryString = NamedQueryUtils.resolveNamedQueryString(em(), queryName);
 		}
 		//建立context， 并放入数据
 		VelocityContext context = new VelocityContext();

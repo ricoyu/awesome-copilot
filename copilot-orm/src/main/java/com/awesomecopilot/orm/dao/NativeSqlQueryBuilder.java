@@ -6,7 +6,6 @@ import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
-import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.common.lang.utils.SqlUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.Page;
@@ -15,6 +14,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import com.awesomecopilot.orm.utils.NamedQueryUtils;
 import com.awesomecopilot.orm.utils.OrderByValidator;
 import com.awesomecopilot.orm.utils.SQLUtils;
 import jakarta.persistence.EntityManager;
@@ -286,9 +286,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		if (matcher.find()) {
 			rawQuery = sqlOrQueryName; // 这就是一个完整的查询语句,而不是定义在xml中的查询语句名
 		} else {//表示queryName是定义在xml中的查询语句名
-			query = em().createNamedQuery(sqlOrQueryName)
-					.unwrap(org.hibernate.query.Query.class);
-			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
+			rawQuery = NamedQueryUtils.resolveNamedQueryString(em(), sqlOrQueryName);
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
 		addOrder(queryString);
@@ -384,8 +382,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		if (matcher.find()) {
 			rawQuery = sqlOrQueryName; // 这就是一个完整的查询语句,而不是定义在xml中的查询语句名
 		} else {//表示queryName是定义在xml中的查询语句名
-			query = em().createNamedQuery(sqlOrQueryName).unwrap(org.hibernate.query.Query.class);
-			rawQuery = ReflectionUtils.getFieldValue("originalSqlString", query);
+			rawQuery = NamedQueryUtils.resolveNamedQueryString(em(), sqlOrQueryName);
 		}
 		StringBuilder queryString = new StringBuilder(rawQuery);
 		
