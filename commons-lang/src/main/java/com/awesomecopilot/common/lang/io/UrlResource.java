@@ -14,8 +14,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class UrlResource extends AbstractFileResolvingResource {
 
@@ -215,7 +216,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 		super.customizeConnection(con);
 		String userInfo = this.url.getUserInfo();
 		if (userInfo != null) {
-			String encodedCredentials = Base64.getUrlEncoder().encodeToString(userInfo.getBytes());
+			String encodedCredentials = Base64.getUrlEncoder().encodeToString(userInfo.getBytes(UTF_8));
 			con.setRequestProperty(AUTHORIZATION, "Basic " + encodedCredentials);
 		}
 	}
@@ -308,7 +309,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 		}
 		// Otherwise, process URL path
 		String filename = StringUtils.getFilename(StringUtils.cleanPath(this.url.getPath()));
-		return (filename != null ? URLDecoder.decode(filename, StandardCharsets.UTF_8) : null);
+		return (filename != null ? URLDecoder.decode(filename, UTF_8) : null);
 	}
 
 	/**

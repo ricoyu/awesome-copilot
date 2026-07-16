@@ -4,10 +4,6 @@ import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.common.lang.resource.YamlOps;
 import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-
 /**
  * Twitter_Snowflake<br>
  * SnowFlake的结构如下(每部分用-分开):<br>
@@ -243,38 +239,6 @@ public class SnowflakeId {
 			timestamp = System.currentTimeMillis();
 		}
 		return timestamp;
-	}
-
-
-	/**
-	 * 生成workerId，从IP地址中获取，如果获取失败则返回1
-	 * @return
-	 */
-	private static int generateWorkerIdFromIp() {
-		try {
-			Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-			while (interfaces.hasMoreElements()) {
-				NetworkInterface nif = interfaces.nextElement();
-				if (nif.isLoopback() || nif.isVirtual() || !nif.isUp()) continue;
-
-				Enumeration<InetAddress> addresses = nif.getInetAddresses();
-				while (addresses.hasMoreElements()) {
-					InetAddress addr = addresses.nextElement();
-					if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()) continue;
-
-					byte[] ipBytes = addr.getAddress();
-					// 取IP地址的最后两个字节（IPv4最后两段，IPv6也适用）
-					int hash = 0;
-					for (int i = Math.max(0, ipBytes.length - 2); i < ipBytes.length; i++) {
-						hash = 31 * hash + (ipBytes[i] & 0xFF);
-					}
-					return Math.abs(hash) % 32;  // 32 = 1<<5，确保0~31
-				}
-			}
-		} catch (Exception e) {
-			// ignore
-		}
-		return 1; // fallback
 	}
 
 }

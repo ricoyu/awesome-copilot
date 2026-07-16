@@ -203,6 +203,7 @@ public final class Concurrent {
 	 */
 	public static void shutdown() {
 		IO_POOL.shutdown();
+		DELAY_POOL.shutdown();
 	}
 
 	private static void addCompleteFuture(CompletableFuture<?> completableFuture) {

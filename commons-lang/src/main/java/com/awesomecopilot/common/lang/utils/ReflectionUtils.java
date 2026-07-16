@@ -209,6 +209,8 @@ public class ReflectionUtils {
 		} catch (IllegalAccessException ex) {
 			logger.error("", ex);
 			logger.error("Set value {} for field {} failed!", value, fieldName);
+			throw new IllegalStateException(
+					"Unexpected reflection exception - " + ex.getClass().getName() + ": " + ex.getMessage());
 		}
 	}
 	
