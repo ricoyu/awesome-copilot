@@ -57,7 +57,8 @@ public class WorkerIdGenerator {
                     for (int i = Math.max(0, ipBytes.length - 2); i < ipBytes.length; i++) {
                         hash = 31 * hash + (ipBytes[i] & 0xFF);
                     }
-                    int workerId = Math.abs(hash) % 32;
+                    //避免 Integer.MIN_VALUE 边界问题
+                    int workerId = (hash & Integer.MAX_VALUE) % 32;
                     return workerId > 0 ? workerId : 1; // 避免返回0（可选）
                 }
             }

@@ -27,6 +27,7 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	private final long refillRate;        // 每秒补充的令牌数
 	private final long refillIntervalMs;  // 补充令牌的时间间隔(毫秒)
 	private final ScheduledExecutorService scheduler;
+	private long pendingRefillMillis;     // 累积未兑换成令牌的毫秒配额（定时任务单线程访问）
 
 	/**
 	 * 令牌桶限流器
@@ -55,8 +56,14 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	 * 补充令牌（由定时任务调用）
 	 */
 	private void refillTokens() {
+		pendingRefillMillis += refillRate * refillIntervalMs;
+		long tokensToAdd = pendingRefillMillis / 1000;
+		pendingRefillMillis %= 1000;
+		if (tokensToAdd <= 0) {
+			return;
+		}
 		long currentTokens = tokens.get();
-		long newTokens = Math.min(capacity, currentTokens + refillRate); // 不超过容量
+		long newTokens = Math.min(capacity, currentTokens + tokensToAdd);
 		if (tokens.compareAndSet(currentTokens, newTokens)) {
 			if (log.isDebugEnabled()) {
 				log.debug("[Refill] Tokens: " + newTokens); // 调试日志

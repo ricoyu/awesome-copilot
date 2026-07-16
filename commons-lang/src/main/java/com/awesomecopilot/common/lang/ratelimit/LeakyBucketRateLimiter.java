@@ -32,15 +32,20 @@ public class LeakyBucketRateLimiter implements RateLimiter {
      * @param leakRate 漏出速率(每秒处理的请求数)
      */
     public LeakyBucketRateLimiter(int capacity, int leakRate) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("capacity must be positive");
+        }
+        if (leakRate <= 0) {
+            throw new IllegalArgumentException("leakRate must be positive");
+        }
         this.capacity = capacity;
         this.leakRate = leakRate;
         this.queue = new ArrayBlockingQueue<>(capacity);
         this.scheduler = Executors.newScheduledThreadPool(2); // 1个用于定时漏出，1个用于处理任务
         this.isRunning = new AtomicBoolean(true);
-        
+
         // 启动漏桶的定时漏出任务
-        // 计算每次处理的间隔时间(毫秒)
-        long interval = 1000 / leakRate;
+        long interval = Math.max(1, 1000L / leakRate);
         scheduler.scheduleAtFixedRate(this::processRequests, 0, interval, TimeUnit.MILLISECONDS);
     }
 
@@ -86,8 +91,8 @@ public class LeakyBucketRateLimiter implements RateLimiter {
 
     @Override
     public boolean canPass() {
-        // 兼容RateLimiter接口，仅判断是否能加入队列
-        return queue.size() < capacity;
+        // 通过原子入队占位，避免 size 检查的 TOCTOU 竞态
+        return submitRequest(() -> {});
     }
 
     /**

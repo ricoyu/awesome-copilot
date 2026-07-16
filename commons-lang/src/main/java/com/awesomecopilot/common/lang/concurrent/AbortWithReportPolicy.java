@@ -38,7 +38,13 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 	
 	private static final long TEN_MINUTES_MILLS = 10 * 60 * 1000;
 	
-	private static Semaphore guard = new Semaphore(1);
+	private static final Semaphore guard = new Semaphore(1);
+
+	private static final ExecutorService DUMP_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+		Thread thread = new Thread(r, "abort-policy-thread-dump");
+		thread.setDaemon(true);
+		return thread;
+	});
 	
 	@Override
 	public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -99,24 +105,30 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 		if (!guard.tryAcquire()) {
 			return;
 		}
-		// 异步dump线程池信息 
-		ExecutorService pool = Executors.newSingleThreadExecutor();
-		pool.execute(() -> {
-			try {
-				ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-				StringBuilder sb = new StringBuilder();
-				for (ThreadInfo threadInfo : threadMxBean.dumpAllThreads(true, true)) {
-					sb.append(getThreadDumpString(threadInfo));
-				}
-				log.error("thread dump info:", sb.toString());
-			} catch (Exception e) {
-				log.error("thread dump error", e);
-			} finally {
-				guard.release();
-				pool.shutdown();
+		try {
+			now = System.currentTimeMillis();
+			if (now - lastPrintTime < TEN_MINUTES_MILLS) {
+				return;
 			}
-			lastPrintTime = System.currentTimeMillis();
-		});
+			lastPrintTime = now;
+			DUMP_EXECUTOR.execute(() -> {
+				try {
+					ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+					StringBuilder sb = new StringBuilder();
+					for (ThreadInfo threadInfo : threadMxBean.dumpAllThreads(true, true)) {
+						sb.append(getThreadDumpString(threadInfo));
+					}
+					log.error("thread dump info:", sb.toString());
+				} catch (Exception e) {
+					log.error("thread dump error", e);
+				} finally {
+					guard.release();
+				}
+			});
+		} catch (Exception e) {
+			guard.release();
+			log.error("thread dump submit error", e);
+		}
 	}
 	
 	@SuppressWarnings("all")

@@ -392,13 +392,28 @@ public class ReflectionUtils {
 	 * @return Field[]
 	 */
 	public static Field[] getFields(Class<?> clazz) {
-		Field[] result = fieldsCache.getIfPresent(clazz);
-		if (result == null) {
-			result = clazz.getDeclaredFields();
-			fieldsCache.put(clazz, (result.length == 0 ? NO_FIELDS : result));
-			getFieldsFromSuper(clazz, clazz.getSuperclass());
+		return fieldsCache.get(clazz, ReflectionUtils::computeAllFields);
+	}
+
+	private static Field[] computeAllFields(Class<?> clazz) {
+		List<Field> fieldList = new ArrayList<>();
+		Class<?> current = clazz;
+		while (current != null && current != Object.class) {
+			for (Field declaredField : current.getDeclaredFields()) {
+				boolean overridden = false;
+				for (Field existing : fieldList) {
+					if (existing.getName().equals(declaredField.getName())) {
+						overridden = true;
+						break;
+					}
+				}
+				if (!overridden) {
+					fieldList.add(declaredField);
+				}
+			}
+			current = current.getSuperclass();
 		}
-		return fieldsCache.getIfPresent(clazz);
+		return fieldList.isEmpty() ? NO_FIELDS : fieldList.toArray(Field[]::new);
 	}
 
 	/**
@@ -1282,43 +1297,6 @@ public class ReflectionUtils {
 		return result;
 	}
 	
-	private static void getFieldsFromSuper(Class<?> originalClazz, Class<?> ancesterClazz) {
-		if (ancesterClazz == Object.class) {
-			return;
-		}
-		Field[] fieldsFromSuper = ancesterClazz.getDeclaredFields();
-		if (fieldsFromSuper.length > 0) {
-			Field[] fields = fieldsCache.getIfPresent(originalClazz);
-			List<Field> fieldList = new ArrayList<>();
-			if (fields != null) {
-				fieldList.addAll(Arrays.asList(fields));
-			}
-			
-			for (int j = 0; j < fieldsFromSuper.length; j++) {
-				boolean overrided = false; //检查父类的field是不是被子类覆盖了
-				Field fieldFromSuper = fieldsFromSuper[j];
-				if (fields != null) {
-					for (int i = 0; i < fields.length; i++) {
-						Field field = fields[i];
-						if (field.getName().equals(fieldFromSuper.getName())) {
-							overrided = true;
-							break;
-						}
-					}
-				}
-				if (!overrided) {
-					fieldList.add(fieldFromSuper);
-				}
-			}
-			
-			fields = fieldList.stream().toArray(Field[]::new);
-			fieldsCache.put(originalClazz, fields);
-		}
-		
-		if (ancesterClazz.getSuperclass() != Object.class) {
-			getFieldsFromSuper(originalClazz, ancesterClazz.getSuperclass());
-		}
-	}
 	
 	/**
 	 * 判断一个对象是否为POJO<p/>
