@@ -1,4 +1,4 @@
-package com.awesomecopilot.jwt;
+package com.awesomecopilot.codec;
 
 import com.awesomecopilot.codec.jwt.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -10,27 +10,17 @@ import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * <p>
- * Copyright: (C), 2020/5/21 19:35
- * <p>
- * <p>
- * Company: Sexy Uncle Inc.
- *
- * @author Rico Yu ricoyu520@gmail.com
- * @version 1.0
- */
 @Slf4j
 public class JwtUtilsTest {
 	
 	@Test
 	public void testCreateJajaJwt() {
 		String secret = "123456789abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz";
-		String token = JwtUtils.createJWT(secret, "token", "96", 720000000000L);
+		String token = JwtUtils.createJWT(secret, "token", "999", 720000000000L);
 		System.out.println(token);
 		Claims claims = JwtUtils.parseJWT(secret, token);
 		String subject = claims.getSubject();
-		assertEquals(subject, "96");
+		assertEquals(subject, "999");
 	}
 	@Test
 	public void test() {

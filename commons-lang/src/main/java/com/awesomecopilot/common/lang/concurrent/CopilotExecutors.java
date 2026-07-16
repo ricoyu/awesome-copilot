@@ -138,7 +138,7 @@ public final class CopilotExecutors {
 	 * @return CopilotExecutors
 	 */
 	public CopilotExecutors maxPoolSizeToCorePoolSize() {
-		this.maximumPoolSize = maximumPoolSize;
+		this.maximumPoolSize = this.corePoolSize;
 		return this;
 	}
 	

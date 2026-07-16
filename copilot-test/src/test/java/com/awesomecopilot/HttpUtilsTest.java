@@ -4,7 +4,7 @@ import com.awesomecopilot.cache.JedisUtils;
 import com.awesomecopilot.codec.RsaUtils;
 import com.awesomecopilot.json.jsonpath.JsonPathUtils;
 import com.awesomecopilot.networking.utils.HttpUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
@@ -20,6 +20,24 @@ import java.util.concurrent.TimeUnit;
  */
 public class HttpUtilsTest {
 	
+	@Test
+	public void testJajaSmsPush() {
+		String response = HttpUtils.post("http://sa.test.jajalink.com:31921/api/jaja-admin-business/message/push/sms")
+				.body("""
+						{
+						  "msgType" : "alert",
+						  "phone" : "13913582189",
+						  "templateParam" : {
+						    "sn" : "X60020251126",
+						    "message" : "通信异常"
+						  },
+						  "serviceProviderName" : "嘉嘉厂商",
+						  "platform" : "DMP"
+						}""")
+				.responseType(String.class)
+				.request();
+		System.out.println(response);
+	}
 	@Test
 	public void testAuth() {
 		String responseJson = HttpUtils.get("http://localhost:8083/pic-code").request();

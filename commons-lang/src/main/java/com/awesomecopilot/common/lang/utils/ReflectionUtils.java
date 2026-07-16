@@ -744,11 +744,11 @@ public class ReflectionUtils {
 	}
 	
 	/**
-	 * 检查targetClasses的任意public方法(包含父类中的)是否标注了annotationClass注解
+	 * 检查指定方法是否标注了annotationClass注解
 	 *
 	 * @param annotationClass
 	 * @param method
-	 * @return
+	 * @return boolean
 	 */
 	public static boolean existsAnnotation(Class<? extends Annotation> annotationClass, Method method) {
 		if (annotationClass == null || method == null) {
