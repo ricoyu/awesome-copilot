@@ -15,6 +15,7 @@ import com.awesomecopilot.orm.exception.SQLQueryException;
 import com.awesomecopilot.orm.transformer.ResultTransformerFactory;
 import com.awesomecopilot.orm.utils.HashUtils;
 import com.awesomecopilot.orm.utils.JsonUtils;
+import com.awesomecopilot.orm.utils.OrderByValidator;
 import com.awesomecopilot.orm.utils.SQLUtils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -209,9 +210,15 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	public SqlQueryBuilder page(Page page) {
 		this.page = page;
 		if (page.getOrder() != null) {
+			OrderByValidator.validateField(page.getOrder().getOrderBy());
+			OrderByValidator.validateDirection(page.getOrder().getDirection());
 			orders.add(page.getOrder());
 		}
 		if (!page.getOrders().isEmpty()) {
+			for (OrderBean orderBean : page.getOrders()) {
+				OrderByValidator.validateField(orderBean.getOrderBy());
+				OrderByValidator.validateDirection(orderBean.getDirection());
+			}
 			orders.addAll(page.getOrders());
 		}
 		return this;
@@ -228,17 +235,19 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	@Override
 	public SqlQueryBuilder order(OrderBean order) {
+		OrderByValidator.validateField(order.getOrderBy());
+		OrderByValidator.validateDirection(order.getDirection());
 		orders.add(order);
 		return this;
 	}
-	
+
 	@Override
 	public SqlQueryBuilder order(String orderBy, OrderBean.DIRECTION direction) {
-		OrderBean order = new OrderBean(orderBy, direction);
+		OrderBean order = new OrderBean(OrderByValidator.validateField(orderBy), direction);
 		orders.add(order);
 		return this;
 	}
-	
+
 	@Override
 	public SqlQueryBuilder order(String order) {
 		if (StringUtils.isNotEmpty(order)) {
@@ -247,7 +256,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				String[] arr = o.split(":");
 				OrderBean.DIRECTION direction = arr.length == 1 ? ASC : OrderBean.DIRECTION.of(arr[1]);
 				OrderBean orderBean = new OrderBean();
-				orderBean.setOrderBy(arr[0]);
+				orderBean.setOrderBy(OrderByValidator.validateField(arr[0]));
 				orderBean.setDirection(direction);
 				orders.add(orderBean);
 			});
@@ -393,13 +402,11 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				 * 如果SQL里面已经提供了ORDER BY，追加排序字段时用逗号连接；否则补上 ORDER BY
 				 */
 				if (queryString.toString().toUpperCase().contains("ORDER BY")) {
-					queryString.append(", ")
-							.append(page.getOrder().getOrderBy()).append(" ")
-							.append(page.getOrder().getDirection());
+					queryString.append(", ");
+					OrderByValidator.appendOrderClause(queryString, page.getOrder());
 				} else {
-					queryString.append(" ORDER BY ")
-							.append(page.getOrder().getOrderBy()).append(" ")
-							.append(page.getOrder().getDirection());
+					queryString.append(" ORDER BY ");
+					OrderByValidator.appendOrderClause(queryString, page.getOrder());
 				}
 			}
 			if (!page.getOrders().isEmpty()) { //2,3候选排序
@@ -409,8 +416,8 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 					queryString.append(", ");
 				}
 				for (OrderBean orderBean : page.getOrders()) {
-					queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection())
-							.append(", ");
+					OrderByValidator.appendOrderClause(queryString, orderBean);
+					queryString.append(", ");
 				}
 			}
 			if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
@@ -421,15 +428,13 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			if (queryString.toString().toUpperCase().indexOf("ORDER BY") == -1) {
 				if (this.orders.isEmpty()) {
 					page.setOrder(DFAULT_ORDER);
-					queryString.append(" ORDER BY ")
-							.append(page.getOrder().getOrderBy())
-							.append(" ")
-							.append(page.getOrder().getDirection());
+					queryString.append(" ORDER BY ");
+					OrderByValidator.appendOrderClause(queryString, page.getOrder());
 				} else {
+					queryString.append(" ORDER BY ");
 					for (OrderBean orderBean : this.orders) {
-						queryString.append(" ORDER BY ")
-								.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection())
-								.append(", ");
+						OrderByValidator.appendOrderClause(queryString, orderBean);
+						queryString.append(", ");
 					}
 					queryString.delete(queryString.length() - 2, queryString.length());
 				}
@@ -669,29 +674,31 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	private void addOrder(StringBuilder queryString) {
 		if (!this.orders.isEmpty()) { //2,3候选排序
 			queryString.append(" ORDER BY ");
-			
+
 			for (OrderBean orderBean : this.orders) {
-				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
+				OrderByValidator.appendOrderClause(queryString, orderBean);
+				queryString.append(", ");
 			}
 		}
 		if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
 			queryString.delete(queryString.length() - 2, queryString.length());
 		}
 	}
-	
+
 	private String addOrder(String sql) {
 		StringBuilder queryString = new StringBuilder(sql);
 		if (!this.orders.isEmpty()) { //2,3候选排序
 			queryString.append(" ORDER BY ");
-			
+
 			for (OrderBean orderBean : this.orders) {
-				queryString.append(orderBean.getOrderBy()).append(" ").append(orderBean.getDirection()).append(", ");
+				OrderByValidator.appendOrderClause(queryString, orderBean);
+				queryString.append(", ");
 			}
 		}
 		if (queryString.lastIndexOf(", ") == queryString.length() - 2) {
 			queryString.delete(queryString.length() - 2, queryString.length());
 		}
-		
+
 		return queryString.toString();
 	}
 }
