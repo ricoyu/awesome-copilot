@@ -164,7 +164,7 @@ public final class QueryUtils {
 		Class clazz = queryValue.getDeclaringClass();
 		Object code = null;
 		try {
-			code = ReflectionUtils.getFieldValue("code", clazz);
+			code = ReflectionUtils.getFieldValue("code", queryValue);
 		} catch (IllegalArgumentException e) {
 			log.warn("{} 没有定义 code 属性, 忽略次查询条件", clazz.getSimpleName());
 		}

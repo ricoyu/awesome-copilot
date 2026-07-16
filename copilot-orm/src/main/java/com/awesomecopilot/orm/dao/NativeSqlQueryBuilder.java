@@ -390,14 +390,14 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 			if (page.getOrder() != null) {
 				primaryOrdered = true;
 				/*
-				 * 如果SQL里面已经提供了ORDER BY排序, 这边就不需要再加ORDER BY了
+				 * 如果SQL里面已经提供了ORDER BY，追加排序字段时用逗号连接；否则补上 ORDER BY
 				 */
 				if (queryString.toString().toUpperCase().contains("ORDER BY")) {
-					queryString.append(" ORDER BY ")
+					queryString.append(", ")
 							.append(page.getOrder().getOrderBy()).append(" ")
 							.append(page.getOrder().getDirection());
 				} else {
-					queryString.append(" , ")
+					queryString.append(" ORDER BY ")
 							.append(page.getOrder().getOrderBy()).append(" ")
 							.append(page.getOrder().getDirection());
 				}
