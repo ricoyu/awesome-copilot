@@ -24,6 +24,7 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.CriteriaUpdate;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -414,19 +415,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, PK id) {
 		Objects.requireNonNull(id, "id cannot be null");
-
-		if (logicalDeleteEnabled) {
-			// 执行逻辑删除：更新deleted字段为true
-			T entity = em().find(entityClass, id);
-			if (entity != null) {
-				ReflectionUtils.setField(logicalDeleteField, entity, true);
-				em().merge(entity);
-			}
-		} else {
-			// 执行物理删除
-			T entity = em().getReference(entityClass, id);
-			delete(entity);
-		}
+		deleteByPKBulk(entityClass, List.of(id));
 	}
 
 	/**
@@ -441,9 +430,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (ids.length == 0) {
 			return;
 		}
-		for (PK id : ids) {
-			deleteByPK(entityClass, id);
-		}
+		deleteByPKBulk(entityClass, Arrays.stream(ids).filter(Objects::nonNull).collect(toList()));
 	}
 
 	@Override
@@ -452,22 +439,11 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (ids.length == 0) {
 			return;
 		}
+		List<Long> idList = new ArrayList<>(ids.length);
 		for (long id : ids) {
-			Objects.requireNonNull(id, "id cannot be null");
-
-			if (logicalDeleteEnabled) {
-				// 执行逻辑删除：更新deleted字段为true
-				T entity = em().find(entityClass, id);
-				if (entity != null) {
-					ReflectionUtils.setField(logicalDeleteField, entity, true);
-					em().merge(entity);
-				}
-			} else {
-				// 执行物理删除
-				T entity = em().getReference(entityClass, id);
-				delete(entity);
-			}
+			idList.add(id);
 		}
+		deleteByPKBulk(entityClass, idList);
 	}
 
 	@Override
@@ -476,32 +452,53 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (ids.length == 0) {
 			return;
 		}
-		for (long id : ids) {
-			Objects.requireNonNull(id, "id cannot be null");
-
-			if (logicalDeleteEnabled) {
-				// 执行逻辑删除：更新deleted字段为true
-				T entity = em().find(entityClass, id);
-				if (entity != null) {
-					ReflectionUtils.setField(logicalDeleteField, entity, true);
-					em().merge(entity);
-				}
-			} else {
-				// 执行物理删除
-				T entity = em().getReference(entityClass, id);
-				delete(entity);
-			}
+		List<Integer> idList = new ArrayList<>(ids.length);
+		for (int id : ids) {
+			idList.add(id);
 		}
+		deleteByPKBulk(entityClass, idList);
 	}
 
 	@Override
 	public <T, PK extends Serializable> void deleteByPK(Class<T> entityClass, Collection<PK> ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
-		if (ids.size() == 0) {
+		if (ids.isEmpty()) {
 			return;
 		}
-		for (PK pk : ids) {
-			deleteByPK(entityClass, pk);
+		deleteByPKBulk(entityClass, ids.stream().filter(Objects::nonNull).collect(toList()));
+	}
+
+	private String resolveIdAttributeName(Class<?> entityClass) {
+		Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entityClass, Id.class);
+		if (idField == null) {
+			throw new IllegalArgumentException(
+					"No @Id field found on entity class: " + entityClass.getName());
+		}
+		return idField.getName();
+	}
+
+	private <T> void deleteByPKBulk(Class<T> entityClass, Collection<?> ids) {
+		if (ids.isEmpty()) {
+			return;
+		}
+		List<?> idList = ids.stream().distinct().collect(toList());
+		String idAttribute = resolveIdAttributeName(entityClass);
+		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
+
+		for (int i = 0; i < idList.size(); i += batchSize) {
+			List<?> batch = idList.subList(i, Math.min(i + batchSize, idList.size()));
+			if (logicalDeleteEnabled) {
+				CriteriaUpdate<T> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(entityClass);
+				Root<T> root = criteriaUpdate.from(entityClass);
+				criteriaUpdate.set(root.get(logicalDeleteField), true);
+				criteriaUpdate.where(root.get(idAttribute).in(batch));
+				em().createQuery(criteriaUpdate).executeUpdate();
+			} else {
+				CriteriaDelete<T> criteriaDelete = criteriaBuilder.createCriteriaDelete(entityClass);
+				Root<T> root = criteriaDelete.from(entityClass);
+				criteriaDelete.where(root.get(idAttribute).in(batch));
+				em().createQuery(criteriaDelete).executeUpdate();
+			}
 		}
 	}
 
