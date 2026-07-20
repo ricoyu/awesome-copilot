@@ -521,11 +521,18 @@ public abstract class BaseQueryBuilder {
                 requestBuilder.searchAfter(sortValues);
             }
 
-            // source filtering
-            if (includeSource != null && includeSource.length > 0) {
-                requestBuilder.source(src -> src.filter(f -> f.includes(asList(includeSource))));
-            } else if (excludeSource != null && excludeSource.length > 0) {
-                requestBuilder.source(src -> src.filter(f -> f.excludes(asList(excludeSource))));
+            // ES 中 excludes 优先级高于 includes，同名字段会被排除，如果同时设置最终 _source 为空, 与Query DSL语义保持一致
+            if ((includeSource != null && includeSource.length > 0)
+                    || (excludeSource != null && excludeSource.length > 0)) {
+                requestBuilder.source(src -> src.filter(f -> {
+                    if (includeSource != null && includeSource.length > 0) {
+                        f.includes(asList(includeSource));
+                    }
+                    if (excludeSource != null && excludeSource.length > 0) {
+                        f.excludes(asList(excludeSource));
+                    }
+                    return f;
+                }));
             } else if (!fetchSource) {
                 requestBuilder.source(src -> src.filter(f -> f.includes(emptyList())));
             }

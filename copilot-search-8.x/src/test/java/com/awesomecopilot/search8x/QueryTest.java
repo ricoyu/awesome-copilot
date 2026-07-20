@@ -3547,6 +3547,10 @@ public class QueryTest {
 		Object[] sort = elasticPage.getSort();
 		System.out.println(JacksonUtils.toPrettyJson( sort));
 		
+		/*
+		 * 在测试 testPagingSearchAfter 中，第二次 search_after 查询没有携带 sort 参数，
+		 * 而 Elasticsearch 要求使用 search_after 时必须提供与第一次查询相同的排序规则，否则 ES 无法确定分页的排序顺序，导致所有分片执行失败。
+		 */
 		elasticPage = Query.matchAllQuery("shop_goods")
 				.searchAfter(sort)
 				.size(10)
@@ -3559,6 +3563,17 @@ public class QueryTest {
 		List<String> results = elasticPage.getResults();
 		for (String result : results) {
 			System.out.println(JacksonUtils.toPrettyJson(result));
+		}
+	}
+	
+	@Test
+	public void testIncludeExclude() {
+		List<String> shopGoods = Query.matchAllQuery("shop_goods")
+				.includeSources("goods_id", "goods_name")
+				.excludeSources("goods_id", "goods_name")
+				.queryForList();
+		for (String shopGood : shopGoods) {
+			System.out.println(shopGood);
 		}
 	}
 	
