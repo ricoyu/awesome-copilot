@@ -7,6 +7,7 @@ import com.awesomecopilot.search8x.ElasticUtils.Query;
 import com.awesomecopilot.search8x.pojo.AirConditioner;
 import com.awesomecopilot.search8x.pojo.GoodsEs;
 import com.awesomecopilot.search8x.pojo.GoodsInfo;
+import com.awesomecopilot.search8x.vo.ElasticPage;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
@@ -3507,6 +3508,57 @@ public class QueryTest {
 		for (AirConditioner doc : docs) {
 			assertThat(doc.getId()).isNotNull();
 			System.out.println(JacksonUtils.toPrettyJson(doc));
+		}
+	}
+	
+	/**
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *     "query": {
+	 *         "match_all": {}
+	 *     },
+	 *     "from": 0,
+	 *     "size": 6
+	 * }
+	 * </pre>
+	 *
+	 *
+	 */
+	@Test
+	public void testSimplePage() {
+		List<Object> shopGoods = Query.matchAllQuery("shop_goods")
+				.from(0)
+				.size(6)
+				.queryForList();
+		assertThat(shopGoods.size()).isEqualTo(6);
+		shopGoods.forEach(System.out::println);
+	}
+	
+	@Test
+	public void testPagingSearchAfter() {
+		ElasticPage<String> elasticPage = Query.matchAllQuery("shop_goods")
+				.size(10)
+				.from(0)
+				.sort("price:desc, goods_id:asc")
+				.queryForPage();
+		assertThat(elasticPage.getTotalCount()).isEqualTo(109);
+		assertThat(elasticPage.getResults().size()).isEqualTo(10);
+		Object[] sort = elasticPage.getSort();
+		System.out.println(JacksonUtils.toPrettyJson( sort));
+		
+		elasticPage = Query.matchAllQuery("shop_goods")
+				.searchAfter(sort)
+				.size(10)
+				.sort("price:desc,goods_id:asc")
+				.queryForPage();
+		assertThat(elasticPage.getResults().size()).isEqualTo(10);
+		sort = elasticPage.getSort();
+		System.out.println(JacksonUtils.toPrettyJson( sort));
+		
+		List<String> results = elasticPage.getResults();
+		for (String result : results) {
+			System.out.println(JacksonUtils.toPrettyJson(result));
 		}
 	}
 	

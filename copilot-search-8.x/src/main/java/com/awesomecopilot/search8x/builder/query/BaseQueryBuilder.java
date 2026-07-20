@@ -392,11 +392,13 @@ public abstract class BaseQueryBuilder {
             }
         }
 
-        // 取最后一个hit的sort值
+        // 取最后一个hit的sort值, 提取FieldValue内部的原始值
         Object[] sortValues = null;
         Hit<Map> lastHit = hits.get(hits.size() - 1);
         if (lastHit.sort() != null && !lastHit.sort().isEmpty()) {
-            sortValues = lastHit.sort().toArray();
+            sortValues = lastHit.sort().stream()
+                    .map(fv -> fv == null ? null : fv._get())
+                    .toArray();
         }
 
         com.awesomecopilot.search8x.vo.ElasticPage<T> page = new com.awesomecopilot.search8x.vo.ElasticPage<>();
@@ -496,9 +498,17 @@ public abstract class BaseQueryBuilder {
 
             // search_after
             if (searchAfter != null && searchAfter.length > 0) {
+                if (sortClauses.isEmpty()) {
+                    throw new IllegalArgumentException("search_after requires at least one sort clause. " +
+                            "Please add .sort(\"field:order\") before calling queryForPage().");
+                }
                 List<FieldValue> sortValues = new ArrayList<>();
                 for (Object sv : searchAfter) {
-                    if (sv instanceof String) {
+                    if (sv == null) {
+                        sortValues.add(FieldValue.NULL);
+                    } else if (sv instanceof FieldValue) {
+                        sortValues.add((FieldValue) sv);
+                    } else if (sv instanceof String) {
                         sortValues.add(FieldValue.of((String) sv));
                     } else if (sv instanceof Number) {
                         sortValues.add(FieldValue.of(((Number) sv).doubleValue()));
