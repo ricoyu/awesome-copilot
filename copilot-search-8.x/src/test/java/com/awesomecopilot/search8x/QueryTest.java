@@ -18,6 +18,7 @@ import static co.elastic.clients.elasticsearch._types.query_dsl.Operator.And;
 import static co.elastic.clients.elasticsearch._types.query_dsl.Operator.Or;
 import static co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.CrossFields;
 import static co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.Phrase;
+import static com.awesomecopilot.search8x.builder.agg.sub.SubAggregations.avg;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -3577,6 +3578,173 @@ public class QueryTest {
 		}
 	}
 	
+	/**
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *     "query": {
+	 *         "match": {
+	 *           "goods_name": "华为手机"
+	 *         }
+	 *     },
+	 *     "highlight": {
+	 *         "fields": {
+	 *             "goods_name": {},
+	 *             "goods_desc": {}
+	 *         },
+	 *         "pre_tags": ["<em style='color:red'>"],
+	 *         "post_tags": ["</em>"]
+	 *     }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testHighLight() {
+		List<String> results = Query.matchQuery("shop_goods")
+				.query("goods_name", "华为手机")
+				.highlightFields("goods_name", "goods_desc")
+				.highlightTags("<em style='color:red'>", "</em>")
+				.queryForList();
+		for (String result : results) {
+			System.out.println(result);
+		}
+		
+	}
+	
+	/**
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *     "size": 0,
+	 *     "query": {"term": {"online": true}},
+	 *     "aggs": {
+	 *       "group_by_category": {
+	 *         "terms": {"field": "category"},
+	 *         "aggs": {
+	 *           "avg_price": {
+	 *             "avg": {"field": "price"}
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testQueryWithSubAgg() {
+		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("shop_goods")
+				.of("group_by_category", "category")
+				.subAggregation(avg("avg_price", "price"))
+				.setQuery(Query.termQuery("online", true))
+				.get();
+		for (Map<String, Object> bucket : result) {
+			System.out.println(bucket);
+		}
+	}
+	
+	/**
+	 * Nested路径聚合: 在嵌套文档sku_list上按color分组, 并计算每组的平均sku_price
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *     "size": 0,
+	 *     "aggs": {
+	 *       "sku_nested": {
+	 *         "nested": {"path": "sku_list"},
+	 *         "aggs": {
+	 *           "group_color": {
+	 *             "terms": {"field": "sku_list.color"},
+	 *             "aggs": {
+	 *               "avg_sku_price": {
+	 *                 "avg": {"field": "sku_list.sku_price"}
+	 *               }
+	 *             }
+	 *           }
+	 *         }
+	 *       }
+	 *     }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testNestedPathAgg() {
+		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("shop_goods")
+				.nestedPath("sku_nested", "sku_list")
+				.of("group_color", "sku_list.color")
+				.subAggregation(avg("avg_sku_price", "sku_list.sku_price"))
+				.get();
+		for (Map<String, Object> bucket : result) {
+			System.out.println(bucket);
+		}
+	}
+	
+	/**
+	 * 复合查询: bool(filter + must含nested) + terms聚合
+	 * <pre>
+	 * POST shop_goods/_search
+	 * {
+	 *     "_source": ["goods_id","goods_name","price","sales","brand.brand_name"],
+	 *     "from":0,
+	 *     "size": 10,
+	 *     "sort": [{"sales": "desc"}],
+	 *     "highlight": {
+	 *         "fields": {"goods_name":{}},
+	 *         "pre_tags": ["<red>"],
+	 *         "post_tags": ["</red>"]
+	 *     },
+	 *     "query": {
+	 *         "bool": {
+	 *             "filter": [
+	 *               {"term": {"online": true}},
+	 *               {"term": {"category": "手机数码"}},
+	 *               {"range": {"price": {"gte": 3000, "lte": 7000}}}
+	 *             ],
+	 *             "must": [
+	 *               {"multi_match": {"query": "华为", "fields": ["goods_name^3","goods_desc"]}},
+	 *               {"nested": {"path": "sku_list", "query": {"bool": {"must": [
+	 *                 {"term": {"sku_list.color": "黑色"}},
+	 *                 {"range": {"sku_list.sku_stock": {"gte": 400}}}
+	 *               ]}}}}
+	 *             ]
+	 *         }
+	 *     },
+	 *     "aggs": {
+	 *       "cat_stat": {
+	 *         "terms": {"field": "category"}
+	 *       }
+	 *     }
+	 * }
+	 * </pre>
+	 */
+	@Test
+	public void testComplexBoolNestedQueryWithAgg() {
+		// 构建 nested 查询: sku_list 中 color=黑色 且 sku_stock>=400
+		co.elastic.clients.elasticsearch._types.query_dsl.Query nestedQuery =
+				co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q -> q.nested(n -> n
+						.path("sku_list")
+						.query(co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q2 -> q2.bool(b -> b
+								.must(co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q3 -> q3.term(t -> t.field("sku_list.color").value("黑色"))))
+								.must(co.elastic.clients.elasticsearch._types.query_dsl.Query.of(q3 -> q3.range(r -> r.number(n2 -> n2.field("sku_list.sku_stock").gte(400.0))))
+						))))));
+
+		// 构建外层 bool 查询
+		var boolQueryBuilder = Query.bool("shop_goods")
+				.term("online", true).filter()
+				.term("category", "手机数码").filter()
+				.range("price").gte(3000).lte(7000).filter()
+				.multiMatch("华为", "goods_name^3", "goods_desc").must()
+				.must(nestedQuery);
+
+		// terms 聚合 + 查询条件
+		List<Map<String, Object>> result = ElasticUtils.Aggs.terms("shop_goods")
+				.of("cat_stat", "category")
+				.setQuery(boolQueryBuilder)
+				.get();
+		for (Map<String, Object> bucket : result) {
+			System.out.println(bucket);
+		}
+	}
+
 	/**
 	 * 对应原版 MatchPhraseQueryTest 的 POJO 类
 	 */

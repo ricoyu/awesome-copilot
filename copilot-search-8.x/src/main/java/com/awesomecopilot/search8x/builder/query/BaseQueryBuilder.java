@@ -7,6 +7,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.Highlight;
+import co.elastic.clients.elasticsearch.core.search.HighlightField;
 import co.elastic.clients.elasticsearch.core.search.TotalHits;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils;
@@ -15,6 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +124,21 @@ public abstract class BaseQueryBuilder {
      * 默认值: multiply (算分与函数值的乘积)
      */
     protected String boostMode = "multiply";
+
+    /**
+     * 高亮字段列表
+     */
+    protected List<String> highlightFieldNames = new ArrayList<>();
+
+    /**
+     * 高亮前缀标签, 如 "<em style='color:red'>"
+     */
+    protected String highlightPreTag;
+
+    /**
+     * 高亮后缀标签, 如 "</em>"
+     */
+    protected String highlightPostTag;
 
     /**
      * 子类实现此方法来构建ES 8.x Query对象
@@ -235,6 +254,50 @@ public abstract class BaseQueryBuilder {
     }
 
     /**
+     * 设置高亮字段
+     * <p>
+     * 对应 Query DSL:
+     * <pre>
+     * "highlight": {
+     *     "fields": {
+     *         "goods_name": {},
+     *         "goods_desc": {}
+     *     }
+     * }
+     * </pre>
+     *
+     * @param fields 需要高亮的字段名
+     * @return T
+     */
+    public <T extends BaseQueryBuilder> T highlightFields(String... fields) {
+        if (fields != null && fields.length > 0) {
+            Collections.addAll(this.highlightFieldNames, fields);
+        }
+        return (T) this;
+    }
+
+    /**
+     * 设置高亮标签
+     * <p>
+     * 对应 Query DSL:
+     * <pre>
+     * "highlight": {
+     *     "pre_tags": ["&lt;em style='color:red'&gt;"],
+     *     "post_tags": ["&lt;/em&gt;"]
+     * }
+     * </pre>
+     *
+     * @param preTag  高亮前缀标签
+     * @param postTag 高亮后缀标签
+     * @return T
+     */
+    public <T extends BaseQueryBuilder> T highlightTags(String preTag, String postTag) {
+        this.highlightPreTag = preTag;
+        this.highlightPostTag = postTag;
+        return (T) this;
+    }
+
+    /**
      * 设置外部传入的Query对象
      * <p>
      * 允许用户直接传入已构建好的Query对象, 而不是通过子类实现buildQuery()
@@ -295,7 +358,7 @@ public abstract class BaseQueryBuilder {
     }
 
     /**
-     * 执行查询, 返回结果列表
+     * 执行查询, 返回结果列表, 如果设置了高亮字段则将高亮片段合并进 source
      */
     public <T> List<T> queryForList() {
         SearchResponse<Map> response = doSearch();
@@ -310,9 +373,11 @@ public abstract class BaseQueryBuilder {
             Map<String, Object> source = hit.source();
             if (source == null) {
                 continue;
-            }else {
+            } else {
                 source.put("_id", hit.id());
             }
+            // 将高亮片段合并到 source 中
+            mergeHighlight(source, hit);
             if (resultType == null || resultType == Object.class || resultType == String.class) {
                 results.add((T) JacksonUtils.toJson(source));
             } else {
@@ -537,6 +602,22 @@ public abstract class BaseQueryBuilder {
                 requestBuilder.source(src -> src.filter(f -> f.includes(emptyList())));
             }
 
+            // highlight
+            if (!highlightFieldNames.isEmpty()) {
+                final String preTag = highlightPreTag;
+                final String postTag = highlightPostTag;
+                requestBuilder.highlight(Highlight.of(h -> {
+                    for (String fieldName : highlightFieldNames) {
+                        h.fields(fieldName, HighlightField.of(hf -> hf));
+                    }
+                    if (preTag != null && postTag != null) {
+                        h.preTags(preTag);
+                        h.postTags(postTag);
+                    }
+                    return h;
+                }));
+            }
+
             SearchRequest request = requestBuilder.build();
 
             if (log.isDebugEnabled()) {
@@ -547,6 +628,24 @@ public abstract class BaseQueryBuilder {
         } catch (IOException e) {
             throw new RuntimeException("Search failed", e);
         }
+    }
+
+    /**
+     * 将 Hit 中的高亮片段合并到 source Map 中
+     * <p>
+     * 高亮结果以 "_highlight" 为 key 存入 source, 值为 Map&lt;String, String&gt;,
+     * 其中 key 是字段名, value 是拼接后的高亮片段
+     */
+    private void mergeHighlight(Map<String, Object> source, Hit<Map> hit) {
+        Map<String, List<String>> highlight = hit.highlight();
+        if (highlight == null || highlight.isEmpty()) {
+            return;
+        }
+        Map<String, String> highlightMap = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : highlight.entrySet()) {
+            highlightMap.put(entry.getKey(), String.join("", entry.getValue()));
+        }
+        source.put("_highlight", highlightMap);
     }
 
     protected static void notNull(Object obj, String msg) {

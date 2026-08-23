@@ -42,6 +42,7 @@ public final class AggResultSupport {
 	 * 解析 Terms 聚合结果
 	 * <p>
 	 * 支持 StringTerms 和 LongTerms 两种类型
+	 * 自动解包 Nested 聚合: 当顶层是 Nested 聚合时, 会递归进入内部查找 Terms 聚合
 	 *
 	 * @param aggregations ES 8.x 聚合 Map (name -> Aggregate)
 	 * @return 聚合结果列表，每个元素是一个桶的统计信息
@@ -56,6 +57,16 @@ public final class AggResultSupport {
 		for (Map.Entry<String, Aggregate> entry : aggregations.entrySet()) {
 			String aggName = entry.getKey();
 			Aggregate aggregate = entry.getValue();
+			
+			// 处理 Nested 聚合: 自动解包进入内部查找 Terms 聚合
+			if (aggregate.isNested()) {
+				var nestedAgg = aggregate.nested();
+				if (nestedAgg.aggregations() != null && !nestedAgg.aggregations().isEmpty()) {
+					List<Map<String, T>> innerResult = termsResult(nestedAgg.aggregations());
+					aggResults.addAll(innerResult);
+				}
+				continue;
+			}
 			
 			// 处理 StringTerms 聚合
 			if (aggregate.isSterms()) {

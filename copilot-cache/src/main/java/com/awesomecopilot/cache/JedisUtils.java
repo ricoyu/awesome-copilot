@@ -66,6 +66,105 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * <p>
  * 通过lua脚本实现了一些原生Redis不具备的接口, 如带过期时间的setnx(key, value, expires, timeUnit)
  *
+ * <h4>配置方式</h4>
+ * 本类的 {@code JedisOperations} 在类加载时即初始化, 配置读取优先级(从高到低)如下:
+ * <ol>
+ *     <li/>Spring Environment(含 Nacos 配置中心): Spring Boot 应用由 {@link com.awesomecopilot.cache.config.RedisConfigInitializer}
+ *          自动注册, 直接调用本类即可, 无需手动注册; 支持 redis.* 自定义 key, 以及 spring.data.redis.* / spring.redis.* 标准 key 回退
+ *     <li/>系统属性(如 -Dredis.host=192.168.1.100)
+ *     <li/>环境变量(如 REDIS_HOST)
+ *     <li/>本地配置文件(classpath / 工作目录 / 工作目录config 下的 redis.properties)
+ *     <li/>application.yml 的 spring.redis.*(无 redis.properties 且未注册 Spring 上下文时)
+ *     <li/>默认 localhost:6379
+ * </ol>
+ * 支持单节点、哨兵(redis.sentinels)、集群(redis.clusters)三种部署模式,
+ * 详细说明参见项目根目录 NACOS_CONFIG_GUIDE.md。
+ *
+ * <h4>支持的配置项</h4>
+ * 以下配置项均可从 Spring Environment(Nacos)、系统属性、环境变量、redis.properties 任一来源读取,
+ * 支持 redis.* 自定义写法与 Spring Boot 标准 key(spring.data.redis.* / spring.redis.*)两种写法:
+ * <p>
+ * <b>Spring Boot 标准 key 映射</b>
+ * <table border="1">
+ *     <tr><th>redis.* 配置项</th><th>spring.data.redis.* (Boot 3.x)</th><th>spring.redis.* (Boot 2.x)</th></tr>
+ *     <tr><td>redis.host</td><td>spring.data.redis.host</td><td>spring.redis.host</td></tr>
+ *     <tr><td>redis.port</td><td>spring.data.redis.port</td><td>spring.redis.port</td></tr>
+ *     <tr><td>redis.password</td><td>spring.data.redis.password</td><td>spring.redis.password</td></tr>
+ *     <tr><td>redis.db</td><td>spring.data.redis.database</td><td>spring.redis.database</td></tr>
+ *     <tr><td>redis.connectionTimeout</td><td>spring.data.redis.timeout</td><td>spring.redis.timeout</td></tr>
+ *     <tr><td>redis.socketTimeout</td><td>spring.data.redis.timeout</td><td>spring.redis.timeout</td></tr>
+ *     <tr><td>redis.timeout</td><td>spring.data.redis.timeout</td><td>spring.redis.timeout</td></tr>
+ *     <tr><td>redis.sentinels</td><td>spring.data.redis.sentinel.nodes</td><td>spring.redis.sentinel.nodes</td></tr>
+ *     <tr><td>redis.maserName</td><td>spring.data.redis.sentinel.master</td><td>spring.redis.sentinel.master</td></tr>
+ *     <tr><td>redis.clusters</td><td>spring.data.redis.cluster.nodes</td><td>spring.redis.cluster.nodes</td></tr>
+ *     <tr><td>redis.maxTotal</td><td>spring.data.redis.jedis.pool.max-active</td><td>spring.redis.jedis.pool.max-active</td></tr>
+ *     <tr><td>redis.maxIdle</td><td>spring.data.redis.jedis.pool.max-idle</td><td>spring.redis.jedis.pool.max-idle</td></tr>
+ *     <tr><td>redis.minIdle</td><td>spring.data.redis.jedis.pool.min-idle</td><td>spring.redis.jedis.pool.min-idle</td></tr>
+ * </table>
+ * <p>
+ * 未列入上表的配置项(如 redis.debug、redis.warmUp、redis.testOnBorrow、redis.cluster.maxAttempts 等)
+ * 无 Spring Boot 标准 key, 仅支持 redis.* 写法。
+ * <p>
+ * <b>单节点模式</b>
+ * <table border="1">
+ *     <tr><th>配置项</th><th>说明</th><th>默认值</th></tr>
+ *     <tr><td>redis.default.enabled</td><td>是否启用默认配置(默认 localhost:6379)</td><td>true</td></tr>
+ *     <tr><td>redis.host</td><td>Redis 主机地址</td><td>localhost</td></tr>
+ *     <tr><td>redis.port</td><td>端口号</td><td>6379</td></tr>
+ *     <tr><td>redis.password</td><td>密码</td><td>无</td></tr>
+ *     <tr><td>redis.db</td><td>数据库下标</td><td>0</td></tr>
+ *     <tr><td>redis.connectionTimeout</td><td>连接超时时间(毫秒)</td><td>50000</td></tr>
+ *     <tr><td>redis.socketTimeout</td><td>命令执行超时时间(毫秒)</td><td>1000</td></tr>
+ *     <tr><td>redis.debug</td><td>是否打印读取到的配置信息</td><td>false</td></tr>
+ *     <tr><td>redis.warmUp</td><td>启动时是否预热连接池</td><td>true</td></tr>
+ * </table>
+ * <p>
+ * <b>哨兵模式</b>
+ * <table border="1">
+ *     <tr><th>配置项</th><th>说明</th><th>默认值</th></tr>
+ *     <tr><td>redis.sentinels</td><td>哨兵地址, 形式 ip:port,ip:port</td><td>无</td></tr>
+ *     <tr><td>redis.maserName</td><td>哨兵 master 名字</td><td>mymaster</td></tr>
+ *     <tr><td>redis.timeout</td><td>超时时间(毫秒)</td><td>5000</td></tr>
+ *     <tr><td>redis.password</td><td>密码</td><td>无</td></tr>
+ *     <tr><td>redis.db</td><td>数据库下标</td><td>0</td></tr>
+ *     <tr><td>redis.debug</td><td>是否打印读取到的配置信息</td><td>false</td></tr>
+ * </table>
+ * <p>
+ * <b>集群模式</b>
+ * <table border="1">
+ *     <tr><th>配置项</th><th>说明</th><th>默认值</th></tr>
+ *     <tr><td>redis.clusters</td><td>集群节点地址, 形式 ip:port,ip:port</td><td>无</td></tr>
+ *     <tr><td>redis.cluster.maxAttempts</td><td>执行命令出现异常时的最大重试次数</td><td>3</td></tr>
+ *     <tr><td>redis.password</td><td>密码</td><td>无</td></tr>
+ *     <tr><td>redis.connectionTimeout</td><td>连接超时时间(毫秒)</td><td>50000</td></tr>
+ *     <tr><td>redis.socketTimeout</td><td>命令执行超时时间(毫秒)</td><td>1000</td></tr>
+ *     <tr><td>redis.debug</td><td>是否打印读取到的配置信息</td><td>false</td></tr>
+ * </table>
+ * <p>
+ * <b>连接池(三种模式通用)</b>
+ * <table border="1">
+ *     <tr><th>配置项</th><th>说明</th><th>默认值</th></tr>
+ *     <tr><td>redis.maxTotal</td><td>资源池最大连接数</td><td>50</td></tr>
+ *     <tr><td>redis.maxIdle</td><td>资源池允许的最大空闲连接数</td><td>50</td></tr>
+ *     <tr><td>redis.minIdle</td><td>资源池最少空闲连接数</td><td>8</td></tr>
+ *     <tr><td>redis.testOnBorrow</td><td>借用连接时是否校验有效性</td><td>true</td></tr>
+ *     <tr><td>redis.testOnReturn</td><td>归还连接时是否校验有效性</td><td>false</td></tr>
+ *     <tr><td>redis.blockWhenExhausted</td><td>资源用尽后调用者是否等待</td><td>true</td></tr>
+ *     <tr><td>redis.maxWaitMillis</td><td>资源用尽后最大等待时间(毫秒)</td><td>60000</td></tr>
+ *     <tr><td>redis.testWhileIdle</td><td>是否开启空闲资源监测</td><td>true</td></tr>
+ *     <tr><td>redis.timeBetweenEvictionRunsMillis</td><td>空闲资源检测周期(毫秒)</td><td>30000</td></tr>
+ *     <tr><td>redis.minEvictableIdleTimeMillis</td><td>资源最小空闲时间(毫秒)</td><td>60000</td></tr>
+ *     <tr><td>redis.numTestsPerEvictionRun</td><td>空闲检测每次采样数, -1 表示全部</td><td>-1</td></tr>
+ * </table>
+ * <p>
+ * <b>环境变量 / 系统属性覆盖(仅单节点)</b>
+ * <table border="1">
+ *     <tr><th>变量名</th><th>说明</th></tr>
+ *     <tr><td>COPILOT_REDIS_HOST</td><td>覆盖 redis.host</td></tr>
+ *     <tr><td>COPILOT_REDIS_PORT</td><td>覆盖 redis.port</td></tr>
+ *     <tr><td>COPILOT_REDIS_PASSWORD</td><td>覆盖 redis.password</td></tr>
+ * </table>
+ *
  * <p>
  * Copyright: Copyright (c) 2018-05-12 18:16
  * <p>

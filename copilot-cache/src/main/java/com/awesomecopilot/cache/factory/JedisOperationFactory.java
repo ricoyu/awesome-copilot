@@ -1,5 +1,6 @@
 package com.awesomecopilot.cache.factory;
 
+import com.awesomecopilot.cache.config.RedisConfigReader;
 import com.awesomecopilot.cache.config.RedisProperties;
 import com.awesomecopilot.cache.operations.JedisClusterOperations;
 import com.awesomecopilot.cache.operations.JedisOperations;
@@ -35,13 +36,27 @@ public final class JedisOperationFactory {
 	
 	private static final String SENTINELS = "redis.sentinels";
 	private static final String CLUSTERS = "redis.clusters";
-	
+
+	/**
+	 * 注册 Spring ApplicationContext, 使工厂能够从 Spring Environment(含 Nacos 配置中心)读取 Redis 配置。
+	 * <p>
+	 * 在 Spring Boot 应用中无需调用本方法, 由 {@link com.awesomecopilot.cache.config.RedisConfigInitializer}
+	 * 通过 spring.factories 在应用启动阶段自动注册 Spring Environment。仅当在非 Spring Boot 的
+	 * Spring 环境中使用时, 才需要手动调用本方法注册。
+	 *
+	 * @param applicationContext Spring 应用上下文
+	 */
+	public static void registerContext(Object applicationContext) {
+		RedisConfigReader.registerContext(applicationContext);
+	}
+
 	public static JedisOperations create() {
 		
 		/**
-		 * 默认读取classpath下redis.properties文件
+		 * 默认读取classpath下redis.properties文件,
+		 * 如果注册了 Spring ApplicationContext, 则优先从 Spring Environment(Nacos) 读取配置
 		 */
-		PropertyReader propertyReader = new PropertyReader("redis");
+		PropertyReader propertyReader = new RedisConfigReader("redis");
 		RedisProperties redisProperties = null;
 		
 		/*

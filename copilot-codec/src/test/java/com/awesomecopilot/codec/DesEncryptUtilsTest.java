@@ -8,7 +8,7 @@ public class DesEncryptUtilsTest {
 	
 	@Test
 	public void testEncryptJaJaPwd() {
-		String encrypt = DesEncryptUtils.encrypt("123456", "ricoyu@jajalink.com");
+		String encrypt = DesEncryptUtils.encrypt("qianyu14", "ricoyu@jajalink.com");
 		System.out.println(encrypt);
 	}
 	
