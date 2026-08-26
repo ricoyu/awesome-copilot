@@ -100,8 +100,16 @@ public interface SQLOperations {
 	 * @return List<T>
 	 */
 	public <T> List<T> findList(String queryName, Map<String, Object> params, Class<T> clazz);
-
-
+	
+	
+	/**
+	 * 跟findList的差别就是结果集不封装到Bean里面
+	 * List里面存的是Object[], 数组长度取决于你SELECT了几个字段
+	 *
+	 * @param queryName 可以是定义在xx.hbm.xml中的sql-query的名字, 也可以是完整的一个SQL语句, 最新的loser-orm对这块更新支持了
+	 * @return List<T>
+	 */
+	public <T> List<T> findRawList(String queryName, String propertyName, Object value);
 	/**
 	 * 执行更新, 插入或删除语句
 	 *

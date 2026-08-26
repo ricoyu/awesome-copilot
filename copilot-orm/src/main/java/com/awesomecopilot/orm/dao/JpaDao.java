@@ -997,7 +997,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 		return resultList;
 	}
-
+	
+	@Override
+	public <T> List<T> findRawList(String queryName, String propertyName, Object value) {
+		Map<String, Object> params = new HashMap<>();
+		params.put(propertyName, value);
+		return query4RawList(queryName, params);
+	}
+	
 	@Override
 	public <T> int deleteIn(Class<T> entityClass, String propertyName, Collection<?> values) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
  * 序列化Result对象, 如果其中的page属性为null, 那么就不输出
  * <p>
@@ -34,7 +36,9 @@ public class ResultSerializer extends StdSerializer<Result> {
 		//0 成功 非0 失败
 		gen.writeStringField("code", value.getCode());
 		gen.writeStringField("status", value.getStatus());
-		gen.writeObjectField("message", value.getMessage());
+		if (value.getMessage()!= null && isNotBlank(value.getMessage().toString())) {
+			gen.writeObjectField("message", value.getMessage());
+		}
 
 		//不是分页查询就不输出page字段
 		if (value.getPage() != null) {

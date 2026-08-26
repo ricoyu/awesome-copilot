@@ -1,5 +1,7 @@
 package com.awesomecopilot.web.utils;
 
+import com.awesomecopilot.common.lang.resource.YamlOps;
+import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.web.exception.DownloadException;
@@ -34,18 +36,34 @@ import static com.awesomecopilot.common.lang.utils.Assert.notNull;
  * @version 1.0
  */
 public final class RestUtils {
-
+	
 	private static final Logger log = LoggerFactory.getLogger(RestUtils.class);
 	
 	/**
+	 * 输出的时候要不要加跨域头
+	 */
+	private static boolean enableCors = false;
+	
+	static {
+		YamlOps yamlOps = YamlProfileReaders.instance("application");
+		enableCors = yamlOps.getBoolean("copilot.mvc.cors.enabled", true);
+	}
+	
+	/**
 	 * 将结果以application/json形式写入输出流
+	 *
 	 * @param response
 	 * @param result
 	 */
 	@SneakyThrows
 	public static void writeJson(ServletResponse response, Object result) {
-		HttpServletResponse httpServletResponse = (HttpServletResponse)response;
-		CORS.builder().allowAll().build(httpServletResponse);
+		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+		/*
+		 * 这里不能直接开启跨域, 不然在SpringCloudAlibaba环境, 网关层也开启跨域的话两头开跨域会报错CORS error
+		 */
+		if (enableCors) {
+			CORS.builder().allowAll().build(httpServletResponse);
+		}
 		httpServletResponse.setStatus(HttpStatus.OK.value());
 		httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		JacksonUtils.writeValue(response.getWriter(), result);
@@ -53,13 +71,19 @@ public final class RestUtils {
 	
 	/**
 	 * 将结果以application/json形式以指定的Http Status写入输出流
+	 *
 	 * @param response
 	 * @param result
 	 */
 	@SneakyThrows
 	public static void writeJson(ServletResponse response, HttpStatus httpStatus, Object result) {
 		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-		CORS.builder().allowAll().build(httpServletResponse);
+		/*
+		 * 这里不能直接开启跨域, 不然在SpringCloudAlibaba环境, 网关层也开启跨域的话两头开跨域会报错CORS error
+		 */
+		if (enableCors) {
+			CORS.builder().allowAll().build(httpServletResponse);
+		}
 		httpServletResponse.setStatus(httpStatus.value());
 		httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		JacksonUtils.writeValue(response.getWriter(), result);
@@ -67,13 +91,19 @@ public final class RestUtils {
 	
 	/**
 	 * 将结果以application/json形式写入输出流
+	 *
 	 * @param response
 	 * @param result
 	 */
 	@SneakyThrows
 	public static void writeRawJson(ServletResponse response, String result) {
-		HttpServletResponse httpServletResponse = (HttpServletResponse)response;
-		CORS.builder().allowAll().build(httpServletResponse);
+		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+		/*
+		 * 这里不能直接开启跨域, 不然在SpringCloudAlibaba环境, 网关层也开启跨域的话两头开跨域会报错CORS error
+		 */
+		if (enableCors) {
+			CORS.builder().allowAll().build(httpServletResponse);
+		}
 		httpServletResponse.setStatus(HttpStatus.OK.value());
 		httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.getWriter().write(result);
@@ -81,13 +111,19 @@ public final class RestUtils {
 	
 	/**
 	 * 将结果以application/json形式以指定的Http Status写入输出流
+	 *
 	 * @param response
 	 * @param result
 	 */
 	@SneakyThrows
 	public static void writeRawJson(ServletResponse response, HttpStatus httpStatus, String result) {
-		HttpServletResponse httpServletResponse = (HttpServletResponse)response;
-		CORS.builder().allowAll().build(httpServletResponse);
+		HttpServletResponse httpServletResponse = (HttpServletResponse) response;
+		/*
+		 * 这里不能直接开启跨域, 不然在SpringCloudAlibaba环境, 网关层也开启跨域的话两头开跨域会报错CORS error
+		 */
+		if (enableCors) {
+			CORS.builder().allowAll().build(httpServletResponse);
+		}
 		httpServletResponse.setStatus(httpStatus.value());
 		httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		response.getWriter().write(result);
@@ -117,11 +153,15 @@ public final class RestUtils {
 		}
 		
 		String contentType = request.getServletContext().getMimeType(file.getAbsolutePath());
-		if(contentType == null) {
+		if (contentType == null) {
 			contentType = "application/octet-stream";
 		}
-		
-		CORS.builder().allowAll().build(response);
+		/*
+		 * 这里不能直接开启跨域, 不然在SpringCloudAlibaba环境, 网关层也开启跨域的话两头开跨域会报错CORS error
+		 */
+		if (enableCors) {
+			CORS.builder().allowAll().build(response);
+		}
 		response.setStatus(HttpStatus.OK.value());
 		response.setHeader(HttpHeaders.CONTENT_TYPE, contentType);
 		try {
@@ -131,7 +171,7 @@ public final class RestUtils {
 			throw new DownloadException("下载文件失败", e);
 		}
 		
-		try (OutputStream out = response.getOutputStream()){
+		try (OutputStream out = response.getOutputStream()) {
 			out.write(IOUtils.readFileAsBytes(file));
 			out.flush();
 		} catch (IOException e) {

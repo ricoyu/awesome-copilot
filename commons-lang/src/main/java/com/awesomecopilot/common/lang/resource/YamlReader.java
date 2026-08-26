@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
 import static java.util.Arrays.asList;
 
 /**
- * 读取yml文件
+ * 读取yml/yaml文件
+ * <p>
+ * 同时支持 .yml 和 .yaml 后缀, 优先查找 .yml, 未找到时回退 .yaml。
  * <p>
  * Copyright: (C), 2021-01-21 11:10
  * <p>
@@ -34,10 +37,13 @@ public class YamlReader implements YamlOps {
 	private static final String FILE_SEPRATOR = System.getProperty("file.separator");
 	
 	/**
-	 * 属性文件后缀, 不是CLASSPATH下的属性文件需要用全路径名称
+	 * 支持的 YAML 后缀, 按优先级排列: .yml 优先于 .yaml
 	 */
-	private static final String RESOURCE_SUFFIX = ".yml";
+	private static final String[] YAML_SUFFIXES = {".yml", ".yaml"};
 	
+	/**
+	 * 资源基础名称(不含后缀), 用于 getResource() 返回以及 profile 文件拼接
+	 */
 	private String resource;
 	
 	/**
@@ -51,7 +57,7 @@ public class YamlReader implements YamlOps {
 	private Map<String, Object> yaml3 = null;
 	
 	/**
-	 * yml的文件名, 带不带.yml后缀都可以识别<p>
+	 * yml/yaml的文件名, 带不带后缀都可以识别, 同时支持 .yml 和 .yaml 后缀<p>
 	 * 推荐使用: YamlOps yamlOps = YamlProfileReaders.instance("application");<p>
 	 * 支持profile以及工作目录, classpath下不同优先级配置文件读取<p>
 	 * <p>
@@ -61,57 +67,82 @@ public class YamlReader implements YamlOps {
 	 * <li/>工作目录下的同名配置文件
 	 * <li/>classpath下的同名配置文件
 	 * </ol>
+	 * 每个位置优先查找 .yml, 未找到时回退 .yaml
 	 *
 	 * @param resource
 	 */
 	public YamlReader(String resource) {
 		notNull(resource, "resource cannot be null!");
-		if (!resource.endsWith(RESOURCE_SUFFIX)) {
-			resource = resource + RESOURCE_SUFFIX;
-		}
-		this.resource = resource;
+		this.resource = stripYamlSuffix(resource);
 		
 		Yaml yaml = new Yaml();
 		/*
-		 * 读取classpath下的yml
+		 * 读取classpath下的yml/yaml
 		 */
-		try {
-			InputStream inputStream = IOUtils.readClasspathFileAsInputStream(resource);
-			if (inputStream != null) {
-				yaml1 = yaml.load(inputStream);
-				inputStream.close();
-			}
-		} catch (IOException e) {
-			log.warn(e.getMessage());
-		}
+		yaml1 = loadFirst(yaml, suffix -> IOUtils.readClasspathFileAsInputStream(resource + suffix));
 		/*
-		 * 读取工作目录下的yml
+		 * 读取工作目录下的yml/yaml
 		 */
-		try {
-			InputStream inputStream = IOUtils.readFileAsStream(WORKING_DIR + FILE_SEPRATOR + resource);
-			if (inputStream != null) {
-				yaml2 = yaml.load(inputStream);
-				inputStream.close();
+		yaml2 = loadFirst(yaml, suffix -> {
+			try {
+				return IOUtils.readFileAsStream(WORKING_DIR + FILE_SEPRATOR + resource + suffix);
+			} catch (IOException e) {
+				log.warn(e.getMessage());
+				return null;
 			}
-		} catch (IOException e) {
-			log.warn(e.getMessage());
-		}
+		});
 		/*
-		 * 读取工作目录config下的yml
+		 * 读取工作目录config下的yml/yaml
 		 */
-		try {
-			InputStream inputStream = IOUtils.readFileAsStream(WORKING_DIR + FILE_SEPRATOR + "config" + FILE_SEPRATOR + resource);
-			if (inputStream != null) {
-				yaml3 = yaml.load(inputStream);
-				inputStream.close();
+		yaml3 = loadFirst(yaml, suffix -> {
+			try {
+				return IOUtils.readFileAsStream(WORKING_DIR + FILE_SEPRATOR + "config" + FILE_SEPRATOR + resource + suffix);
+			} catch (IOException e) {
+				log.warn(e.getMessage());
+				return null;
 			}
-		} catch (IOException e) {
-			log.warn(e.getMessage());
-		}
+		});
 	}
 	
 	/**
-	 * 判断yml是否存在
+	 * 去除资源名称中的 .yml 或 .yaml 后缀, 返回基础名称
+	 */
+	private static String stripYamlSuffix(String name) {
+		if (name.endsWith(".yml")) {
+			return name.substring(0, name.length() - 4);
+		}
+		if (name.endsWith(".yaml")) {
+			return name.substring(0, name.length() - 5);
+		}
+		return name;
+	}
+	
+	/**
+	 * 依次尝试 .yml / .yaml 后缀, 加载第一个找到的 YAML 文件
+	 *
+	 * @param yaml           SnakeYaml 实例
+	 * @param streamProvider 根据后缀返回 InputStream 的函数, 找不到时返回 null
+	 * @return 解析后的 Map, 未找到任何文件时返回 null
+	 */
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> loadFirst(Yaml yaml, Function<String, InputStream> streamProvider) {
+		for (String suffix : YAML_SUFFIXES) {
+			InputStream inputStream = streamProvider.apply(suffix);
+			if (inputStream != null) {
+				try {
+					Map<String, Object> result = yaml.load(inputStream);
+					inputStream.close();
+					return result;
+				} catch (IOException e) {
+					log.warn(e.getMessage());
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * 判断yml/yaml是否存在
 	 *
 	 * @return
 	 */
