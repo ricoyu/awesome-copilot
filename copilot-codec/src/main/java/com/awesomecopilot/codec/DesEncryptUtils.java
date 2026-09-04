@@ -5,8 +5,6 @@ import com.awesomecopilot.codec.exception.DESDecryptionException;
 import com.awesomecopilot.codec.exception.DESEncryptionException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -33,18 +31,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class DesEncryptUtils {
 	
-	private static final Logger logger = LoggerFactory.getLogger(DesEncryptUtils.class);
-	
-	private static Cipher cipher = null;
-	
-	static {
+	/**
+	 * Cipher 非线程安全, 用 ThreadLocal 为每个线程缓存独立的 Cipher 实例, 兼顾线程安全与性能
+	 */
+	private static final ThreadLocal<Cipher> CIPHER_THREAD_LOCAL = ThreadLocal.withInitial(() -> {
 		try {
-			cipher = Cipher.getInstance("DES");
+			return Cipher.getInstance("DES");
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			logger.error("实例化Cipher失败", e);
 			throw new CipherInitializeException(e);
 		}
-	}
+	});
 	
 	/**
 	 * 加密
@@ -58,6 +54,7 @@ public class DesEncryptUtils {
 		
 		try {
 			SecretKeySpec keyspec = getDESSecretKey(key);
+			Cipher cipher = CIPHER_THREAD_LOCAL.get();
 			cipher.init(Cipher.ENCRYPT_MODE, keyspec);
 			byte[] encrypted = cipher.doFinal(dataBytes);
 			return Base64.encodeBase64String(encrypted);
@@ -77,7 +74,7 @@ public class DesEncryptUtils {
 		try {
 			byte[] encrypted = Base64.decodeBase64(data);
 			
-			Cipher cipher = Cipher.getInstance("DES");
+			Cipher cipher = CIPHER_THREAD_LOCAL.get();
 			SecretKeySpec keyspec = getDESSecretKey(key);
 			
 			cipher.init(Cipher.DECRYPT_MODE, keyspec);

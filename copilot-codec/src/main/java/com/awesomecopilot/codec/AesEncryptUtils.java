@@ -5,8 +5,6 @@ import com.awesomecopilot.codec.exception.AESEncryptionException;
 import com.awesomecopilot.codec.exception.CipherInitializeException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -35,18 +33,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class AesEncryptUtils {
 	
-	private static final Logger logger = LoggerFactory.getLogger(AesEncryptUtils.class);
-	
-	private static Cipher cipher = null;
-	
-	static {
+	/**
+	 * Cipher 非线程安全, 用 ThreadLocal 为每个线程缓存独立的 Cipher 实例, 兼顾线程安全与性能
+	 */
+	private static final ThreadLocal<Cipher> CIPHER_THREAD_LOCAL = ThreadLocal.withInitial(() -> {
 		try {
-			cipher = Cipher.getInstance("AES/CBC/NoPadding");
+			return Cipher.getInstance("AES/CBC/NoPadding");
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			logger.error("实例化Cipher失败", e);
 			throw new CipherInitializeException(e);
 		}
-	}
+	});
 	
 	/**
 	 * 加密
@@ -57,22 +53,24 @@ public class AesEncryptUtils {
 	 * @throws Exception
 	 */
 	public static String encrypt(String data, String key) {
-		int blockSize = cipher.getBlockSize();
-		
 		byte[] dataBytes = data.getBytes(UTF_8);
-		int plaintextLength = dataBytes.length;
-		if (plaintextLength % blockSize != 0) {
-			plaintextLength = plaintextLength + (blockSize - (plaintextLength % blockSize));
-		}
-		
-		byte[] plaintext = new byte[plaintextLength];
-		System.arraycopy(dataBytes, 0, plaintext, 0, dataBytes.length);
 		
 		byte[] bytes = key.getBytes(UTF_8);
 		SecretKeySpec keyspec = new SecretKeySpec(bytes, "AES");
 		IvParameterSpec ivspec = new IvParameterSpec(bytes);
 		
 		try {
+			Cipher cipher = CIPHER_THREAD_LOCAL.get();
+			int blockSize = cipher.getBlockSize();
+			
+			int plaintextLength = dataBytes.length;
+			if (plaintextLength % blockSize != 0) {
+				plaintextLength = plaintextLength + (blockSize - (plaintextLength % blockSize));
+			}
+			
+			byte[] plaintext = new byte[plaintextLength];
+			System.arraycopy(dataBytes, 0, plaintext, 0, dataBytes.length);
+			
 			cipher.init(Cipher.ENCRYPT_MODE, keyspec, ivspec);
 			byte[] encrypted = cipher.doFinal(plaintext);
 			return Base64.encodeBase64URLSafeString(encrypted);
@@ -93,7 +91,7 @@ public class AesEncryptUtils {
 		try {
 			byte[] encrypted = Base64.decodeBase64(data);
 			
-			Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+			Cipher cipher = CIPHER_THREAD_LOCAL.get();
 			byte[] bytes = key.getBytes(UTF_8);
 			SecretKeySpec keyspec = new SecretKeySpec(bytes, "AES");
 			IvParameterSpec ivspec = new IvParameterSpec(bytes);
