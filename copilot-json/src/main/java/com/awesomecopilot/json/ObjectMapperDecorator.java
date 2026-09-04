@@ -9,6 +9,7 @@ import com.awesomecopilot.json.jackson.deserializer.EnumDeserializer;
 import com.awesomecopilot.json.jackson.deserializer.LocalDateDeserializer;
 import com.awesomecopilot.json.jackson.deserializer.LocalDateTimeDeserializer;
 import com.awesomecopilot.json.jackson.deserializer.PageDeserializer;
+import com.awesomecopilot.json.jackson.serializer.HtmlEscapeStringSerializer;
 import com.awesomecopilot.json.jackson.serializer.LocalDateTimeSerializer;
 import com.awesomecopilot.json.jackson.serializer.ResultSerializer;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -70,6 +71,7 @@ public class ObjectMapperDecorator {
 	private static boolean epochBased = propertyReader.getBoolean("copilot.jackson.epochBased", false);
 	private static boolean ignorePropertiesCase = propertyReader.getBoolean("copilot.jackson.ignore_case", false);
 	private static boolean failOnUnknownProperties = propertyReader.getBoolean("copilot.jackson.fail.on.unknown.properties", false);
+	private static boolean xssEnabled = propertyReader.getBoolean("copilot.filter.xss-enabled", false);
 	
 	public ObjectMapper decorate(ObjectMapper objectMapper) {
 		if (epochBased) {
@@ -129,11 +131,12 @@ public class ObjectMapperDecorator {
 		 */
 		objectMapper.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
 		
-		//注册xss解析器, 去掉注释的原因是request body如果有 < 这种, 都会被替换成&lt, 但是如果用户就是要提交<呢?
-		/*SimpleModule xssModule = new SimpleModule("XssStringJsonModule");
-		xssModule.addSerializer(String.class, new XssStringJsonSerializer());
-		xssModule.addDeserializer(String.class, new XssStringJsonDeserializer());
-		objectMapper.registerModule(xssModule);*/
+		//注册xss序列化器, 默认关闭, 可通过jackson.properties中的copilot.filter.xss-enabled=true开启
+		if (xssEnabled) {
+			SimpleModule xssModule = new SimpleModule("XssStringJsonModule");
+			xssModule.addSerializer(String.class, new HtmlEscapeStringSerializer());
+			objectMapper.registerModule(xssModule);
+		}
 		
 		//系列化字符串时候, Jackson会把双引号转义, 如\", 这里配置不需要转义
 		//objectMapper.getFactory().setCharacterEscapes(new CustomCharacterEscapes());

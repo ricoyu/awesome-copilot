@@ -250,7 +250,7 @@ public final class AuthUtils {
 	 *
 	 * @param token
 	 */
-	public static String auth(String token) {
+	public static String checkToken(String token) {
 		Objects.requireNonNull(token, "token cannot be null");
 		
 		byte[] bytes = JedisUtils.evalsha(sha1,

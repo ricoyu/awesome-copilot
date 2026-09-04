@@ -15,17 +15,17 @@ import java.util.Map;
  * <p>
  * Company: Sexy Uncle Inc.
  * <p>
- 
+ *
  * @author Rico Yu  ricoyu520@gmail.com
  * @version 1.0
  */
 public class Result<T> {
-
+	
 	/**
 	 * 调用成功的状态码
 	 */
 	private static final String SUCCESS_CODE = "0";
-
+	
 	private static final Logger log = LoggerFactory.getLogger(Result.class);
 	
 	/**
@@ -37,7 +37,7 @@ public class Result<T> {
 	 * success error
 	 */
 	private String status;
-
+	
 	/**
 	 * message表示在API调用失败的情况下详细的错误信息, 这个信息可以由客户端直接呈现给用户
 	 * 调用成功则固定为null；
@@ -65,62 +65,64 @@ public class Result<T> {
 	
 	public <K, V> Result put(K key, V value) {
 		if (data instanceof Map) {
-			Map<K, V> map = (Map<K, V>)data;
+			Map<K, V> map = (Map<K, V>) data;
 			map.put(key, value);
 		} else {
 			log.warn("data is not a Map, cannot call put(k, v)");
 		}
 		return this;
 	}
-
+	
 	public T getData() {
 		return this.data;
 	}
+	
 	public String getCode() {
 		return code;
 	}
-
+	
 	public void setCode(String code) {
 		this.code = code;
 	}
-
+	
 	public String getStatus() {
 		return status;
 	}
-
+	
 	public void setStatus(String status) {
 		this.status = status;
 	}
-
+	
 	public Object getMessage() {
 		return message;
 	}
-
-
+	
+	
 	public void setMessage(Object message) {
 		this.message = message;
 	}
-
+	
 	public void setData(T data) {
 		this.data = data;
 	}
-
+	
 	public Page getPage() {
 		return page;
 	}
-
+	
 	public void setPage(Page page) {
 		this.page = page;
 	}
-
+	
 	/**
 	 * 判断调用是否成功
+	 *
 	 * @return boolean
 	 */
 	public boolean isSuccess() {
 		return SUCCESS_CODE.equals(code);
 	}
-
+	
 	/**
 	 * 判断是否有异常。如果有，则抛出 {@link ServiceException} 异常
 	 */
@@ -129,9 +131,12 @@ public class Result<T> {
 			return;
 		}
 		// 业务异常
-		throw new ServiceException(code, (String) message);
+		// message 可能是 String，也可能是校验错误信息 List<String[]> 等非字符串类型，
+		// 直接强转 (String) 会抛 ClassCastException，这里统一安全地转成 String
+		String errorMessage = message == null ? null : (message instanceof String ? (String) message : message.toString());
+		throw new ServiceException(code, errorMessage);
 	}
-
+	
 	/**
 	 * 判断是否有异常。如果有，则抛出 {@link ServiceException} 异常
 	 * 如果没有，则返回 {@link #data} 数据

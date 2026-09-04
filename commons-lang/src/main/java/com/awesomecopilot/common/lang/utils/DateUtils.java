@@ -592,7 +592,7 @@ public final class DateUtils {
 			return LocalDate.parse(source, DTF_DATE_FORMAT_EN_1);
 		}
 		
-		if (PT_DATE_EN_1.matcher(source).matches()) {
+		if (PT_DATE_EN_2.matcher(source).matches()) {
 			return LocalDate.parse(source, DTF_DATE_FORMAT_EN_2);
 		}
 		

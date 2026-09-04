@@ -132,7 +132,7 @@ final class SimpleDateFormatHolder {
 	
 	public static SimpleDateFormat getSimpleDateFormat(String source) {
 		if (matches(PT_ISO_DATETIME, source)) {
-			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME_1);
+			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME);
 		}
 		if (matches(PT_ISO_DATE, source)) {
 			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATE);

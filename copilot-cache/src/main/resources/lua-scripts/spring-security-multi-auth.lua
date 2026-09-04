@@ -7,7 +7,7 @@
   auth:token:username       field是token,    value是username
   auth:token:userdetails    field是token,    value是userdetails
   auth:token:authorities    field是token,    value是authorities
-  auth:token:login:info     field是token,    value是额外的登录信息, 如设备号、手机操作系统, IP地址等等。使用场景如app登出提示
+  auth:token:loginInfo     field是token,    value是额外的登录信息, 如设备号、手机操作系统, IP地址等等。使用场景如app登出提示
   auth:token:ttl            field是token,    value是token过期时间, refresh token的时候取这个值作为新的过期时间
   
 每个用户1个SET 
@@ -21,7 +21,7 @@
 local AUTH_TOKEN_USERNAME_HASH = "auth:token:username"
 local AUTH_TOKEN_USERDETAILS_HASH = "auth:token:userdetails"
 local AUTH_TOKEN_AUTHORITIES_HASH = "auth:token:authorities"
-local AUTH_TOKEN_LOGIN_INFO_HASH = "auth:token:login:info"
+local AUTH_TOKEN_LOGIN_INFO_HASH = "auth:token:loginInfo"
 local AUTH_TOKEN_TTL_HASH = "auth:token:ttl"
 local AUTH_TOKEN_TTL_ZSET = "auth:token:ttl:zset"
 
