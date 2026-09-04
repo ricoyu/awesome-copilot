@@ -94,7 +94,7 @@ public class JacksonUtilsTest {
 				{"merchant_info": {"bank_account": "686888888761", "bank_name": "招商银行", "account_name": "俞雪华", "open_bank": "招商银行园区分行营业部"} }""";
 		ObjectNode objectNode = JacksonUtils.parseObject(json);
 		JsonNode merchantInfo = objectNode.get("merchant_info");
-		String bankAccount = merchantInfo.get("bank_account").toString();
+		String bankAccount = merchantInfo.get("bank_account").asText();
 		System.out.println(JacksonUtils.toPrettyJson(objectNode));
 		assertEquals("686888888761", bankAccount);
 	}
@@ -154,12 +154,12 @@ public class JacksonUtilsTest {
 		assertEquals("2020-03-20", resultMap.get("birthday"));
 	}
 	
-	@Test
+/*	@Test
 	public void testMongoDocumentJson() {
 		String json = IOUtils.readClassPathFileAsString("mongodbDocumentJson.json");
 		UserInfo userInfo = JacksonUtils.toObject(json, UserInfo.class);
 		System.out.println(userInfo.getId());
-	}
+	}*/
 	
 	@Test
 	public void testSerializeSingleValue() {

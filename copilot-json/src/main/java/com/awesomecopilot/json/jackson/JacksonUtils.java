@@ -297,6 +297,16 @@ public final class JacksonUtils {
 		return objectMapper;
 	}
 	
+	/**
+	 * 运行时动态添加 MixIn。
+	 * <p>
+	 * 注意：该方法直接修改共享的 {@code objectMapper}，且 {@link ObjectMapper#addMixIn(Class, Class)}
+	 * 内部通过复制 AnnotationIntrospector 实现，<b>不保证并发安全</b>。请勿在高并发场景下频繁调用，
+	 * 建议在应用启动阶段一次性完成所有 MixIn 注册。
+	 *
+	 * @param target      目标类型
+	 * @param mixinSource MixIn 源类型
+	 */
 	public static void addMixIn(Class target, Class mixinSource) {
 		objectMapper.addMixIn(target, mixinSource);
 	}

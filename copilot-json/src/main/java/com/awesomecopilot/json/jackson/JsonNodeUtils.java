@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -221,7 +222,7 @@ public final class JsonNodeUtils {
 				T obj = JacksonUtils.toObject(nodeValue, clazz);
 				values.add(obj);
 			}
-			return (T[]) values.stream().toArray();
+			return values.toArray((T[]) Array.newInstance(clazz, values.size()));
 		}
 		
 		return null;
