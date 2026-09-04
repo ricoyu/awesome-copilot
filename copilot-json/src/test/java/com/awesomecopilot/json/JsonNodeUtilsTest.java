@@ -2,6 +2,7 @@ package com.awesomecopilot.json;
 
 import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
+import com.awesomecopilot.json.jackson.JsonNodeUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -12,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * <p>
@@ -64,6 +67,38 @@ public class JsonNodeUtilsTest {
 		}
 	}
 	
+	@Test
+	@SneakyThrows
+	public void testReadListStringWithoutQuotes() {
+		JsonNode node = JacksonUtils.objectMapper().readTree(IOUtils.readClassPathFileAsBytes("array-field.json"));
+		List<String> values = JsonNodeUtils.readList(node, "dns_grouped_A");
+		assertThat(values).containsExactly("180.101.49.11", "180.101.49.12");
+	}
+
+	@Test
+	@SneakyThrows
+	public void testReadListObjects() {
+		JsonNode node = JacksonUtils.objectMapper().readTree(IOUtils.readClassPathFileAsBytes("array-field.json"));
+		List<DnsAnswer> answers = JsonNodeUtils.readList(node, "dns_answers", DnsAnswer.class);
+		assertThat(answers).hasSize(3);
+		assertThat(answers.get(0).getRrname()).isEqualTo("www.baidu.com");
+		assertThat(answers.get(0).getRrtype()).isEqualTo("CNAME");
+		assertThat(answers.get(0).getTtl()).isEqualTo(600L);
+		assertThat(answers.get(0).getRdata()).isEqualTo("www.a.shifen.com");
+	}
+
+	@Test
+	@SneakyThrows
+	public void testReadArrObjects() {
+		JsonNode node = JacksonUtils.objectMapper().readTree(IOUtils.readClassPathFileAsBytes("array-field.json"));
+		DnsAnswer[] answers = JsonNodeUtils.readArr(node, "dns_answers", DnsAnswer.class);
+		assertThat(answers).hasSize(3);
+		assertThat(answers[1].getRrname()).isEqualTo("www.a.shifen.com");
+		assertThat(answers[1].getRrtype()).isEqualTo("A");
+		assertThat(answers[1].getTtl()).isEqualTo(600L);
+		assertThat(answers[1].getRdata()).isEqualTo("180.101.49.11");
+	}
+
 	@Data
 	public static class DnsAnswer {
 		

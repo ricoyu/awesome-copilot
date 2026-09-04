@@ -24,7 +24,7 @@ public class LocalDateTimeJsonDeserializer extends JsonDeserializer<LocalDateTim
 	@Override
 	public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt)
 			throws IOException, JsonProcessingException {
-		return null;
+		return LocalDateTimeDeserializer.INSTANCE.deserialize(p, ctxt);
 	}
 
 }

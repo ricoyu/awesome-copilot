@@ -34,11 +34,11 @@ public class AuthUtilsTest {
 		assertTrue(logined);
 		
 		//token1已经被踢掉了, 所以是拿不到对应的username的
-		String username = AuthUtils.auth("token1");
+		String username = AuthUtils.checkToken("token1");
 		assertNull(username);
 		
 		//token2此时是有效的
-		username = AuthUtils.auth("token2");
+		username = AuthUtils.checkToken("token2");
 		assertEquals(username, "rico");
 		
 		//登出token2
@@ -49,7 +49,7 @@ public class AuthUtilsTest {
 		assertTrue(success);
 		
 		TimeUnit.SECONDS.sleep(2);
-		username = AuthUtils.auth("token3");
+		username = AuthUtils.checkToken("token3");
 		assertNull(username);
 		logined = AuthUtils.isLogined("rico");
 		assertFalse(logined);
@@ -97,8 +97,8 @@ public class AuthUtilsTest {
 		assertTrue(success);
 		boolean logined = AuthUtils.isLogined("rico");
 		assertTrue(logined);
-		String username1 = AuthUtils.auth("token001");
-		String username2 = AuthUtils.auth("token002");
+		String username1 = AuthUtils.checkToken("token001");
+		String username2 = AuthUtils.checkToken("token002");
 		assertEquals(username1, username2);
 		TimeUnit.SECONDS.sleep(4);
 		logined = AuthUtils.isLogined("rico");

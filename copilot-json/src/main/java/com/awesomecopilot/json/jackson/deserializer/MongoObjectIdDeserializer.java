@@ -34,7 +34,11 @@ public class MongoObjectIdDeserializer extends JsonDeserializer<String> {
 	public String deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
 		TreeNode tree = jp.getCodec().readTree(jp);
 		if (tree.isObject()) {
-			return ((ValueNode) tree.get("$oid")).asText();
+			ValueNode iod = (ValueNode) tree.get("$oid");
+			if (iod!= null) {
+				return iod.asText();
+			}
+			return null;
 		}
 		
 		return null;

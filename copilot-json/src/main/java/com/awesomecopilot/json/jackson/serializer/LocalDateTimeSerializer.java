@@ -19,6 +19,7 @@ public class LocalDateTimeSerializer extends StdSerializer<LocalDateTime> {
 	
 	public LocalDateTimeSerializer(ZoneOffset zoneOffset) {
 		super(LocalDateTime.class);
+		this.zoneOffset = zoneOffset;
 	}
 
 	@Override

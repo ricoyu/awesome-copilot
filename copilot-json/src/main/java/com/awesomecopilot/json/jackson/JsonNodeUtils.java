@@ -1,6 +1,8 @@
 package com.awesomecopilot.json.jackson;
 
 import com.awesomecopilot.common.lang.utils.EnumUtils;
+import com.awesomecopilot.json.exception.JacksonException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import org.slf4j.Logger;
@@ -218,8 +220,7 @@ public final class JsonNodeUtils {
 			Iterator<JsonNode> elements = jsonNode.elements();
 			while (elements.hasNext()) {
 				JsonNode childNode = elements.next();
-				String nodeValue = childNode.toString();
-				T obj = JacksonUtils.toObject(nodeValue, clazz);
+				T obj = treeToValue(childNode, clazz);
 				values.add(obj);
 			}
 			return values.toArray((T[]) Array.newInstance(clazz, values.size()));
@@ -275,8 +276,7 @@ public final class JsonNodeUtils {
 			Iterator<JsonNode> elements = jsonNode.elements();
 			while (elements.hasNext()) {
 				JsonNode childNode = elements.next();
-				String nodeValue = childNode.toString();
-				T obj = JacksonUtils.toObject(nodeValue, clazz);
+				T obj = treeToValue(childNode, clazz);
 				values.add(obj);
 			}
 			return values;
@@ -330,12 +330,20 @@ public final class JsonNodeUtils {
 			Iterator<JsonNode> elements = jsonNode.elements();
 			while (elements.hasNext()) {
 				JsonNode childNode = elements.next();
-				String nodeValue = childNode.toString();
+				String nodeValue = childNode.textValue();
 				values.add(nodeValue);
 			}
 			return values;
 		}
 		
 		return null;
+	}
+	
+	private static <T> T treeToValue(JsonNode node, Class<T> clazz) {
+		try {
+			return JacksonUtils.objectMapper().treeToValue(node, clazz);
+		} catch (JsonProcessingException e) {
+			throw new JacksonException("JsonNode [" + node + "] 转 " + clazz.getName() + " 失败", e);
+		}
 	}
 }
