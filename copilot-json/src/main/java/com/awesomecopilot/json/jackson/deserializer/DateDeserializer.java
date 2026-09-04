@@ -1,5 +1,6 @@
 package com.awesomecopilot.json.jackson.deserializer;
 
+import com.awesomecopilot.common.lang.exception.DateParseException;
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.core.JsonParser;
@@ -8,7 +9,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.datatype.jsr310.deser.JSR310DateTimeDeserializerBase;
 
 import java.io.IOException;
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -70,15 +70,11 @@ public class DateDeserializer extends JSR310DateTimeDeserializerBase<Date> {
 			if (dateStr.length() == 0) {
 				return null;
 			}
-			// as per [datatype-jsr310#37], only check for optional (and, incorrect...) time
-			// marker 'T'
-			// if we are using default formatter
-			DateTimeFormatter format = _formatter;
 			try {
 				return DateUtils.parse(dateStr);
-			} catch (DateTimeException e) {
+			} catch (DateParseException e) {
 				throw new UnsupportedOperationException("Cannot update object of type "
-						+ LocalDate.class.getName() + " (by deserializer of type " + getClass().getName() + ")");
+						+ Date.class.getName() + " (by deserializer of type " + getClass().getName() + ")");
 			}
 		}
 		if (parser.hasToken(JsonToken.VALUE_NUMBER_INT)) {

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -103,12 +104,19 @@ public final class JsonPathUtils {
     }
 
     /**
+     * 无锁路径表达式热缓存。JsonPath 编译结果不可变且线程安全，可安全复用。
+     */
+    private static final ConcurrentHashMap<String, JsonPath> PATH_CACHE = new ConcurrentHashMap<>();
+
+    /**
      * Bypass JsonContext.read(String), which uses JsonPath's global LRU cache.
      * The default cache can be a shared lock hot spot under high concurrency.
+     * 这里改用无锁的 ConcurrentHashMap 缓存编译结果, 避免每次读取都重新 compile 路径表达式。
      */
     private static <T> T readPath(DocumentContext ctx, String path) {
         Object json = ctx.json();
-        return JsonPath.compile(path).read(json, ctx.configuration());
+        JsonPath compiledPath = PATH_CACHE.computeIfAbsent(path, JsonPath::compile);
+        return compiledPath.read(json, ctx.configuration());
     }
 
     private static <T> T convertValue(Object value, Class<T> clazz) {
