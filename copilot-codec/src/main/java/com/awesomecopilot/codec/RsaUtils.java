@@ -186,6 +186,8 @@ public final class RsaUtils {
 	 * @return 经过Base64编码后的公私钥
 	 */
 	static {
+		// 静态初始化块由 JVM 类初始化锁保证「每个类加载器只执行一次」, 其它线程会阻塞至初始化完成,
+		// 故进程内不存在 keysPresent() 与生成/写盘之间的竞态; 跨进程(多个 JVM)并发才需另用文件锁 FileLock。
 		if (!keysPresent()) {
 			/*
 			 * 磁盘上不存在密钥对则在用户目录下重新生成
@@ -606,7 +608,7 @@ public final class RsaUtils {
 	 * @param sign RSA签名得到的经过Base64编码的字符串
 	 * @return true--验签通过,false--验签未通过
 	 */
-	public boolean verify(String data, String sign) {
+	public static boolean verify(String data, String sign) {
 		notNull(data, "data 不能为null");
 		notNull(sign, "sign 不能为null");
 		return verify(data.getBytes(UTF_8), sign);
@@ -619,7 +621,7 @@ public final class RsaUtils {
 	 * @param sign RSA签名得到的经过Base64编码的字符串
 	 * @return true--验签通过,false--验签未通过
 	 */
-	public boolean verify(byte[] data, String sign) {
+	public static boolean verify(byte[] data, String sign) {
 		notNull(sign, "sign 不能为null");
 		if (data == null || data.length == 0) {
 			log.info("data or sign is null");
@@ -927,13 +929,19 @@ public final class RsaUtils {
 		}
 		privateKeyFile.createNewFile();
 		
-		ObjectOutputStream publicKeyOS = new ObjectOutputStream(new FileOutputStream(publicKeyFile));
-		publicKeyOS.writeObject(publicKey);
-		publicKeyOS.close();
+		try (ObjectOutputStream publicKeyOS = new ObjectOutputStream(new FileOutputStream(publicKeyFile))) {
+			publicKeyOS.writeObject(publicKey);
+		}
 		
-		ObjectOutputStream privateKeyOS = new ObjectOutputStream(new FileOutputStream(privateKeyFile));
-		privateKeyOS.writeObject(privateKey);
-		privateKeyOS.close();
+		try (ObjectOutputStream privateKeyOS = new ObjectOutputStream(new FileOutputStream(privateKeyFile))) {
+			privateKeyOS.writeObject(privateKey);
+		}
+
+		// 校验写盘结果: 两个文件都必须存在且非空, 否则视为写入未成功
+		if (!publicKeyFile.exists() || publicKeyFile.length() == 0
+				|| !privateKeyFile.exists() || privateKeyFile.length() == 0) {
+			throw new IOException("密钥对写盘校验失败: public 或 private 文件缺失或为空");
+		}
 	}
 	
 }

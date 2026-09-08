@@ -99,11 +99,8 @@ public final class HashUtils {
 		hash ^= hash >> 17;
 		hash += hash << 5;
 		
-		// 如果算出来的值为负数则取其绝对值
-		if (hash < 0) {
-			hash = Math.abs(hash);
-		}
-		return hash;
+		// 清掉符号位保证结果非负; 不能用 Math.abs, 因为 Math.abs(Integer.MIN_VALUE) 仍返回负数(溢出)
+		return hash & 0x7fffffff;
 	}
 
 	/**

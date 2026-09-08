@@ -74,65 +74,82 @@ public class Rsa {
 	private RSAPublicKey publicKey;
 	private RSAPrivateKey privateKey;
 	
-	@SuppressWarnings("resource")
+	/**
+	 * 获取 Rsa 实例: 磁盘上已有密钥对则读取, 否则生成一对并写盘。
+	 * <p>
+	 * keysPresent() 检查与其后的生成/写盘并非原子操作, 多线程首次并发调用会重复生成密钥对,
+	 * 甚至交叉写坏 public/private 文件导致两者不配对。这里用类级锁 + 双重检查(DCL)保证
+	 * "不存在才生成"在整个 JVM 内只发生一次, 并在写盘后校验文件确实生成且非空。
+	 */
 	public static Rsa instance() {
-		/*
-		 * 磁盘上不存在密钥对则重新生成
-		 */
+		// 快路径: 密钥对已存在则无需加锁, 直接读盘
 		if (!keysPresent()) {
-			try {
-				KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM_RSA);
-				
-				//初始化KeyPairGenerator对象
-				keyPairGenerator.initialize(KEY_LENGTH);
-				//生成密匙对
-				KeyPair keyPair = keyPairGenerator.generateKeyPair();
-				//得到公钥
-				RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-				//得到私钥
-				RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-				
-				File privateKeyFile = new File(PRIVATE_KEY_FILE);
-				File publicKeyFile = new File(PUBLIC_KEY_FILE);
-				
-				if (publicKeyFile.getParentFile() != null) {
-					publicKeyFile.getParentFile().mkdirs();
+			synchronized (Rsa.class) {
+				// 双重检查: 排队等锁期间, 密钥对可能已被其它线程生成并写盘
+				if (!keysPresent()) {
+					generateAndPersist();
 				}
-				publicKeyFile.createNewFile();
-				
-				if (privateKeyFile.getParentFile() != null) {
-					privateKeyFile.getParentFile().mkdirs();
-				}
-				privateKeyFile.createNewFile();
-				
-				ObjectOutputStream publicKeyOS = new ObjectOutputStream(new FileOutputStream(publicKeyFile));
+			}
+		}
+		// 统一从磁盘读取(本线程刚生成或复用已有), 保证公私密钥严格配对
+		return readKeysFromDisk();
+	}
+
+	/**
+	 * 生成 RSA 密钥对并写盘, 写盘后校验两个文件均存在且非空。
+	 * 仅在 instance() 的双重检查临界区内调用, 保证整个 JVM 生命周期只执行一次。
+	 */
+	private static void generateAndPersist() {
+		try {
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM_RSA);
+			//初始化KeyPairGenerator对象
+			keyPairGenerator.initialize(KEY_LENGTH);
+			//生成密匙对
+			KeyPair keyPair = keyPairGenerator.generateKeyPair();
+			//得到公钥
+			RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+			//得到私钥
+			RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+
+			File privateKeyFile = new File(PRIVATE_KEY_FILE);
+			File publicKeyFile = new File(PUBLIC_KEY_FILE);
+			if (publicKeyFile.getParentFile() != null) {
+				publicKeyFile.getParentFile().mkdirs();
+			}
+			if (privateKeyFile.getParentFile() != null) {
+				privateKeyFile.getParentFile().mkdirs();
+			}
+
+			// try-with-resources 保证 flush+close, 避免写到一半抛异常导致文件句柄泄漏
+			try (ObjectOutputStream publicKeyOS = new ObjectOutputStream(new FileOutputStream(publicKeyFile))) {
 				publicKeyOS.writeObject(publicKey);
-				publicKeyOS.close();
-				
-				ObjectOutputStream privateKeyOS = new ObjectOutputStream(new FileOutputStream(privateKeyFile));
-				privateKeyOS.writeObject(keyPair.getPrivate());
-				privateKeyOS.close();
-				
-				return new Rsa(publicKey, privateKey);
-			} catch (Exception e) {
-				throw new RuntimeException("生成密钥对失败", e);
 			}
-		} else {
-			/*
-			 * 从磁盘上读取密钥对
-			 */
-			try {
-				ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(PUBLIC_KEY_FILE));
-				RSAPublicKey publicKey = (RSAPublicKey) objectInputStream.readObject();
-				
-				objectInputStream = new ObjectInputStream(new FileInputStream(PRIVATE_KEY_FILE));
-				RSAPrivateKey privateKey = (RSAPrivateKey) objectInputStream.readObject();
-				objectInputStream.close();
-				
-				return new Rsa(publicKey, privateKey);
-			} catch (IOException | ClassNotFoundException e) {
-				throw new RuntimeException("获取密钥对失败", e);
+			try (ObjectOutputStream privateKeyOS = new ObjectOutputStream(new FileOutputStream(privateKeyFile))) {
+				privateKeyOS.writeObject(privateKey);
 			}
+
+			// 校验写盘结果: 两个文件都必须存在且非空, 否则视为生成失败
+			if (!publicKeyFile.exists() || publicKeyFile.length() == 0
+					|| !privateKeyFile.exists() || privateKeyFile.length() == 0) {
+				throw new IOException("密钥对写盘校验失败: public 或 private 文件缺失或为空");
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("生成密钥对失败", e);
+		}
+	}
+
+	/**
+	 * 从磁盘读取公私密钥对; 反序列化失败(含文件损坏/未写全)会抛异常, 这本身也是对写盘结果的一次校验
+	 */
+	private static Rsa readKeysFromDisk() {
+		try (
+				ObjectInputStream publicInputStream = new ObjectInputStream(new FileInputStream(PUBLIC_KEY_FILE));
+				ObjectInputStream privateInputStream = new ObjectInputStream(new FileInputStream(PRIVATE_KEY_FILE))) {
+			RSAPublicKey publicKey = (RSAPublicKey) publicInputStream.readObject();
+			RSAPrivateKey privateKey = (RSAPrivateKey) privateInputStream.readObject();
+			return new Rsa(publicKey, privateKey);
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException("获取密钥对失败", e);
 		}
 	}
 	

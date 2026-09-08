@@ -23,11 +23,11 @@ public final class MD5Utils {
 			'b', 'c', 'd', 'e', 'f' };
 
 	/**
-	 * 获取字符串的MD5hash值, 一个32位无符号整数
+	 * 获取字符串的MD5 hash值, 映射到一致性哈希环的 0 ~ 2³²-1 区间
 	 * @param origin 字符串
-	 * @return 32位无符号整数, MD5 hash值
+	 * @return 表示 32 位无符号整数的 long 值(恒 ≥ 0), MD5 hash 值
 	 */
-	public static int encode2Int(String origin) {
+	public static long encode2Int(String origin) {
 		if (origin == null) {
 			return 0 ;
 		}
@@ -40,8 +40,8 @@ public final class MD5Utils {
 					| ((md5Bytes[1] & 0xFF) << 8)
 					| ((md5Bytes[2] & 0xFF) << 16)
 					| ((md5Bytes[3] & 0xFF) << 24);
-			// 5. 转为无符号int（Java无原生unsigned int，位运算模拟），保证结果≥0
-			return hashInt & 0xFFFFFFFF;
+			// 5. Java 无原生 unsigned int, 用 Integer.toUnsignedLong 按无符号语义拓宽为 long, 结果落在 0 ~ 2³²-1 (恒 ≥ 0)
+			return Integer.toUnsignedLong(hashInt);
 		} catch (Exception e) {
 			// 6. 异常兜底：日志可替换为项目日志框架（logback/log4j2）
 			// logger.error("MD5 encode error, origin:{}", origin, e);

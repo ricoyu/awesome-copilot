@@ -29,7 +29,8 @@ public class RedixUtils {
      * @return String
      */
     public static String byte2Hex(byte b) {
-        return String.format("%02x", b).toUpperCase();
+        //b & 0xFF 将 byte 转为 0~255 的无符号 int, 显式规避符号扩展; %02X 直接输出 2 位大写十六进制, 无需再 toUpperCase()
+        return String.format("%02X", b & 0xFF);
     }
     /**
      * byte[]转16进制字符串
@@ -235,7 +236,7 @@ public class RedixUtils {
      */
     public static String char2BinaryStr(char c) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 13; i >= 0; i--) {
+        for (int i = 15; i >= 0; i--) {
             // 使用位移和按位与操作来检查每一位
             sb.append((c >> i) & 1);
         }
@@ -431,7 +432,7 @@ public class RedixUtils {
      * @return boolean
      */
     public static boolean isPowerOfTwo(int val) {
-        return (val & -val) == val;
+        return val > 0 && (val & (val - 1)) == 0;
     }
 
     /**
@@ -447,7 +448,7 @@ public class RedixUtils {
 
         //hex = hex.trim().toUpperCase();
         hex = StringUtils.trimAll(hex).toUpperCase();
-        if (hex.toUpperCase().indexOf("0X") != -1) {
+        if (hex.toUpperCase().startsWith("0X")) {
             hex = hex.substring(2);
         }
         return hex;

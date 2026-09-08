@@ -1,6 +1,7 @@
 package com.awesomecopilot.codec;
 
 import java.math.BigInteger;
+import java.util.Locale;
 
 /**
  * 十六进制操作相关API
@@ -30,6 +31,11 @@ public final class HexUtils {
 		}
 		hex = hex.replaceAll("\\s", "");
 		
+		//每字节对应2个十六进制字符, 合法输入长度必为偶数; 奇数长度会导致 substring 越界, 此处快速失败
+		if (hex.length() % 2 != 0) {
+			throw new IllegalArgumentException("hex字符串长度必须为偶数, 当前长度: " + hex.length() + ", 内容: " + hex);
+		}
+		
 		StringBuilder output = new StringBuilder();
 		for (int i = 0; i < hex.length(); i += 2) {
 			// grab the hex in pairs
@@ -54,7 +60,9 @@ public final class HexUtils {
 		
 		StringBuffer hex = new StringBuffer();
 		for (int i = 0; i < chars.length; i++) {
-			hex.append(Integer.toHexString((int) chars[i]));
+			//使用 %02x 保证每个字符至少输出 2 位十六进制, 避免 < 0x10 的字符(如 \n、\t)只输出 1 位产生奇数长度/歧义结果
+			//指定 Locale.ROOT 确保输出为确定的 ASCII 十六进制, 不受默认区域设置影响
+			hex.append(String.format(Locale.ROOT, "%02x", (int) chars[i]));
 		}
 		
 		return hex.toString();
@@ -71,8 +79,13 @@ public final class HexUtils {
 			return null;
 		}
 		
-		if (hex.toLowerCase().indexOf("0x") != -1) {
+		//仅当 0x 出现在开头时才移除前缀, 避免误删中间的 0x (如 "120x3")
+		if (hex.toLowerCase().startsWith("0x")) {
 			hex = hex.substring(2);
+			//移除前缀后为空或全空白, 与空字符串输入语义一致返回 null
+			if ("".equals(hex.trim())) {
+				return null;
+			}
 		}
 		
 		return Integer.parseInt(hex, 16);
@@ -83,8 +96,13 @@ public final class HexUtils {
 			return null;
 		}
 		
-		if (hex.toLowerCase().indexOf("0x") != -1) {
+		//仅当 0x 出现在开头时才移除前缀, 避免误删中间的 0x (如 "120x3")
+		if (hex.toLowerCase().startsWith("0x")) {
 			hex = hex.substring(2);
+			//移除前缀后为空或全空白, 与空字符串输入语义一致返回 null
+			if ("".equals(hex.trim())) {
+				return null;
+			}
 		}
 		
 		return Long.parseLong(hex, 16);

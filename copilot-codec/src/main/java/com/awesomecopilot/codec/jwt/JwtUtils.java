@@ -53,7 +53,8 @@ public final class JwtUtils {
 				.setSubject(subject)
 				//设置签名使用的签名算法和签名使用的秘钥
 				.signWith(SignatureAlgorithm.HS256, getKeyInstance(secretKey));
-		long ttMillis = expireSecond * 1000;
+		//expireSecond 为 null 时回退到默认有效期，避免自动拆箱 NPE
+		long ttMillis = (expireSecond == null ? expirationTimeInSecond : expireSecond) * 1000;
 		if (ttMillis >= 0) {
 			long expMillis = nowMillis + ttMillis;
 			Date exp = new Date(expMillis);
@@ -107,7 +108,9 @@ public final class JwtUtils {
 	 * @return Date
 	 */
 	public static Date getExpirationDateFromToken(String token) {
-		return parseJWT(token).getExpiration();
+		//parseJWT 对非法/过期 token 返回 null，需判空避免 NPE
+		Claims claims = parseJWT(token);
+		return claims == null ? null : claims.getExpiration();
 	}
 	
 	/**
@@ -118,6 +121,10 @@ public final class JwtUtils {
 	 */
 	private static Boolean isTokenExpired(String token) {
 		Date expiration = getExpirationDateFromToken(token);
+		//无法解析出过期时间（token 非法或已失效）视为已过期
+		if (expiration == null) {
+			return true;
+		}
 		return expiration.before(new Date());
 	}
 	
