@@ -45,6 +45,17 @@ import java.util.Objects;
 public class Rsa {
 	
 	public static final String CHARSET = "UTF-8";
+
+	/**
+	 * 异常消息脱敏: 绝不在异常/日志中拼入原始数据(可能是加密前的明文, 如密码、token),
+	 * 只保留长度与 SHA-256 摘要前 8 位, 便于排查又不泄露内容。
+	 */
+	private static String sanitize(String data) {
+		if (data == null) {
+			return "null";
+		}
+		return "len=" + data.length() + ", sha256=" + HashUtils.sha256(data).substring(0, 8);
+	}
 	
 	/**
 	 * 加密算法
@@ -190,7 +201,7 @@ public class Rsa {
 			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 			return base64Encode(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		} catch (Exception e) {
-			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("加密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -210,7 +221,7 @@ public class Rsa {
 			cipher.init(Cipher.ENCRYPT_MODE, key);
 			return base64Encode(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		} catch (Exception e) {
-			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("加密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -220,7 +231,7 @@ public class Rsa {
 			cipher.init(Cipher.ENCRYPT_MODE, privateKey);
 			return base64Encode(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		} catch (Exception e) {
-			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("加密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -242,7 +253,7 @@ public class Rsa {
 			cipher.init(Cipher.ENCRYPT_MODE, privateKey);
 			return base64Encode(rsaSplitCodec(cipher, Cipher.ENCRYPT_MODE, data.getBytes(CHARSET)));
 		} catch (Exception e) {
-			throw new RuntimeException("加密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("加密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -261,7 +272,7 @@ public class Rsa {
 			signature.update(data.getBytes(CHARSET));
 			return Base64.encodeBase64String(signature.sign());
 		} catch (Exception e) {
-			throw new RuntimeException("签名字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("签名字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -284,7 +295,7 @@ public class Rsa {
 			signature.update(data.getBytes(CHARSET));
 			return base64Encode(signature.sign());
 		} catch (Exception e) {
-			throw new RuntimeException("签名字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("签名字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -302,7 +313,7 @@ public class Rsa {
 			signature.update(data.getBytes(CHARSET));
 			return signature.verify(Base64.decodeBase64(sign));
 		} catch (Exception e) {
-			throw new RuntimeException("验签字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("验签字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -325,7 +336,7 @@ public class Rsa {
 			signature.update(data.getBytes(CHARSET));
 			return signature.verify(base64Decode(sign));
 		} catch (Exception e) {
-			throw new RuntimeException("验签字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("验签字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -335,7 +346,7 @@ public class Rsa {
 			cipher.init(Cipher.DECRYPT_MODE, publicKey);
 			return new String(rsaSplitCodec(cipher,Cipher.DECRYPT_MODE, base64Decode(data)), CHARSET);
 		} catch (Exception e) {
-			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("解密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -356,7 +367,7 @@ public class Rsa {
 			cipher.init(Cipher.DECRYPT_MODE, key);
 			return new String(rsaSplitCodec(cipher, Cipher.DECRYPT_MODE, base64Decode(data)), CHARSET);
 		} catch (Exception e) {
-			throw new RuntimeException("解密字符串[" + data + "]时遇到异常", e);
+			throw new RuntimeException("解密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -366,7 +377,7 @@ public class Rsa {
 			cipher.init(Cipher.DECRYPT_MODE, privateKey);
 			return new String( rsaSplitCodec(cipher, Cipher.DECRYPT_MODE, base64Decode(data)), CHARSET);
 		} catch (Exception e) {
-			throw new PrivateDecryptException("解密字符串[" + data + "]时遇到异常", e);
+			throw new PrivateDecryptException("解密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
@@ -381,7 +392,7 @@ public class Rsa {
 			cipher.init(Cipher.DECRYPT_MODE, key);
 			return new String(rsaSplitCodec(cipher, Cipher.DECRYPT_MODE, base64Decode(data)), CHARSET);
 		} catch (Exception e) {
-			throw new PrivateDecryptException("解密字符串[" + data + "]时遇到异常", e);
+			throw new PrivateDecryptException("解密字符串[" + sanitize(data) + "]时遇到异常", e);
 		}
 	}
 	
