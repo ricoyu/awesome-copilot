@@ -271,7 +271,8 @@ public final class RsaUtils {
 	 * @return
 	 */
 	public static RSAPublicKey loadPublicKeyFromPemFile(byte[] publicKeyBytes) {
-		return generatePublicKey(new String(publicKeyBytes, UTF_8));
+		String publicKeyStr = new String(publicKeyBytes, UTF_8);
+		return generatePublicKey(extractPublicKey(publicKeyStr));
 	}
 	
 	/**
@@ -703,12 +704,12 @@ public final class RsaUtils {
 	 */
 	public static RSAPublicKey generatePublicKey(String publicKeyStr) {
 		notNull(publicKeyStr, "公钥字符串不能为null");
-		//通过X509编码的Key指令获得公钥对象
-		X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(base64Decode(publicKeyStr));
 		try {
+			//通过X509编码的Key指令获得公钥对象
+			X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(base64Decode(publicKeyStr));
 			KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM_RSA);
 			return (RSAPublicKey) keyFactory.generatePublic(x509KeySpec);
-		} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+		} catch (NoSuchAlgorithmException | InvalidKeySpecException | RuntimeException e) {
 			log.error("根据公钥串[{}]获取公钥对象失败", publicKey, e);
 			throw new RsaPublicKeyException(MessageFormat.format("根据公钥串[{0}]获取公钥对象失败", publicKey), e);
 		}
