@@ -49,6 +49,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class AggTest {
 	
 	@Test
+	public void testCardinalityAgg2() {
+		Map<String, Object> aggResult = Aggs.composite("ecommerce_order_v2")
+				.cardinality("distinct_brand", "brand")
+				.cardinality("distinct_category", "category")
+				.get();
+		System.out.println(JacksonUtils.toPrettyJson(aggResult));
+	}
+	
+	@Test
 	public void testBankAddressTerms() {
 		List<Map<String, Object>> result = Aggs.terms("bank")
 				.of("age_agg", "age")

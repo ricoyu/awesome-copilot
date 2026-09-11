@@ -16,8 +16,7 @@ import java.util.Map;
 
 import static co.elastic.clients.elasticsearch._types.query_dsl.Operator.And;
 import static co.elastic.clients.elasticsearch._types.query_dsl.Operator.Or;
-import static co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.CrossFields;
-import static co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.Phrase;
+import static co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType.*;
 import static com.awesomecopilot.search8x.builder.agg.sub.SubAggregations.avg;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,6 +38,20 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @Slf4j
 public class QueryTest {
+	
+	@Test
+	public void testMultiMatchBestField() {
+		List<GoodsEs> goods = Query.multiMatch("shop_goods")
+				.query("美的空调", "goods_name", "goods_desc")
+				.type(BestFields)
+				.size(10)
+				.resultType(GoodsEs.class)
+				.queryForList();
+		assertThat(goods.size()).isEqualTo(10);
+		for (GoodsEs good : goods) {
+			System.out.println(JacksonUtils.toPrettyJson(good));
+		}
+	}
 	
 	/**
 	 * <pre>

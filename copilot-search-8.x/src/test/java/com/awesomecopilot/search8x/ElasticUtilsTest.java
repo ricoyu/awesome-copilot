@@ -1175,14 +1175,17 @@ public class ElasticUtilsTest {
      */
     @Test
     public void testHanLpAnalyzer() {
-        ElasticUtils.analyze(Analyzer.HANLP_NLP, "美国会同意对台军售").forEach(System.out::println);
+        List<String> analyzed = ElasticUtils.analyze(Analyzer.IK_MAX_WORD, "区块链的应用");
+        analyzed.forEach(System.out::println);
+        analyzed = ElasticUtils.analyze(Analyzer.HANLP_NLP, "美国会同意对台军售");
         System.out.println("------------------------");
 
-        ElasticUtils.analyze(Analyzer.HANLP_STANDARD, "美国会同意对台军售").forEach(System.out::println);
+        analyzed = ElasticUtils.analyze(Analyzer.HANLP_STANDARD, "美国会同意对台军售");
+        analyzed.forEach(System.out::println);
         System.out.println("------------------------");
-        ElasticUtils.analyze(Analyzer.HANLP, "美国会同意对台军售").forEach(System.out::println);
+        analyzed = ElasticUtils.analyze(Analyzer.HANLP, "美国会同意对台军售");
         System.out.println("------------------------");
-        ElasticUtils.analyze(Analyzer.HANLP_N_SHORT, "美国会同意对台军售").forEach(System.out::println);
+        analyzed = ElasticUtils.analyze(Analyzer.HANLP_N_SHORT, "美国会同意对台军售");
         System.out.println("------------------------");
     }
     

@@ -190,7 +190,7 @@ public final class HashUtils {
 		Mac hmacSHA256 = null;
 		try {
 			hmacSHA256 = Mac.getInstance("HmacSHA256");
-			SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
+			SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 			hmacSHA256.init(secret_key);
 		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
 			log.error("", e);

@@ -32,6 +32,15 @@ import static com.awesomecopilot.json.jackson.JacksonUtils.toPrettyJson;
 @Slf4j
 public class AggTest {
 	
+	@Test
+	public void testCardinalityAgg2() {
+		Map<String, Object> aggResult = Aggs.composite("ecommerce_order_v2")
+				.cardinality("distinct_brand", "brand")
+				.cardinality("distinct_category", "category")
+				.get();
+		System.out.println(JacksonUtils.toPrettyJson(aggResult));
+	}
+	
 	/**
 	 * 基础单值指标（value_count/sum/avg/max/min/count）
 	 */
