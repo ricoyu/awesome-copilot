@@ -1,6 +1,8 @@
 package com.awesomecopilot.common.lang.resource;
 
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -17,6 +19,14 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  */
 public class YamlProfileReaders implements YamlOps {
 	
+	/**
+	 * 按 resource 名缓存的进程级实例。YamlReader 构造时会立即读盘(classpath/工作目录/config
+	 * 目录共 6 个候选文件)并做 YAML 解析,单次可达几十毫秒;本类构造后全部字段只读,线程安全,
+	 * 故可安全共享。高频调用点(如 ORM 每次 query)不要再重复 new。<p>
+	 * 需要感知配置文件变更(热加载)时调用 {@link #clearCache()} 后重新获取。
+	 */
+	private static final ConcurrentMap<String, YamlProfileReaders> INSTANCES = new ConcurrentHashMap<>();
+	
 	private YamlReader yamlReader;
 	
 	private YamlReader profileReader;
@@ -31,11 +41,19 @@ public class YamlProfileReaders implements YamlOps {
 	 * <li/>工作目录下的同名配置文件
 	 * <li/>classpath下的同名配置文件
 	 * </ol>
+	 * 同一 resource 名在进程内只解析一次,返回共享缓存实例;
+	 * 需要重新读文件时先调 {@link #clearCache()}。
 	 * @param resource
 	 */
 	public static YamlProfileReaders instance(String resource) {
-		YamlReader yamlReader = new YamlReader(resource);
-		return new YamlProfileReaders(yamlReader);
+		return INSTANCES.computeIfAbsent(resource, r -> new YamlProfileReaders(new YamlReader(r)));
+	}
+	
+	/**
+	 * 清空缓存,下次 instance(resource) 会重新读盘解析。用于配置文件热加载场景或单元测试。
+	 */
+	public static void clearCache() {
+		INSTANCES.clear();
 	}
 	
 	public YamlProfileReaders(YamlReader yamlReader) {

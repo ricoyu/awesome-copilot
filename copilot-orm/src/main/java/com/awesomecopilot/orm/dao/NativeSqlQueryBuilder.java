@@ -1,8 +1,6 @@
 package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.common.lang.context.ThreadContext;
-import com.awesomecopilot.common.lang.resource.YamlOps;
-import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
@@ -59,7 +57,6 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	private static final Logger log = LoggerFactory.getLogger(NativeSqlQueryBuilder.class);
 	
-	private YamlOps yamlOps = YamlProfileReaders.instance("application");
 	/**
 	 * 用于判断是否是查询语句
 	 */
@@ -88,6 +85,14 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	private static final ConcurrentMap<String, ArrayTypes> ARRAY_TYPE_MAP = new ConcurrentHashMap<>();
 	
 	private String sqlOrQueryName;
+	
+	/**
+	 * 是否自动修复SQL(补/删 WHERE、AND 关键字)。默认 true；
+	 * 经 JpaDao.query() 构建时会注入 JpaDao 的 Spring 配置值(copilot.orm.sql.auto-fix),
+	 * 保持同一配置单一来源(此前 builder 自行读 application.yml, 与环境变量/nacos 等
+	 * 非 YAML 渠道的配置会静默分叉, 且每次 new builder 触发重复读盘)
+	 */
+	private boolean sqlAutofix = true;
 	
 	private Map<String, Object> params = new HashMap<>();
 	
@@ -309,7 +314,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		boolean autoFix = yamlOps.getBoolean("copilot.orm.sql.auto-fix", true);
+		boolean autoFix = sqlAutofix;
 		if (autoFix) {
 			if (log.isDebugEnabled()) {
 				log.debug("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
@@ -456,7 +461,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 		Velocity.evaluate(context, sql, sqlOrQueryName, queryString.toString());
 		String preParsedSQL = sql.toString();
 		String parsedSQL = preParsedSQL;
-		boolean autoFix = yamlOps.getBoolean("copilot.orm.sql.auto-fix", true);
+		boolean autoFix = sqlAutofix;
 		if (autoFix) {
 			if (log.isDebugEnabled()) {
 				log.debug("未裁剪前解析得到的原生SQL: \n {}", preParsedSQL);
@@ -562,6 +567,10 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 	
 	public void setSqlOrQueryName(String sqlOrQueryName) {
 		this.sqlOrQueryName = sqlOrQueryName;
+	}
+	
+	public void setSqlAutofix(boolean sqlAutofix) {
+		this.sqlAutofix = sqlAutofix;
 	}
 	
 	public void setHibernateQueryMode(String hibernateQueryMode) {

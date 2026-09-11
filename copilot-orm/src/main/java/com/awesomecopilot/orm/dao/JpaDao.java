@@ -139,7 +139,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 * 是否自动修复SQL, 比如动态SQL因为某些条件没传, 导致多了一个 AND 关键字之类
 	 */
 	@Value("${copilot.orm.sql.auto-fix:true}")
-	private boolean sqlAutofix = false;
+	private boolean sqlAutofix = true;
 
 	@Value("${copilot.orm.sql.batch-size:100}")
 	private int batchSize = 100;
@@ -682,6 +682,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	public SqlQueryBuilder query(String sqlOrQueryName) {
 		NativeSqlQueryBuilder sqlQueryBuilder = new NativeSqlQueryBuilder(entityManager, entityManagerFactory);
 		sqlQueryBuilder.setSqlOrQueryName(sqlOrQueryName);
+		//auto-fix 以 JpaDao 的 Spring 配置为单一来源, builder 不再自行读 application.yml
+		sqlQueryBuilder.setSqlAutofix(sqlAutofix);
 		sqlQueryBuilder.setHibernateQueryMode(hibernateQueryMode);
 		sqlQueryBuilder.setEnumLookupProperties(enumLookupProperties);
 		//ReflectionUtils.setField("sqlOrQueryName", sqlQueryBuilder, sqlOrQueryName);
