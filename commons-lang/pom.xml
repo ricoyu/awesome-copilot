@@ -125,13 +125,6 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
         </dependency>
-
-        <!-- 一个用于解析和操作 SQL 语句的 Java 库 -->
-        <dependency>
-            <groupId>com.github.jsqlparser</groupId>
-            <artifactId>jsqlparser</artifactId>
-            <version>4.9</version>
-        </dependency>
     </dependencies>
 
     <!--<build>

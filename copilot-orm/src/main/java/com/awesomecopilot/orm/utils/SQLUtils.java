@@ -1,24 +1,111 @@
 package com.awesomecopilot.orm.utils;
 
+import com.awesomecopilot.common.lang.context.ThreadContext;
+import com.awesomecopilot.common.lang.exception.SqlParseException;
+import com.awesomecopilot.common.lang.utils.StringUtils;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+/**
+ * ORM 的 SQL 工具集(自 21.0.8 起合并了原 commons-lang 的 SqlUtils)：
+ * <ol>
+ * <li>{@link #build(String)}——修复 Velocity 渲染后残缺的 WHERE/AND；</li>
+ * <li>{@link #generateCountSql(String)}——为分页生成 count SQL；</li>
+ * <li>{@link #addDeleteTenantIdCondition(String)}——供 StatementInspector 追加
+ * deleted / tenant_id 条件。</li>
+ * </ol>
+ * 三组转换各自使用有上限的 Caffeine 缓存(线程安全、自动淘汰, 不再需要手工 clear)。
+ */
 public class SQLUtils {
 	
 	private static final Logger log = LoggerFactory.getLogger(SQLUtils.class);
-	private static final HashMap<String, String> SQL_CACHE = new HashMap<>();
+	private static final Cache<String, String> SQL_CACHE = Caffeine.newBuilder().maximumSize(2000).build();
+	private static final Cache<String, String> COUNT_SQL_CACHE = Caffeine.newBuilder().maximumSize(1000).build();
+	private static final Cache<String, String> TENANT_SQL_CACHE = Caffeine.newBuilder().maximumSize(2000).build();
+	
+	/**
+	 * copilot-orm是否启用逻辑删除自动过滤, JpaDao 初始化时调用
+	 * {@link #configureLogicalDelete(boolean, String)} 设置
+	 */
+	private static volatile boolean logicalDeleteEnabled = false;
+	/**
+	 * 逻辑删除字段名
+	 */
+	private static volatile String logicalDeleteField = "deleted";
+	
+	public static void configureLogicalDelete(boolean enabled, String field) {
+		logicalDeleteEnabled = enabled;
+		logicalDeleteField = isNotBlank(field) ? field : "deleted";
+		//已按旧配置改写过的SQL缓存必须作废, 否则配置变更后仍返回旧产物
+		TENANT_SQL_CACHE.invalidateAll();
+	}
+	
+	public static boolean isLogicalDeleteEnabled() {
+		return logicalDeleteEnabled;
+	}
+	
+	public static String getLogicalDeleteField() {
+		return logicalDeleteField;
+	}
+	
+	/**
+	 * 字面量占位符哨兵字符(不会出现在正常SQL/空白里), build 内部用
+	 */
+	private static final char LITERAL_MARK = '\u0001';
 	
 	public static String build(String rawSql) {
-		if (SQL_CACHE.containsKey(rawSql)) {
-			return SQL_CACHE.get(rawSql);
+		//Caffeine 的 get(key, loader) 原子加载, 消灭原 containsKey+get+put 的竞态
+		return SQL_CACHE.get(rawSql, SQLUtils::doBuild);
+	}
+	
+	private static String doBuild(String rawSql) {
+		
+		/*
+		 * ① 字符串字面量保护: 'xxx' 的内容(含其中的 select/from/and 等单词、多余空格)先换成
+		 * 占位符再进修复管线, 结尾还原。否则关键字小写/替换会改写字面量数据本身。
+		 */
+		List<String> literals = new ArrayList<>();
+		String masked = maskStringLiterals(rawSql, literals);
+		
+		String result = unmask(fixMaskedSql(masked), literals);
+		String normalizedOriginal = unmask(normalizeWhitespace(masked), literals);
+		
+		/*
+		 * ② 冒烟校验: 只有当"原始SQL本身合法、修复结果反而解析失败"时才判定是修复把SQL改坏,
+		 * 回退原始SQL并告警(原始就不合法正是本工具要修的对象, 修完仍不合法则维持尽力修复)。
+		 */
+		if (parseable(normalizedOriginal) && !parseable(result)) {
+			log.warn("SQLUtils.build 修复后的SQL无法解析, 已回退使用原始SQL. 修复结果: [{}] 原始SQL: [{}]",
+					result, normalizedOriginal);
+			result = normalizedOriginal;
 		}
 		
-		// 预处理：统一换行/制表符为空格，去重空格
-		String sql = rawSql.trim().replaceAll("[\\t\\n\\r]", " ").replaceAll("\\s+", " ");
+		return result;
+	}
+	
+	/**
+	 * 对"字面量已遮蔽"的SQL执行修复管线(不含缓存/遮蔽/还原/校验), 子查询递归也走这里,
+	 * 保证占位符只在最外层 build() 被还原一次。
+	 */
+	private static String fixMaskedSql(String maskedSql) {
+		String sql = normalizeWhitespace(maskedSql);
 		String result;
 		
 		boolean hasJoin = sql.toLowerCase().contains(" join ");
@@ -29,16 +116,103 @@ public class SQLUtils {
 		} else if (!hasAsAfterParen) {
 			result = processJoinSql(sql);
 		} else {
-			result = rawSql;
+			result = sql;
 		}
 		
 		// 最终统一格式：去重空格 + 关键字小写
 		result = lowercaseKeywords(result).replaceAll("\\s+", " ").trim();
 		
-		result = result.replaceAll("(?i)\\s+and\\s+and\\s*", " and ");
+		result = result.replaceAll("(?i)\\s+and\\s+and\\b\\s*", " and ");
 		
-		SQL_CACHE.put(rawSql, result);
 		return result;
+	}
+	
+	private static String normalizeWhitespace(String sql) {
+		// 预处理：统一换行/制表符为空格，去重空格
+		return sql.trim().replaceAll("[\\t\\n\\r]", " ").replaceAll("\\s+", " ");
+	}
+	
+	/**
+	 * 把每个 '...' 字符串字面量的内容替换为占位符 \u0001N\u0001(引号保留), 原文按序收集进
+	 * literals。支持 '' 转义(Oracle风格双单引号)。未闭合的引号不遮蔽(尽力而为)。
+	 */
+	private static String maskStringLiterals(String sql, List<String> literals) {
+		StringBuilder sb = new StringBuilder(sql.length());
+		int i = 0;
+		int n = sql.length();
+		while (i < n) {
+			char c = sql.charAt(i);
+			if (c != '\'') {
+				sb.append(c);
+				i++;
+				continue;
+			}
+			int j = i + 1;
+			StringBuilder content = new StringBuilder();
+			boolean closed = false;
+			while (j < n) {
+				char cj = sql.charAt(j);
+				if (cj == '\'') {
+					if (j + 1 < n && sql.charAt(j + 1) == '\'') {
+						content.append("''");
+						j += 2;
+						continue;
+					}
+					closed = true;
+					break;
+				}
+				content.append(cj);
+				j++;
+			}
+			if (!closed) {
+				// 引号不闭合, 不敢确定字面量边界, 原样保留
+				sb.append(c);
+				i++;
+				continue;
+			}
+			sb.append('\'').append(LITERAL_MARK).append(literals.size()).append(LITERAL_MARK).append('\'');
+			literals.add(content.toString());
+			i = j + 1;
+		}
+		return sb.toString();
+	}
+	
+	private static String unmask(String masked, List<String> literals) {
+		if (literals.isEmpty()) {
+			return masked;
+		}
+		StringBuilder sb = new StringBuilder(masked.length());
+		int i = 0;
+		while (i < masked.length()) {
+			char c = masked.charAt(i);
+			if (c == LITERAL_MARK) {
+				int end = masked.indexOf(LITERAL_MARK, i + 1);
+				if (end != -1) {
+					try {
+						int idx = Integer.parseInt(masked.substring(i + 1, end));
+						if (idx >= 0 && idx < literals.size()) {
+							sb.append(literals.get(idx));
+							i = end + 1;
+							continue;
+						}
+					} catch (NumberFormatException ignore) {
+						// 落单/被改写的占位符, 原样输出
+					}
+				}
+			}
+			sb.append(c);
+			i++;
+		}
+		return sb.toString();
+	}
+	
+	private static boolean parseable(String sql) {
+		try {
+			CCJSqlParserUtil.parse(sql);
+			return true;
+		} catch (JSQLParserException | StackOverflowError | RuntimeException e) {
+			return false;
+		}
 	}
 	
 	private static String processJoinSql(String sql) {
@@ -55,7 +229,8 @@ public class SQLUtils {
 				.replaceAll("(?i)\\bwhere\\s+(and|or)\\b\\s*", "where ")
 				.replaceAll("(?i)\\bwhere\\s+and\\s+and\\b", "where ")
 				.replaceAll("(?i)\\s+(and|or)\\s+(and|or)\\b", " $1 ")
-				.replaceAll("(?i)\\s+and\\s+and\\s*", " and ");
+				//第二个 and 必须带 \b: 否则 "and android = 2" 会命中 "and and", 列名被吃掉前缀
+				.replaceAll("(?i)\\s+and\\s+and\\b\\s*", " and ");
 		
 		String sqlWithCorrectTable = fixTableAlias(cleaned);
 		
@@ -64,7 +239,9 @@ public class SQLUtils {
 		String fixedMain = fixWhereAnd(mainSql);
 		
 		for (int i = 0; i < subs.size(); i++) {
-			String processedSub = build(subs.get(i));
+			//子查询里带着外层遮蔽好的字面量占位符, 不能再走 build()(会二次遮蔽/还原/污染缓存),
+			//只做修复管线本身
+			String processedSub = fixMaskedSql(subs.get(i));
 			fixedMain = fixedMain.replace("(@sub" + i + ")", "(" + processedSub + ")");
 		}
 		
@@ -75,7 +252,8 @@ public class SQLUtils {
 		}
 		
 		String cleanedFinal = cleanEmptyWhere(fixedMain);
-		cleanedFinal = cleanedFinal.replaceAll("from", " from").replaceAll("\\s+", " ").trim();
+		//必须带词边界: 裸 "from" 会把 date_from/time_from 等含关键字子串的列名插入空格改坏
+		cleanedFinal = cleanedFinal.replaceAll("\\bfrom\\b", " from").replaceAll("\\s+", " ").trim();
 		
 		return cleanedFinal;
 	}
@@ -90,17 +268,28 @@ public class SQLUtils {
 		String lowerWhereContent = whereContent.toLowerCase();
 		
 		if (whereContent.isEmpty()
-				|| lowerWhereContent.startsWith("and")
-				|| lowerWhereContent.startsWith("or")
+				|| startsWithKeyword(lowerWhereContent, "and")
+				|| startsWithKeyword(lowerWhereContent, "or")
 				|| lowerWhereContent.startsWith("order by")
 				|| lowerWhereContent.startsWith("group by")
 				|| lowerWhereContent.startsWith("having")
 				|| lowerWhereContent.startsWith("limit")
 				|| lowerWhereContent.startsWith("union")) {
-			String suffix = whereContent.replaceAll("^\\s*(and|or)\\s*", "").trim();
+			String suffix = whereContent.replaceAll("^\\s*(and|or)\\b\\s*", "").trim();
 			return sql.substring(0, whereIdx).trim() + (suffix.isEmpty() ? "" : " " + suffix);
 		}
 		return sql;
+	}
+	
+	/**
+	 * 判断 s 是否以完整关键词 keyword 开头(后跟空格或到此为止)。
+	 * 裸 startsWith("or")/"and" 会把 orderno、android 这类列名前缀误当成连接词剥掉。
+	 */
+	private static boolean startsWithKeyword(String s, String keyword) {
+		if (!s.startsWith(keyword)) {
+			return false;
+		}
+		return s.length() == keyword.length() || Character.isWhitespace(s.charAt(keyword.length()));
 	}
 	
 	private static String fixWhereAnd(String sql) {
@@ -474,7 +663,157 @@ public class SQLUtils {
 		return sql;
 	}
 	
+	/**
+	 * 清空本类全部转换缓存。配置热更新或单元测试隔离时调用。
+	 */
 	public static void clearCache() {
-		SQL_CACHE.clear();
+		SQL_CACHE.invalidateAll();
+		COUNT_SQL_CACHE.invalidateAll();
+		TENANT_SQL_CACHE.invalidateAll();
+	}
+	
+	/**
+	 * 给定任意的select语句, 生成对应的count语句（自 commons-lang SqlUtils 合并而来）
+	 */
+	public static String generateCountSql(String originalQuerySql) {
+		//注意: 不校验 originalQuerySql 是否为 null 与 SqlParseException 语义均保持原实现
+		return COUNT_SQL_CACHE.get(originalQuerySql, SQLUtils::doGenerateCountSql);
+	}
+	
+	private static String doGenerateCountSql(String originalQuerySql) {
+		try {
+			// 解析原始SQL查询
+			Statement statement = CCJSqlParserUtil.parse(originalQuerySql);
+			
+			if (statement instanceof PlainSelect plainSelect) {
+				// 构建新的COUNT(*)查询(与旧实现一致: 替换 selectItems)
+				SelectItem<?> countItem = new SelectItem<>(new Column("COUNT(*)"));
+				plainSelect.setSelectItems(Arrays.asList(countItem));
+				return plainSelect.toString();
+			}
+			if (statement instanceof Select select) {
+				// UNION/INTERSECT 等 SetOperationList: 旧实现直接抛 SqlParseException,
+				// 改走派生表包裹, 对任意 Select 语义成立且不丢分页能力
+				return "select count(*) from (" + select + ") copilot_count_t";
+			}
+		} catch (JSQLParserException e) {
+			throw new SqlParseException(originalQuerySql, e);
+		}
+		throw new SqlParseException(originalQuerySql);
+	}
+	
+	/**
+	 * 处理所有类型的SQL语句，动态添加deleted=0和tenant_id条件（自 commons-lang SqlUtils 合并而来）。
+	 * 供 DeletedTenantIdConditionInterceptor（Hibernate StatementInspector）调用。
+	 * <p>
+	 * 无法解析、或非 Select/Update/Delete 语句时<b>原样返回</b>并告警, 不再抛异常中断查询
+	 * （旧实现在 UNION 等场景直接抛 SqlParseException, 会让任何 UNION 查询失败）。
+	 */
+	public static String addDeleteTenantIdCondition(String originalQuerySql) {
+		Long tenantId = ThreadContext.get("tenantId");
+		String sqlCacheKey = originalQuerySql + (tenantId == null ? "" : tenantId);
+		return TENANT_SQL_CACHE.get(sqlCacheKey, k -> doAddDeleteTenantIdCondition(originalQuerySql, tenantId));
+	}
+	
+	private static String doAddDeleteTenantIdCondition(String originalQuerySql, Long tenantId) {
+		Statement statement;
+		try {
+			statement = CCJSqlParserUtil.parse(originalQuerySql);
+		} catch (JSQLParserException | RuntimeException e) {
+			//解析不了就不冒险改写, 交给数据库报错
+			log.warn("SQLUtils.addDeleteTenantIdCondition 无法解析SQL, 已原样放行: {}", originalQuerySql, e);
+			return originalQuerySql;
+		}
+		
+		try {
+			if (statement instanceof PlainSelect plainSelect) {
+				applyCondition(plainSelect, tenantId);
+				return plainSelect.toString();
+			}
+			if (statement instanceof Select select) {
+				//UNION/SetOperationList: 逐个子句追加条件, 保证每个分支都被过滤
+				appendConditionsToSelectBody(select, tenantId);
+				return select.toString();
+			}
+			if (statement instanceof Update update) {
+				update.setWhere(CCJSqlParserUtil.parseCondExpression(
+						buildNewCondition(update.getWhere() != null ? update.getWhere().toString() : "", tenantId)));
+				return update.toString();
+			}
+			if (statement instanceof Delete delete) {
+				delete.setWhere(CCJSqlParserUtil.parseCondExpression(
+						buildNewCondition(delete.getWhere() != null ? delete.getWhere().toString() : "", tenantId)));
+				return delete.toString();
+			}
+		} catch (JSQLParserException e) {
+			log.warn("SQLUtils.addDeleteTenantIdCondition 追加条件失败, 已原样放行: {}", originalQuerySql, e);
+			return originalQuerySql;
+		}
+		return originalQuerySql;
+	}
+	
+	private static void applyCondition(PlainSelect plainSelect, Long tenantId) throws JSQLParserException {
+		String newCondition = buildNewCondition(
+				plainSelect.getWhere() != null ? plainSelect.getWhere().toString() : "", tenantId);
+		if (isNotBlank(newCondition)) {
+			plainSelect.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
+		}
+	}
+	
+	private static void appendConditionsToSelectBody(Select select, Long tenantId) {
+		if (select instanceof PlainSelect plainSelect) {
+			try {
+				applyCondition(plainSelect, tenantId);
+			} catch (JSQLParserException e) {
+				log.warn("无法为 UNION 子句追加条件, 该子句保持原样: {}", plainSelect, e);
+			}
+			return;
+		}
+		if (select instanceof net.sf.jsqlparser.statement.select.SetOperationList setOperationList) {
+			for (Select body : setOperationList.getSelects()) {
+				appendConditionsToSelectBody(body, tenantId);
+			}
+		}
+	}
+	
+	/**
+	 * 在原 WHERE 条件上补齐 deleted / tenant_id 过滤。
+	 *
+	 * @param originalCondition 原 WHERE 子句文本(可能为空串)
+	 * @param tenantId          当前租户, null 表示不做租户过滤
+	 */
+	private static String buildNewCondition(String originalCondition, Long tenantId) {
+		String trimmedSql = StringUtils.trimAll(originalCondition);
+		boolean alreadyContainDeleted = trimmedSql.toLowerCase().contains(logicalDeleteField + "=");
+		boolean alreadyContainTenantId = trimmedSql.toLowerCase().contains("tenant_id=");
+		
+		/*
+		 * 原条件含 OR 时必须整体括起来再 AND, 否则 AND 优先级高于 OR,
+		 * 会变成 a=1 OR (b=2 AND deleted=0) —— 已删除数据从 a=1 分支泄漏。
+		 * 这里用词边界匹配(兼容 or 前后换行/制表/多空格/括号粘连), 只要存在 OR 就加括号,
+		 * 多加括号无副作用, 宁可保守。
+		 */
+		String parsedOriginalCondition = originalCondition;
+		if (originalCondition.toLowerCase().matches("(?s).*\\bor\\b.*")) {
+			parsedOriginalCondition = "(" + originalCondition + ")";
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		if (!originalCondition.isEmpty()) {
+			sb.append(parsedOriginalCondition);
+		}
+		if (!alreadyContainDeleted && logicalDeleteEnabled) {
+			if (sb.length() > 0) {
+				sb.append(" AND ");
+			}
+			sb.append(logicalDeleteField).append(" = 0");
+		}
+		if (tenantId != null && !alreadyContainTenantId) {
+			if (sb.length() > 0) {
+				sb.append(" AND ");
+			}
+			sb.append("tenant_id = ").append(tenantId);
+		}
+		return sb.toString();
 	}
 }

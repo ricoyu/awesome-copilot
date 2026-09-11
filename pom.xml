@@ -60,6 +60,9 @@
         <!--<elasticsearch.version>7.12.0</elasticsearch.version>-->
         <!--<elasticsearch.version>7.9.3</elasticsearch.version>-->
 
+        <!-- SQL解析库, 统一走 dependencyManagement -->
+        <jsqlparser.version>4.9</jsqlparser.version>
+
         <!-- ES8.x 官方推荐客户端, 用于 copilot-search-8.x 模块 -->
         <elasticsearch-java.version>8.19.14</elasticsearch-java.version>
         <jakarta-json-api.version>2.0.1</jakarta-json-api.version>
@@ -76,6 +79,9 @@
         <httpasyncclient.version>4.1.4</httpasyncclient.version>
 
         <junit.version>4.13.2</junit.version>
+        <!-- JUnit 5: 5.9 起 Launcher 的测试排除说明日志由 info 降为 config, 避免 IDEA 单方法运行时刷屏 -->
+        <junit-jupiter.version>5.10.2</junit-jupiter.version>
+        <junit-platform.version>1.10.2</junit-platform.version>
 
         <aspectj.version>1.8.7</aspectj.version>
         <cglib.version>3.2.1</cglib.version>
@@ -107,6 +113,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>${jsqlparser.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
@@ -346,19 +357,26 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
-                <version>5.7.0</version>
+                <version>${junit-jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>5.7.0</version>
+                <version>${junit-jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
-                <version>5.7.0</version>
+                <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <!-- Launcher 由 IDE/构建工具在测试期使用, 显式收口版本, 与 jupiter-engine 保持同一 platform 线 -->
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${junit-platform.version}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -707,6 +725,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- 测试期统一收口 Launcher 版本, 避免 IDE 自动注入历史版本导致日志行为不一致 -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static com.awesomecopilot.orm.utils.SQLUtils.build;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SQLUtilsTest {
@@ -614,5 +615,58 @@ public class SQLUtilsTest {
 		System.out.println("处理前sql45：" + sql45);
 		System.out.println("处理后sql45：" + sqlwhere);
 		assertEquals(expected.toLowerCase(), sqlwhere.toLowerCase());
+	}
+
+	/**
+	 * 回归：列名内嵌 SQL 关键字子串不能被"修复"破坏（历史 bug：无词边界的 replaceAll
+	 * 把 date_from 改成 "date_ from"、android 改成 "roid"、orderdate 整条件前缀被剥）。
+	 */
+	@Test
+	@Order(46)
+	public void testKeywordSubstringColumnNames() {
+		assertEquals("select date_from, time_from from orders where id = :id",
+				build("SELECT date_from, time_from FROM orders WHERE id = :id"));
+		assertEquals("select * from t where x = 1 and android = 2",
+				build("select * from t where x = 1 and android = 2"));
+		assertEquals("select * from t where orderdate = 1",
+				build("select * from t where orderdate = 1"));
+		assertEquals("select * from t where orscore > 3 and band = 'X'",
+				build("select * from t where orscore > 3 and band = 'X'"));
+	}
+
+	/**
+	 * 回归：字符串字面量内容不得被关键字小写/替换改写。
+	 */
+	@Test
+	@Order(47)
+	public void testStringLiteralsPreserved() {
+		assertEquals("select * from t where name = 'In Stock Only'",
+				build("select * from t WHERE name = 'In Stock Only'"));
+		assertEquals("select * from t where note = 'select from where'",
+				build("SELECT * FROM t WHERE note = 'select from where'"));
+		assertEquals("select * from t where id in (:ids) and name like '%from%'",
+				build("select * from t where id in (:ids) and name like '%from%'"));
+	}
+
+	/**
+	 * 修复功能本身仍然有效：残缺 WHERE/多余 AND 会被修好
+	 */
+	@Test
+	@Order(48)
+	public void testRealFixesStillWork() {
+		assertEquals("select * from t where age > :a",
+				build("SELECT * FROM t where AND age > :a"));
+		assertEquals("select * from t where a=1 and b=2",
+				build("select * from t where a=1 and and b=2"));
+	}
+
+	/**
+	 * 未闭合引号的畸形SQL尽力而为、不抛异常
+	 */
+	@Test
+	@Order(49)
+	public void testUnclosedQuoteNoThrow() {
+		String out = build("select * from t where name = 'rico");
+		assertNotNull(out);
 	}
 }

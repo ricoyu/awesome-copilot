@@ -1,6 +1,6 @@
 package com.awesomecopilot.orm.interceptor;
 
-import com.awesomecopilot.common.lang.utils.SqlUtils;
+import com.awesomecopilot.orm.utils.SQLUtils;
 import org.hibernate.resource.jdbc.spi.StatementInspector;
 
 /**
@@ -30,6 +30,6 @@ public class DeletedTenantIdConditionInterceptor implements StatementInspector {
     @Override
     public String inspect(String sql) {
         // 在已有WHERE后追加条件，或新增WHERE
-        return SqlUtils.addDeleteTenantIdCondition(sql);
+        return SQLUtils.addDeleteTenantIdCondition(sql);
     }
 }

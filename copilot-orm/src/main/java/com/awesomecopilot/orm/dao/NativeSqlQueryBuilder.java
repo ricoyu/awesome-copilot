@@ -4,7 +4,6 @@ import com.awesomecopilot.common.lang.context.ThreadContext;
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ArrayUtils;
 import com.awesomecopilot.common.lang.utils.PrimitiveUtils;
-import com.awesomecopilot.common.lang.utils.SqlUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.common.lang.vo.Page;
 import com.awesomecopilot.orm.exception.SQLCountQueryException;
@@ -530,7 +529,7 @@ public class NativeSqlQueryBuilder implements SqlQueryBuilder {
 				parsedSQL = parsedSQL.substring(0, orderByIndex);
 			}
 			// 查询总记录数
-			String countSql = SqlUtils.generateCountSql(parsedSQL);
+			String countSql = SQLUtils.generateCountSql(parsedSQL);
 			log.info("Count SQL: {}", countSql);
 			org.hibernate.query.Query<T> countQuery = em().createNativeQuery(countSql)
 					.unwrap(org.hibernate.query.Query.class);

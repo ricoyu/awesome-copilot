@@ -2,7 +2,6 @@ package com.awesomecopilot.orm.dao;
 
 import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import com.awesomecopilot.common.lang.utils.SqlUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
 import com.awesomecopilot.orm.exception.EntityOperationException;
@@ -200,8 +199,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@PostConstruct
 	public void initialize() {
 		try {
-			SqlUtils.logicalDeleteEnabled = this.logicalDeleteEnabled;
-			SqlUtils.logicalDeleteField = this.logicalDeleteField;
+			SQLUtils.configureLogicalDelete(this.logicalDeleteEnabled, this.logicalDeleteField);
 			this.query("首次使用前的初始化");
 			log.info("首次使用前的初始化完成");
 		} finally {

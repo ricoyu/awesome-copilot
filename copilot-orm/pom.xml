@@ -97,6 +97,12 @@
             <artifactId>velocity</artifactId>
         </dependency>
 
+        <!-- SQLUtils/分页count/逻辑删除条件注入用, 版本走根pom dependencyManagement -->
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
