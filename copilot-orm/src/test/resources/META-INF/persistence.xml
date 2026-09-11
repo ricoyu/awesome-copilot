@@ -1,0 +1,16 @@
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence" version="3.1">
+  <persistence-unit name="orm-test">
+    <!-- 测试实体全部显式列出, 不走包扫描 -->
+    <class>com.awesomecopilot.orm.it.entity.Book</class>
+    <properties>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ormtest;DB_CLOSE_DELAY=-1"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+      <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.show_sql" value="false"/>
+      <!-- 避免加载 hibernate-validator 时缺 jakarta.el 报错 -->
+      <property name="jakarta.persistence.validation.mode" value="none"/>
+    </properties>
+  </persistence-unit>
+</persistence>

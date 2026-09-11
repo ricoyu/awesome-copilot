@@ -1,6 +1,5 @@
 package com.awesomecopilot.orm.dao;
 
-import com.awesomecopilot.common.lang.utils.ArrayTypes;
 import com.awesomecopilot.common.lang.utils.ReflectionUtils;
 import com.awesomecopilot.common.lang.vo.OrderBean;
 import com.awesomecopilot.orm.criteria.JPACriteriaQuery;
@@ -52,7 +51,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -103,8 +101,6 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	//用于判断是否update语句
 	private static final Pattern UPDATE_PATTERN =
 			Pattern.compile("\\bupdate\\b[\\s\\S]*?\\bset\\b\\s+", Pattern.CASE_INSENSITIVE);
-
-	private static final ConcurrentMap<String, ArrayTypes> ARRAY_TYPE_MAP = new ConcurrentHashMap<>();
 
 	@Autowired
 	private EntityManagerFactory entityManagerFactory;
@@ -171,15 +167,6 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	private Map<String, Class> classMap = new HashMap<>();
 
 	static {
-		ARRAY_TYPE_MAP.put(ArrayTypes.LONG.getClassName(), ArrayTypes.LONG);
-		ARRAY_TYPE_MAP.put(ArrayTypes.LONG_WRAPPER.getClassName(), ArrayTypes.LONG_WRAPPER);
-		ARRAY_TYPE_MAP.put(ArrayTypes.INTEGER.getClassName(), ArrayTypes.INTEGER);
-		ARRAY_TYPE_MAP.put(ArrayTypes.INTEGER_WRAPPER.getClassName(), ArrayTypes.INTEGER_WRAPPER);
-		ARRAY_TYPE_MAP.put(ArrayTypes.STRING.getClassName(), ArrayTypes.STRING);
-		ARRAY_TYPE_MAP.put(ArrayTypes.DOUBLE.getClassName(), ArrayTypes.DOUBLE);
-		ARRAY_TYPE_MAP.put(ArrayTypes.DOUBLE_WRAPPER.getClassName(), ArrayTypes.DOUBLE_WRAPPER);
-		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT.getClassName(), ArrayTypes.FLOAT);
-		ARRAY_TYPE_MAP.put(ArrayTypes.FLOAT_WRAPPER.getClassName(), ArrayTypes.FLOAT_WRAPPER);
 
 		Properties properties = new Properties();
 		properties.setProperty("userdirective",
@@ -214,6 +201,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T> void persist(T entity) {
+		try {
+			persistImpl(entity);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void persistImpl(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
 		try {
 			em().persist(entity);
@@ -226,13 +221,21 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> void persist(List<T> entities) {
+		try {
+			persistImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void persistImpl(List<T> entities) {
 		Objects.requireNonNull(entities, "entities cannot be null");
 		if (entities.isEmpty()) {
 			return;
 		}
 		try {
 			for (int i = 0; i < entities.size(); i++) {
-				persist(entities.get(i));
+				persistImpl(entities.get(i));
 				/*
 				 * i+1是因为i是从0开始的, 如果batchSize=100, 那么i=99的时候, i+1=100, 正好是100的倍数, 此时需要flush
 				 */
@@ -260,6 +263,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T> T merge(T entity) {
+		try {
+			return mergeImpl(entity);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> T mergeImpl(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
 		try {
 			return em().merge(entity);
@@ -278,6 +289,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T> List<T> merge(List<T> entities) {
+		try {
+			return mergeImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> mergeImpl(List<T> entities) {
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
@@ -298,6 +317,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> T save(T entity) {
+		try {
+			return saveImpl(entity);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> T saveImpl(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
 		/*
 		 * 找到主键字段, 原来按照字段名称来找, 固定找"id"字段, 但实际开发可能主键字段不叫id, 而叫xxx_id
@@ -306,7 +333,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entity.getClass(), Id.class);
 		Object id = ReflectionUtils.getFieldValue(idField, entity);
 		if (id == null) {
-			persist(entity);
+			persistImpl(entity);
 			return entity;
 		} else {
 			try {
@@ -321,12 +348,20 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> save(List<T> entities) {
+		try {
+			return saveImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> saveImpl(List<T> entities) {
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
 		List<T> results = new ArrayList<>();
 		for (int i = 0, length = entities.size(); i < length; i++) {
-			results.add(save(entities.get(i)));
+			results.add(saveImpl(entities.get(i)));
 			/*
 			 * i+1是因为i是从0开始的, 如果batchSize=100, 那么i=99的时候, i+1=100, 正好是100的倍数, 此时需要flush
 			 */
@@ -345,13 +380,21 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> save(Set<T> entities) {
+		try {
+			return saveImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> saveImpl(Set<T> entities) {
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
 		List<T> results = new ArrayList<>();
 		int i = 0;
 		for (T entity : entities) {
-			results.add(save(entity));
+			results.add(saveImpl(entity));
 			i++;
 			if (i > 0 && (i % batchSize == 0)) {
 				flush();
@@ -373,6 +416,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T> void delete(T entity) {
+		try {
+			deleteImpl(entity);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void deleteImpl(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
 		try {
 			em().remove(entity);
@@ -392,6 +443,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T> void delete(List<T> entities) {
+		try {
+			deleteImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void deleteImpl(List<T> entities) {
 		Objects.requireNonNull(entities, "entity cannot be null");
 		try {
 			for (T t : entities) {
@@ -500,6 +559,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	private <T> void deleteByPKBulk(Class<T> entityClass, Collection<?> ids) {
+		try {
+			deleteByPKBulkImpl(entityClass, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	private <T> void deleteByPKBulkImpl(Class<T> entityClass, Collection<?> ids) {
 		if (ids.isEmpty()) {
 			return;
 		}
@@ -533,6 +600,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	 */
 	@Override
 	public <T, PK extends Serializable> T get(Class<T> clazz, PK id) {
+		try {
+			return getImpl(clazz, id);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> T getImpl(Class<T> clazz, PK id) {
 		Objects.requireNonNull(id, "id cannot be null");
 		if (log.isDebugEnabled()) {
 			log.debug("Try to find " + clazz.getName() + " by id " + id);
@@ -548,6 +623,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, PK... ids) {
+		try {
+			return getMultiImpl(clazz, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> getMultiImpl(Class<T> clazz, PK... ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		// ==========核心兼容逻辑：拦截 long[] 被封装成单个元素的场景==========
 		Object[] targetIds = ids;
@@ -592,6 +675,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> List<T> getMulti(Class<T> clazz, List<PK> ids) {
+		try {
+			return getMultiImpl(clazz, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> getMultiImpl(Class<T> clazz, List<PK> ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		if (log.isDebugEnabled()) {
 			log.debug("Try to find " + clazz.getName() + " by ids " + ids);
@@ -607,6 +698,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, PK... ids) {
+		try {
+			return listByIdsImpl(entityClass, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> listByIdsImpl(Class<T> entityClass, PK... ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		log.debug("Try to find " + entityClass.getName() + " by ids " + ids);
 		try {
@@ -622,6 +721,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> List<T> listByIds(Class<T> entityClass, List<PK> ids) {
+		try {
+			return listByIdsImpl(entityClass, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> listByIdsImpl(Class<T> entityClass, List<PK> ids) {
 		Objects.requireNonNull(ids, "ids cannot be null");
 		log.debug("Try to find " + entityClass.getName() + " by ids " + ids);
 		try {
@@ -637,6 +744,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> T find(Class<T> clazz, PK id) {
+		try {
+			return findImpl(clazz, id);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> T findImpl(Class<T> clazz, PK id) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
@@ -663,6 +778,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> findList(Class<T> entityClass, String propertyName, Object value) {
+		try {
+			return findListImpl(entityClass, propertyName, value);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findListImpl(Class<T> entityClass, String propertyName, Object value) {
 		Objects.requireNonNull(propertyName, "propertyName cannot be null!");
 		JPACriteriaQuery<T> jpaCriteriaQuery =
 				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
@@ -697,6 +820,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> T findOne(Class<T> entityClass, String propertyName, Object value) {
+		try {
+			return findOneImpl(entityClass, propertyName, value);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> T findOneImpl(Class<T> entityClass, String propertyName, Object value) {
 		List<T> resultList = null;
 		JPACriteriaQuery<T> jpaCriteriaQuery =
 				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
@@ -711,6 +842,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> Optional<T> findOne(Class<T> clazz, PK id) {
+		try {
+			return findOneImpl(clazz, id);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> Optional<T> findOneImpl(Class<T> clazz, PK id) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(clazz);
 		Root<T> root = criteriaQuery.from(clazz);
@@ -734,7 +873,26 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T, PK extends Serializable> T load(Class<T> entityClass, PK id) {
 		try {
-			return em().getReference(entityClass, id);
+			return loadImpl(entityClass, id);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> T loadImpl(Class<T> entityClass, PK id) {
+		try {
+			T reference = em().getReference(entityClass, id);
+			/*
+			 * 无 Spring 事务且不在 begin() 手动事务中时, 本次终端调用结束即释放自建 EM,
+			 * 懒代理会因失去 Session 而在访问属性时抛 LazyInitializationException。
+			 * 这里立即初始化, 保证返回值脱离 EM 仍可用（语义上向 get() 靠拢）;
+			 * 事务内不初始化, 保持懒加载原语义。记录不存在时会在此抛 EntityNotFoundException,
+			 * 比延迟到属性访问时才报错更可预期。
+			 */
+			if (!isInSpringTransaction() && !entityManagerHolder().hasActiveLocalTransaction()) {
+				org.hibernate.Hibernate.initialize(reference);
+			}
+			return reference;
 		} catch (Throwable e) {
 			log.error("", e);
 			throw new EntityOperationException(e);
@@ -743,6 +901,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> findAll(Class<T> entityClass) {
+		try {
+			return findAllImpl(entityClass);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findAllImpl(Class<T> entityClass) {
 		CriteriaQuery<T> criteriaQuery = em().getCriteriaBuilder().createQuery(entityClass);
 		criteriaQuery.from(entityClass);
 		TypedQuery<T> query = em().createQuery(criteriaQuery);
@@ -755,6 +921,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> findIn(Class<T> entityClass, final String propertyName, Collection<?> values) {
+		try {
+			return findInImpl(entityClass, propertyName, values);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findInImpl(Class<T> entityClass, final String propertyName, Collection<?> values) {
 		boolean includeDeleted = false;
 		Objects.requireNonNull(propertyName);
 		if (isEmpty(values)) {
@@ -768,6 +942,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	public <T, E> List<T> findIn(Class<T> entityClass, String propertyName, E[] values) {
+		try {
+			return findInImpl(entityClass, propertyName, values);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, E> List<T> findInImpl(Class<T> entityClass, String propertyName, E[] values) {
 		boolean includeDeleted = false;
 		Objects.requireNonNull(propertyName);
 		if (values == null || values.length == 0) {
@@ -782,6 +964,15 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T> List<T> findBetween(Class<T> entityClass, String propertyName, LocalDateTime begin,
 	                               LocalDateTime end) {
+		try {
+			return findBetweenImpl(entityClass, propertyName, begin, end);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, LocalDateTime begin,
+	                               LocalDateTime end) {
 		boolean includeDeleted = false;
 		Objects.requireNonNull(propertyName);
 		if (begin == null && end == null) {
@@ -795,17 +986,35 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> findBetween(Class<T> entityClass, String propertyName, Long begin, Long end) {
+		try {
+			return findBetweenImpl(entityClass, propertyName, begin, end);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, Long begin, Long end) {
+		boolean includeDeleted = false;
 		Objects.requireNonNull(propertyName);
 		Objects.requireNonNull(begin);
 		Objects.requireNonNull(end);
 		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
 				.between(propertyName, begin, end);
+		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
 		return jpaCriteriaQuery.list();
 	}
 
 
 	@Override
 	public <T> List<T> findIsNull(Class<T> entityClass, String propertyName) {
+		try {
+			return findIsNullImpl(entityClass, propertyName);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findIsNullImpl(Class<T> entityClass, String propertyName) {
 		Objects.requireNonNull(propertyName, "propertyName cannot be null!");
 		JPACriteriaQuery<T> jpaCriteriaQuery =
 				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
@@ -831,6 +1040,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> boolean ifExists(Class<T> entityClass, String propertyName, Object value) {
+		try {
+			return ifExistsImpl(entityClass, propertyName, value);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> boolean ifExistsImpl(Class<T> entityClass, String propertyName, Object value) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 
 		CriteriaQuery<Boolean> query = criteriaBuilder.createQuery(Boolean.class);
@@ -919,6 +1136,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> List<T> findList(String queryName, Map<String, Object> params, Class<T> clazz) {
+		try {
+			return findListImpl(queryName, params, clazz);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> List<T> findListImpl(String queryName, Map<String, Object> params, Class<T> clazz) {
 		String rawQuery = null;
 		org.hibernate.query.Query<T> query = null;
 		Matcher matcher = SELECT_PATTERN.matcher(queryName);
@@ -966,20 +1191,15 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 		if (isNotEmpty(params)) {
 			/*
-			 * 如果params里面某个key对应的value是null, 下面query.setProperties(params)会抛NullpointException, 所以这里要移除值为null的key
+			 * 绑参前先复制一份, 只清副本, 不动调用方传进来的 params。
+			 * 旧实现直接在 params 上删 null 键、把空集合改成字符串 "''", 调用方拿着
+			 * 同一个 map 再查第二次时参数已经残缺或被改样——这是个隐蔽的坑。
+			 * null 值的键要剔除(setProperties 碰到 null 会抛 NullPointerException);
+			 * 空 List/空数组原样绑定即可, Hibernate 会生成恒假条件, 查询返回 0 行。
 			 */
-			Iterator<Map.Entry<String, Object>> iterator = params.entrySet().iterator();
-			while (iterator.hasNext()) {
-				Map.Entry<String, Object> entry = iterator.next();
-				if (entry.getValue() == null) {
-					iterator.remove();
-				}
-			}
-			for (String key : params.keySet()) {
-				Object value = params.get(key);
-				processInOperate(params, key, value);
-			}
-			query.setProperties(params);
+			Map<String, Object> bindParams = new HashMap<>(params);
+			bindParams.entrySet().removeIf(entry -> entry.getValue() == null);
+			query.setProperties(bindParams);
 		}
 
 		List<T> resultList;
@@ -1007,6 +1227,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	
 	@Override
 	public <T> int deleteIn(Class<T> entityClass, String propertyName, Collection<?> values) {
+		try {
+			return deleteInImpl(entityClass, propertyName, values);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> int deleteInImpl(Class<T> entityClass, String propertyName, Collection<?> values) {
 		CriteriaBuilder criteriaBuilder = em().getCriteriaBuilder();
 		CriteriaDelete<T> criteriaDelete = criteriaBuilder.createCriteriaDelete(entityClass);
 		Root<T> root = criteriaDelete.from(entityClass);
@@ -1029,6 +1257,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T, PK extends Serializable> List<T> ensureMultiEntityExists(Class<T> entityClass, PK... ids) {
+		try {
+			return ensureMultiEntityExistsImpl(entityClass, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> ensureMultiEntityExistsImpl(Class<T> entityClass, PK... ids) {
 		Session session = em().unwrap(Session.class);
 		MultiIdentifierLoadAccess<T> multiIdentifierLoadAccess = session.byMultipleIds(entityClass);
 		List<T> entities = multiIdentifierLoadAccess.multiLoad(ids);
@@ -1047,6 +1283,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T, PK extends Serializable> List<T> ensureMultiEntityExists(Class<T> entityClass, List<PK> ids) {
+		try {
+			return ensureMultiEntityExistsImpl(entityClass, ids);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T, PK extends Serializable> List<T> ensureMultiEntityExistsImpl(Class<T> entityClass, List<PK> ids) {
 		requireNonNull(ids, "ids cannot be null!");
 		Session session = em().unwrap(Session.class);
 		MultiIdentifierLoadAccess<T> multiIdentifierLoadAccess = session.byMultipleIds(entityClass);
@@ -1066,12 +1310,28 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	@Override
 	public <T> void detach(T entity) {
+		try {
+			detachImpl(entity);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void detachImpl(T entity) {
 		requireNonNull(entity, "entity cannot be null!");
 		em().detach(entity);
 	}
 
 	@Override
 	public <T> void detach(List<T> entities) {
+		try {
+			detachImpl(entities);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public <T> void detachImpl(List<T> entities) {
 		requireNonNull(entities, "entities cannot be null!");
 		entities.forEach((entity) -> {
 			requireNonNull(entity);
@@ -1113,6 +1373,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@SuppressWarnings("unchecked")
 	@Override
 	public int execute(String queryName, Map<String, Object> params) {
+		try {
+			return executeImpl(queryName, params);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	public int executeImpl(String queryName, Map<String, Object> params) {
 		String rawQuery = null;
 		org.hibernate.query.Query<Integer> query = null;
 		if (isSqlStatement(queryName)) {
@@ -1142,10 +1410,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 				.unwrap(org.hibernate.query.Query.class);
 
 		if (isNotEmpty(params)) {
-			for (String key : params.keySet()) {
-				Object value = params.get(key);
-				processInOperate(params, key, value);
-			}
+			//空集合不再偷换成字符串 "''": 直接绑空 List, DELETE/UPDATE 里的 IN 条件恒假,
+			//影响 0 行; 而 "''" 绑到数字列在 MySQL 上会报类型转换错误(报告 P1-10)
 			query.setProperties(params);
 		}
 
@@ -1198,91 +1464,6 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return setParameters(query, params);
 	}
 
-	/**
-	 * 如果value是List或者数组，当他们是空、长度为0，则需要特殊处理一下，将value改写为'',这样SQL IN 语句才不会出错
-	 *
-	 * @param params
-	 * @param key
-	 * @param value
-	 */
-	private void processInOperate(Map<String, Object> params, String key, Object value) {
-		if (value == null) {
-			return;
-		}
-
-		if (value instanceof List) {
-			List<?> values = (List<?>) value;
-			if (values.size() == 0) {
-				params.put(key, "''");
-			}
-			return;
-		}
-
-		ArrayTypes arrayTypes = ARRAY_TYPE_MAP.get(value.getClass().getName());
-		if (arrayTypes == null) {
-			return;
-		}
-
-		switch (arrayTypes) {
-			case LONG_WRAPPER:
-				Long[] arr1 = (Long[]) value;
-				if (arr1.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case LONG:
-				long[] arr2 = (long[]) value;
-				if (arr2.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case INTEGER:
-				int[] arr3 = (int[]) value;
-				if (arr3.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case INTEGER_WRAPPER:
-				Integer[] arr4 = (Integer[]) value;
-				if (arr4.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case STRING:
-				String[] arr5 = (String[]) value;
-				if (arr5.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case DOUBLE:
-				double[] arr6 = (double[]) value;
-				if (arr6.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case DOUBLE_WRAPPER:
-				Double[] arr7 = (Double[]) value;
-				if (arr7.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case FLOAT:
-				float[] arr8 = (float[]) value;
-				if (arr8.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-			case FLOAT_WRAPPER:
-				Float[] arr9 = (Float[]) value;
-				if (arr9.length == 0) {
-					params.put(key, "''");
-				}
-				break;
-
-			default:
-				break;
-		}
-	}
 
 	private boolean isEmpty(Collection entities) {
 		return entities == null || entities.isEmpty();
@@ -1415,6 +1596,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		cleanupEntityManager();
 	}
+	/**
+	 * P0-5: 终端操作统一收尾。无 Spring 事务且线程自建 EM 上没有活跃本地事务（begin() 手动
+	 * 开启的）时，关闭并摘除自建 EntityManager；Spring 事务内与 begin()/commit() 流程中
+	 * 为空操作，行为不变。
+	 */
+	private void releaseAfterTerminalOp() {
+		releaseEntityManagerIfIdle();
+	}
 
 	private boolean isSqlStatement(String queryName) {
 		Matcher matcher = SELECT_PATTERN.matcher(queryName);
@@ -1442,6 +1631,14 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 
 	private <T> List<T> query4RawList(String queryName, Map<String, Object> params) {
+		try {
+			return query4RawListImpl(queryName, params);
+		} finally {
+			releaseAfterTerminalOp();
+		}
+	}
+
+	private <T> List<T> query4RawListImpl(String queryName, Map<String, Object> params) {
 		String queryString = null;
 		org.hibernate.query.Query<?> query = null;
 		Matcher matcher = SELECT_PATTERN.matcher(queryName);

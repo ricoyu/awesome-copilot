@@ -33,24 +33,22 @@ public class BooleanPredicate extends AbstractPredicate {
 
 	@SuppressWarnings({ "rawtypes"})
 	public Predicate toPredicate(CriteriaBuilder criteriaBuilder, Root root) {
-		Predicate predicate = null;
 		Path path = root.get(getPropertyName());
 		switch (compareMode) {
 		case EQ:
-			if (propertyValue != null) {
-				predicate = criteriaBuilder.equal(path, propertyValue);
-			} else {
-				predicate = criteriaBuilder.isNull(path);
-			}
-			break;
+			return propertyValue != null
+					? criteriaBuilder.equal(path, propertyValue)
+					: criteriaBuilder.isNull(path);
 		case NOTEQ:
-			if (propertyValue != null) {
-				predicate = criteriaBuilder.notEqual(path, propertyValue);
-			} else {
-				predicate = criteriaBuilder.isNotNull(path);
-			}
+			return propertyValue != null
+					? criteriaBuilder.notEqual(path, propertyValue)
+					: criteriaBuilder.isNotNull(path);
+		default:
+			// 修复两处旧问题: NOTEQ case 缺 break(恰好是最后一个 case 才没出事故);
+			// GT/GE/LT/LE/ANYWHERE 进来会静默返回 null 谓词, 到 where() 才 NPE
+			throw new IllegalArgumentException(
+					"BooleanPredicate 只支持 EQ/NOTEQ, 传入 " + compareMode + ", 属性: " + getPropertyName());
 		}
-		return predicate;
 	}
 
 }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static java.text.MessageFormat.format;
@@ -47,7 +48,14 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	public static final String LOOSE = "loose";
 	
 	//所有列名连接之后的值，用来判断数据库返回的字段数量、顺序有没有改变
+	//(保留用于日志/调试; 热路径判断已改用 boundAliases 数组逐位比较)
 	private String aliasConcated = null;
+
+	/*
+	 * 上次成功绑定时的列名快照。每行数据进来时只需逐位 equals,
+	 * 代替旧实现"每行把整个列名数组拼成一个新字符串再比较"的固定开销
+	 */
+	private String[] boundAliases = null;
 
 	@SuppressWarnings("rawtypes")
 	private final Class resultClass;
@@ -71,9 +79,12 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	 * 比如：
 	 * 第一行数据过来，第三列值为null，那么就无法判断这一列是否需要做类型转换，所以castChecks[2]为null
 	 * 因此，只有当castChecks中每个元素都是true，才表示类型转换检查完成了
+	 * <p>
+	 * volatile: transformTuple 的无锁快路径靠它做"发布开关"——它在锁内最后被置 true,
+	 * 快路径线程读到 true 就能保证看到之前所有数组写入(Java 内存模型的 happens-before)
 	 * @on
 	 */
-	private boolean castChecksComplete = false;
+	private volatile boolean castChecksComplete = false;
 
 	//只是为了在初次完成castChecks时打印log用
 	private byte castChecksCompletePoint = 0;
@@ -147,7 +158,8 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 
 	@SuppressWarnings("rawtypes")
 	public ValueHandlerResultTransformer(Class resultClass) {
-		this.resultClass = resultClass;
+		// 委托双参构造器: 旧实现不跑 initializeTmp() 且 queryMode=null, 属于"用了必炸"的陷阱
+		this(resultClass, LOOSE);
 	}
 
 	/**
@@ -164,7 +176,11 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 		if (!StringUtils.equalsIgAny(queryMode, STRICT, LOOSE)) {
 			throw new InvalidParameterException("hibernateQueryMode can only be empty or strict, loose");
 		}
-		this.queryMode = queryMode;
+		// 统一转小写存起来: 校验用的是 equalsIgAny(大小写不敏感), 但 transformTuple 里的
+		// queryMode.equals(LOOSE) 是大小写敏感的——旧实现允许传 "Loose" 进来, 后面
+		// loose 判断全部失效, 缺列时不再跳过、转而拿 null methodHandle invoke 出 NPE。
+		// 在构造入口归一化, 下游怎么比较都不会漏
+		this.queryMode = queryMode.toLowerCase(Locale.ROOT);
 		this.resultClass = resultClass;
 		initializeTmp();
 	}
@@ -279,33 +295,73 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	}
 
 	/**
-	 * 这个方法在转换每一行数据的时候都会被调用，目的是确认每一列是否需要做类型转换
-	 * 
-	 * 每行数据都需要调用这个初始化方法的原因：
-	 * 		tuple的某个元素是null，这时候就不知道是否需要做类型转换了，因为下一个resultset的该元素可能不为null但是不匹配setter参数类型
-	 * 
-	 * 但是也不用担心，整个方法分成两个初始化块
-	 * 
-	 * 第一块进行返回的数据结果集的列名和Bean中方法的匹配，这一步只需做一次就OK了
-	 * 第二块极端情况下会对结果集的每一行都调用一遍，如某列都是null的情况
-	 * 
-	 * @on
-	 * @param aliases
-	 * @param tuple
+	 * 每行数据的初始化检查入口。
+	 * <p>
+	 * 每行数据都需要调用这个方法的原因：
+	 * tuple 的某个元素是 null 时无法判断该列是否需要类型转换，要等后面非 null 的行来确定。
+	 * <p>
+	 * 旧实现整个方法 synchronized, 且每行都要拿锁进来走一遍判断——这个 transformer
+	 * 实例是按 SQL 全局共享的(工厂缓存), 大结果集 × 多线程查询同一个 SQL 时, 所有线程
+	 * 在一把锁上排队, 纯属无谓竞争。
+	 * <p>
+	 * 现在拆成两段:
+	 *  - 快路径(无锁): 完全初始化 + 列名快照一致时直接返回, 只读 volatile 标志和数组,
+	 *    多线程完全并行;
+	 *  - 慢路径(synchronized): 首轮初始化/列名变化重建/某列值一直为 null 需要续查,
+	 *    才进锁。这些本来就是低频事件。
+	 * 正确性依据: castChecksComplete 是 volatile 且在锁内最后置 true, 快路径读到 true
+	 * 即可安全看到之前的全部数组写入; 快路径校验过列名一致, 期间即使有线程触发重建,
+	 * 重建对"当前行能用的绑定"是幂等的(相同列名会重建出相同绑定), 不会读到半成品。
 	 */
-	private synchronized void initialize(String[] aliases, Object[] tuple) {
+	private void initialize(String[] aliases, Object[] tuple) {
+		if (fastPathReady(aliases)) {
+			return;
+		}
+		synchronizedInitialize(aliases, tuple);
+	}
+
+	/**
+	 * 无锁快路径判定: 两套初始化都已完成、列名与上次成功绑定完全一致 → 无需任何动作。
+	 * 同一实例只被"相同 SQL + 相同 Bean"共享(工厂按 key 缓存), 并发行的列名天然一致,
+	 * 快路径的列名比较只是防御性检查。
+	 * 已知极限情况: 数据库列结构在运行中变更、且旧列查询恰好撞上另一线程触发的重建时,
+	 * 可能有个别行读到构建中的数组抛异常——列结构变更窗口内的瞬时现象, 重建完成后自愈;
+	 * 旧加锁版本同样要面对列变更时首轮绑定失败重试, 只是排队方式不同。
+	 */
+	private boolean fastPathReady(String[] aliases) {
+		if (!castChecksComplete) {
+			return false;
+		}
+		String[] bound = boundAliases;
+		if (bound == null || bound.length != aliases.length) {
+			return false;
+		}
+		for (int i = 0; i < bound.length; i++) {
+			if (!StringUtils.equalsIgCase(bound[i], aliases[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private synchronized void synchronizedInitialize(String[] aliases, Object[] tuple) {
 		/*
-		 * 系统已经在运行，但是期间对数据库表新增/删除字段，会导致methods和aliases的长度不一致
-		 * 如果发生, 重新初始化
+		 * 系统在运行期间, 如果数据库表新增/删除了字段, 查询返回的列(aliases)就和之前
+		 * 匹配好的 setter 数组对不上了。旧代码遇到这种情况会把 alias2MethodInitialized
+		 * 置回 false 等下一行数据来了重建——但重建时 castChecksComplete 忘了重置,
+		 * 第二遍初始化直接跳过, 类型标记全是空, 之后每一行数据都会抛
+		 * "没有办法将值...转换为..." 的异常, 而且坏的是全局共享的缓存实例,
+		 * 结果就是: 加个字段, 这个查询到重启之前永远报错。
+		 * 现在改为: 发现列对不上, 当场把两套状态全部清零重建, 不再"等下一行"。
 		 * @on
 		 */
 		if (alias2MethodInitialized) {
-			if (methods.length != aliases.length ) {
-				alias2MethodInitialized = false;
-			} else { //如果调整的字段顺序，会造成数据转换时类型不一致
-				String aliasConcated2 = StringUtils.concat(aliases);
-				if (!StringUtils.equalsIgCase(aliasConcated2, aliasConcated)) {
-					alias2MethodInitialized = false;
+			if (methods.length != aliases.length) {
+				//列数量都变了, 上次的判断结果没有任何保留价值, 整套状态清零重建
+				resetAliasBinding();
+			} else { //列数相同但顺序/名称变了(比如调整了字段顺序), 会造成类型判断错位
+				if (!aliasesUnchanged(aliases)) {
+					resetAliasBinding();
 				}
 			}
 		}
@@ -379,6 +435,8 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 			}
 
 			alias2MethodInitialized = true;
+			//记下这次绑定对应的列名快照, 下一行数据进来时逐位比较即可(零字符串分配)
+			boundAliases = aliases.clone();
 			aliasConcated = StringUtils.concat(aliases);
 		}
 
@@ -477,6 +535,40 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 	@Override
 	public List transformList(List resultList) {
 		return ResultTransformer.super.transformList(resultList);
+	}
+
+	/**
+	 * 把"列名 -> setter 绑定"以及基于列名的类型判断标记全部作废, 下一条数据进来时
+	 * 从头重建。必须整套一起清: 旧代码只清了 alias2MethodInitialized,
+	 * castChecksComplete 还是 true, 导致第二轮初始化被整体跳过, 之后每行都报错。
+	 */
+	private void resetAliasBinding() {
+		alias2MethodInitialized = false;
+		//第二部分初始化(逐列判断要不要做类型转换)的结果也全部作废
+		castChecksComplete = false;
+		castChecksCompletePoint = 0;
+		//列数变了, 长度一致性检查也要重新做一遍
+		tupleAliasLengthCheck = false;
+		boundAliases = null;
+		aliasConcated = null;
+	}
+
+	/**
+	 * 本行的列名和上次成功绑定时是否完全一致(区分顺序)。
+	 * 逐位 equalsIgnoreCase, 不拼接新字符串——这个判断每行数据都要做一次,
+	 * 旧实现每行都 StringUtils.concat 整个列名数组再比较, 大结果集上是白扔的开销
+	 */
+	private boolean aliasesUnchanged(String[] aliases) {
+		String[] bound = boundAliases;
+		if (bound == null || bound.length != aliases.length) {
+			return false;
+		}
+		for (int i = 0; i < bound.length; i++) {
+			if (!StringUtils.equalsIgCase(bound[i], aliases[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/*

@@ -22,8 +22,9 @@ public class LocalDateTimePredicate extends AbstractDatePredicate {
 	private LocalDateTime begin;
 	private LocalDateTime end;
 
-	private DateMatchMode matchMode = DateMatchMode.BETWEEN;
-
+	// 历史 bug: 这里曾声明 private DateMatchMode matchMode 遮蔽父类字段,
+	// 导致 setMatchMode()(写父类)与 toPredicate()(读子类)两套状态并存, 已删除,
+	// 模式统一由 AbstractDatePredicate 持有
 	public LocalDateTimePredicate(String propertyName, LocalDateTime begin, LocalDateTime end) {
 		setPropertyName(propertyName);
 		this.begin = begin;
@@ -31,6 +32,7 @@ public class LocalDateTimePredicate extends AbstractDatePredicate {
 		if (begin == null && end == null) {
 			throw new IllegalArgumentException("begin and end can't both be null");
 		}
+		DateMatchMode matchMode = DateMatchMode.BETWEEN;
 		if (begin == null) {
 			matchMode = DateMatchMode.EARLIER_THAN_OR_SAME;
 		}
@@ -38,7 +40,7 @@ public class LocalDateTimePredicate extends AbstractDatePredicate {
 			matchMode = DateMatchMode.LATER_THAN_OR_SAME;
 		}
 		addCandidateMatchMode(matchMode);
-		checkDateMatchMode(matchMode);
+		setMatchMode(matchMode);   // 写父类唯一字段(旧代码直接赋值子类遮蔽字段)
 	}
 	
 	/**
@@ -49,7 +51,8 @@ public class LocalDateTimePredicate extends AbstractDatePredicate {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Predicate toPredicate(CriteriaBuilder criteriaBuilder, Root root) {
-		switch (matchMode) {
+		// 读父类 getter, 保证与 setMatchMode 一致
+		switch (getMatchMode()) {
 		case BETWEEN:
 			return criteriaBuilder.between(root.get(getPropertyName()), begin, end);
 		case EARLIER_THAN_OR_SAME:
@@ -57,7 +60,8 @@ public class LocalDateTimePredicate extends AbstractDatePredicate {
 		case LATER_THAN_OR_SAME:
 			return criteriaBuilder.greaterThanOrEqualTo(root.get(getPropertyName()), begin);
 		default:
-			return null;
+			// 抛异常优于返回 null: null 谓词会带进 where() 变成难排查的 NPE
+			throw new IllegalStateException("LocalDateTimePredicate 意外模式: " + getMatchMode());
 		}
 	}
 

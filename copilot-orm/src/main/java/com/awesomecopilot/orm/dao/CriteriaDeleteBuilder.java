@@ -69,9 +69,6 @@ public class CriteriaDeleteBuilder {
 		try {
 			delete.where(conditions.toArray(new jakarta.persistence.criteria.Predicate[0]));
 			return em().createQuery(delete).executeUpdate();
-		} catch (Exception e) {
-			em().getTransaction().rollback();
-			throw e;
 		} finally {
 			entityManagerHolder.closeIfNeeded();
 		}

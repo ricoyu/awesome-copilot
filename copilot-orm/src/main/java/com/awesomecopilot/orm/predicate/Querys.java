@@ -69,9 +69,10 @@ public final class Querys {
 
         public QueryBuilder gt(String propertyName, Object propertyValue) {
             if (propertyValue == null) {
-                StringPredicate predicate = new StringPredicate(propertyName, null, GT);
-                add(predicate);
-                return this;
+                // "大于 null" 无意义; 旧代码构造 StringPredicate(name,null,GT),
+                // 而 toPredicate 对 GT+null 现在会抛 IllegalArgumentException —— 这里提前点名
+                throw new IllegalArgumentException(
+                        "gt(" + propertyName + ") 值为null, 无法构造大于比较; 需要 IS NULL 请用 eq(" + propertyName + ", null)");
             }
 
             if (propertyValue instanceof String) {
@@ -92,22 +93,18 @@ public final class Querys {
                 return this;
             }
 
-            if (propertyValue instanceof Boolean) {
-                Predicate predicate = booleanPredicate(propertyName, (Boolean) propertyValue, GT);
-                add(predicate);
-                return this;
-            }
-
             if (propertyValue instanceof LocalDate) {
                 Predicate predicate = localDatePredicate(propertyName, (LocalDate) propertyValue, LATER_THAN);
                 add(predicate);
                 return this;
             }
 
-            //这个只支持等于不等于
-            Predicate predicate = basicPredicate(propertyName, propertyValue);
-            add(predicate);
-            return this;
+            // 历史 bug: 未覆盖类型(Double/BigDecimal/LocalDateTime...)落到 basicPredicate,
+            // 而 BasicPredicate 只会生成 = —— 请求">"静默变成"=", 查询结果错误且无告警。
+            // Boolean 的 ">" 本身也无业务意义。现在统一快速失败。
+            throw new IllegalArgumentException("gt(" + propertyName + ") 不支持值类型 "
+                    + propertyValue.getClass().getName() + ", 支持: String/Integer/Long/LocalDate; "
+                    + "其他类型请直接构造对应 Predicate 或在调用方先比较");
         }
 
     }

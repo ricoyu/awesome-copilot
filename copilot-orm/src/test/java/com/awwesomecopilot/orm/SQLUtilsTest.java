@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static com.awesomecopilot.orm.utils.SQLUtils.build;
+import static com.awesomecopilot.orm.utils.SQLUtils.generateCountSql;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -668,5 +669,61 @@ public class SQLUtilsTest {
 	public void testUnclosedQuoteNoThrow() {
 		String out = build("select * from t where name = 'rico");
 		assertNotNull(out);
+	}
+
+	/**
+	 * generateCountSql: GROUP BY 应数分组数(旧实现替换 selectItems 会返回每组一行)
+	 */
+	@Test
+	@Order(50)
+	public void testCountGroupBy() {
+		String countSql = generateCountSql("select dept, count(*) c from emp group by dept");
+		assertEquals("select count(*) from (SELECT dept, count(*) c FROM emp GROUP BY dept) copilot_count_t",
+				countSql, "GROUP BY 查询的 count 应包裹派生表数分组数, 而不是返回每组一行");
+	}
+
+	/**
+	 * generateCountSql: DISTINCT 应数去重行(旧实现 count 全部行导致总数偏大)
+	 */
+	@Test
+	@Order(51)
+	public void testCountDistinct() {
+		String countSql = generateCountSql("select distinct dept from emp");
+		assertEquals("select count(*) from (SELECT DISTINCT dept FROM emp) copilot_count_t",
+				countSql);
+	}
+
+	/**
+	 * generateCountSql: UNION 不再抛异常, 包裹派生表
+	 */
+	@Test
+	@Order(52)
+	public void testCountUnion() {
+		String countSql = generateCountSql("select id from a union select id from b");
+		assertEquals("select count(*) from (SELECT id FROM a UNION SELECT id FROM b) copilot_count_t",
+				countSql);
+	}
+
+	/**
+	 * generateCountSql: 子查询里的 ORDER BY/LIMIT 保留, 只剥离最外层
+	 */
+	@Test
+	@Order(53)
+	public void testCountSubqueryOrderByPreserved() {
+		String countSql = generateCountSql(
+				"select * from emp where id in (select id from dept order by x limit 1) order by id");
+		assertEquals("select count(*) from (SELECT * FROM emp WHERE id IN (SELECT id FROM dept ORDER BY x LIMIT 1)) copilot_count_t",
+				countSql, "子查询里的 ORDER BY/LIMIT 是业务语义必须保留, 只剥离最外层 order by id");
+	}
+
+	/**
+	 * generateCountSql: 最外层 ORDER BY/LIMIT/OFFSET 被剥离(对 count 无意义)
+	 */
+	@Test
+	@Order(54)
+	public void testCountStripsOuterOrderByAndLimit() {
+		String countSql = generateCountSql("select * from emp order by id limit 10 offset 5");
+		assertEquals("select count(*) from (SELECT * FROM emp) copilot_count_t",
+				countSql, "最外层 order by/limit/offset 应被剥离");
 	}
 }

@@ -7,18 +7,15 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.update.Update;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -679,21 +676,26 @@ public class SQLUtils {
 		//注意: 不校验 originalQuerySql 是否为 null 与 SqlParseException 语义均保持原实现
 		return COUNT_SQL_CACHE.get(originalQuerySql, SQLUtils::doGenerateCountSql);
 	}
-	
+
 	private static String doGenerateCountSql(String originalQuerySql) {
 		try {
 			// 解析原始SQL查询
 			Statement statement = CCJSqlParserUtil.parse(originalQuerySql);
-			
-			if (statement instanceof PlainSelect plainSelect) {
-				// 构建新的COUNT(*)查询(与旧实现一致: 替换 selectItems)
-				SelectItem<?> countItem = new SelectItem<>(new Column("COUNT(*)"));
-				plainSelect.setSelectItems(Arrays.asList(countItem));
-				return plainSelect.toString();
-			}
+
+			/*
+			 * 统一走派生表包裹: select count(*) from ( 原查询 ) copilot_count_t。
+			 * 这样对三种旧实现会算错的形态都语义正确:
+			 *  - GROUP BY: 旧实现替换 selectItems 生成 "count(*) ... GROUP BY dept" 返回每组一行,
+			 *    getSingleResult() 抛 NonUniqueResultException; 包裹后数的是分组数;
+			 *  - DISTINCT: 旧实现 count 全部行(总数偏大); 包裹后数去重行;
+			 *  - UNION/SetOperationList: 旧实现抛 SqlParseException; 包裹后正确。
+			 * 包裹前剥离最外层 ORDER BY / LIMIT / OFFSET(它们对 count 无意义), 子查询里的
+			 * ORDER BY/LIMIT 是业务语义, 不动。
+			 */
 			if (statement instanceof Select select) {
-				// UNION/INTERSECT 等 SetOperationList: 旧实现直接抛 SqlParseException,
-				// 改走派生表包裹, 对任意 Select 语义成立且不丢分页能力
+				select.setOrderByElements(null);
+				select.setLimit(null);
+				select.setOffset(null);
 				return "select count(*) from (" + select + ") copilot_count_t";
 			}
 		} catch (JSQLParserException e) {
