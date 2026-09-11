@@ -2,6 +2,7 @@
   <persistence-unit name="orm-test">
     <!-- 测试实体全部显式列出, 不走包扫描 -->
     <class>com.awesomecopilot.orm.it.entity.Book</class>
+    <class>com.awesomecopilot.orm.it.entity.Product</class>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ormtest;DB_CLOSE_DELAY=-1"/>

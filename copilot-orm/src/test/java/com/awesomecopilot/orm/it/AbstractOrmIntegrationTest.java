@@ -49,10 +49,12 @@ public abstract class AbstractOrmIntegrationTest {
 		inject(jpaDao, "logicalDeleteEnabled", false);
 		// SQL 自动修复保持默认 true, 与生产配置一致
 		seedEm = emf.createEntityManager();
-		// 清空表并立即提交, 让后续自建 EM 的新连接能看到干净状态;
-		// 旧写法只 begin 不 commit, delete 在未提交事务里对其他连接不可见, 造成跨测试数据残留
+		// 清空所有测试表并立即提交, 让后续自建 EM 的新连接能看到干净状态;
+		// 旧写法只 begin 不 commit, delete 在未提交事务里对其他连接不可见, 造成跨测试数据残留。
+		// 注意: 每新增一个测试实体表, 这里也要加一行 delete, 否则跨测试类残留会串数据
 		seedEm.getTransaction().begin();
 		seedEm.createNativeQuery("delete from book").executeUpdate();
+		seedEm.createNativeQuery("delete from product").executeUpdate();
 		seedEm.getTransaction().commit();
 	}
 

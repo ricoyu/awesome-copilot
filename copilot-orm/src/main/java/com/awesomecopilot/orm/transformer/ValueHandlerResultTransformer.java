@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -59,6 +61,15 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 
 	@SuppressWarnings("rawtypes")
 	private final Class resultClass;
+
+	/**
+	 * resultClass 的无参构造器, 初始化时解析一次并缓存。
+	 * 替代废弃的 Class.newInstance(): 旧 API 在无参构造器缺失/不可见时把异常原样甩给调用方,
+	 * 且会吞掉构造器内部抛出的异常(只剩一个 InvocationTargetException 壳都不给),
+	 * 现在构造失败会明确报出是哪一层的问题
+	 */
+	@SuppressWarnings("rawtypes")
+	private Constructor resultConstructor;
 
 	private MethodHandles.Lookup lookup = MethodHandles.lookup();
 
@@ -182,6 +193,16 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 		// 在构造入口归一化, 下游怎么比较都不会漏
 		this.queryMode = queryMode.toLowerCase(Locale.ROOT);
 		this.resultClass = resultClass;
+		// 无参构造器解析一次缓存起来, 每行数据不再走废弃的 Class.newInstance()
+		try {
+			this.resultConstructor = resultClass.getDeclaredConstructor();
+			if (!this.resultConstructor.canAccess(null)) {
+				this.resultConstructor.setAccessible(true);
+			}
+		} catch (NoSuchMethodException e) {
+			throw new HibernateException("resultClass [" + resultClass.getName()
+					+ "] 缺少可访问的无参构造器, 无法作为查询结果映射目标", e);
+		}
 		initializeTmp();
 	}
 
@@ -253,7 +274,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 					if (field.getName().equalsIgnoreCase(propertyName)) {
 						Convert convert = field.getAnnotation(Convert.class);
 						if (convert != null) {
-							AttributeConverter converter = (AttributeConverter) convert.converter().newInstance();
+							AttributeConverter converter = (AttributeConverter) convert.converter().getDeclaredConstructor().newInstance();
 							tempAttributeConverters[i] = converter;
 							break;
 						}
@@ -280,7 +301,7 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 					if (found) {
 						Convert convert = getter.getAnnotation(Convert.class);
 						if (convert != null) {
-							AttributeConverter converter = (AttributeConverter) convert.converter().newInstance();
+							AttributeConverter converter = (AttributeConverter) convert.converter().getDeclaredConstructor().newInstance();
 							tempAttributeConverters[i] = converter;
 						}
 						// 找到则跳出该层循环
@@ -594,7 +615,8 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 		
 		int index = 0; //一旦抛异常时，用于记录是哪个字段出错
 		try {
-			result = resultClass.newInstance();
+			// 用构造时缓存的无参构造器创建 Bean, 替代废弃的 resultClass.newInstance()
+			result = resultConstructor.newInstance();
 
 			for (int i = 0; i < aliases.length; i++) {
 				index = i;
@@ -710,6 +732,10 @@ public class ValueHandlerResultTransformer implements ResultTransformer {
 		} catch (InstantiationException | IllegalAccessException e) {
 			throw new HibernateException("Could not instantiate resultclass: " + resultClass.getName() + ", alias: "
 					+ aliases[index] + ", parameterType: " + parameterTypes[index] + ", value: " + tuple[index]);
+		} catch (InvocationTargetException e) {
+			// Bean 自己的无参构造器里抛了异常, 把真实原因带出来, 不再被 newInstance() 吞掉
+			throw new HibernateException("resultClass [" + resultClass.getName()
+					+ "] 的无参构造器执行失败: " + e.getCause(), e.getCause());
 		} catch (Throwable e) {
 			logger.error("通用异常 alias: " + aliases[index] +", parameterType: " + parameterTypes[index] + ", value: " + tuple[index]);
 			throw new ApplicationException(e);

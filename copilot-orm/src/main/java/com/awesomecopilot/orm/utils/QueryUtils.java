@@ -171,6 +171,14 @@ public final class QueryUtils {
 		if (code == null) {
 			return;
 		}
+		/*
+		 * javadoc 承诺过的语义: code 为 -1 表示"查询所有", 不该把这个条件加进 params。
+		 * 旧实现没做这个检查, 按文档写的业务代码(专门定义一个 code=-1 的 ALL 枚举值)
+		 * 会多出一个恒假的查询条件, 查出来永远是空
+		 */
+		if (code instanceof Number && ((Number) code).intValue() == -1) {
+			return;
+		}
 		params.put(paramName, code);
 	}
 

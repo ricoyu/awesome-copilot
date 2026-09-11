@@ -176,6 +176,46 @@ class TransformerTest {
 		assertEquals(0, failures.get(), "null/非null 混序并发下每行映射都应正确");
 	}
 
+	@Test
+	@DisplayName("(d) resultClass 没有无参构造器: 创建 transformer 时立刻报清楚, 不是每行数据时才炸")
+	void noNoArgConstructorFailsAtConstruction() {
+		Exception e = assertThrows(Exception.class,
+				() -> new ValueHandlerResultTransformer(NoNoArgCtor.class, "loose"));
+		assertTrue(String.valueOf(e.getMessage()).contains("无参构造器"),
+				"报错信息应点明缺少无参构造器, 实际: " + e.getMessage());
+	}
+
+	@Test
+	@DisplayName("(d) Bean 无参构造器内部抛异常: 真实原因被带出来, 不再被旧 newInstance() 吞掉")
+	void constructorExceptionSurfacesRealCause() {
+		ValueHandlerResultTransformer t = new ValueHandlerResultTransformer(BrokenCtor.class, "loose");
+		Exception e = assertThrows(Exception.class,
+				() -> t.transformTuple(new Object[]{"x"}, new String[]{"name"}));
+		Throwable cause = e.getCause() != null ? e.getCause() : e;
+		assertTrue(String.valueOf(cause.getMessage()).contains("构造器里故意炸"),
+				"应看到构造器里的真实异常信息, 实际: " + cause.getMessage());
+	}
+
+	/** 没有无参构造器的 Bean */
+	public static class NoNoArgCtor {
+		private final String name;
+
+		public NoNoArgCtor(String name) {
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+	}
+
+	/** 无参构造器会抛异常的 Bean */
+	public static class BrokenCtor {
+		public BrokenCtor() {
+			throw new IllegalStateException("构造器里故意炸");
+		}
+	}
+
 	public static class WithAge {
 		private String name;
 		private int age; // 基本类型, DB 列 int

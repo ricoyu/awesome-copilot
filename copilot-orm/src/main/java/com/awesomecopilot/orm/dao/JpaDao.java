@@ -30,7 +30,6 @@ import jakarta.persistence.criteria.Subquery;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.runtime.RuntimeConstants;
 import org.hibernate.MultiIdentifierLoadAccess;
 import org.hibernate.Session;
 import org.slf4j.Logger;
@@ -57,8 +56,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -175,9 +172,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 						"com.awesomecopilot.orm.directive.Between," +
 						"com.awesomecopilot.orm.directive.IfEqual," +
 						"com.awesomecopilot.orm.directive.IfPresent");
-		properties.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log" +
-				".Log4JLogChute");
-		properties.setProperty("runtime.log.logsystem.log4j.logger", "velocity");
+		/*
+		 * 这里原来把 Velocity 的日志通道指定成 Log4JLogChute, 但 copilot-orm 的 classpath 上
+		 * 没有 log4j 1.x —— Velocity 加载这个类失败后静默退化成"什么都不记"的 NullLogChute,
+		 * 模板里的未知指令、引用不到的变量等告警全部丢失(排查动态SQL问题等于盲查)。
+		 * 删掉这两行让 Velocity 用自带的默认日志实现; 项目里日志统一走 slf4j/logback,
+		 * 需要看 Velocity 内部日志时按它自己的默认方式输出即可。
+		 */
 		//初始化运行时引擎
 		Velocity.init(properties);
 		log.info("Velocity初始化完成");
@@ -204,7 +205,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			persistImpl(entity);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -224,7 +225,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			persistImpl(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -241,6 +242,12 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 				 */
 				if (i > 0 && ((i + 1) % batchSize == 0)) {
 					flush();
+					//每批flush后把刚写的实体逐个逐出一级缓存, 不然10万条批量写入时
+					//持久化上下文线性膨胀、堆内存翻着倍走。不用clear()整库清空,
+					//避免误伤同事务里其他还要脏检查的受管实体
+					for (int j = i + 1 - batchSize; j <= i; j++) {
+						em().detach(entities.get(j));
+					}
 				}
 			}
 			/*
@@ -249,6 +256,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			 * objects remain in the persistence context until it is closed.
 			 */
 			flush();
+			//尾批: 仅当有不足 batchSize 的零头时才需额外 detach(整除时循环内已处理完最后一批)
+			int remainder = entities.size() % batchSize;
+			if (remainder != 0) {
+				for (int j = entities.size() - remainder; j < entities.size(); j++) {
+					em().detach(entities.get(j));
+				}
+			}
 		} catch (Throwable e) {
 			log.error("", e);
 			throw new PersistenceException(e);
@@ -266,7 +280,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return mergeImpl(entity);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -292,7 +306,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return mergeImpl(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -318,13 +332,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T> T save(T entity) {
 		try {
-			return saveImpl(entity);
+			return doSave(entity);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
-	public <T> T saveImpl(T entity) {
+	public <T> T doSave(T entity) {
 		Objects.requireNonNull(entity, "entity cannot be null");
 		/*
 		 * 找到主键字段, 原来按照字段名称来找, 固定找"id"字段, 但实际开发可能主键字段不叫id, 而叫xxx_id
@@ -349,19 +363,19 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T> List<T> save(List<T> entities) {
 		try {
-			return saveImpl(entities);
+			return doSave(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
-	public <T> List<T> saveImpl(List<T> entities) {
+	public <T> List<T> doSave(List<T> entities) {
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
 		List<T> results = new ArrayList<>();
 		for (int i = 0, length = entities.size(); i < length; i++) {
-			results.add(saveImpl(entities.get(i)));
+			results.add(doSave(entities.get(i)));
 			/*
 			 * i+1是因为i是从0开始的, 如果batchSize=100, 那么i=99的时候, i+1=100, 正好是100的倍数, 此时需要flush
 			 */
@@ -381,20 +395,20 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@Override
 	public <T> List<T> save(Set<T> entities) {
 		try {
-			return saveImpl(entities);
+			return doSave(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
-	public <T> List<T> saveImpl(Set<T> entities) {
+	public <T> List<T> doSave(Set<T> entities) {
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
 		List<T> results = new ArrayList<>();
 		int i = 0;
 		for (T entity : entities) {
-			results.add(saveImpl(entity));
+			results.add(doSave(entity));
 			i++;
 			if (i > 0 && (i % batchSize == 0)) {
 				flush();
@@ -419,7 +433,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			deleteImpl(entity);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -446,7 +460,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			deleteImpl(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -527,12 +541,23 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	private String resolveIdAttributeName(Class<?> entityClass) {
-		Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entityClass, Id.class);
-		if (idField == null) {
+		Set<Field> idFields = ReflectionUtils.findFieldsWithAnnotation(entityClass, Id.class);
+		if (idFields.isEmpty()) {
 			throw new IllegalArgumentException(
 					"No @Id field found on entity class: " + entityClass.getName());
 		}
-		return idField.getName();
+		/*
+		 * 复合主键(多个 @Id 字段)时必须报错而不是随便挑一个:
+		 * findFieldsWithAnnotation 返回的是 HashSet, 迭代顺序每次 JVM 启动都可能不同,
+		 * 旧代码直接取"第一个", 复合主键实体的 deleteByPK 会按不确定的列做 IN 删除——
+		 * 小概率但属于静默删错数据的高危路径
+		 */
+		if (idFields.size() > 1) {
+			throw new IllegalArgumentException(
+					"实体类 " + entityClass.getName() + " 是复合主键(多个 @Id 字段: "
+							+ idFields + "), 不支持按单列主键的 deleteByPK/find 操作, 请用自定义条件查询");
+		}
+		return idFields.iterator().next().getName();
 	}
 
 	private void applyLogicalDeleteFilter(JPACriteriaQuery<?> query, Class<?> entityClass,
@@ -558,11 +583,32 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return false;
 	}
 
+	/**
+	 * "已删除"标记该写什么值, 按字段实际类型推导——和 resolveNotDeletedValue 互为镜像。
+	 * 旧代码 deleteByPKBulk 里硬编码 set(true): Boolean 字段没问题, 但 int deleted 字段
+	 * 查询时按 0 过滤、删除时却写 true, 类型错配(Hibernate 可能转换、可能直接报错),
+	 * 而且查询永远过滤不到"已删"的行(0 != true 转出来的 1), 逻辑删除等于失效
+	 */
+	private Object resolveDeletedValue(Class<?> entityClass) {
+		Field field = ReflectionUtils.findField(logicalDeleteField, entityClass);
+		if (field == null) {
+			return true;
+		}
+		Class<?> type = field.getType();
+		if (type == boolean.class || type == Boolean.class) {
+			return true;
+		}
+		if (Number.class.isAssignableFrom(type) || type.isPrimitive()) {
+			return 1;
+		}
+		return true;
+	}
+
 	private <T> void deleteByPKBulk(Class<T> entityClass, Collection<?> ids) {
 		try {
 			deleteByPKBulkImpl(entityClass, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -579,7 +625,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			if (logicalDeleteEnabled) {
 				CriteriaUpdate<T> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(entityClass);
 				Root<T> root = criteriaUpdate.from(entityClass);
-				criteriaUpdate.set(root.get(logicalDeleteField), true);
+				//按字段实际类型写"已删除"值(Boolean->true, int/Integer->1), 不再硬编码 true
+				criteriaUpdate.set(root.get(logicalDeleteField), resolveDeletedValue(entityClass));
 				criteriaUpdate.where(root.get(idAttribute).in(batch));
 				em().createQuery(criteriaUpdate).executeUpdate();
 			} else {
@@ -603,7 +650,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return getImpl(clazz, id);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -626,7 +673,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return getMultiImpl(clazz, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -678,7 +725,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return getMultiImpl(clazz, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -701,7 +748,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return listByIdsImpl(entityClass, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -724,7 +771,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return listByIdsImpl(entityClass, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -747,7 +794,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findImpl(clazz, id);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -781,7 +828,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findListImpl(entityClass, propertyName, value);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -823,7 +870,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findOneImpl(entityClass, propertyName, value);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -845,7 +892,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findOneImpl(clazz, id);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -875,7 +922,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return loadImpl(entityClass, id);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -904,7 +951,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findAllImpl(entityClass);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -924,7 +971,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findInImpl(entityClass, propertyName, values);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -945,7 +992,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findInImpl(entityClass, propertyName, values);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -967,7 +1014,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findBetweenImpl(entityClass, propertyName, begin, end);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -989,7 +1036,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findBetweenImpl(entityClass, propertyName, begin, end);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1010,7 +1057,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findIsNullImpl(entityClass, propertyName);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1043,7 +1090,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return ifExistsImpl(entityClass, propertyName, value);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1139,7 +1186,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return findListImpl(queryName, params, clazz);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1230,7 +1277,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return deleteInImpl(entityClass, propertyName, values);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1260,7 +1307,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return ensureMultiEntityExistsImpl(entityClass, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1286,7 +1333,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return ensureMultiEntityExistsImpl(entityClass, ids);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1313,7 +1360,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			detachImpl(entity);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1327,7 +1374,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			detachImpl(entities);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1376,7 +1423,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return executeImpl(queryName, params);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
@@ -1596,14 +1643,6 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		cleanupEntityManager();
 	}
-	/**
-	 * P0-5: 终端操作统一收尾。无 Spring 事务且线程自建 EM 上没有活跃本地事务（begin() 手动
-	 * 开启的）时，关闭并摘除自建 EntityManager；Spring 事务内与 begin()/commit() 流程中
-	 * 为空操作，行为不变。
-	 */
-	private void releaseAfterTerminalOp() {
-		releaseEntityManagerIfIdle();
-	}
 
 	private boolean isSqlStatement(String queryName) {
 		Matcher matcher = SELECT_PATTERN.matcher(queryName);
@@ -1634,7 +1673,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		try {
 			return query4RawListImpl(queryName, params);
 		} finally {
-			releaseAfterTerminalOp();
+			releaseEntityManagerIfIdle();
 		}
 	}
 
