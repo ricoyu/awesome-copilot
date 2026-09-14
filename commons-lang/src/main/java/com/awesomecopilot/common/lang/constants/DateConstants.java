@@ -141,6 +141,16 @@ public final class DateConstants {
 	public static final DateTimeFormatter DTF_ISO_DATETIME = ofPattern(FMT_ISO_DATETIME);
 	
 	/**
+	 * yyyy-MM-dd HH:mm:ss.SSS (带毫秒). 显式分支的价值是短路与语义明确:
+	 * 兜底 finalShot(PT_ALL) 本也能拼出同样的3位毫秒模式解析成功(实测), 但要扫完
+	 * 前面全部20+个模式才落到兜底, 且依赖其隐式拼装. Date 输出格式(带.SSS)在
+	 * copilot-json 的 ObjectMapperDecorator 中设定, 这里给它一条明确的识别路径.
+	 */
+	public static final Pattern PT_ISO_DATETIME_MILLIS = compile("\\d{4}-\\d{2}-\\d{2}(\\s+)\\d{2}:\\d{2}:\\d{2}\\.\\d{3}");
+	public static final String FMT_ISO_DATETIME_MILLIS = "yyyy-MM-dd HH:mm:ss.SSS";
+	public static final DateTimeFormatter DTF_ISO_DATETIME_MILLIS = ofPattern(FMT_ISO_DATETIME_MILLIS);
+	
+	/**
 	 * yyyy-MM-d HH:mm:ss
 	 */
 	public static final Pattern PT_ISO_DATETIME_1 = compile("\\d{4}-\\d{2}-\\d{1}(\\s+)\\d{2}:\\d{2}:\\d{2}");
@@ -312,10 +322,18 @@ public final class DateConstants {
 	// https://stackoverflow.com/questions/685377/how-to-check-an-utc-formatted-date-with-a-regular-expression
 	public final static String FMT_RFC1123_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
 	public static final DateTimeFormatter DFT_DATETIME_FORMAT_RFC = ofPattern(FMT_RFC1123_FORMAT, ENGLISH);
-	public static final SimpleDateFormat SDT_GMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
-	static {
-		SDT_GMT.setTimeZone(TimeZone.getTimeZone("GMT"));
-	}
+	/**
+	 * 解析/格式化HTTP请求头日期(如 "Sun, 06 Nov 1994 08:49:37 GMT")用的GMT时区格式化器.
+	 * <p>
+	 * 注意: SimpleDateFormat不是线程安全的(内部持有可变的Calendar), 以前直接暴露静态实例,
+	 * 多线程并发调用会解析出错日期且不报错(实测12万次错921次), 所以改成ThreadLocal包装,
+	 * 每个线程持有自己的实例, 用法: {@code SDT_GMT.get().parse(source)}.
+	 */
+	public static final ThreadLocal<SimpleDateFormat> SDT_GMT = ThreadLocal.withInitial(() -> {
+		SimpleDateFormat sdf = new SimpleDateFormat(FMT_RFC1123_FORMAT, Locale.ENGLISH);
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return sdf;
+	});
 	
 	/**
 	 * UTC 时间格式<p> 

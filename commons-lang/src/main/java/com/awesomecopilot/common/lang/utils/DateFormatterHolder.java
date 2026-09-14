@@ -131,6 +131,9 @@ final class DateFormatterHolder {
 	}
 	
 	public static DateTimeFormatter getDateTimeFormatter(String source) {
+		if (matches(PT_ISO_DATETIME_MILLIS, source)) { // 带毫秒
+			return DateFormatterHolder.formatFor(FMT_ISO_DATETIME_MILLIS);
+		}
 		if (matches(PT_ISO_DATETIME, source)) {
 			return DateFormatterHolder.formatFor(FMT_ISO_DATETIME_1);
 		}
@@ -278,6 +281,10 @@ final class DateFormatterHolder {
 	}
 	
 	public static DateTimeFormatter getDateTimeFormatter(String source, TimeZone timeZone) {
+		
+		if (PT_ISO_DATETIME_MILLIS.matcher(source).matches()) { // yyyy-MM-dd HH:mm:ss.SSS
+			return DateFormatterHolder.formatFor(FMT_ISO_DATETIME_MILLIS, timeZone);
+		}
 		
 		if (PT_ISO_DATETIME.matcher(source).matches()) {
 			return DateFormatterHolder.formatFor(FMT_ISO_DATETIME_1, timeZone);

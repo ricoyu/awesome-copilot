@@ -131,6 +131,9 @@ final class SimpleDateFormatHolder {
 	}
 	
 	public static SimpleDateFormat getSimpleDateFormat(String source) {
+		if (matches(PT_ISO_DATETIME_MILLIS, source)) { // 带毫秒, 放在无毫秒模式前面(全串matches互斥, 顺序只为省扫描)
+			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME_MILLIS);
+		}
 		if (matches(PT_ISO_DATETIME, source)) {
 			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME);
 		}
@@ -278,6 +281,10 @@ final class SimpleDateFormatHolder {
 	}
 	
 	public static SimpleDateFormat getSimpleDateFormat(String source, TimeZone timeZone) {
+		
+		if (PT_ISO_DATETIME_MILLIS.matcher(source).matches()) { // yyyy-MM-dd HH:mm:ss.SSS
+			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME_MILLIS, timeZone);
+		}
 		
 		if (PT_ISO_DATETIME.matcher(source).matches()) {
 			return SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME_1, timeZone);

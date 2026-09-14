@@ -330,7 +330,8 @@ public final class DateUtils {
 				return new Date(zonedDateTime.toInstant().toEpochMilli());
 			}
 			try {
-				return SDT_GMT.parse(source);
+				// SDT_GMT是ThreadLocal包装, 每线程一个实例, 避免并发解析出错日期(详见DateConstants注释)
+				return SDT_GMT.get().parse(source);
 			} catch (ParseException e) {
 			}
 			log.warn("No suitable Dateformat found!");
@@ -751,7 +752,7 @@ public final class DateUtils {
 				return zonedDateTime.toLocalDateTime();
 			}
 			try {
-				Date date = SDT_GMT.parse(source);
+				Date date = SDT_GMT.get().parse(source);
 				return toLocalDateTime(date);
 			} catch (ParseException e) {
 			}
