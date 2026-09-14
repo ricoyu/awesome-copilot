@@ -1,6 +1,9 @@
 package com.awesomecopilot.orm.it;
 
+import com.awesomecopilot.orm.dao.CriteriaOperations;
+import com.awesomecopilot.orm.dao.EntityOperations;
 import com.awesomecopilot.orm.dao.JpaDao;
+import com.awesomecopilot.orm.dao.SQLOperations;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
@@ -9,9 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * copilot-orm 集成测试基类。
@@ -32,6 +33,12 @@ public abstract class AbstractOrmIntegrationTest {
 	protected static EntityManagerFactory emf;
 
 	protected JpaDao jpaDao;
+	
+	protected CriteriaOperations criteriaOperations;
+	
+	protected SQLOperations sqlOperations;
+	
+	protected EntityOperations entityOperations;
 
 	/** 数据准备用, 绕开被测的 JpaDao 方法, 保证数据准备本身不依赖被测逻辑 */
 	protected EntityManager seedEm;
@@ -44,6 +51,9 @@ public abstract class AbstractOrmIntegrationTest {
 	@BeforeEach
 	void setupDao() {
 		jpaDao = new JpaDao();
+		criteriaOperations = jpaDao;
+		sqlOperations = jpaDao;
+		entityOperations = jpaDao;
 		inject(jpaDao, "entityManagerFactory", emf);
 		// 逻辑删除默认关闭, 避免影响不相关测试
 		inject(jpaDao, "logicalDeleteEnabled", false);
@@ -55,6 +65,7 @@ public abstract class AbstractOrmIntegrationTest {
 		seedEm.getTransaction().begin();
 		seedEm.createNativeQuery("delete from book").executeUpdate();
 		seedEm.createNativeQuery("delete from product").executeUpdate();
+		seedEm.createNativeQuery("delete from user_order").executeUpdate();
 		seedEm.getTransaction().commit();
 	}
 

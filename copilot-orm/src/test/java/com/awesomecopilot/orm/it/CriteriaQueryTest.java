@@ -9,7 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -28,7 +27,7 @@ class CriteriaQueryTest extends AbstractOrmIntegrationTest {
 	@DisplayName("query(Class).eq 精确匹配单字段")
 	void eqQuery() {
 		seedStandardBooks();
-		List<Book> result = jpaDao.query(Book.class).eq("name", "深入理解JVM").findList();
+		List<Book> result = criteriaOperations.query(Book.class).eq("name", "深入理解JVM").findList();
 		assertEquals(1, result.size());
 		assertEquals("周志明", result.get(0).getAuthor());
 	}
@@ -38,6 +37,7 @@ class CriteriaQueryTest extends AbstractOrmIntegrationTest {
 	void eqNullIgnored() {
 		seedStandardBooks();
 		List<Book> result = jpaDao.query(Book.class).eq("name", null).findList();
+		//List<Book> result = jpaDao.query(Book.class).isNull("name").findList();
 		assertEquals(5, result.size());
 	}
 

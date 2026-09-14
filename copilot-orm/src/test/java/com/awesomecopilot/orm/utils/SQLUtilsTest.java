@@ -1,4 +1,4 @@
-package com.awwesomecopilot.orm;
+package com.awesomecopilot.orm.utils;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
