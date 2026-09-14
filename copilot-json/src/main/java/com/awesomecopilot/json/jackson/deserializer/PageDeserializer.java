@@ -26,9 +26,9 @@ import java.util.Iterator;
 public class PageDeserializer extends StdDeserializer<Page> {
 	
 	/**
-	 * 分页时传入的SQL排序字段名, 需要防止SQL注入, 去掉一些特殊字符 
+	 * 分页时传入的SQL排序字段名, 需要防止SQL注入, 去掉一些特殊字符
 	 */
-	private static String[] SQL_TRIM_STR = new String[]{" ", "\\(", "\\)", "\\*", "\\\\", "/"};
+	private static final String[] SQL_TRIM_STR = new String[]{" ", "\\(", "\\)", "\\*", "\\\\", "/"};
 	
 	public PageDeserializer() {
 		this(null);

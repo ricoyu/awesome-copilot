@@ -146,7 +146,11 @@ public class ObjectMapperDecorator {
 	private ObjectMapper stringBasedObjectMapper(ObjectMapper objectMapper) {
 		JavaTimeModule javaTimeModule = new JavaTimeModule();
 		javaTimeModule.addSerializer(LocalDateTime.class, new com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer(ofPattern("yyyy-MM-dd HH:mm:ss")));
-		javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(ofPattern("yyyy-MM-dd HH:mm:ss")));
+		// LocalDateTime 反序列化要同时吃 "yyyy-MM-dd HH:mm:ss" 字符串和 epoch 毫秒数字:
+		// 用默认构造(epoch毫秒formatter版)——数字token按毫秒解析, 字符串token内部走 DateUtils 自动识别,
+		// 两条路都通. 旧实现"先注册ofPattern版再注册后塞epoch版覆盖"依赖 SimpleModule 懒setup的内部时序,
+		// 最终生效的就是epoch版, 这里直接注册它, 只留一次.
+		javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer());
 
 		javaTimeModule.addSerializer(LocalDate.class, new com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer(ofPattern("yyyy-MM-dd")));
 		//javaTimeModule.addDeserializer(LocalDate.class, new com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer(ofPattern("yyyy-MM-dd")));
@@ -156,8 +160,6 @@ public class ObjectMapperDecorator {
 		javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(ofPattern("HH:mm:ss")));
 		javaTimeModule.addDeserializer(LocalTime.class, new com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer(ofPattern("HH:mm:ss")));
 
-		DateTimeFormatter epochMilisFormatter = epocMillisFormatter();
-
 		/*
 		 * 如果在Spring环境使用, 从Spring容器中拿到的objectMapper实例已经注册过javaTimeModule
 		 * 默认是不支持重复注册的, 即我们这里注册的会被忽略,
@@ -165,12 +167,13 @@ public class ObjectMapperDecorator {
 		 */
 		objectMapper.disable(MapperFeature.IGNORE_DUPLICATE_MODULE_REGISTRATIONS);
 		objectMapper.registerModule(javaTimeModule);
-		javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(epochMilisFormatter));
 
 		/*
-		 * java.util.Date 序列化格式
+		 * java.util.Date 序列化格式. 带 .SSS 毫秒段: 旧格式秒级精度会吃掉毫秒,
+		 * toJson->toObject 往返一次时间静默偏移最多999ms(实测). 识别链已在
+		 * SimpleDateFormatHolder/DateFormatterHolder 补了 yyyy-MM-dd HH:mm:ss.SSS 分支, 可原路解析.
 		 */
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		objectMapper.setDateFormat(simpleDateFormat);
 
 		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

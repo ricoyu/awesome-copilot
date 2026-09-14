@@ -44,6 +44,9 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
+            <!-- 本模块自身已不再 import org.json(评审建议删), 但删了会搞挂 copilot-search:
+                 它有7个文件 import org.json 且只声明了 copilot-json, 靠本模块传递依赖拿 jar.
+                 要清理需先给 copilot-search 显式声明, 故保留. -->
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
@@ -88,6 +91,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+
+        <!-- JsonPathUtils 的 PATH_CACHE 用 Caffeine 做带上限的无锁缓存 -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
 
         <!-- Junit5 -->
