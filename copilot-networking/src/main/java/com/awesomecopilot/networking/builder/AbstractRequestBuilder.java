@@ -273,6 +273,14 @@ public abstract class AbstractRequestBuilder {
 		HttpClientBuilder httpClientBuilder = HttpClients.custom()
 				.setSSLSocketFactory(sslConnectionSocketFactory)
 				.setConnectionManager(connectionManager)
+				/*
+				 * 声明连接管理器(池)不归这个客户端所有。不声明时, HttpClientBuilder 会给客户端注册
+				 * 一条"close() 时顺手 shutdown 连接管理器"的动作(4.5.13 源码 HttpClientBuilder.java:1244),
+				 * 而本类的 connectionManager 是 static 全进程共享的——request() 里
+				 * try-with-resources 关闭客户端时就会把共享池一起关掉, 导致同进程后续所有
+				 * HttpUtils 请求抛 "Connection pool shut down" (评审报告 P0-1)。
+				 */
+				.setConnectionManagerShared(true)
 				.setDefaultCookieStore(cookieStore)
 				.setDefaultRequestConfig(builder.build());
 		/*
