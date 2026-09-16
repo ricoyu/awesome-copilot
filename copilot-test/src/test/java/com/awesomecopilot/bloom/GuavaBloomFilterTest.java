@@ -124,7 +124,7 @@ public class GuavaBloomFilterTest {
 	 * expectedFpp 是过滤器自己报的"当前误判概率"（expected false positive probability,
 	 * 即按现在已置起的位的比例推算, 下一个全新元素被误报成"存在"的概率）。
 	 * <p>
-	 * 它随着 put 单调上涨, 这条测试把它在三个阶段的量级钉下来, 数字均为本机实测值：
+	 * 它随着 put 单调上涨。这条测试用本机实测值确定三个阶段的断言区间, 不凭印象写数字：
 	 * <p>
 	 * 阶段一, 刚建好还没放元素：所有位都是 0, 全新元素必然有 0 位可查, 误判概率严格为 0。
 	 * 阶段二, 设计容量 500 只放了 3 个：位数组几乎空着, 误判概率低到 3.07E-17,
@@ -203,11 +203,11 @@ public class GuavaBloomFilterTest {
 	 * 只会无声地 degrade（变差）, 所以业务上元素总量会增长时, 容量要按最终规模的峰值报,
 	 * 或者定期重建。
 	 * <p>
-	 * 附送一个实测坑：超载到这种程度后, 调 approximateElementCount 不再返回估计值,
+	 * 另外一个实测发现的陷阱：超载到这种程度后, 调 approximateElementCount 不再返回估计值,
 	 * 而是直接抛 ArithmeticException（"input is infinite or NaN"）——它的估算公式里有
 	 * ln(1 - 置位比例) 这一项, 位被置满时 1-比例 趋于 0, ln(0) 是负无穷, double 运算
-	 * 传给 Guava 的整型转换就直接炸出异常了。也就是说"数都数不出来"本身就是过滤器
-	 * 已经饱和的强烈信号, 生产代码里不要裸调这个方法。
+	 * 传给 Guava 整型库做转换时直接抛出异常。也就是说"数都数不出来"本身就是过滤器
+	 * 已经饱和的强烈信号, 生产代码里不要不加保护地直接调用这个方法。
 	 */
 	@Test
 	public void testOverSaturationBreaksFppGuarantee() {
@@ -251,10 +251,10 @@ public class GuavaBloomFilterTest {
 	 * 这组数字的工程含义：想把误判率从 1% 压到千分之一, 内存要多花约 50%；
 	 * 反过来 1% 放宽到 10%, 能省掉一半内存。选型时别拍脑袋"越小越好",
 	 * 要拿"误判的代价"换"内存的代价"来比。比如拿布隆过滤器挡数据库查询,
-	 * 1% 的误判只是让百分之一的不存在主键白跑一趟数据库, 数据库完全扛得住,
+	 * 1% 的误判只是让百分之一的不存在主键多查一次数据库, 数据库完全承受得住,
 	 * 那就没必要为千分之一付 1.5 倍内存。
 	 * <p>
-	 * 断言不钉死精确字节数（guava 升级时头部格式可能微调）, 只钉实测得到的比例关系：
+	 * 断言不写死精确字节数（guava 升级时头部格式可能微调）, 只按实测得到的比例关系设定区间：
 	 * 0.01 档约是 0.1 档的两倍, 0.001 档约是 0.01 档的一倍半。
 	 */
 	@Test
@@ -300,7 +300,7 @@ public class GuavaBloomFilterTest {
 	 * 但注意 0 是放行的：n=0 算出来的位数组是 0 位宽, Guava 照样给你建一个"空壳过滤器",
 	 * 之后再往里 put 也不报错, 元素也真能查出来（它把位数组撑到了最小可用宽度）,
 	 * 只是此时的一切概率承诺都不复存在。实测 n=0 建完 put 一个元素, mightContain
-	 * 对该元素返回 true、对另一个新元素返回 false, 看着挺正常——这正是"不校验反而埋雷",
+	 * 对该元素返回 true、对另一个新元素返回 false, 看着挺正常——这正说明"不做校验, 隐患反而被藏得更深",
 	 * 业务代码里预期数量应当来自真实统计, 别偷懒传 0。
 	 */
 	@Test
@@ -333,7 +333,7 @@ public class GuavaBloomFilterTest {
 	 * readFrom 需要重新传 Funnel（漏斗, 即"怎么把对象拆成字节喂给哈希函数"）：
 	 * 序列化的字节流里只存了位数组和哈希轮数, 没有存 Funnel 和字符集——因为 Funnel
 	 * 是函数不是数据, 没法随流传输, 读的时候必须口头约定"用什么方式算哈希"。
-	 * 这个约定就是下一条测试踩坑的根源。
+	 * 这个约定就是下一条测试所描述故障的根源。
 	 */
 	@Test
 	public void testWriteToReadFromRoundTripKeepsContent() throws IOException {
@@ -358,7 +358,7 @@ public class GuavaBloomFilterTest {
 	}
 
 	/**
-	 * 大坑测试：writeTo/readFrom 的字节流里不记录字符集, 写入端和读取端必须约好同一个
+	 * 重点陷阱测试：writeTo/readFrom 的字节流里不记录字符集, 写入端和读取端必须约好同一个
 	 * Charset, 否则中文（任何非纯 ASCII 字符串）会"查无此人"。
 	 * <p>
 	 * 复现过程：用 GBK 字符集的 stringFunnel 建过滤器并放入"中文字符串"——GBK 把这三个字
@@ -369,8 +369,8 @@ public class GuavaBloomFilterTest {
 	 * 直接违反第一条铁律的直觉, 而且全程没有任何报错。
 	 * <p>
 	 * 为什么英文字符串躲得过这一劫：ASCII 字符在 GBK 和 UTF-8 里编码字节完全相同,
-	 * 哈希自然一致, 所以测试环境里用英文名试一下没问题, 上线碰上中文就翻车——
-	 * 这种"英文正常、中文失灵"的 bug 最难查。用 unencodedCharsFunnel（按 UTF-16
+	 * 哈希自然一致, 所以测试环境里用英文名试一下没问题, 上线遇到中文就出错——
+	 * 这种"用英文测试一切正常、上线碰到中文就出错"的 bug 最难查。用 unencodedCharsFunnel（按 UTF-16
 	 * 字符单元直接喂哈希, 不经过字节编码）则与字符集无关, 也是解法之一。
 	 * <p>
 	 * 结论：跨进程/跨语言传布隆过滤器, 协议文档里必须白纸黑字写清 funnel 的字符集。
@@ -433,7 +433,7 @@ public class GuavaBloomFilterTest {
 	 * isCompatible 检查的是三件事是否全部一致：位数组宽度、哈希轮数、Funnel 类型。
 	 * 实测：同为"1000 容量 1% 误判"的两个 stringFunnel 过滤器 compatible 为 true；
 	 * 把容量改成 500（位数组宽度不同）就为 false, 而且直接 putAll 会抛
-	 * IllegalArgumentException——合并前不自己检查的话, 运行时异常会直接砸在脸上,
+	 * IllegalArgumentException——合并前不自己检查的话, 运行时会直接抛出异常给调用方,
 	 * 这就是官方提供 isCompatible 的意义。
 	 * <p>
 	 * 更隐蔽的一种不兼容：容量和误判率声明都一样, 但一个是 32 位哈希策略一个是 64 位
@@ -542,7 +542,7 @@ public class GuavaBloomFilterTest {
 	 * （char 值）两个字节两个字节地喂。所以同一个中文串分别用两种方式 put 进
 	 * 两个规格相同的过滤器, 置的位不同, equals 为 false, isCompatible 也为 false
 	 * （Funnel 不同）。两者不能混用在"写入端一种、读取端另一种"的场景里——
-	 * 又回到上一条测试的教训: funnel 必须全链路一致。
+	 * 又回到上一条测试的教训: 写入端和读取端的 funnel 必须从头到尾保持一致。
 	 */
 	@Test
 	public void testDifferentFunnelsAreIncompatible() {
@@ -558,10 +558,10 @@ public class GuavaBloomFilterTest {
 	}
 
 	/**
-	 * null 元素当场抛 NullPointerException, 不会静默放进位数组。
+	 * null 元素当场抛 NullPointerException, 不会把 null 悄悄写进位数组。
 	 * <p>
-	 * put(null) 和 mightContain(null) 都在 funnel 解引用对象时 NPE, 快速失败、
-	 * 位置就在调用行, 不会污染数据。业务里可空字段要先自己挡一层再喂过滤器。
+	 * put(null) 和 mightContain(null) 都在 funnel 解引用对象时立刻抛出 NullPointerException,
+	 * 报错位置就在调用行, 不会把 null 悄悄写进位数组污染数据。业务里可空字段要先自己挡一层再喂过滤器。
 	 * 空字符串 "" 则完全合法：编码后是零字节输入, 照样能稳定哈希出一组位置,
 	 * put 过之后 mightContain("") 返回 true。
 	 */
@@ -597,7 +597,7 @@ public class GuavaBloomFilterTest {
 
 	/**
 	 * equals 比的是"内容"而不是"声明"：两份声明规格相同、装的数据也相同的过滤器才相等,
-	 * 数据没对齐就不等, 哪怕预期容量数字一致。
+	 * 两份数据内容不一致就不相等, 哪怕预期容量数字一致。
 	 * <p>
 	 * 实测两个方向：① 同为"100 容量、都只放 1 个元素 1", equals 为 true；
 	 * ② 声明同为 100 容量, 但一个按 1% 误判率建、一个按 0.1% 建——位数组宽度不同,
