@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,6 +65,8 @@ public class HttpUtilsTest {
 		String modelJson = HttpUtils.get("https://aiberm.com/v1/models")
 				.contentType("application/json")
 				.bearerAuth("sk-3wTuRBeuOK7X5aIyDFNYOVAZrQuJfOuvOmkTt6qFmO04tLvn")
+				.connectionTimeout(3, SECONDS)
+				.soTimeout(200, MILLISECONDS)
 				.request();
 		
 		List<String> models = JsonPathUtils.readListNode(modelJson, "$.data[*].id");

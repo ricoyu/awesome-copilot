@@ -11,11 +11,13 @@ import com.awesomecopilot.common.lang.exception.BusinessException;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
+import com.awesomecopilot.networking.httpclient.IdleConnectionEvictor;
 import com.awesomecopilot.networking.utils.ErrorUtils;
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -36,6 +38,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -60,6 +63,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -67,8 +71,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
@@ -110,11 +116,52 @@ public abstract class AbstractRequestBuilder {
 
 	public static final String DEFAULT_CHARSET = "UTF-8";
 
+	/** 默认连接池: 校验HTTPS证书链与主机名(绝大多数场景用这个)——评审报告 P2-1 */
+	protected static PoolingHttpClientConnectionManager secureConnectionManager;
+	/** 信任所有证书的连接池: 仅当调用方显式 .trustAllCerts(true) 时启用(内网自签证书场景) */
+	protected static PoolingHttpClientConnectionManager insecureConnectionManager;
+
+	protected static SSLConnectionSocketFactory secureSslSocketFactory;
+	protected static SSLConnectionSocketFactory insecureSslSocketFactory;
+
+	/** 定时清理两个池的过期/空闲连接(评审报告 P2-2: 此类此前从未被启动) */
+	private static volatile IdleConnectionEvictor idleConnectionEvictor;
+
+	/**
+	 * 请求生命周期超时的共享调度线程池(评审报告 P2-3):
+	 * 旧实现每个带 timeout 的请求 new 一个 java.util.Timer, 任务用完不取消,
+	 * 线程要一直活到 timeout 时刻才自己退出, 高流量下线程大量堆积。
+	 * 现在全进程共用一个守护线程, 请求结束时任务即被 cancel。
+	 */
+	private static final ScheduledExecutorService TIMEOUT_SCHEDULER =
+			Executors.newSingleThreadScheduledExecutor(r -> {
+				Thread t = new Thread(r, "copilot-http-timeout-scheduler");
+				t.setDaemon(true);
+				return t;
+			});
+
+	/**
+	 * 默认重试handler(评审报告 P2-9): 旧代码"不指定retries"走 HttpClientBuilder 内部的
+	 * DefaultHttpRequestRetryHandler, "指定了retries"才换 StandardHttpRequestRetryHandler,
+	 * 两种handler的可重试异常名单不同, 等于配了个次数就悄悄换了重试策略。
+	 * 现在两条路统一用 StandardHttpRequestRetryHandler, 默认(3次,不重试已发出的非幂等请求)。
+	 */
+	private static final StandardHttpRequestRetryHandler DEFAULT_RETRY_HANDLER =
+			new StandardHttpRequestRetryHandler(3, false);
+
 	protected static PoolingHttpClientConnectionManager connectionManager;
 
 	protected static SSLConnectionSocketFactory sslConnectionSocketFactory;
 
 	static {
+		/*
+		 * 评审报告 P2-1 修复：HTTPS 默认可信。
+		 * secureConnectionSocketFactory 走 JDK 默认 trust manager(校验证书链是否受系统信任)
+		 * 加默认主机名验证器(校验证书 CN/SAN 与请求主机一致)——这是绝大多数场景该用的。
+		 * insecureConnectionSocketFactory 保留旧的"信任所有证书+不校验主机名"组合,
+		 * 只有调用方显式 .trustAllCerts(true) 的请求才会走它（内网自签证书场景）。
+		 * 两个连接池各挂一种 HTTPS socket factory，与 method 无关、与请求绑定（见 buildHttpClient）。
+		 */
 		TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
 
 		SSLContext sslContext = null;
@@ -124,23 +171,45 @@ public abstract class AbstractRequestBuilder {
 			log.error("初始化SSL上下文失败, 无法建立HTTPS连接", e);
 			throw new RuntimeException(e);
 		}
-		sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+		insecureSslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+		// SSLContexts.createDefault() = 系统默认信任库; createStandard() 的主机名验证器执行
+		// 严格 CN/SAN 校验（对应 HttpsURLConnection 默认行为）
+		secureSslSocketFactory = new SSLConnectionSocketFactory(SSLContexts.createDefault(),
+				SSLConnectionSocketFactory.getDefaultHostnameVerifier());
 
-		Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
-				.register("https", sslConnectionSocketFactory)
+		secureConnectionManager = new PoolingHttpClientConnectionManager(registryWith(secureSslSocketFactory));
+		insecureConnectionManager = new PoolingHttpClientConnectionManager(registryWith(insecureSslSocketFactory));
+		for (PoolingHttpClientConnectionManager cm :
+				Arrays.asList(secureConnectionManager, insecureConnectionManager)) {
+			cm.setMaxTotal(100);// 整个连接池最大连接数
+			/*
+			 * 设置每一个路由的最大连接数, 这里的路由是指 IP+PORT.
+			 * 例如连接池大小(MaxTotal)设置为300, 路由连接数设置为200(DefaultMaxPerRoute),
+			 * 对于www.a.com 与 www.b.com 两个路由来说,
+			 * 发起服务的主机连接到每个路由的最大连接数(并发数)不能超过200,
+			 * 两个路由的总连接数不能超过300。
+			 */
+			cm.setDefaultMaxPerRoute(20);
+		}
+		// 保留旧字段名(protected static 有子类依赖的风险, 语义=默认安全池)
+		connectionManager = secureConnectionManager;
+		sslConnectionSocketFactory = secureSslSocketFactory;
+
+		/*
+		 * 评审报告 P2-2 修复：IdleConnectionEvictor 此前定义了但全仓库没有任何地方启动它，
+		 * 池里被服务端单方面关闭的连接要等到下一次请求真实写数据失败才被发现。
+		 * 现在启动守护线程, 每 5 秒清理两个池中"已过期的"和"闲置超过 30 秒的"连接。
+		 */
+		idleConnectionEvictor = new IdleConnectionEvictor(
+				Arrays.asList(secureConnectionManager, insecureConnectionManager), 30, TimeUnit.SECONDS);
+		idleConnectionEvictor.start();
+	}
+
+	private static Registry<ConnectionSocketFactory> registryWith(SSLConnectionSocketFactory sslFactory) {
+		return RegistryBuilder.<ConnectionSocketFactory>create()
+				.register("https", sslFactory)
 				.register("http", new PlainConnectionSocketFactory())
 				.build();
-
-		connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-		connectionManager.setMaxTotal(100);// 整个连接池最大连接数
-		/*
-		 * 设置每一个路由的最大连接数, 这里的路由是指 IP+PORT.
-		 * 例如连接池大小(MaxTotal)设置为300, 路由连接数设置为200(DefaultMaxPerRoute),
-		 * 对于www.a.com 与 www.b.com 两个路由来说,
-		 * 发起服务的主机连接到每个路由的最大连接数(并发数)不能超过200,
-		 * 两个路由的总连接数不能超过300。
-		 */
-		connectionManager.setDefaultMaxPerRoute(20);
 	}
 
 
@@ -233,7 +302,16 @@ public abstract class AbstractRequestBuilder {
 
 	protected Map<String, Object> headers = new HashMap<>(12);
 
-	protected BasicCookieStore cookieStore = new BasicCookieStore();
+	/**
+	 * 本次请求是否使用"信任所有HTTPS证书"的连接池。默认 false=正常校验证书链与主机名。
+	 * 内网自签证书环境显式调 .trustAllCerts(true)（评审报告 P2-1 修复引入的开关）。
+	 */
+	protected boolean trustAllCerts = false;
+
+	/** port() 是否被显式调过——没调过时 https 默认端口应为443而不是字段初始值80(P2-6) */
+	protected boolean portExplicitlySet = false;
+
+	protected CookieStore cookieStore = new BasicCookieStore();
 
 	protected Class responseType;
 
@@ -268,9 +346,17 @@ public abstract class AbstractRequestBuilder {
 		if (soTimeout != null) {
 			builder.setSocketTimeout(soTimeout.intValue());
 		}
+		// P2-1: 按调用方是否显式声明"信任所有证书"选池; 默认(不声明)走校验证书的安全池
+		final PoolingHttpClientConnectionManager pool =
+				trustAllCerts ? insecureConnectionManager : secureConnectionManager;
 		HttpClientBuilder httpClientBuilder = HttpClients.custom()
-				.setSSLSocketFactory(sslConnectionSocketFactory)
-				.setConnectionManager(connectionManager)
+				/*
+				 * P2-13: 删掉了旧代码的 .setSSLSocketFactory(sslConnectionSocketFactory)。
+				 * 该设置在传入了外部连接管理器时是无效配置(HttpClientBuilder 4.5.13 源码里
+				 * sslSocketFactory 只在"builder自建池"分支被使用), TLS 行为实际由所选池的
+				 * socketFactoryRegistry 决定——两个池已在静态块分别绑好 安全/信任所有 两种factory。
+				 */
+				.setConnectionManager(pool)
 				/*
 				 * 声明连接管理器(池)不归这个客户端所有。不声明时, HttpClientBuilder 会给客户端注册
 				 * 一条"close() 时顺手 shutdown 连接管理器"的动作(4.5.13 源码 HttpClientBuilder.java:1244),
@@ -285,14 +371,12 @@ public abstract class AbstractRequestBuilder {
 		 * 如果设置了重试次数
 		 * requestSentRetryEnabled 如果调用的接口是幂等的, 可以设为true, 如果不幂等, 设为false, 避免重复提交
 		 */
-		if (retries != null) {
-			httpClientBuilder.setRetryHandler(new StandardHttpRequestRetryHandler(retries, requestSentRetryEnabled));
-		}
+		httpClientBuilder.setRetryHandler(resolveRetryHandler(retries, requestSentRetryEnabled));
 
 		CloseableHttpClient httpClient = httpClientBuilder.build();
 
-		int leased = connectionManager.getTotalStats().getLeased();
-		int available = connectionManager.getTotalStats().getAvailable();
+		int leased = pool.getTotalStats().getLeased();
+		int available = pool.getTotalStats().getAvailable();
 		int total = leased + available;
 
 		if (log.isDebugEnabled()) {
@@ -302,11 +386,11 @@ public abstract class AbstractRequestBuilder {
 							"当前正在执行任务的连接数: {}\n" +
 							"当前空闲的连接数: {}\n" +
 							"当前等待获取连接的任务数: {}",
-					connectionManager.getTotalStats().getMax(),
+					pool.getTotalStats().getMax(),
 					total,
 					leased,
 					available,
-					connectionManager.getTotalStats().getPending());
+					pool.getTotalStats().getPending());
 		}
 
 		return httpClient;
@@ -365,6 +449,7 @@ public abstract class AbstractRequestBuilder {
 	 */
 	public AbstractRequestBuilder port(int port) {
 		this.port = port;
+		this.portExplicitlySet = true;
 		return this;
 	}
 
@@ -458,6 +543,51 @@ public abstract class AbstractRequestBuilder {
 		notNull(token, "token must not be null");
 		headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 		return this;
+	}
+
+	/**
+	 * 显式声明本次请求信任所有HTTPS证书(不校验证书链、不校验主机名)。
+	 * 默认不信任——旧实现是全进程无条件信任所有证书(评审报告 P2-1), 内网自签环境
+	 * 需要旧的宽松行为时, 在构建请求时显式调用本方法。
+	 *
+	 * @param trustAllCerts true=走"信任所有证书"连接池
+	 * @return AbstractRequestBuilder
+	 */
+	public AbstractRequestBuilder trustAllCerts(boolean trustAllCerts) {
+		this.trustAllCerts = trustAllCerts;
+		return this;
+	}
+
+	/**
+	 * 指定本请求使用的CookieStore(评审报告 P2-8): 默认每个builder自带一个一次性
+	 * BasicCookieStore, 服务端 Set-Cookie 回来的会话cookie随builder一起被丢弃,
+	 * 满足不了"先登录拿会话、后续请求带会话"的场景。跨请求保持cookie时,
+	 * 调用方自建一个 BasicCookieStore 在这里传入, 多个请求共享同一个实例即可。
+	 *
+	 * @param cookieStore 请求间共享的cookie存储
+	 * @return AbstractRequestBuilder
+	 */
+	public AbstractRequestBuilder cookieStore(CookieStore cookieStore) {
+		notNull(cookieStore, "cookieStore cannot be null");
+		this.cookieStore = cookieStore;
+		return this;
+	}
+
+	/** 观察两个连接池的选择结果(测试与排障用): trustAll=true 返回不校验证书的那个 */
+	public static SSLConnectionSocketFactory sslSocketFactoryFor(boolean trustAllCerts) {
+		return trustAllCerts ? insecureSslSocketFactory : secureSslSocketFactory;
+	}
+
+	/** 空闲连接回收线程是否活着(P2-2 接线效果可观测) */
+	public static boolean isIdleConnectionEvictorRunning() {
+		IdleConnectionEvictor e = idleConnectionEvictor;
+		return e != null && e.isAlive();
+	}
+
+	/** 重试handler解析(P2-9): 不指定retries与指定retries走同一个handler类型 */
+	public static HttpRequestRetryHandler resolveRetryHandler(Integer retries, boolean requestSentRetryEnabled) {
+		return retries == null ? DEFAULT_RETRY_HANDLER
+				: new StandardHttpRequestRetryHandler(retries, requestSentRetryEnabled);
 	}
 
 	protected AbstractRequestBuilder onError(Consumer<Exception> errorCallback) {
@@ -604,7 +734,12 @@ public <T> T request() {
 			builder = new URIBuilder();
 			builder.setScheme(scheme == null ? null : scheme.name().toLowerCase());
 			builder.setHost(host);
-			builder.setPort(port);
+			/*
+			 * P2-6: 没显式设过端口时按协议推断默认端口——旧代码 port 字段初始值恒为80,
+			 * scheme(HTTPS)+忘设端口时请求打到80。显式设过则尊重用户值。
+			 */
+			builder.setPort(portExplicitlySet ? port
+					: (Scheme.HTTPS == scheme ? 443 : 80));
 			builder.setPath(path);
 			/*
 			 * 分段构建路径没有"URL 自带参数"要合并, params 全按原始文本编码一次
@@ -616,6 +751,7 @@ public <T> T request() {
 		// P1-5 配套修复: 给未指定域的 cookie 回填本次请求主机名(见 assignDomainlessCookies)
 		assignDomainlessCookies(effectiveHost);
 
+		ScheduledFuture<?> abortTask = null;
 		try {
 			/*
 			 * 根据请求方法创建HttpGet, HttpPost等对象
@@ -641,18 +777,11 @@ public <T> T request() {
 
 			try (CloseableHttpClient httpClient = buildHttpClient()) {
 				/*
-				 * 如果设置了整个请求生命周期的超时时间, 超时后中断请求
+				 * 设置了生命周期超时时间的话, 到点中断请求(P2-3修复: 不再每次 new Timer)。
+				 * abortTask 在外层 finally 里 cancel, 请求提前结束时定时任务随即作废。
 				 */
 				if (timeout != null) {
-					TimerTask task = new TimerTask() {
-						@Override
-						public void run() {
-							if (httpRequest != null) {
-								httpRequest.abort();
-							}
-						}
-					};
-					new Timer(true).schedule(task, timeout);
+					abortTask = TIMEOUT_SCHEDULER.schedule(httpRequest::abort, timeout, TimeUnit.MILLISECONDS);
 				}
 
 				try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
@@ -719,6 +848,11 @@ public <T> T request() {
 			} else {
 				log.error("HTTP请求执行失败, url: {}", url != null ? url : (scheme + "://" + host + ":" + port + path), e);
 				throw new HttpRequestException(e);
+			}
+		} finally {
+			// 请求已结束, 撤销尚未触发的超时中断任务(P2-3)
+			if (abortTask != null) {
+				abortTask.cancel(false);
 			}
 		}
 	}

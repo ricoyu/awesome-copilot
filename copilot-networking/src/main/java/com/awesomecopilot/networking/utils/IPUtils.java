@@ -1,6 +1,5 @@
 package com.awesomecopilot.networking.utils;
 
-import com.awesomecopilot.codec.RedixUtils;
 import com.awesomecopilot.networking.matcher.IpAddressMatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -247,12 +246,23 @@ public class IPUtils {
 		if (isBlank(subnetMask)) {
 			return false;
 		}
-		
+		/*
+		 * 评审报告 P2-11 修复：
+		 * ① log.warn 的占位符 {} 此前没传参数, 日志永远输出字面量 "subnetMask {} should be
+		 *   a number!", 看不到实际不合法的值——现在把值传进去。
+		 * ② Integer.parseInt("032")=32 会放行带前导零的掩码, 而 IPv6 prefix 侧的正则拒绝
+		 *   "064", 两边标准不一致。统一为: 掩码段不允许前导零。
+		 */
+		String maskText = subnetMask.trim();
+		if (maskText.length() > 1 && maskText.charAt(0) == '0') {
+			log.warn("subnetMask {} 不合法: 不允许前导零", maskText);
+			return false;
+		}
 		try {
-			int mask = Integer.parseInt(subnetMask.trim());
+			int mask = Integer.parseInt(maskText);
 			return mask >= 1 && mask <= 32;
 		} catch (NumberFormatException e) {
-			log.warn("subnetMask {} should be a number!");
+			log.warn("subnetMask {} 应该是1~32的数字", maskText, e);
 			return false;
 		}
 	}
@@ -269,42 +279,11 @@ public class IPUtils {
 		
 		return IPV6_PREFIX_PATTERN.matcher(prefix.trim()).matches();
 	}
-	
-	/**
-	 * IPv4的每部分是一个十进制数字
-	 * @param subIp
-	 * @return String IP的二进制表示
+
+	/*
+	 * 评审报告 P2-11 修复：删除了两个私有 toBinaryStr 重载——全仓库唯一引用点在本类内部
+	 * 也不存在(编译警告"never used locally"), 且实现用循环 s="0"+s 拼字符串。
+	 * 如果将来真要 IP 二进制表示, 用 String.format("%8s", Integer.toBinaryString(x)).replace(' ', '0')
+	 * 或 Guava/Groovy 现成工具, 不要复活这段。
 	 */
-	private static String toBinaryStr(Integer subIp) {
-		/*
-		 * 10.10.10.0
-		 * IP的每一部分都介于0~255之间, 255的二进制表示为11111111
-		 * 所以如果小于255, 那么二进制前面补零, 补足8位
-		 */
-		String s = RedixUtils.int2BinaryStr(subIp);
-		int initialLength = s.length();
-		for (int i = initialLength; i < 8; i++) {
-			s = "0" + s;
-		}
-		
-		return s;
-	}
-	
-	/**
-	 * IPv6的每部分是一个十六进制字符串, 转成二进制每组占16位
-	 * @param subIp
-	 * @return String IP的二进制表示
-	 */
-	private static String toBinaryStr(String subIp) {
-		if (isBlank(subIp)) {
-			return "0000000000000000";
-		}
-		String s = RedixUtils.hex2BinaryStr(subIp);
-		int initialLength = s.length();
-		for (int i = initialLength; i < 16; i++) {
-			s = "0" + s;
-		}
-		
-		return s;
-	}
 }

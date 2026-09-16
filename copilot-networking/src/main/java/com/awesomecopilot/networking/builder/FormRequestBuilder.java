@@ -393,8 +393,14 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 					request.removeHeaders(CONTENT_TYPE);
 					continue;
 				}
-				//普通表单数据
-				StringBody stringBody = new StringBody(Transformers.toString(value), ContentType.create(ContentTypes.MULTIPART_FORM_DATA, UTF_8));
+				/*
+				 * 普通表单字段。评审报告 P2-7 修复：
+				 * 旧代码把单个字段的 Content-Type 写成 multipart/form-data——那是整个
+				 * 请求体的类型, 不是某一个 part 的类型; part 本身是纯文本, 应为
+				 * text/plain;charset=UTF-8。multipart/form-data 作为 part 类型是语义错误,
+				 * 严格解析的服务端(以及未来的 HttpClient 5)行为不可预期。
+				 */
+				StringBody stringBody = new StringBody(Transformers.toString(value), ContentType.create("text/plain", UTF_8));
 				builder.addPart(entry.getKey(), stringBody);
 			}
 			
@@ -410,12 +416,10 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 			params.add(new BasicNameValuePair(paramName, Transformers.toString(value)));
 		}
 		
-		try {
-			request.setEntity(new UrlEncodedFormEntity(params));
-		} catch (UnsupportedEncodingException e) {
-			log.error("表单参数URL编码失败", e);
-			throw new RuntimeException("表单参数URL编码失败", e);
-		}
+		// P2-7: 显式指定UTF-8字符集, 不再依赖平台默认。
+		// 传入的 StandardCharsets.UTF_8 是 Charset 常量, 这个重载不存在"编码族不存在"的
+		// 运行时异常, 旧的 UnsupportedEncodingException try/catch 一并移除
+		request.setEntity(new UrlEncodedFormEntity(params, UTF_8));
 	}
 	
 }

@@ -1,6 +1,6 @@
 package com.awesomecopilot.search;
 
-import com.awesomecopilot.networking.utils.HttpClientUtils;
+import com.awesomecopilot.networking.utils.HttpUtils;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,7 +20,8 @@ public class ESIndexTest {
 	 */
 	@Test
 	public void testCat() {
-		String response = HttpClientUtils.httpGetRequest("http://192.168.100.104:9200/_cat/indices/kibana*?v&s=index");
+		// 2026-09-16 评审报告 P2-4: HttpClientUtils 整类删除, 迁移到门面 HttpUtils
+		String response = HttpUtils.get("http://192.168.100.104:9200/_cat/indices/kibana*?v&s=index").request();
 		System.out.println(response);
 	}
 }

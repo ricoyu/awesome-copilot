@@ -36,11 +36,20 @@ public final class HttpUtils {
 	 * @param url
 	 * @return JsonRequestBuilder
 	 */
+	/**
+	 * 执行HTTP GET请求并返回结果。
+	 * <p>
+	 * 评审报告 P2-5 修复：不再预置 Content-Type: application/json——Content-Type 描述的是
+	 * "请求体的类型", GET 没有请求体, 带这个头毫无意义, 个别严格校验的网关还会因此拒绝请求。
+	 * 需要声明响应类型请用 Accept; 确有携带请求体的非常规用法, 自行调用 addHeader 指定。
+	 *
+	 * @param url 完整URL
+	 * @return JsonRequestBuilder
+	 */
 	public static JsonRequestBuilder get(String url) {
 		JsonRequestBuilder requestBuilder = new JsonRequestBuilder();
 		requestBuilder.method(HttpMethod.GET);
 		requestBuilder.url(url);
-		requestBuilder.addHeader(CONTENT_TYPE, MediaType.APPLICATION_JSON);
 		return requestBuilder;
 	}
 
@@ -60,7 +69,6 @@ public final class HttpUtils {
 	public static JsonRequestBuilder get() {
 		JsonRequestBuilder requestBuilder = new JsonRequestBuilder();
 		requestBuilder.method(HttpMethod.GET);
-		requestBuilder.addHeader(CONTENT_TYPE, MediaType.APPLICATION_JSON);
 		return requestBuilder;
 	}
 
@@ -122,7 +130,7 @@ public final class HttpUtils {
 		JsonRequestBuilder requestBuilder = new JsonRequestBuilder();
 		requestBuilder.method(HttpMethod.DELETE);
 		requestBuilder.url(url);
-		requestBuilder.addHeader(CONTENT_TYPE, MediaType.APPLICATION_JSON);
+		// P2-5: DELETE 默认无请求体, 不预置 Content-Type（需要带body时自行 addHeader + 走支持实体的方法）
 		return requestBuilder;
 	}
 
@@ -136,7 +144,14 @@ public final class HttpUtils {
 		FormRequestBuilder builder = new FormRequestBuilder();
 		builder.url(url);
 		builder.method(HttpMethod.POST);
-		builder.addHeader(CONTENT_TYPE, MediaType.APPLICATION_FORM);
+		/*
+		 * 评审报告 P2-7 修复：Content-Type 带上 charset=UTF-8。
+		 * 旧值 application/x-www-form-urlencoded 不带字符集, 而 HTTP 表单规范里
+		 * 未声明字符集时服务端按 ISO-8859-1 解析是常见行为; 本框架的请求体实际按
+		 * UTF-8 编码, 英文数据碰巧一致, 中文数据在严格按规范解析的服务端上会乱码,
+		 * 且"英文正常、中文出错"最难排查。声明写进头里, 两边对齐。
+		 */
+		builder.addHeader(CONTENT_TYPE, MediaType.APPLICATION_FORM_UTF8);
 		return builder;
 	}
 	
