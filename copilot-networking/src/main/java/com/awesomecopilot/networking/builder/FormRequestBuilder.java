@@ -120,9 +120,16 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 	@Override
 	public FormRequestBuilder addCookie(String name, String value) {
 		BasicClientCookie cookie = new BasicClientCookie(name, value);
-		cookie.setDomain("sexy-uncle.com");
+		/*
+		 * 评审报告 P1-5 修复: 这里曾写死 cookie.setDomain("sexy-uncle.com")——作者某个
+		 * 项目的域名。往 localhost 或其他任何主机发表单时, HttpClient 的 cookie 匹配规则
+		 * 因域不符不会携带这个 cookie, 表现为"明明 addCookie 了服务端却说没收到"。
+		 * 不设置 domain, HttpClient 会按当前请求的主机归属 cookie(JDK cookie 规范
+		 * 中的 host-only cookie), 这才是两参重载应有的语义——用户没指定域, 就只对
+		 * 本次请求的主机生效。
+		 */
 		cookie.setPath("/");
-		cookie.setAttribute(ClientCookie.DOMAIN_ATTR, "true");
+		cookie.setAttribute(ClientCookie.PATH_ATTR, "true");
 		cookieStore.addCookie(cookie);
 		return this;
 	}
@@ -406,8 +413,8 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 		try {
 			request.setEntity(new UrlEncodedFormEntity(params));
 		} catch (UnsupportedEncodingException e) {
-			log.error("", e);
-			throw new RuntimeException("", e);
+			log.error("表单参数URL编码失败", e);
+			throw new RuntimeException("表单参数URL编码失败", e);
 		}
 	}
 	

@@ -284,10 +284,10 @@ public final class HttpClientUtils {
 				return result;
 			}
 		} catch (ClientProtocolException e) {
-			log.error("", e);
+			log.error("HTTP请求发送失败, url: {}", request.getURI(), e);
 			throw new HttpRequestException(e);
 		} catch (IOException e) {
-			log.error("", e);
+			log.error("HTTP请求发送失败, url: {}", request.getURI(), e);
 			throw new HttpRequestException(e);
 		}
 		

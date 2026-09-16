@@ -1,15 +1,13 @@
 package com.awesomecopilot.networking.builder;
 
-import com.awesomecopilot.common.lang.bean.UrlParts;
 import com.awesomecopilot.common.lang.concurrent.Concurrent;
 import com.awesomecopilot.common.lang.transformer.Transformers;
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import com.awesomecopilot.common.lang.utils.IOUtils;
-import com.awesomecopilot.common.lang.utils.ReflectionUtils;
-import com.awesomecopilot.common.lang.utils.RegexUtils;
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.networking.constants.HttpHeaders;
+import com.awesomecopilot.common.lang.exception.BusinessException;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
@@ -25,6 +23,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -43,7 +42,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
@@ -123,7 +121,7 @@ public abstract class AbstractRequestBuilder {
 		try {
 			sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
 		} catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-			log.error("", e);
+			log.error("初始化SSL上下文失败, 无法建立HTTPS连接", e);
 			throw new RuntimeException(e);
 		}
 		sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
@@ -487,32 +485,37 @@ public abstract class AbstractRequestBuilder {
 	protected List<NameValuePair> toNameValuePairs(Map<String, Object> params) {
 		List<NameValuePair> pairs = new ArrayList<NameValuePair>();
 		for (Map.Entry<String, Object> entry : params.entrySet()) {
-			//如果一个参数有多个值, 把这多个值用,连接
-			List valueList = (ArrayList) entry.getValue();
-			pairs.add(new BasicNameValuePair(entry.getKey(), StringUtils.joinWith(",", valueList)));
+			Object raw = entry.getValue();
+			String value;
+			if (raw instanceof List) {
+				/*
+				 * 评审报告 P1-2 修复。两种 List 形态都要处理:
+				 * ① MultiValueMap 聚合出的 ["java","go"] —— 同名参数逐值收集;
+				 * ② 用户把一个 List 整体塞进 MultiValueMap 产生的嵌套形态 [["java","go"]]
+				 *    (MultiValueMap.put 不展开传入集合, form.param("tag", List.of(..)) 就是这种)。
+				 * 旧代码直接把 List 交给可变参数的 StringUtils.joinWith, 整个 List 被当成一个
+				 * 元素调 toString, 服务端收到 "tag=[java, go]"(带方括号)。
+				 * 按方法原注释的语义: 多个值用逗号连成一个值, 所以这里逐层摊平后逗号 join。
+				 */
+				List<String> flattened = new ArrayList<>();
+				for (Object item : (List<?>) raw) {
+					if (item instanceof List) {
+						for (Object inner : (List<?>) item) {
+							flattened.add(String.valueOf(inner));
+						}
+					} else if (item != null) {
+						flattened.add(String.valueOf(item));
+					}
+				}
+				value = StringUtils.joinWith(",", flattened.toArray());
+			} else {
+				value = String.valueOf(raw);
+			}
+			pairs.add(new BasicNameValuePair(entry.getKey(), value));
 		}
 		pairs.addAll(this.pairs);
 
 		return pairs;
-	}
-
-	/**
-	 * 包装一个URL的各个部分, 以对象的形式返回
-	 *
-	 * @return UrlParts
-	 */
-	protected UrlParts buildUrlParts() {
-		if (isNotBlank(url)) {
-			return RegexUtils.teardown(url);
-		}
-
-		UrlParts urlParts = new UrlParts();
-		urlParts.setScheme(scheme == null ? null : scheme.name().toLowerCase());
-		urlParts.setHost(host);
-		urlParts.setPort(port);
-		urlParts.setPath(path);
-
-		return urlParts;
 	}
 
 	/**
@@ -526,11 +529,11 @@ public abstract class AbstractRequestBuilder {
 		try {
 			uri = builder.build();
 		} catch (URISyntaxException e) {
-			log.error("", e);
+			log.error("URI构建失败(通常因为URL或参数含非法字符)", e);
 			throw new IllegalArgumentException(e);
 		}
 
-		HttpRequestBase request = null;
+		HttpRequestBase request;
 		switch (method) {
 			case GET:
 				request = new HttpGet(uri);
@@ -553,6 +556,14 @@ public abstract class AbstractRequestBuilder {
 			case TRACE:
 				request = new HttpTrace(uri);
 				break;
+			case PATCH:
+				//评审报告 P1-1 修复: HttpMethod 枚举里有 PATCH, 原先 switch 漏了分支,
+				//request 保持 null 走到 addHeader 时抛 NullPointerException
+				request = new HttpPatch(uri);
+				break;
+			default:
+				//method 为 null 或新增枚举值漏配分支时, 立刻抛异常说清原因, 不再让 null 往下漏
+				throw new IllegalArgumentException("不支持的HTTP方法: " + method);
 		}
 
 		addHeader(request);
@@ -565,22 +576,45 @@ public abstract class AbstractRequestBuilder {
 	 * @return T
 	 */
 public <T> T request() {
-		UrlParts urlParts = buildUrlParts();
-
-		URIBuilder builder = new URIBuilder();
-		builder.setScheme(urlParts.getScheme());
-		builder.setHost(urlParts.getHost());
-		builder.setPort(urlParts.getPort());
-		builder.setPath(urlParts.getPath());
-
-		/*
-		 * 把从URL里面解析出来的参数和显式设置的参数合并
-		 */
-		MultiMap multiMap = urlParts.paramMap();
-		params.putAll(multiMap);
-
-		List<NameValuePair> pairs = toNameValuePairs(params);
-		builder.setParameters(pairs);
+		URIBuilder builder;
+		String effectiveHost;
+		if (isNotBlank(url)) {
+			/*
+			 * 完整 URL 交给 JDK 的 URI 解析器（评审报告 P1-4 修复: 原先用自研正则拆解,
+			 * IPv6 地址和单位数端口都会解析错位; teardown 解析失败返回 null 后这里还会 NPE）。
+			 * 参数处理规则（P0-3/P1-3 修复）: URI 解析出的 query 保持"已编码"原样,
+			 * 用 URLEncodedUtils 取出后按原始文本放进 builder——这样既不会把 %20 再编成
+			 * %2520（旧实现把已编码值当原始文本重新编码）, 也不会丢掉值里带 = 的参数
+			 * （旧实现按 = 硬切两段, 三段以上或无 = 的直接不报错地丢弃）。
+			 */
+			URI urlUri;
+			try {
+				urlUri = new URI(url);
+			} catch (URISyntaxException e) {
+				throw new IllegalArgumentException("不合法的URL: " + url, e);
+			}
+			builder = new URIBuilder(urlUri, UTF8);
+			// 只把用户显式 addParam 的参数重新编码追加(它们的值本来就是原始文本);
+			// URL 自带的参数同名时, URIBuilder 里已编码的原值与显式值并存, 语义见 url() 注释
+			if (!params.isEmpty()) {
+				builder.addParameters(toNameValuePairs(params));
+			}
+			effectiveHost = urlUri.getHost();
+		} else {
+			builder = new URIBuilder();
+			builder.setScheme(scheme == null ? null : scheme.name().toLowerCase());
+			builder.setHost(host);
+			builder.setPort(port);
+			builder.setPath(path);
+			/*
+			 * 分段构建路径没有"URL 自带参数"要合并, params 全按原始文本编码一次
+			 */
+			List<NameValuePair> pairs = toNameValuePairs(new HashMap<String, Object>(params));
+			builder.setParameters(pairs);
+			effectiveHost = host;
+		}
+		// P1-5 配套修复: 给未指定域的 cookie 回填本次请求主机名(见 assignDomainlessCookies)
+		assignDomainlessCookies(effectiveHost);
 
 		try {
 			/*
@@ -590,10 +624,13 @@ public <T> T request() {
 			HttpUriRequest httpRequest = buildHttpRequest(builder);
 
 			/*
-			 * 钩子方法, 提供子类去实现
+			 * 钩子方法, 提供子类去实现。
+			 * 判断依据从 "instanceof HttpPost || HttpPut" 放宽为"请求类支持携带实体":
+			 * HttpPatch 同样是 HttpEntityEnclosingRequestBase 的子类, 修 P1-1 时必须一起放开,
+			 * 否则 method(PATCH) 不再抛 NPE 了, body 却仍然发不出去（评审报告 P1-1 的完整修复）。
 			 */
-			if (httpRequest instanceof HttpPost || httpRequest instanceof HttpPut) {
-				//只有POST, PUT方法, 并且是发送JSON数据才需要执行
+			if (httpRequest instanceof HttpEntityEnclosingRequestBase) {
+				//发送JSON数据/表单数据才需要执行
 				if (this instanceof JsonRequestBuilder) {
 					addBody((HttpEntityEnclosingRequestBase) httpRequest);
 				} else if (this instanceof FormRequestBuilder) {
@@ -620,47 +657,70 @@ public <T> T request() {
 
 				try (CloseableHttpResponse response = httpClient.execute(httpRequest)) {
 					/*
-					 * 拿response entity之前先检查一下status code, 实际测试下来如果是405错误,不会报任何异常, 只是拿到的entity是空
+					 * 拿response entity之前先检查状态码。实测 405 这类错误 HttpClient 不抛异常,
+					 * 只能自己判断。原来这里靠反射读内部类 HttpResponseProxy 的 "original" 字段
+					 * 再取 reasonPhrase——proxiedResponse 本身就实现了 getStatusLine()/getEntity(),
+					 * 直接调即可, 不需要反射(反射在类结构变化时会静默拿到 null)。
 					 */
-					BasicHttpResponse original = (BasicHttpResponse) ReflectionUtils.getFieldValue("original", response);
-					int statucCode =
-							original.getStatusLine().getStatusCode();
-					if (statucCode != 200) {
-						String reasonPhrase = ReflectionUtils.getFieldValue("reasonPhrase", original);
-						ErrorUtils.checkError(statucCode, reasonPhrase);
+					int statusCode = response.getStatusLine().getStatusCode();
+					if (statusCode < 200 || statusCode >= 300) {
+						// P0-2 修复: checkError 现在对一切非 2xx 抛异常, 2xx 直接放行(含 204/206)
+						ErrorUtils.checkError(statusCode, response.getStatusLine().getReasonPhrase());
 					}
 					HttpEntity entity = response.getEntity();
-					if (entity != null) {
-						//表示结果要以byte[]数组形式返回
-						if (returnBytes) {
-							return (T) IOUtils.toByteArray(entity.getContent());
-						}
-
-						String result = EntityUtils.toString(entity, "UTF-8");
-
-						if (responseType != null) {
-							if (isBlank(result)) {
-								return null;
-							}
-							if (responseType == String.class) {
-								return (T) result;
-							}
-							return (T) JacksonUtils.toObject(result, responseType);
-						}
-						return (T) result;
+					if (entity == null) {
+						/*
+						 * P1-7 修复: 响应没有实体(HEAD/204 等)时, 旧实现不声明任何异常地走到
+						 * 方法末尾 return null, 调用方拿到 null 一头雾水。这里保持返回 null
+						 * (语义正确: 确实没有内容), 但打一条 info 说明原因, 便于排查。
+						 */
+						log.info("HTTP响应无内容(entity为空), 状态码: {}, 返回null", statusCode);
+						return null;
 					}
+					//表示结果要以byte[]数组形式返回; 声明 responseType=byte[].class 视同开启
+					//(P1-7 修复: 旧实现两者不联动, byte[].class 会走 Jackson 分支抛
+					// ClassCastException, 被包成完全看不出根因的 HttpRequestException)
+					if (returnBytes || responseType == byte[].class) {
+						try (java.io.InputStream in = entity.getContent()) {
+							return (T) IOUtils.toByteArray(in);
+						}
+					}
+
+					String result = EntityUtils.toString(entity, "UTF-8");
+
+					if (responseType != null) {
+						if (isBlank(result)) {
+							return null;
+						}
+						if (responseType == String.class) {
+							return (T) result;
+						}
+						return (T) JacksonUtils.toObject(result, responseType);
+					}
+					return (T) result;
 				}
 			}
+		} catch (BusinessException | HttpRequestException e) {
+			/*
+			 * P1-6 修复: checkError 抛出的"HTTP语义异常"不再被兜底 catch 包一层
+			 * HttpRequestException——调用方 catch (BusinessException) 能按 404/405 分支处理,
+			 * 错误码信息不再丢失。errorCallback 也照常收到它。
+			 */
+			if (errorCallback != null) {
+				errorCallback.accept(e);
+				return null;
+			}
+			log.error("HTTP请求返回错误状态", e);
+			throw e;
 		} catch (Exception e) {
 			if (errorCallback != null) {
 				errorCallback.accept(e);
+				return null;
 			} else {
-				log.error("", e);
+				log.error("HTTP请求执行失败, url: {}", url != null ? url : (scheme + "://" + host + ":" + port + path), e);
 				throw new HttpRequestException(e);
 			}
 		}
-
-		return null;
 	}
 
 	/**
@@ -690,6 +750,32 @@ public <T> T request() {
 	 * @param request
 	 */
 	protected void addFormData(HttpEntityEnclosingRequestBase request) {
+	}
+
+	/**
+	 * 把 addCookie 时未指定域名的 cookie 归属到本次请求的主机（评审报告 P1-5 的配套修复）。
+	 * <p>
+	 * 背景：RFC6265 cookie 规范（HttpClient 4.x 默认实现）拒收"既没有 Domain 属性也没有
+	 * HostClientCookie 标记"的手工 cookie——旧代码靠写死 domain="sexy-uncle.com" 让它过了
+	 * 检查，代价是换个主机就查不到域不匹配不发。删掉硬编码后必须补上这一步：发请求前把
+	 * 请求主机回填给所有 domain 为空的 cookie，效果 = 浏览器对 Set-Cookie 不带 Domain 时的
+	 * host-only 归属。
+	 */
+	private void assignDomainlessCookies(String requestHost) {
+		if (requestHost == null) {
+			return;
+		}
+		for (org.apache.http.impl.cookie.BasicClientCookie cookie :
+				cookieStore.getCookies().stream()
+						.filter(c -> c instanceof org.apache.http.impl.cookie.BasicClientCookie)
+						.map(c -> (org.apache.http.impl.cookie.BasicClientCookie) c)
+						.collect(java.util.stream.Collectors.toList())) {
+			if (cookie.getDomain() == null) {
+				cookie.setDomain(requestHost);
+				// 标记域属性是显式设定的, RFC6265 规范下才不会被拒收
+				cookie.setAttribute(org.apache.http.cookie.ClientCookie.DOMAIN_ATTR, "true");
+			}
+		}
 	}
 
 	private void addHeader(HttpRequestBase request) {
