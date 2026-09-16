@@ -279,6 +279,34 @@ public class FormRequestBuilder extends AbstractRequestBuilder implements OAuth2
 	}
 	
 	/**
+	 * http.connection.timeout 与远程主机建立连接的超时时间。
+	 * 2026-09-16 补：FormRequestBuilder 此前缺这个方法(JsonRequestBuilder 有),
+	 * 表单请求设置不了连接超时——公网测试用例暴露了这处 API 不对称。
+	 *
+	 * @param timeout
+	 * @param timeUnit
+	 * @return FormRequestBuilder
+	 */
+	public FormRequestBuilder connectionTimeout(Integer timeout, TimeUnit timeUnit) {
+		Objects.requireNonNull(timeout, "timeout cannot be null!");
+		Objects.requireNonNull(timeUnit, "timeUnit cannot be null!");
+		this.connectionTimeout = timeUnit.toMillis(timeout);
+		return this;
+	}
+	
+	/**
+	 * 显式声明本次请求信任所有HTTPS证书(内网自签环境用, 见 AbstractRequestBuilder#trustAllCerts)
+	 *
+	 * @param trustAllCerts true=走"信任所有证书"连接池
+	 * @return FormRequestBuilder
+	 */
+	@Override
+	public FormRequestBuilder trustAllCerts(boolean trustAllCerts) {
+		super.trustAllCerts(trustAllCerts);
+		return this;
+	}
+	
+		/**
 	 * http.socket.timeout
 	 * <p>
 	 * 建立连接后, 传输数据的超时时间

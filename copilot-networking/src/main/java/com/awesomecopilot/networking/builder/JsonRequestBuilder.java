@@ -197,6 +197,18 @@ public class JsonRequestBuilder extends AbstractRequestBuilder {
 	}
 	
 	/**
+	 * 显式声明本次请求信任所有HTTPS证书(内网自签环境用, 见 AbstractRequestBuilder#trustAllCerts)
+	 *
+	 * @param trustAllCerts true=走"信任所有证书"连接池
+	 * @return JsonRequestBuilder
+	 */
+	@Override
+	public JsonRequestBuilder trustAllCerts(boolean trustAllCerts) {
+		super.trustAllCerts(trustAllCerts);
+		return this;
+	}
+	
+		/**
 	 * http.connection.timeout
 	 * <p>
 	 * 与远程主机建立连接的超时时间
