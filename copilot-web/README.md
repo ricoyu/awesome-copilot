@@ -1,21 +1,27 @@
 # copilot-web
 
-Web 层通用组件封装，为 Spring MVC / Spring Cloud 微服务提供全局异常处理、REST 输出、消息国际化、XSS 防护、链路追踪等基础能力。
+Web 层通用组件封装，为 Spring MVC / Spring Cloud 微服务提供全局异常处理、REST 输出、消息国际化、XSS 清洗、请求包装、日期绑定、链路追踪等基础能力。
+
+> **重要：本模块是"组件库"，不是"starter"。** 它自己不带任何自动装配声明（无 `AutoConfiguration.imports`）。自动装配在独立仓库 `copilot-starter` 中提供：引入 `copilot-spring-boot-web-starter` / `copilot-spring-cloud-starter` / `copilot-spring-security6-starter` 才会把本模块的组件注册进过滤器链和 MVC 配置；只依赖 `copilot-web` 时，所有组件都需要手工装配。下文每项能力都标注了实际的启用方式。
 
 ---
 
-# 一 模块简介
+# 一 能力总览
 
-copilot-web 是 awesome-copilot 体系中面向 Web 层的核心模块，基于 Jakarta Servlet + Spring WebMVC 构建。  
-引入该模块后，业务系统可获得：
-
-- 统一的全局异常处理（REST 风格 JSON 响应）
-- 便捷的 JSON 输出与文件下载工具
-- 消息国际化（i18n）支持
-- 请求链路追踪（traceId）
-- XSS 防护与请求体重复读取
-- 日期类型自动绑定
-- ThreadLocal 自动清理
+| 能力 | 核心类 | 启用方式 |
+| --- | --- | --- |
+| 全局异常处理 | `RestExceptionAdvice` | starter 自动装配（`copilot-spring-boot-web-starter` 的 `CopilotMvcConfiguration`，可用 `copilot.mvc.rest-exception-advice-enabled=false` 关闭）；裸依赖时靠 `@RestControllerAdvice` 注解 + 组件扫描到本包才生效 |
+| REST 输出 / 文件下载 | `RestUtils` | 直接调用静态方法 |
+| 跨域响应头 | `CORS` | 手动调用，或由 `RestUtils` 按开关自动附加（见注意事项 3） |
+| 消息国际化 | `MessageHelper` / `LocalizedException` | 直接调用；要求容器里有名为 `messageSource` 的标准 MessageSource Bean |
+| XSS 清洗 | `XssCleanUtils` | 直接调用，或装配 `XssHttpServletRequestWrapper`（XssFilter 在 starter 的 `copilot-spring-boot-web` 模块里，按 `copilot.filter.xss-enabled=true` 开启，默认关） |
+| 请求体重复读取 | `HttpServletRequestRepeatedReadFilter` + `RepeatedReadHttpServletRequestWarpper` | 开关 `copilot.filter.repeated-read` 存在时由 starter 注册；或在 Spring Security 装配路径（`copilot-spring-security6-starter`）中被加入链；裸依赖时手动注册 FilterRegistrationBean |
+| Filter 里修改请求头 | `RequestHeaderModifiableFilter` + `HeaderMapRequestWrapper` | 继承抽象 Filter 后手动注册 |
+| 日期参数绑定 | `GlobalBindingAdvice` + 4 个日期 ArgumentResolver | starter 自动装配（`CopilotMvcConfiguration`）；裸依赖时手动注册 Advice 并 `addArgumentResolvers` |
+| 枚举 / 逗号数组参数转换 | `GenericEnumConverter`、`ObjectToEnumConverterFactory`、`StringToArrayConverter`、`CustomConversionServiceFactoryBean` | starter 里 `addFormatters` 注册了 GenericEnumConverter（属性 code/desc）；逗号转数组需注册 ConversionService Bean（starter 已注册，属性为 code） |
+| 链路追踪 | `TraceFilter` | **没有任何 starter 装配它**。需组件扫描到 `com.awesomecopilot.web.filter` 包（它标了 `@Component`），或手动 `new TraceFilter()` 注册 FilterRegistrationBean |
+| 过滤器链异常处理 | `ExceptionFilter` | 未标注解，需手动注册（`copilot-spring-cloud` 模块有自己的同名 Filter，别混淆） |
+| ThreadLocal 清理 | `ThreadLocalCleanupListener` | starter 自动装配（`CopilotThreadAutoConfiguration`，注册为 ServletListener） |
 
 ---
 
@@ -25,140 +31,140 @@ copilot-web 是 awesome-copilot 体系中面向 Web 层的核心模块，基于 
 
 `RestExceptionAdvice` 基于 `@RestControllerAdvice`，统一拦截 Controller 层抛出的异常并以标准 `Result` JSON 格式返回。
 
-支持的异常类型：
-
-| 异常类型 | 说明 |
+| 异常类型 | 响应 |
 | --- | --- |
-| `BusinessException` | 通用业务异常，支持 i18n 消息 |
-| `ServiceException` | 服务层异常 |
-| `ApplicationException` | 应用级异常 |
-| `ValidationException` | 表单 / Bean 校验失败 |
-| `GeneralValidationException` | 手工校验不通过 |
-| `EntityNotFoundException` | 实体未找到 |
-| `LocalizedException` | 国际化异常 |
-| `MaxUploadSizeExceededException` | 文件上传超限 |
-| `Throwable` | 兜底处理，整合 Sentinel 熔断统计 |
+| `BusinessException` | HTTP 200 + 业务码，消息走 i18n（`I18N.i18nMessage`） |
+| `ServiceException` / `ApplicationException` | HTTP 200 + 异常自带 code/message |
+| `LocalizedException` | HTTP 200 + statusCode + 国际化消息（取不到消息时回退 defaultMessage，不会返回 null） |
+| `ValidationException` / `GeneralValidationException` / `MethodArgumentNotValidException` | HTTP 200 + `4002` + 字段错误列表 |
+| `UniqueConstraintViolationException` | HTTP 200 + `5001` |
+| `EntityNotFoundException` | HTTP 200 + `404` 段业务码 |
+| `HttpRequestMethodNotSupportedException` | HTTP 200 + `4051` |
+| `HttpMessageNotReadableException`（请求体解析失败） | **HTTP 500** + `5001`（评审报告 P2-4 指出该语义值得商榷，尚未改） |
+| `TypeMismatchException` | 走 Spring 默认处理（HTTP 400） |
+| `MaxUploadSizeExceededException` | HTTP 200 + `4005` + i18n 消息（从异常文本解析实际/限制大小填入消息参数） |
+| 其余 `Throwable` | 非业务异常返回 **HTTP 500**（便于微服务间调用方感知失败并触发熔断统计）；cause 里能翻出业务异常时按业务异常返回 200 |
 
-同时兼容 Sa-Token 认证框架的 `NotLoginException`、`NotPermissionException`。
+兼容 Sa-Token 的 `NotLoginException` / `NotPermissionException`（按类名匹配，避免硬依赖）。整合 Sentinel（存在 `restBlockExceptionHandler` Bean 时）会对异常调用 `Tracer.trace(e)` 计入熔断统计，响应仍由本 Advice 产出。
 
 ## 2.2 REST 输出工具
 
-`RestUtils` 提供在 Filter / Interceptor 等非 Controller 环境中直接输出 JSON 或下载文件的能力：
+`RestUtils` 供 Filter / Interceptor / 认证回调等非 Controller 环境直接写响应：
 
 ```java
-// 输出 JSON
-RestUtils.writeJson(response, result);
-RestUtils.writeJson(response, HttpStatus.INTERNAL_SERVER_ERROR, result);
+RestUtils.writeJson(response, result);                              // 200 + JSON
+RestUtils.writeJson(response, HttpStatus.UNAUTHORIZED, result);     // 指定状态码
+RestUtils.writeRawJson(response, jsonString);                       // 原样输出字符串
 
-// 输出原始 JSON 字符串
-RestUtils.writeRawJson(response, jsonString);
-
-// 文件下载
-RestUtils.download(file);
-RestUtils.download(path, "自定义文件名.xlsx");
+RestUtils.download(file);                                           // 以文件名下载
+RestUtils.download(path, "自定义文件名.xlsx");                        // 流式拷贝, 带 Content-Length
 ```
+
+`download` 要求当前线程有 Spring 的 RequestAttributes（Controller/Filter 内满足），否则抛 `DownloadException`。大文件为流式写出，峰值内存与文件大小无关。
 
 ## 2.3 消息国际化
 
-`MessageHelper` 封装 Spring `MessageSource`，根据当前请求 Locale 自动返回对应语言的消息：
+`MessageHelper` 懒加载容器里的 `MessageSource`（Bean 名须为 `messageSource`）：
 
 ```java
-// 根据 code 获取消息
-String msg = MessageHelper.getMessage("error.user.notfound");
-
-// 带参数
-String msg = MessageHelper.getMessage("error.order.expired", List.of(orderId));
-
-// 指定 Locale
-String msg = MessageHelper.getMessage("error.user.notfound", Locale.ENGLISH, userId);
+String msg = MessageHelper.getMessage("error.user.notfound");            // 取不到返回 null
+String msg = MessageHelper.getMessage("error.order.expired", "订单过期");  // 取不到返回默认消息
+String msg = MessageHelper.getMessage("code", Locale.ENGLISH, userId);     // 取不到返回 code 本身
 ```
 
-配合 `LocalizedException` 使用，可实现异常消息的国际化：
+行为约定（2026-09-17 评审修复后）：容器里没有 MessageSource 时**不抛异常**，按上述规则降级，并 WARN 一次提示装配问题；单个 code 查不到记 DEBUG 日志。`LocalizedException.getLocalizedMessage()` 在 i18n 取不到时自动回退构造时传入的 defaultMessage。
 
-```java
-throw new LocalizedException("5001", "error.user.notfound", List.of(userId), "User not found");
-```
+## 2.4 XSS 清洗
 
-## 2.4 链路追踪
+`XssCleanUtils.clean(String)` 移除 HTML 注入点：`<script>` 标签及内容、`javascript:` 伪协议前缀、`onXXX` 事件属性（带引号/不带引号）。
 
-`TraceFilter` 自动为每个请求生成或透传 `traceId`，并写入 MDC，便于日志输出：
-
-- 优先读取请求头 `TRACE_ID`
-- 若不存在则自动生成
-
-在 `logback-spring.xml` 中配置 `%X{traceId}` 即可在日志中输出 traceId。
-
-## 2.5 XSS 防护
-
-`XssCleanUtils` 提供 XSS 清洗能力，可清理 `<script>` 标签、`javascript:` 伪协议、`onXXX` 事件属性等：
+**清洗只作用于标签与协议层。** 纯文本里的 `alert(...)` / `eval(...)` 等函数名不再删除（评审报告 P0-2）——它们出现在业务文案里属正常内容；文本要渲染成 HTML 时请在输出侧做转义（如 commons-lang 的 `StringUtils.escapeHtml4`）。
 
 ```java
 String clean = XssCleanUtils.clean(dirtyInput);
+List<String> cleaned = (List<String>) XssCleanUtils.cleanObject(list);  // 递归清洗集合/数组/Map, 注意用返回值
 ```
 
-`XssHttpServletRequestWrapper` 可在 Filter 层自动清洗请求参数。
+装配 `XssHttpServletRequestWrapper` 后可在 Servlet 层自动清洗参数、请求头和 JSON/表单请求体（starter 里对应 `copilot.filter.xss-enabled=true`）。
 
-## 2.6 请求体重复读取
+## 2.5 请求体重复读取
 
-`HttpServletRequestRepeatedReadFilter` 将请求体缓存，允许在 Filter、Interceptor、Controller 中多次读取 Body：
+`HttpServletRequestRepeatedReadFilter` 用 `RepeatedReadHttpServletRequestWarpper` 按**原始字节**缓存请求体（评审报告 P1-1 修复后），字段值含换行/制表符的 JSON 也能原样二次读取；`multipart/form-data`（文件上传）不做缓存直接放行。
+
+适用场景：签名校验 Filter 读过 body 后 Controller 还要再读。注意 body 会完整驻留内存，大请求体请评估。
+
+## 2.6 Filter 中修改请求头
 
 ```java
-// 注册 Filter
-@Bean
-public FilterRegistrationBean<HttpServletRequestRepeatedReadFilter> repeatedReadFilter() {
-    FilterRegistrationBean<HttpServletRequestRepeatedReadFilter> reg = new FilterRegistrationBean<>();
-    reg.setFilter(new HttpServletRequestRepeatedReadFilter());
-    reg.addUrlPatterns("/*");
-    return reg;
+public class MyHeaderFilter extends RequestHeaderModifiableFilter {
+    public boolean matches(HttpServletRequest req) { return true; }
+    public void addHeader(HeaderMapRequestWrapper req) {
+        req.addHeader("tenantId", "abc");   // 注意: 实际是覆盖(set)语义, 同名只留最后一个(评审报告 P2-9)
+    }
 }
 ```
 
 ## 2.7 日期类型自动绑定
 
-`GlobalBindingAdvice` 自动将字符串参数绑定为日期类型，支持：
+两层机制并存，解析优先级明确：
 
-- `java.util.Date`（yyyy-MM-dd HH:mm:ss / yyyy-MM-dd HH:mm）
-- `LocalDate`
-- `LocalDateTime`
-- `LocalTime`
+1. **Controller 方法参数**（`@RequestParam Date d` 等）：4 个 ArgumentResolver 处理。参数上写了 `@DateTimeFormat(pattern=...)` 按 pattern **严格**解析（输入形态不符直接报错，不会悄悄解析出错值）；写了 `@DateTimeFormat(iso=...)` 按 ISO 解析且兼容带 `Z`/`+08:00` 偏移的值；**没写注解**则走 `DateUtils.parse` 自动匹配常见格式（yyyy-MM-dd HH:mm:ss、yyyy-MM-dd、ISO8601、RFC1123 等 40+ 种，解析失败返回 null）。
+2. **@ModelAttribute 表单对象字段**：`GlobalBindingAdvice` 注册的 PropertyEditor 处理，走 `DateUtils` 自动匹配，字段上的 `@DateTimeFormat` 会被编辑器抢先、不生效（评审报告 P1-4 已知边界）。
 
-## 2.8 跨域支持
+时区：注解 pattern/iso 路径与自动匹配路径都按 Asia/Shanghai 解释无时区信息的值。
 
-`CORS` 提供 Builder 模式配置跨域响应头：
+## 2.8 枚举与数组参数转换
 
-```java
-CORS.builder()
-    .allowedOrigins("https://example.com")
-    .allowedMethods("GET", "POST")
-    .allowedHeaders("Content-Type", "Authorization")
-    .build(response);
+- `GenericEnumConverter`（starter 默认注册，属性 code、desc）：枚举参数可按 code 属性值、desc 属性值、name、ordinal 匹配。
+- `CustomConversionServiceFactoryBean`：整表替换应用的 ConversionService，注册 `StringToArrayConverter` + 按配置属性匹配的枚举转换。注册为 Bean 名 `conversionService` 即被 Spring MVC 采用；`properties` 未配置时枚举转换会失效，务必显式配置。
+- `StringToArrayConverter`：逗号分隔字符串 → `Integer[]`/`Long[]`/`Double[]`/`Float[]`/`BigDecimal[]`/`String[]`/`Character[]`/`Boolean[]` 参数。
+- ⚠️ ConversionService 会覆盖内建转换链，替换 `conversionService` 后需回归验证集合/Map 参数绑定。
 
-// 或允许所有
-CORS.builder().allowAll().build(response);
-```
+## 2.9 链路追踪与过滤器链异常处理
 
-## 2.9 ThreadLocal 清理
-
-`ThreadLocalCleanupListener` 在请求开始和结束时自动清理 `ThreadContext`，防止线程复用导致的数据污染。
+- `TraceFilter`：从请求头 `TRACE_ID` 取 traceId（无则生成），写入 MDC 键 `traceId`，logback pattern 加 `%X{traceId}` 即可输出。已知不足（评审报告 P2-5，未修）：随机数生成有撞号概率、MDC 不在请求结束清理、starter 无装配入口——跨请求串号与残留风险自负。
+- `ExceptionFilter`：捕获过滤器链上 RestExceptionAdvice 管不到的异常，返回 500 + JSON。它把根因放进 `ThreadContext("routeCause")` 目前无消费方（评审报告 P2-6，未修），依赖 `ThreadLocalCleanupListener` 在请求结束时清理。
+- `ThreadLocalCleanupListener`：请求开始/结束时清理 ThreadContext，starter 已自动注册。
 
 ---
 
-# 三 依赖说明
+# 三 配置项一览（copilot-web 自身读取）
+
+| 键 | 默认值 | 说明 |
+| --- | --- | --- |
+| `copilot.mvc.cors.enabled` | **true** | 控制 `RestUtils` 输出是否附加 `CORS.allowAll()` 响应头。类加载时从 application.yml 读一次，运行期不可改。Spring Cloud 网关两端都开跨域会报 CORS error，网关链路请显式设为 false |
+
+starter 侧另有 `copilot.mvc.rest-exception-advice-enabled`（默认 true）、`copilot.filter.xss-enabled`（默认 false）、`copilot.filter.repeated-read`（存在即启用）、`copilot.mvc.cors.*`（Spring MVC 标准跨域配置）等键，归 starter 文档管辖。
+
+---
+
+# 四 依赖说明
 
 | 模块 | 说明 |
 | --- | --- |
-| `commons-lang` | 基础工具类、异常体系、Result 封装 |
-| `copilot-validation` | Bean 校验支持 |
-| `copilot-json` | Jackson 序列化 |
-| `sentinel-core`（可选） | 整合 Alibaba Sentinel 熔断统计 |
-| Spring Web / WebMVC | Spring MVC 框架 |
-| Jakarta Servlet API | Servlet 规范 |
+| `commons-lang` | 基础工具、异常体系、Result、DateUtils/EnumUtils |
+| `copilot-validation` | Bean 校验异常与 ErrorMessage |
+| `copilot-json` | Jackson 序列化（writeJson） |
+| `commons-spring` | ApplicationContextHolder / I18N / LocaleContextHolder（经 copilot-validation 传递引入） |
+| `sentinel-core` | Tracer 统计（compile 依赖，未用 Sentinel 时相关代码只是不命中分支） |
+| Spring Web / WebMVC / Context | MVC 框架 |
+| Jakarta Servlet API | 模块内覆盖为 6.0.0（Spring 6.1.5 按 Servlet 6 编译；父 pom 管理的 5.0.0 与本模块不匹配），provided 范围不打进 jar |
 
 ---
 
-# 四 使用示例
+# 五 注意事项
 
-## 4.1 业务异常处理
+1. **裸依赖 copilot-web ≠ 能力生效**。`XssHttpServletRequestWrapper`、`HttpServletRequestRepeatedReadFilter`、`ExceptionFilter`、`TraceFilter`、`RequestHeaderModifiableFilter` 在只有本模块依赖时都不会进过滤器链，本文宣传的能力必须装配后才存在（评审报告 P0-3 的核实结论：装配入口在 copilot-starter 仓库，不在本模块）。
+2. **Sentinel 整合**：存在 `restBlockExceptionHandler` Bean 时异常会计入 Sentinel 统计，但响应仍由本 Advice 返回（不会"重新抛出让过滤器处理"，注释与实现的矛盾见评审报告 P2-1）。
+3. **跨域**：网关层和本服务不要同时开；`allowAll()` 输出 `*`，与 `Allow-Credentials` 互斥（带 Cookie 的跨域需求请用 `CORS.builder().allowedOrigins(具体域名)` 或走 MVC 的 CorsRegistry，评审报告 P2-7 的 allowCredentials 分支未实现）。
+4. **i18n 装配**：`MessageHelper` 按类型从容器取 MessageSource，Bean 名必须注册为 `messageSource`；取不到时降级返回 null/默认消息并 WARN 一次，不会抛异常打断请求。
+5. **日期参数带 @DateTimeFormat 的宽容度变化**（2026-09-17）：输入与 pattern 不符现在抛异常而非悄悄返回 null/错值；需要旧的宽容行为就不要写注解。
+
+---
+
+# 六 使用示例
+
+## 6.1 业务异常处理
 
 ```java
 @RestController
@@ -176,9 +182,9 @@ public class UserController {
 }
 ```
 
-异常将被 `RestExceptionAdvice` 捕获并返回统一 JSON 格式。
+异常将被 `RestExceptionAdvice` 捕获并返回统一 JSON 格式（需按"能力总览"完成装配）。
 
-## 4.2 在 Filter 中输出 JSON
+## 6.2 在 Filter 中输出 JSON
 
 ```java
 public class AuthFilter implements Filter {
@@ -196,7 +202,7 @@ public class AuthFilter implements Filter {
 }
 ```
 
-## 4.3 文件下载
+## 6.3 文件下载
 
 ```java
 @GetMapping("/export")
@@ -206,7 +212,7 @@ public void export(HttpServletResponse response) {
 }
 ```
 
-## 4.4 国际化异常
+## 6.4 国际化异常
 
 ```java
 // messages_zh_CN.properties
@@ -218,25 +224,3 @@ error.user.notfound=User {0} not found
 // 业务代码
 throw new LocalizedException("5001", "error.user.notfound", List.of(userId), "User not found");
 ```
-
----
-
-# 五 注意事项
-
-1. **Spring Boot 自动装配**  
-   `RestExceptionAdvice`、`GlobalBindingAdvice`、`TraceFilter` 均通过 `@Component` / `@RestControllerAdvice` 自动注册，引入依赖即生效。
-
-2. **Sentinel 整合**  
-   当 classpath 中存在 `restBlockExceptionHandler` Bean 时，`RestExceptionAdvice` 会将异常委托给 Sentinel 处理，避免冲突。
-
-3. **跨域配置**  
-   `RestUtils` 默认不开启跨域（由 `copilot.mvc.cors.enabled` 控制），在 Spring Cloud 网关环境下建议由网关统一处理跨域，避免双重 CORS 头导致浏览器报错。
-
-4. **请求体重复读取**  
-   `HttpServletRequestRepeatedReadFilter` 需手动注册，适用于需要在 Filter 和 Controller 中同时读取 Body 的场景（如签名校验 + 业务处理）。
-
-5. **ThreadLocal 清理**  
-   `ThreadLocalCleanupListener` 需手动注册为 `ServletRequestListener`，建议在使用 `ThreadContext` 的应用中配置，防止内存泄漏。
-
-6. **日期格式**  
-   `GlobalBindingAdvice` 支持的日期格式为 `yyyy-MM-dd HH:mm:ss` 和 `yyyy-MM-dd HH:mm`，如需其他格式请自行扩展。

@@ -2,7 +2,6 @@ package com.awesomecopilot.web.utils;
 
 import com.awesomecopilot.common.lang.resource.YamlOps;
 import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
-import com.awesomecopilot.common.lang.utils.IOUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.web.exception.DownloadException;
 import jakarta.servlet.ServletResponse;
@@ -21,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.awesomecopilot.common.lang.utils.Assert.notNull;
@@ -40,12 +40,15 @@ public final class RestUtils {
 	private static final Logger log = LoggerFactory.getLogger(RestUtils.class);
 	
 	/**
-	 * 输出的时候要不要加跨域头
+	 * 输出的时候要不要加跨域头。
+	 * final(评审报告 P1-5): 只在类加载时读一次配置, 运行期不可变——非final的static字段
+	 * 任何代码都能改, 属于没有保护的全局可变状态。
 	 */
-	private static boolean enableCors = false;
+	private static final boolean enableCors;
 	
 	static {
 		YamlOps yamlOps = YamlProfileReaders.instance("application");
+		//这个配置项在starter的CopilotMvcProperties提供了, Idea会自动提示
 		enableCors = yamlOps.getBoolean("copilot.mvc.cors.enabled", true);
 	}
 	
@@ -164,6 +167,10 @@ public final class RestUtils {
 		}
 		response.setStatus(HttpStatus.OK.value());
 		response.setHeader(HttpHeaders.CONTENT_TYPE, contentType);
+		/*
+		 * 评审报告 P1-5: 下载必须带上Content-Length, 客户端才能显示进度并校验完整性
+		 */
+		response.setHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()));
 		try {
 			response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + java.net.URLEncoder.encode(filename, "UTF-8"));
 		} catch (UnsupportedEncodingException e) {
@@ -171,8 +178,13 @@ public final class RestUtils {
 			throw new DownloadException("下载文件失败", e);
 		}
 		
+		/*
+		 * 流式拷贝(评审报告 P1-5): 旧实现 IOUtils.readFileAsBytes 先把整个文件读进内存
+		 * 再一次性write, 几十MB文件并发下载几个就可能OOM; Files.copy 内部按固定缓冲区
+		 * 边读边写, 峰值内存与文件大小无关。
+		 */
 		try (OutputStream out = response.getOutputStream()) {
-			out.write(IOUtils.readFileAsBytes(file));
+			Files.copy(file.toPath(), out);
 			out.flush();
 		} catch (IOException e) {
 			log.error("", e);

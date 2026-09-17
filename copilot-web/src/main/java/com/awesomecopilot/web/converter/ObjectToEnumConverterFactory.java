@@ -47,7 +47,12 @@ public class ObjectToEnumConverterFactory implements ConverterFactory<Object, En
 				}
 				return (T) resultEnum;
 			}
-			return null;
+			/*
+			 * 属性都匹配不到时回退到按 name(字符串) / ordinal(数字) 匹配,
+			 * 与 GenericEnumConverter 行为一致(评审报告 P1-6): 旧实现没有这一步,
+			 * 不配置 properties 时本工厂对任何输入都返回 null。
+			 */
+			return (T) EnumUtils.lookupEnum(enumType, source);
 		}
 		
 	}

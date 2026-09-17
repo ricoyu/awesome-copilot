@@ -15,6 +15,19 @@
         <version>21.0.8</version>
     </parent>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- 保留方法参数名, 供 @DateTimeFormat 等注解与测试发现器使用(对齐Spring Boot默认行为) -->
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>com.alibaba.csp</groupId>
