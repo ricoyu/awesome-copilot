@@ -111,11 +111,14 @@ public class LocalizedException extends RuntimeException {
 
 	@Override
 	public String getLocalizedMessage() {
-		if (isNotBlank(messageTemplate) && CollectionUtils.isNotEmpty(messageParams)) {
-			return MessageHelper.getMessage(messageTemplate, messageParams);
-		}
-		if (isNotBlank(messageTemplate) && messageParams.isEmpty()) {
-			return MessageHelper.getMessage(messageTemplate);
+		if (isNotBlank(messageTemplate)) {
+			String msg = CollectionUtils.isNotEmpty(messageParams)
+					? MessageHelper.getMessage(messageTemplate, messageParams)
+					: MessageHelper.getMessage(messageTemplate);
+			// 应用没配MessageSource或该code没有对应消息时取到null, 回退到默认消息, 保证调用方拿到的永远是可读文本
+			if (isNotBlank(msg)) {
+				return msg;
+			}
 		}
 
 		return defaultMessage;

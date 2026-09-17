@@ -80,62 +80,82 @@ public abstract class StringUtils {
 	}
 	
 	public static String joinWith(String spliter, CharSequence... elements) {
-		return Joiner.on(spliter)
-				.skipNulls()
-				.join(elements);
+		return joinInternal(defaultString(spliter, EMPTY_STRING), elements);
 	}
 	
 	public static String joinWith(String spliter, Object... elements) {
-		return Joiner.on(spliter)
-				.skipNulls()
-				.join(elements);
+		return joinInternal(defaultString(spliter, EMPTY_STRING), elements);
 	}
 	
 	/**
-	 * <p>
-	 * Joins the elements of the provided varargs into a single String containing the provided
-	 * elements.
-	 * </p>
-	 *
-	 * <p>
-	 * No delimiter is added before or after the list. {@code null} elements and separator are
-	 * treated as empty Strings ("").
-	 * </p>
-	 *
-	 * <pre>
-	 * StringUtils.joinWith(",", {"a", "b"})        = "a,b"
-	 * StringUtils.joinWith(",", {"a", "b",""})     = "a,b,"
-	 * StringUtils.joinWith(",", {"a", null, "b"})  = "a,,b"
-	 * StringUtils.joinWith(null, {"a", "b"})       = "ab"
-	 * StringUtils.joinWith(",", [123,456])       = "123,456"
-	 * </pre>
+	 * 拼接 List（含嵌套 List 时递归展开到标量, 见下方 Iterable 版本说明）。
 	 *
 	 * @param separator the separator character to use, null treated as ""
-	 * @param objects   the varargs providing the values to join together. {@code null} elements are
+	 * @param objects   the list providing the values to join together. {@code null} elements are
 	 *                  treated as ""
-	 * @return the joined String.
-	 * @throws IllegalArgumentException if a null varargs is provided
-	 * @since 3.5
+	 * @return the joined String, {@code null} 入参返回 null
 	 */
 	public static String joinWith(final String separator, final List<?> objects) {
-		if (objects == null) {
+		return joinWith(separator, (Iterable<?>) objects);
+	}
+	
+	/**
+	 * 拼接任意集合（Set、Queue 等非 List 的 Iterable）。
+	 * <p>
+	 * 没有本重载时, 集合实参会被 {@link #joinWith(String, Object...)} 当成可变参数的单个元素,
+	 * 调 toString 得到 "[a, b]" 这种带方括号的值（评审报告 P0-1 指出的可变参数陷阱）。
+	 * <p>
+	 * 元素本身还是 Iterable（嵌套集合）时递归展开到标量再拼, 保证
+	 * joinWith(sep, list) 与 joinWith(sep, (Object) list) 结果一致。
+	 * 注意: 基本类型数组（如 char[]、int[]）不是 Iterable, 无法展开, 仍会输出 toString
+	 * 形式（"[C@1a2b3c"）; 需要拼数组请用 String[]（命中 CharSequence... 重载）或 Integer[] 等包装类型数组配合 Arrays.asList。
+	 *
+	 * @param separator 分隔符, null 按空字符串处理
+	 * @param elements  待拼接的集合, null 时返回 null
+	 * @return 拼接结果
+	 */
+	public static String joinWith(final String separator, final Iterable<?> elements) {
+		if (elements == null) {
 			return null;
 		}
-		
-		final String sanitizedSeparator = defaultString(separator, EMPTY_STRING);
-		
-		final StringBuilder result = new StringBuilder();
-		
-		final Iterator<?> iterator = objects.iterator();
-		while (iterator.hasNext()) {
-			final String value = Objects.toString(iterator.next(), "");
-			result.append(value);
-			
-			if (iterator.hasNext()) {
-				result.append(sanitizedSeparator);
-			}
+		List<Object> scalars = new ArrayList<>();
+		for (Object element : elements) {
+			flatten(scalars, element);
 		}
-		
+		return joinScalars(defaultString(separator, EMPTY_STRING), scalars);
+	}
+	
+	/**
+	 * joinWith 系列的统一实现: 先把可变参数里的嵌套集合递归展开到标量, 再逐元素拼接,
+	 * null 元素按空字符串处理, 保证 joinWith(",", asList("a","b"))
+	 * 与 joinWith(",", (Iterable) set) 都得到 "a,b" 而不是 "[a, b]"。
+	 */
+	private static String joinInternal(String separator, Object... elements) {
+		List<Object> scalars = new ArrayList<>();
+		for (Object element : elements) {
+			flatten(scalars, element);
+		}
+		return joinScalars(separator, scalars);
+	}
+	
+	private static void flatten(List<Object> scalars, Object element) {
+		if (element instanceof Iterable<?>) {
+			for (Object item : (Iterable<?>) element) {
+				flatten(scalars, item);
+			}
+		} else {
+			scalars.add(element);
+		}
+	}
+	
+	private static String joinScalars(String separator, List<Object> scalars) {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < scalars.size(); i++) {
+			if (i > 0) {
+				result.append(separator);
+			}
+			result.append(Objects.toString(scalars.get(i), EMPTY_STRING));
+		}
 		return result.toString();
 	}
 	

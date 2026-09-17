@@ -1,10 +1,10 @@
 package com.awesomecopilot.web.http;
 
-import com.awesomecopilot.web.utils.WebUtils;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,7 +45,16 @@ public class RepeatedReadHttpServletRequestWarpper extends HttpServletRequestWra
 		String contentType = request.getHeader("Content-Type");
 		//contentType是multipart/form-data时, 不允许重复读request body, 这个是文件上传, 重复读不了
 		if (isNotBlank(contentType) && contentType.indexOf(MULTIPART_FORM_DATA) != 0) {
-			data = WebUtils.bodyString(request).getBytes(UTF_8);
+			/*
+			 * 按原始字节缓存请求体(评审报告 P1-1): 旧实现走 WebUtils.bodyString,
+			 * 那里按行读取后删除 \r\n\t, 字段值含真实换行的 JSON 缓存后就和客户端
+			 * 原始字节不一致, 下游签名校验/审计比对全部失真, 所以这里直接读 InputStream。
+			 */
+			try {
+				data = IOUtils.toByteArray(request.getInputStream());
+			} catch (IOException e) {
+				throw new IllegalStateException("缓存请求体失败: " + e.getMessage(), e);
+			}
 		}
 		
 		body = data;
@@ -53,7 +62,7 @@ public class RepeatedReadHttpServletRequestWarpper extends HttpServletRequestWra
 	
 	@Override
 	public BufferedReader getReader() throws IOException {
-		return new BufferedReader(new InputStreamReader(getInputStream()));
+		return new BufferedReader(new InputStreamReader(getInputStream(), UTF_8));
 	}
 	
 	@Override
@@ -67,12 +76,12 @@ public class RepeatedReadHttpServletRequestWarpper extends HttpServletRequestWra
 		return new ServletInputStream() {
 			@Override
 			public boolean isFinished() {
-				return false;
+				return bias.available() == 0;
 			}
 			
 			@Override
 			public boolean isReady() {
-				return false;
+				return true;
 			}
 			
 			@Override

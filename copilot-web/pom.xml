@@ -58,6 +58,10 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <!-- 父 pom 管理的 5.0.0 与 Spring 6.1.5(按 Servlet 6.0 编译)不匹配:
+                 spring-test 的 MockHttpServletRequest 引用了 6.0 才有的 jakarta.servlet.ServletConnection,
+                 测试期需要 6.0.0。主代码只用到 5.0/6.0 都存在的 API, 不受影响 -->
+            <version>6.0.0</version>
         </dependency>
 
         <dependency>
@@ -73,6 +77,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <!-- MockHttpServletRequest/Response 等 Web 测试支撑 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
