@@ -57,14 +57,31 @@ public class IOUtilsTest {
 	}
 	
 	@Test
-	public void testReadParts() {
-		byte[] bytes = readFileAsBytes("C:\\Users\\ricoyu\\data.txt", 0, 1024*1024);
-		write("C:\\Users\\ricoyu\\data.txt.part0", bytes);
+	public void testReadParts(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws java.io.IOException {
+		//2026-09-21 改造: 原来读某台机器手工准备的绝对路径 data.txt, 换机器必失败;
+		//现在用 JUnit 临时目录自建数据, 并补真断言(原方法只打印/写文件, 没有任何校验)
+		java.nio.file.Path src = tempDir.resolve("data.txt");
+		byte[] payload = new byte[4096];
+		for (int i = 0; i < payload.length; i++) payload[i] = (byte) (i % 127);
+		java.nio.file.Files.write(src, payload);
+
+		byte[] head = readFileAsBytes(src.toString(), 0, 1024);
+		assertEquals(1024, head.length, "按 offset/length 读取应恰好返回 1024 字节");
+		assertEquals(payload[0], head[0]);
+		assertEquals(payload[1023], head[1023]);
 	}
-	
+
 	@Test
-	public void testMerge() {
-		merge("/home/ricoyu/data-back.txt", "/home/ricoyu/data.txt.part0", "/home/ricoyu/data.txt.part1");
+	public void testMerge(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws java.io.IOException {
+		//同上: 原读 /home/ricoyu/... 在 Windows 上不存在; 改为自建两个分片合并后校验内容
+		java.nio.file.Path part0 = tempDir.resolve("data.txt.part0");
+		java.nio.file.Path part1 = tempDir.resolve("data.txt.part1");
+		java.nio.file.Files.write(part0, "AAA".getBytes("UTF-8"));
+		java.nio.file.Files.write(part1, "BBB".getBytes("UTF-8"));
+		java.nio.file.Path dest = tempDir.resolve("data-back.txt");
+
+		merge(dest.toString(), part0.toString(), part1.toString());
+		assertEquals("AAABBB", new String(java.nio.file.Files.readAllBytes(dest), "UTF-8"));
 	}
 
 	@Test

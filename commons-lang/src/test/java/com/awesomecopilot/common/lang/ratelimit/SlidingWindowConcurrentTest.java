@@ -84,9 +84,12 @@ public class SlidingWindowConcurrentTest {
         // 验证2：拒绝数应该存在（因为总请求数远大于单窗口容量）
         assertTrue(rejectedRequests.get() > 0, "高并发场景下应该有请求被拒绝");
 
-        // 验证3：瞬时QPS不超过限制
-        assertTrue((passedRequests.get() / elapsedSec) <= MAX_REQUESTS * 1.1,
-                "实际QPS超过限制的10%容差范围");
+        // 验证3(2026-09-21 更正): 原断言 passed/elapsedSec <= MAX*1.1 写法错误——
+        // 5000 个请求若在前 0.34 秒(第一个 1 秒窗口内)就全部执行完, 200/0.34=581 必然"超过"220,
+        // 但限流器行为是正确的(恰好放行 200=窗口上限). "总通过数/总耗时"在短耗时场景下不是有效 QPS.
+        // 真正要断言的"单窗口内通过数不超过容量"已由验证1覆盖(elapsed<1s 时 ceil 后即为 MAX_REQUESTS).
+        assertTrue(passedRequests.get() <= MAX_REQUESTS * Math.ceil(Math.max(elapsedSec, 1.0)),
+                "单窗口通过数超过容量");
 
         executor.shutdown();
     }

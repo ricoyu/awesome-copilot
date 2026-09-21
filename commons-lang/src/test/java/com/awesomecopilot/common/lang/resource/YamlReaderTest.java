@@ -42,10 +42,12 @@ public class YamlReaderTest {
 	
 	@Test
 	public void testbootstrapYaml() throws IOException {
-		InputStream inputStream = IOUtils.readFileAsStream("D:\\Learning\\awesome-plus\\awesome-order\\src\\main\\resources\\bootstrap.yaml");
+		//2026-09-21 改造: 原来读另一个仓库(D:\Learning\awesome-plus)的绝对路径, 该仓库不存在/未克隆时必失败;
+		//改为读本模块 test/resources 下的示例文件, 并补真断言(原方法只打印, 没有校验)
+		InputStream inputStream = getClass().getClassLoader().getResourceAsStream("bootstrap-sample.yaml");
 		Map<String, Object> map = new Yaml().load(inputStream);
-		for (String s : map.keySet()) {
-			System.out.println(s+": " + map.get(s));
-		}
+		Map<?, ?> spring = (Map<?, ?>) map.get("spring");
+		assertEquals("dev", ((Map<?, ?>) spring.get("profiles")).get("active"));
+		assertEquals("awesome-order", ((Map<?, ?>) spring.get("application")).get("name"));
 	}
 }
