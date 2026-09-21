@@ -2,8 +2,6 @@ package com.awesomecopilot.web.advice;
 
 import com.awesomecopilot.common.lang.utils.DateUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -27,8 +25,6 @@ import java.util.Date;
  */
 @ControllerAdvice
 public class GlobalBindingAdvice {
-	
-	private static final Logger logger = LoggerFactory.getLogger(GlobalBindingAdvice.class);
 	
 	@InitBinder
 	public void binder(WebDataBinder binder) {

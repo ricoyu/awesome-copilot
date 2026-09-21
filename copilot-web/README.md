@@ -40,9 +40,9 @@ Web 层通用组件封装，为 Spring MVC / Spring Cloud 微服务提供全局�
 | `UniqueConstraintViolationException` | HTTP 200 + `5001` |
 | `EntityNotFoundException` | HTTP 200 + `404` 段业务码 |
 | `HttpRequestMethodNotSupportedException` | HTTP 200 + `4051` |
-| `HttpMessageNotReadableException`（请求体解析失败） | **HTTP 500** + `5001`（评审报告 P2-4 指出该语义值得商榷，尚未改） |
+| `HttpMessageNotReadableException`（请求体格式错误） | **HTTP 400** + `4001`（评审报告 P2-4 已修：原先返回 500） |
 | `TypeMismatchException` | 走 Spring 默认处理（HTTP 400） |
-| `MaxUploadSizeExceededException` | HTTP 200 + `4005` + i18n 消息（从异常文本解析实际/限制大小填入消息参数） |
+| `MaxUploadSizeExceededException` | HTTP 200 + `4005` + i18n 消息（限制大小取 `e.getMaxUploadSize()`，实际大小沿 cause 链找 `getActualSize()`，消息含具体字节数） |
 | 其余 `Throwable` | 非业务异常返回 **HTTP 500**（便于微服务间调用方感知失败并触发熔断统计）；cause 里能翻出业务异常时按业务异常返回 200 |
 
 兼容 Sa-Token 的 `NotLoginException` / `NotPermissionException`（按类名匹配，避免硬依赖）。整合 Sentinel（存在 `restBlockExceptionHandler` Bean 时）会对异常调用 `Tracer.trace(e)` 计入熔断统计，响应仍由本 Advice 产出。
@@ -99,7 +99,7 @@ List<String> cleaned = (List<String>) XssCleanUtils.cleanObject(list);  // 递�
 public class MyHeaderFilter extends RequestHeaderModifiableFilter {
     public boolean matches(HttpServletRequest req) { return true; }
     public void addHeader(HeaderMapRequestWrapper req) {
-        req.addHeader("tenantId", "abc");   // 注意: 实际是覆盖(set)语义, 同名只留最后一个(评审报告 P2-9)
+        req.setHeader("tenantId", "abc");   // 覆盖语义, 同名只留最后一个; 旧名 addHeader 已 @Deprecated(评审报告 P2-9 已修)
     }
 }
 ```
@@ -122,7 +122,7 @@ public class MyHeaderFilter extends RequestHeaderModifiableFilter {
 
 ## 2.9 链路追踪与过滤器链异常处理
 
-- `TraceFilter`：从请求头 `TRACE_ID` 取 traceId（无则生成），写入 MDC 键 `traceId`，logback pattern 加 `%X{traceId}` 即可输出。已知不足（评审报告 P2-5，未修）：随机数生成有撞号概率、MDC 不在请求结束清理、starter 无装配入口——跨请求串号与残留风险自负。
+- `TraceFilter`：从请求头 `TRACE_ID` 取 traceId（无则用 `APP_ID 前缀 + ThreadLocalRandom 随机段` 生成，不再每请求 new Random()），写入 MDC 键 `traceId`，链路结束在 finally 里清理（评审报告 P2-5 已修）。注意随机段仅一百万个槽位且 APP_ID 不随实例变化，同一微服务多实例理论上可撞号（同毫秒同随机数），彻底去重需实例编号体系（与雪花 ID 的 worker-id 同类问题，未规划）。starter 仍无它的装配入口，需组件扫描到 `com.awesomecopilot.web.filter` 包或手动注册。
 - `ExceptionFilter`：捕获过滤器链上 RestExceptionAdvice 管不到的异常，返回 500 + JSON。它把根因放进 `ThreadContext("routeCause")` 目前无消费方（评审报告 P2-6，未修），依赖 `ThreadLocalCleanupListener` 在请求结束时清理。
 - `ThreadLocalCleanupListener`：请求开始/结束时清理 ThreadContext，starter 已自动注册。
 
@@ -156,7 +156,7 @@ starter 侧另有 `copilot.mvc.rest-exception-advice-enabled`（默认 true）�
 
 1. **裸依赖 copilot-web ≠ 能力生效**。`XssHttpServletRequestWrapper`、`HttpServletRequestRepeatedReadFilter`、`ExceptionFilter`、`TraceFilter`、`RequestHeaderModifiableFilter` 在只有本模块依赖时都不会进过滤器链，本文宣传的能力必须装配后才存在（评审报告 P0-3 的核实结论：装配入口在 copilot-starter 仓库，不在本模块）。
 2. **Sentinel 整合**：存在 `restBlockExceptionHandler` Bean 时异常会计入 Sentinel 统计，但响应仍由本 Advice 返回（不会"重新抛出让过滤器处理"，注释与实现的矛盾见评审报告 P2-1）。
-3. **跨域**：网关层和本服务不要同时开；`allowAll()` 输出 `*`，与 `Allow-Credentials` 互斥（带 Cookie 的跨域需求请用 `CORS.builder().allowedOrigins(具体域名)` 或走 MVC 的 CorsRegistry，评审报告 P2-7 的 allowCredentials 分支未实现）。
+3. **跨域**：网关层和本服务不要同时开；`allowAll()` 输出 `*` 时禁止携带凭证。带 Cookie 的跨域用 `CORS.builder().allowedOrigins(单个具体域名).allowCredentials(true)`——会输出 `Access-Control-Allow-Credentials: true` 和 `Vary: Origin`；通配符或多 Origin 与凭证的组合会被忽略并 WARN（多 Origin 需按请求回显单个 Origin，本静态构建器做不到；评审报告 P2-7 已修）。
 4. **i18n 装配**：`MessageHelper` 按类型从容器取 MessageSource，Bean 名必须注册为 `messageSource`；取不到时降级返回 null/默认消息并 WARN 一次，不会抛异常打断请求。
 5. **日期参数带 @DateTimeFormat 的宽容度变化**（2026-09-17）：输入与 pattern 不符现在抛异常而非悄悄返回 null/错值；需要旧的宽容行为就不要写注解。
 

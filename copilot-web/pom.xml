@@ -97,5 +97,13 @@
             <artifactId>spring-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- ValidationUtils 静态块需要 EL 实现(Hibernate Validator 取消息表达式工厂);
+             生产环境由 servlet 容器(tomcat-embed-el)提供, 测试 classpath 需自行带上 -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-el</artifactId>
+            <version>10.1.19</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

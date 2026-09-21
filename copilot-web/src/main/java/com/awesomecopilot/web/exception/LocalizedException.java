@@ -43,10 +43,10 @@ public class LocalizedException extends RuntimeException {
 		this.messageTemplate = messageTemplate;
 	}
 
-	public LocalizedException(String statusCode, String messageTemplate, String defaultMesssage) {
+	public LocalizedException(String statusCode, String messageTemplate, String defaultMessage) {
 		this.statusCode = statusCode;
 		this.messageTemplate = messageTemplate;
-		this.defaultMessage = defaultMesssage;
+		this.defaultMessage = defaultMessage;
 	}
 	
 	public LocalizedException(String[] datas) {
@@ -62,26 +62,26 @@ public class LocalizedException extends RuntimeException {
 	}
 	
 	public LocalizedException(String statusCode, String messageTemplate, List<Object> messageParams,
-			String defaultMesssage) {
+			String defaultMessage) {
 		this.statusCode = statusCode;
 		this.messageTemplate = messageTemplate;
-		this.defaultMessage = defaultMesssage;
+		this.defaultMessage = defaultMessage;
 		this.messageParams = messageParams;
 	}
 
-	public LocalizedException(String statusCode, String messageTemplate, String defaultMesssage, Throwable cause) {
+	public LocalizedException(String statusCode, String messageTemplate, String defaultMessage, Throwable cause) {
 		super(cause);
 		this.statusCode = statusCode;
 		this.messageTemplate = messageTemplate;
-		this.defaultMessage = defaultMesssage;
+		this.defaultMessage = defaultMessage;
 	}
 
 	public LocalizedException(String statusCode, String messageTemplate, List<Object> messageParams,
-			String defaultMesssage, Throwable cause) {
+			String defaultMessage, Throwable cause) {
 		super(cause);
 		this.statusCode = statusCode;
 		this.messageTemplate = messageTemplate;
-		this.defaultMessage = defaultMesssage;
+		this.defaultMessage = defaultMessage;
 		this.messageParams = messageParams;
 	}
 

@@ -38,7 +38,7 @@ public class RepeatedReadHttpServletRequestWrapperTest {
 		request.setContentType("application/json");
 		request.setContent(original);
 
-		RepeatedReadHttpServletRequestWarpper wrapper = new RepeatedReadHttpServletRequestWarpper(request);
+		RepeatedReadHttpServletRequestWrapper wrapper = new RepeatedReadHttpServletRequestWrapper(request);
 
 		// 第一次读
 		byte[] first = wrapper.getInputStream().readAllBytes();
@@ -56,7 +56,7 @@ public class RepeatedReadHttpServletRequestWrapperTest {
 		request.setContentType("application/json");
 		request.setContent(original);
 
-		RepeatedReadHttpServletRequestWarpper wrapper = new RepeatedReadHttpServletRequestWarpper(request);
+		RepeatedReadHttpServletRequestWrapper wrapper = new RepeatedReadHttpServletRequestWrapper(request);
 
 		// getReader 与 getInputStream 共用同一份字节缓存, 二次读取内容必须与原文一致
 		try (var reader = wrapper.getReader()) {
@@ -76,7 +76,7 @@ public class RepeatedReadHttpServletRequestWrapperTest {
 		request.setContentType("application/json");
 		request.setContent("{\"a\":1}".getBytes(StandardCharsets.UTF_8));
 
-		RepeatedReadHttpServletRequestWarpper wrapper = new RepeatedReadHttpServletRequestWarpper(request);
+		RepeatedReadHttpServletRequestWrapper wrapper = new RepeatedReadHttpServletRequestWrapper(request);
 
 		ServletInputStream in = wrapper.getInputStream();
 		assertTrue(in.isReady(), "内存流随时可读, isReady 必须为 true");
@@ -86,13 +86,26 @@ public class RepeatedReadHttpServletRequestWrapperTest {
 	}
 
 	@Test
+	@SuppressWarnings("deprecation")
+	public void testDeprecatedOldClassNameStillWorks() throws IOException {
+		// P2-10: 旧拼写 Warpper 保留为 @Deprecated 子类, 行为必须与新类一致(外部已有调用方, 不能破坏)
+		byte[] original = MULTILINE_JSON.getBytes(StandardCharsets.UTF_8);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setContentType("application/json");
+		request.setContent(original);
+
+		RepeatedReadHttpServletRequestWarpper legacy = new RepeatedReadHttpServletRequestWarpper(request);
+		assertArrayEquals(original, legacy.getInputStream().readAllBytes());
+	}
+
+	@Test
 	public void testMultipartBodyIsNotBuffered() throws IOException {
 		// multipart/form-data 是文件上传, 全量缓存进内存既无意义又危险, wrapper 应放行原始流
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		request.setContentType("multipart/form-data; boundary=----abc");
 		request.setContent("file-bytes".getBytes(StandardCharsets.UTF_8));
 
-		RepeatedReadHttpServletRequestWarpper wrapper = new RepeatedReadHttpServletRequestWarpper(request);
+		RepeatedReadHttpServletRequestWrapper wrapper = new RepeatedReadHttpServletRequestWrapper(request);
 
 		// body 未缓存时 getInputStream 委托原始 request, 内容仍可读
 		byte[] read = wrapper.getInputStream().readAllBytes();

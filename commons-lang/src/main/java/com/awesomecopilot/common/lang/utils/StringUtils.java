@@ -4,7 +4,6 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.text.StrSubstitutor;
 import org.slf4j.Logger;
@@ -15,6 +14,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
+import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -235,16 +235,29 @@ public abstract class StringUtils {
 	}
 	
 	/**
-	 * 生成全局唯一99位长的hex字符串
+	 * 生成指定长度的随机字母数字串(默认 99 位). 用于会话令牌/幂等 token/验证码 ID 等场景.
+	 *
+	 * <p>2026-09-21 起随机源从 RandomStringUtils(底层 ThreadLocalRandom, 非密码学安全)
+	 * 换成 SecureRandom: 这类值一旦可预测就等于交出对应会话/幂等凭证.
+	 * ThreadLocalRandom 与 SecureRandom 都均匀取值, 单测统计上无法区分,
+	 * 落地验证 = javap 确认字节码不再引用 RandomStringUtils + StringUtilsUniqueKeyTest 契约(长度/字符集/不重复).
 	 *
 	 * @return
 	 */
 	public static String uniqueKey() {
-		return RandomStringUtils.randomAlphanumeric(99);
+		return uniqueKey(99);
 	}
 	
+	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+	private static final char[] UNIQUE_KEY_ALPHABET =
+			"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+	
 	public static String uniqueKey(int length) {
-		return RandomStringUtils.randomAlphanumeric(length);
+		StringBuilder sb = new StringBuilder(length);
+		for (int i = 0; i < length; i++) {
+			sb.append(UNIQUE_KEY_ALPHABET[SECURE_RANDOM.nextInt(UNIQUE_KEY_ALPHABET.length)]);
+		}
+		return sb.toString();
 	}
 	
 	/**

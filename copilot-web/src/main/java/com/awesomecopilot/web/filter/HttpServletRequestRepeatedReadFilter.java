@@ -1,6 +1,6 @@
 package com.awesomecopilot.web.filter;
 
-import com.awesomecopilot.web.http.RepeatedReadHttpServletRequestWarpper;
+import com.awesomecopilot.web.http.RepeatedReadHttpServletRequestWrapper;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -22,7 +22,7 @@ public class HttpServletRequestRepeatedReadFilter implements Filter {
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		ServletRequest requestWrapper = null;
 		if (request instanceof HttpServletRequest) {
-			requestWrapper = new RepeatedReadHttpServletRequestWarpper((HttpServletRequest) request);
+			requestWrapper = new RepeatedReadHttpServletRequestWrapper((HttpServletRequest) request);
 		}
 		
 		//获取请求中的流, 将取出来的字符串, 再次转换成流, 然后把它放入到新request对象中
