@@ -16,7 +16,12 @@ import redis.clients.jedis.JedisPubSub;
  */
 public class JedisPubSubTest {
 	
-	@Test
+	/**
+	 * 注意: 本方法故意不加 @Test.
+	 * 方法结尾的 Thread.currentThread().join() 是"当前线程等待自己结束", 永远不会返回,
+	 * 只能靠外部中断停止——这是给 IDE 里手工观察收消息用的写法,
+	 * 一旦被 surefire 执行, mvn test 会挂到 fork 超时(10分钟)才失败
+	 */
 	public void testPubSub() {
 		JedisPubSub subscribe = JedisUtils.subscribe((channel, message) -> {
 			System.out.println("收到消息 Channel: " + channel + ", Message: " + message);

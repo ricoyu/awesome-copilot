@@ -449,8 +449,15 @@ public class JedisPoolOperations implements JedisOperations {
 	@Override
 	public void subscribe(JedisPubSub jedisPubSub, String... channels) {
 		//这边必须要走多线程, 否则会阻塞, 比如SpringBoot启动的时候, 如果有订阅消息的操作, 会阻塞SpringBoot启动
-		THREAD_POOL.execute(() -> pool.getResource().subscribe(jedisPubSub, channels));
-		//pool.getResource().subscribe(jedisPubSub, channels);
+		//借出的 Jedis 必须归还: subscribe() 在 unsubscribe 后正常返回, try-with-resources 届时把连接还给池;
+		//不归还的话每个订阅者永久占用 1 条连接, 等待者一多连接池就被耗尽
+		THREAD_POOL.execute(() -> {
+			try (Jedis jedis = pool.getResource()) {
+				jedis.subscribe(jedisPubSub, channels);
+			} catch (Exception e) {
+				log.error("订阅 channel {} 时发生异常", String.join(",", channels), e);
+			}
+		});
 	}
 	
 	/**
@@ -462,7 +469,13 @@ public class JedisPoolOperations implements JedisOperations {
 	 */
 	@Override
 	public void psubscribe(JedisPubSub jedisPubSub, String... patterns) {
-		THREAD_POOL.execute(() -> pool.getResource().psubscribe(jedisPubSub, patterns));
+		THREAD_POOL.execute(() -> {
+			try (Jedis jedis = pool.getResource()) {
+				jedis.psubscribe(jedisPubSub, patterns);
+			} catch (Exception e) {
+				log.error("订阅 pattern {} 时发生异常", String.join(",", patterns), e);
+			}
+		});
 	}
 	
 	@Override

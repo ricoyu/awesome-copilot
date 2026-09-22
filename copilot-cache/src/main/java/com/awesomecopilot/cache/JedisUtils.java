@@ -184,6 +184,57 @@ public final class JedisUtils {
 	 * 用户缓存lua脚本的sha
 	 */
 	private static final ConcurrentHashMap<String, String> shaHashs = new ConcurrentHashMap<>();
+
+	/**
+	 * 执行 classpath 下 /lua-scripts/ 里的 Lua 脚本: 首次调用 SCRIPT LOAD 并把 SHA 缓存到 shaHashs,
+	 * 之后走 EVALSHA 省传输量. Redis 端脚本缓存被清空(SCRIPT FLUSH/重启/主从切换)时
+	 * EVALSHA 报 NOSCRIPT, 这里自动重新加载脚本并重试一次, 避免锁模块不可用到应用重启
+	 *
+	 * @param luaFile   脚本文件名, 如 "setnx.lua"
+	 * @param sampleKey 集群模式下用于路由 SCRIPT LOAD 的样例 key
+	 * @param keyCount  KEYS 个数
+	 * @param args      KEYS+ARGV 全部字节参数
+	 * @return Redis 返回值
+	 */
+	private static Object evalLua(String luaFile, Object sampleKey, int keyCount, byte[]... args) {
+		byte[] sha = toBytes(loadScript(luaFile, sampleKey));
+		try {
+			return jedisOperations.evalsha(sha, keyCount, args);
+		} catch (RuntimeException e) {
+			if (!isNoScript(e)) {
+				throw e;
+			}
+			log.warn("Redis 端脚本缓存已失效(NOSCRIPT), 重新加载 {} 并重试一次", luaFile);
+			shaHashs.remove(luaFile);
+			sha = toBytes(loadScript(luaFile, sampleKey));
+			return jedisOperations.evalsha(sha, keyCount, args);
+		}
+	}
+	
+	private static String loadScript(String luaFile, Object sampleKey) {
+		return shaHashs.computeIfAbsent(luaFile, x -> {
+			log.debug("Load script {}", luaFile);
+			String script = IOUtils.readClassPathFileAsString("/lua-scripts/" + luaFile);
+			if (jedisOperations instanceof JedisClusterOperations) {
+				return jedisOperations.scriptLoad(script, sampleKey);
+			}
+			return jedisOperations.scriptLoad(script);
+		});
+	}
+	
+	private static boolean isNoScript(Throwable e) {
+		Set<Throwable> seen = new HashSet<>();
+		for (Throwable t = e; t != null && seen.add(t); t = t.getCause()) {
+			if (t.getClass().getSimpleName().contains("NoScript")) {
+				return true;
+			}
+			String msg = t.getMessage();
+			if (msg != null && msg.contains("NOSCRIPT")) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	private static JedisOperations jedisOperations = JedisOperationFactory.create();
 	
@@ -327,17 +378,9 @@ public final class JedisUtils {
 	 */
 	public static boolean set(byte[] key, byte[] value, byte[] expires) {
 		String sampleKey = "setExpire.lua";
-		String setExpireSha1 = shaHashs.computeIfAbsent(sampleKey, (x) -> {
-			log.debug("Load script {}", sampleKey);
-			if (jedisOperations instanceof JedisClusterOperations) {
-				byte[] scripts =
-						jedisOperations.scriptLoad(IOUtils.readClassPathFileAsBytes("/lua-scripts/setExpire.lua"), key);
-				return new String(scripts, UTF_8);
-			} else {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/setExpire.lua"));
-			}
-		});
-		long result = (long) jedisOperations.evalsha(toBytes(setExpireSha1), 1, key, value, expires);
+		
+		long result = (long)  evalLua("setExpire.lua", key, 1,
+				key, value, expires);
 		return result == 1;
 	}
 	
@@ -360,14 +403,9 @@ public final class JedisUtils {
 	
 	public static boolean casNumber(byte[] key, byte[] value, byte[] mode) {
 		String sampleKey = "cas.lua";
-		String setExpireSha1 = shaHashs.computeIfAbsent(sampleKey, (x) -> {
-			log.debug("Load script {}", sampleKey);
-			if (jedisOperations instanceof JedisClusterOperations) {
-				jedisOperations.scriptLoad(IOUtils.readClassPathFileAsBytes("/lua-scripts/cas.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/cas.lua"));
-		});
-		long result = (long) jedisOperations.evalsha(toBytes(setExpireSha1), 1, key, value, mode);
+		
+		long result = (long)  evalLua("cas.lua", key, 1,
+				key, value, mode);
 		return result == 1;
 	}
 	
@@ -423,23 +461,38 @@ public final class JedisUtils {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(timeUnit);
 		
-		String sampleKey = "setnx.lua";
-		String setnxSha1 = shaHashs.computeIfAbsent("setnx.lua", x -> {
-			log.debug("Load script {}", "setnx.lua");
-			if (jedisOperations instanceof JedisClusterOperations) {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/setnx.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/setnx.lua"));
-		});
-		
 		long expireInSeconds = timeUnit.toSeconds(expires);
-		long result = (long) jedisOperations.evalsha(toBytes(setnxSha1),
-				1,
-				toBytes(key),
-				toBytes(value),
-				toBytes(expireInSeconds));
+		// toSeconds 向下取整: 500ms 会变成 0, 而 EXPIRE key 0 的语义是立即删除该 key,
+		// 结果就是 setnx.lua 返回"加锁成功"但 key 瞬间消失, 互斥完全失效, 所以必须拒绝
+		if (expireInSeconds <= 0) {
+			throw new IllegalArgumentException(
+					"过期时间换算成秒后必须 >= 1, 实际: " + expires + " " + timeUnit + " (换算后 " + expireInSeconds + " 秒)");
+		}
+		
+		long result = (Long) evalLua("setnx.lua", key, 1, toBytes(key), toBytes(value), toBytes(expireInSeconds));
 		
 		return result == 1;
+	}
+	
+	/**
+	 * 锁续期: 只有当 key 的 value 等于 requestId 时才刷新过期时间(防止给别的客户端持有的锁续期).
+	 * 供看门狗调用
+	 *
+	 * @param key       锁
+	 * @param requestId 加锁时写入的值
+	 * @param expires   新的过期时间
+	 * @param timeUnit  时间单位
+	 * @return int 1=续期成功; -1=key 已不存在(锁已过期); 0=key 被别的客户端持有(已易主)
+	 */
+	public static int renewLock(String key, String requestId, long expires, TimeUnit timeUnit) {
+		Objects.requireNonNull(key);
+		Objects.requireNonNull(requestId);
+		long expireInSeconds = timeUnit.toSeconds(expires);
+		if (expireInSeconds <= 0) {
+			throw new IllegalArgumentException("续期时间换算成秒后必须 >= 1, 实际: " + expires + " " + timeUnit);
+		}
+		Long result = (Long) evalLua("renew.lua", key, 1, toBytes(key), toBytes(requestId), toBytes(expireInSeconds));
+		return result == null ? -1 : result.intValue();
 	}
 	
 	/**
@@ -462,16 +515,9 @@ public final class JedisUtils {
 	 */
 	public static <T> T get(String key, Class<T> clazz, long expires, TimeUnit timeUnit) {
 		String sampleKey = "getAndSetExpire.lua";
-		String getSetExpireSha1 = shaHashs.computeIfAbsent("getAndSetExpire.lua", x -> {
-			log.debug("Load script {}", "getAndSetExpire.lua");
-			if (jedisOperations instanceof JedisClusterOperations) {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/getAndSetExpire.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/getAndSetExpire.lua"));
-		});
+		
 		long expireInSeconds = timeUnit.toSeconds(expires);
-		byte[] value = (byte[]) jedisOperations.evalsha(toBytes(getSetExpireSha1),
-				1,
+		byte[] value = (byte[])  evalLua("getAndSetExpire.lua", key, 1,
 				toBytes(key),
 				toBytes(expireInSeconds));
 		return toObject(value, clazz);
@@ -692,17 +738,10 @@ public final class JedisUtils {
 	 */
 	public static Long incr(String key, long expires, TimeUnit timeUnit) {
 		String sampleKey = "incrExpire.lua";
-		String setnxSha1 = shaHashs.computeIfAbsent(sampleKey, x -> {
-			log.debug("Load script {}", sampleKey);
-			if (jedisOperations instanceof JedisClusterOperations) {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/incrExpire.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/incrExpire.lua"));
-		});
+		
 		
 		long expireInSeconds = timeUnit.toSeconds(expires);
-		long currentValue = (long) jedisOperations.evalsha(toBytes(setnxSha1),
-				1,
+		long currentValue = (long)  evalLua("incrExpire.lua", key, 1,
 				toBytes(key),
 				toBytes(expireInSeconds));
 		return currentValue;
@@ -798,14 +837,7 @@ public final class JedisUtils {
 		 * @return long list当前的长度
 		 */
 		public static long lpushLimit(String key, int limit, Object... values) {
-			String hashSha = shaHashs.computeIfAbsent("lpush.lua", x -> {
-				log.debug("Load script {}", "lpush.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/lpush.lua"), key);
-				} else {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/lpush.lua"));
-				}
-			});
+			
 			
 			byte[][] objects = new byte[values.length + 2][];
 			objects[0] = toBytes(key);
@@ -813,10 +845,8 @@ public final class JedisUtils {
 			for (int i = 0; i < values.length; i++) {
 				objects[i + 2] = toBytes(values[i]);
 			}
-			return (Long) jedisOperations.evalsha(
-					toBytes(hashSha),
-					1,
-					objects);
+			return (Long)  evalLua("lpush.lua", key, 1,
+				objects);
 		}
 		
 		/**
@@ -1745,19 +1775,11 @@ public final class JedisUtils {
 		 * @return HSetStatus
 		 */
 		public static HSet hset(byte[] key, byte[] field, byte[] value, long ttl) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				} else {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-				}
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, new String(key, UTF_8));
-			Long result = (Long) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					key, // hash key
+			Long result = (Long)  evalLua("hash.lua", key, 2,
+				key, // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hset"), // 调用的lua function名字
 					field,
@@ -1828,19 +1850,11 @@ public final class JedisUtils {
 		 */
 		
 		public static byte[] hget(byte[] key, byte[] field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				String script = IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(script, key);
-				}
-				return jedisOperations.scriptLoad(script);
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] data = (byte[]) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key), // hash key
+			byte[] data = (byte[])  evalLua("hash.lua", key, 2,
+				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hget"), // 调用的lua function名字
 					toBytes(field));
@@ -2089,18 +2103,11 @@ public final class JedisUtils {
 		 * @return int 删除的field数量(Redis原生API是可以一次删多个field, 所以返回的是删除field的数量)
 		 */
 		public static Long hdel(String key, Object field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			return (Long) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key), // hash key
+			return (Long)  evalLua("hash.lua", key, 2,
+				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hdel"), // 调用的lua function名字
 					toBytes(field));
@@ -2118,18 +2125,11 @@ public final class JedisUtils {
 		 * @return int 删除的field数量
 		 */
 		public static String hdelGet(String key, Object field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] data = (byte[]) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key), // hash key
+			byte[] data = (byte[])  evalLua("hash.lua", key, 2,
+				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hdelGet"), // 调用的lua function名字
 					toBytes(field));
@@ -2151,18 +2151,11 @@ public final class JedisUtils {
 		 * @on
 		 */
 		public static TTL ttl(String key, String field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key),
+			Long result = (Long)  evalLua("hash.lua", key, 2,
+				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("ttl"),
 					toBytes(field));
@@ -2194,18 +2187,11 @@ public final class JedisUtils {
 		 * @return
 		 */
 		public static int expire(String key, String field, int ttl) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key),
+			Long result = (Long)  evalLua("hash.lua", key, 2,
+				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("expire"),
 					toBytes(field),
@@ -2225,18 +2211,11 @@ public final class JedisUtils {
 		 * @on
 		 */
 		public static int persist(String key, String field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key),
+			Long result = (Long)  evalLua("hash.lua", key, 2,
+				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("persist"),
 					toBytes(field));
@@ -2249,16 +2228,10 @@ public final class JedisUtils {
 		 * @return
 		 */
 		public static long time() {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), "hash.lua");
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
 			
-			long milis = (long) jedisOperations.evalsha(toBytes(hashSha), 0, toBytes("time"));
+			
+			long milis = (long)  evalLua("hash.lua", "hash.lua", 0,
+				toBytes("time"));
 			return milis;
 		}
 		
@@ -2268,18 +2241,11 @@ public final class JedisUtils {
 		 * @return
 		 */
 		public static List<String> expiredFields(String key) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] bytes = (byte[]) jedisOperations.evalsha(toBytes(hashSha),
-					1,
-					toBytes(zsetKey),
+			byte[] bytes = (byte[])  evalLua("hash.lua", key, 1,
+				toBytes(zsetKey),
 					toBytes("expiredFields"));
 			String json = UnMarshaller.toString(bytes);
 			return toList(json, String.class);
@@ -2289,18 +2255,11 @@ public final class JedisUtils {
 		 * 调试用
 		 */
 		public static void testPurpose(String key, String field) {
-			String hashSha = shaHashs.computeIfAbsent("hash.lua", x -> {
-				log.debug("Load script {}", "hash.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/hash.lua"));
-			});
+			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Object data = (Object) jedisOperations.evalsha(toBytes(hashSha),
-					2,
-					toBytes(key),
+			Object data = (Object)  evalLua("hash.lua", key, 2,
+				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("ttl"),
 					toBytes(field));
@@ -2542,18 +2501,10 @@ public final class JedisUtils {
 		 * @return boolean
 		 */
 		public static boolean slidingWindows(String key, String member, long score, long windowSize, long limitCount) {
-			String hashSha = shaHashs.computeIfAbsent("slidingWindow.lua", x -> {
-				log.debug("Load script {}", "slidingWindow.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/slidingWindow.lua"), key);
-				} else {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/slidingWindow.lua"));
-				}
-			});
 			
-			Long result = (Long) jedisOperations.evalsha(toBytes(hashSha),
-					1,
-					toBytes(key),
+			
+			Long result = (Long)  evalLua("slidingWindow.lua", key, 1,
+				toBytes(key),
 					toBytes(member),
 					toBytes(score),
 					toBytes(windowSize),
@@ -2577,17 +2528,10 @@ public final class JedisUtils {
 		 */
 		public static boolean rateLimit(String key, int expire, int count) {
 			
-			String hashSha = shaHashs.computeIfAbsent("rateLimit.lua", x -> {
-				log.debug("Load script {}", "rateLimit.lua");
-				if (jedisOperations instanceof JedisClusterOperations) {
-					return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/rateLimit.lua"), key);
-				}
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/rateLimit.lua"));
-			});
 			
-			long result = (long) jedisOperations.evalsha(toBytes(hashSha),
-					1,
-					toBytes(join(":", "rate", "limit", key)),
+			
+			long result = (long)  evalLua("rateLimit.lua", key, 1,
+				toBytes(join(":", "rate", "limit", key)),
 					toBytes(expire), toBytes(count));
 			return result == 1;
 		}
@@ -2795,16 +2739,9 @@ public final class JedisUtils {
 	public static byte[] delGet(byte[] key) {
 		Objects.requireNonNull(key);
 		
-		String delGetSha1 = shaHashs.computeIfAbsent("delGet.lua", x -> {
-			log.debug("Load script {}", "delGet.lua");
-			if (jedisOperations instanceof JedisClusterOperations) {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/delGet.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/delGet.lua"));
-		});
 		
-		byte[] value = (byte[]) jedisOperations.evalsha(toBytes(delGetSha1),
-				1,
+		
+		byte[] value = (byte[])  evalLua("delGet.lua", key, 1,
 				key);
 		
 		return value;
@@ -2943,23 +2880,29 @@ public final class JedisUtils {
 	
 	/**
 	 * <pre>
-	 * <b>非公平锁</b></p>
+	 * <b>非公平锁</b>
 	 * Redis 下获取分布式锁, 不会等待锁, 拿不到直接返回
-	 * @param key
-	 * @return Lock
-	 */
-/*	public static boolean lock(String key, String requestId) {
-		KeyUtils.requireNonBlank(key);
-		requireNonEmpty(requestId);
-		return setnx(key, requestId);
-	}*/
-	
-	/**
-	 * 可以试试blockingLock()以及nonBlockingLock, 这两种加锁方式更好
-	 * <pre>
-	 * <b>非公平锁</b></p>
-	 * Redis 下获取分布式锁
-	 * 不会等待锁, 拿不到直接返回
+	 * <p>
+	 * 适用场景: 调用方自己生成并保管 requestId, 需要在另一个线程/另一个请求里用同一个 requestId 解锁;
+	 * 或者定时任务多实例防重复执行这类"一次性 tryLock".
+	 * 同一个方法内加锁解锁的普通场景请优先使用 {@link #nonBlockingLock(String)} / {@link #blockingLock(String)},
+	 * 它们带看门狗续期, 不要求业务时长必须小于租期.
+	 * <p>
+	 * <b>本方法不会自动续期</b>: 底层就是一条 SET NX PX, 租期 leaseTime 一次性写死,
+	 * 加锁成功后没有任何后台任务刷新过期时间(不像 {@link #blockingLock(String)} 那样有 WatchDog
+	 * 每 租期/3 秒续一次). 由此带来两个后果:
+	 * <ul>
+	 *     <li>业务执行时间一旦超过 leaseTime, 锁会在业务还没做完时自动过期, 其他客户端随即加锁成功,
+	 *     互斥被打破, 两个客户端同时操作同一资源; 此时原持锁者再调 {@link #unlock} 会因为
+	 *     value 已不是自己的 requestId 而返回 false(解锁失败), 不会误删别人的锁.</li>
+	 *     <li>leaseTime 也不能一味设大, 设太大时持锁进程崩溃后, 其他客户端要等同样长的时间才能拿到锁.</li>
+	 * </ul>
+	 * 三种应对方式任选:
+	 * ① leaseTime 设置为"业务最长耗时 + 充足余量"(经验值取 2~3 倍), 适合耗时稳定的短任务;
+	 * ② 业务时长不可预知或可能很长时, 改用 {@link #blockingLock(String)} / {@link #nonBlockingLock(String)},
+	 * 让看门狗在持锁期间自动续期;
+	 * ③ 自持 requestId 且确实需要长时间持锁时, 可在业务线程内周期性调用
+	 * {@link #renewLock(String, String, long, TimeUnit)} 手动续期(value 匹配才会刷新).
 	 *
 	 * 为了确保分布式锁可用, 我们至少要确保锁的实现同时满足以下四个条件：
 	 *
@@ -2970,7 +2913,7 @@ public final class JedisUtils {
 	 *
 	 * 第一个为key		我们使用key来当锁, 因为key是唯一的。
 	 * 第二个为value		我们传的是requestId, 很多童鞋可能不明白, 有key作为锁不就够了吗, 为什么还要用到value？原因就是我们在上面讲到可靠性时, 分布式锁要满足第四个条件解铃还须系铃人,
-	 * 			通过给value赋值为requestId, 我们就知道这把锁是哪个请求加的了, 在解锁的时候就可以有依据。requestId可以使用UUID.randomUUID().toString()方法生成。
+	 * 				通过给value赋值为requestId, 我们就知道这把锁是哪个请求加的了, 在解锁的时候就可以有依据。requestId可以使用UUID.randomUUID().toString()方法生成。
 	 * 第三个为nxxx		这个参数我们填的是NX, 意思是SET IF NOT EXIST, 即当key不存在时, 我们进行set操作；若key已经存在, 则不做任何操作；
 	 * 第四个为expx		这个参数我们传的是PX, 意思是我们要给这个key加一个过期的设置, 具体时间由第五个参数决定。
 	 * 第五个为time		与第四个参数相呼应, 代表key的过期时间。
@@ -3007,7 +2950,9 @@ public final class JedisUtils {
 	 * If this is the case, you can use your replication based solution. </pre>
 	 *
 	 * @param key       这个方法的key就是锁的名字
-	 * @param leaseTime key过期时间, 单位秒
+	 * @param requestId 锁的值, 解锁时要用同一个值
+	 * @param leaseTime key过期时间
+	 * @param timeUnit  过期时间单位; 换算成秒后必须 >= 1(500 毫秒这类入参会被拒绝, 因为 EXPIRE 0 会立即删除刚写入的锁)
 	 * @return boolean false表示没有获取到锁, true表示获取到锁了
 	 * @on
 	 */
@@ -3018,7 +2963,7 @@ public final class JedisUtils {
 	/**
 	 * 阻塞非公平锁
 	 *
-	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "copilot:nblk:%s:lock"
+	 * @param key 这个key并不是真正Redis中key的名字, 而是其中的一部分, 用于替换后面%s部分, "copilot:blk:%s:lock"
 	 * @return
 	 */
 	public static Lock blockingLock(String key) {
@@ -3063,15 +3008,7 @@ public final class JedisUtils {
 	 * @return boolean 是否释放成功
 	 */
 	public static boolean unlock(String key, String requestId) {
-		String setnxSha1 = shaHashs.computeIfAbsent("unlock.lua", x -> {
-			log.debug("Load script {}", "unlock.lua");
-			if (jedisOperations instanceof JedisClusterOperations) {
-				return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/unlock.lua"), key);
-			}
-			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString("/lua-scripts/unlock.lua"));
-		});
-		
-		long result = (long) jedisOperations.evalsha(setnxSha1, 1, key, requestId);
+		long result = (Long) evalLua("unlock.lua", key, 1, toBytes(key), toBytes(requestId));
 		return result == 1L;
 	}
 	

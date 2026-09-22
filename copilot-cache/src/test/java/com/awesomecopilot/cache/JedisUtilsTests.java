@@ -124,7 +124,11 @@ public class JedisUtilsTests {
 		System.out.println(JedisUtils.incr("retryCount", 1, TimeUnit.MINUTES));
 	}
 	
-	@Test
+	/**
+	 * 注意: 本方法故意不加 @Test (同 testNonblockingLock 的先例).
+	 * 方法体是 while(true) 无限轮询 lpop + 每秒打印, 设计上是常驻消费者演示,
+	 * 被 surefire 执行会挂死 mvn test; 只适合 IDE 里手工运行观察
+	 */
 	public void testPipelined() {
 		/*List<String> users = JedisUtils.pipeline((pipeline) -> {
 			for (int i = 0; i < 100; i++) {
@@ -264,9 +268,18 @@ public class JedisUtilsTests {
 	
 	@Test
 	public void testQueueListener() {
+		//brpop(key, listener) 底层是 BRPOP timeout=0(无限等待), 列表为空会永远阻塞挂死 mvn test;
+		//所以先入队一个元素, 让 BRPOP 立即返回
+		JedisUtils.del("jobs_list");
+		JedisUtils.LIST.lpush("jobs_list", "job-1");
+		//QueueListener.onDeque 的 message 参数是 Object, 这里按 Object 接收再转字符串断言
+		java.util.concurrent.atomic.AtomicReference<Object> received = new java.util.concurrent.atomic.AtomicReference<>();
 		JedisUtils.LIST.brpop("jobs_list", (key, message) -> {
+			received.set(message);
 			System.out.println(message);
 		});
+		assertEquals("job-1", String.valueOf(received.get()));
+		JedisUtils.del("jobs_list");
 	}
 	
 	@SneakyThrows
@@ -320,8 +333,12 @@ public class JedisUtilsTests {
 		members.forEach(System.out::println);
 	}
 	
+	/**
+	 * 注意: 本方法故意不加 @Test (同 JedisPubSubTest#testPubSub 的先例).
+	 * 结尾的 Thread.currentThread().join() 永远不返回, 会被 surefire 执行并挂死 mvn test;
+	 * 且两个子线程拿 nonBlockingLock 后不 unlock, 靠看门狗续期演示"持锁不释放"效果, 只适合 IDE 手工运行
+	 */
 	@SneakyThrows
-	@Test
 	public void testNonblockingLock() {
 		new Thread(() -> {
 			Lock lock = JedisUtils.nonBlockingLock("stock");
@@ -344,8 +361,12 @@ public class JedisUtilsTests {
 		Thread.currentThread().join();
 	}
 	
+	/**
+	 * 注意: 本方法故意不加 @Test (同 testNonblockingLock 的先例).
+	 * get(key, class, 3, SECONDS) 每次读都把 TTL 刷新为 3 秒, 循环每秒读一次, key 永不过期,
+	 * while (count != null) 是死循环, 被 surefire 执行会挂死 mvn test; 只适合 IDE 里手工观察热点 key 常驻效果
+	 */
 	@SneakyThrows
-	@Test
 	public void testGetAndSetExpire() {
 		JedisUtils.set("product:101:stock", 100, 3, SECONDS);
 		Integer count = JedisUtils.get("product:101:stock", Integer.class);
