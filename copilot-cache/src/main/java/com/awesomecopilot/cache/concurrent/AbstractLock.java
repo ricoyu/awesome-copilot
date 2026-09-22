@@ -50,7 +50,7 @@ abstract class AbstractLock implements Lock, AutoCloseable {
 	protected final String key;
 
 	/**
-	 * 解锁后在该channel上通知等待线程可以获取锁了(NonBlockingLock 没有等待者, 用不到)
+	 * 解锁后在该channel上通知等待线程可以获取锁了(仅 BlockingLock 使用, NonBlockingLock 拿不到锁直接返回, 没有等待者)
 	 */
 	protected final String notifyChannel;
 
@@ -91,11 +91,15 @@ abstract class AbstractLock implements Lock, AutoCloseable {
 	/**
 	 * 开始一次加锁动作: 检查中断标记、拒绝同线程重复加锁(不支持重入),
 	 * 生成本轮锁的 value(threadName-UUID) 并写入 ThreadLocal
+	 * <p>
+	 * 中断检查用 isInterrupted() 而不是 Thread.interrupted(): 后者会清除标记,
+	 * 抛出自定义异常后上层若不按该类型判断, 线程池/框架就再也看不到这个中断信号了。
+	 * 这里保留标记, 中断语义交回给调用方。
 	 *
 	 * @return 本轮锁的 value
 	 */
 	protected final String beginLock() {
-		if (Thread.interrupted()) {
+		if (Thread.currentThread().isInterrupted()) {
 			throw new LockThreadInterruptedException("线程被中断了");
 		}
 		if (lockedThreadLocal.get()) {
@@ -138,7 +142,11 @@ abstract class AbstractLock implements Lock, AutoCloseable {
 
 	/**
 	 * 解锁的公共流程: 检查持锁 -> 停看门狗 -> unlock.lua 比对 value 删除 -> 清理状态.
-	 * 锁在本线程持有期间已过期或被别的客户端获取时(value 不匹配), 抛异常让调用方感知"锁已丢失"
+	 * 锁在本线程持有期间已过期或被别的客户端获取时(value 不匹配), 抛异常让调用方感知"锁已丢失"。
+	 * <p>
+	 * 无论解锁是否成功, 线程持锁状态(locked/value)一定会被清理:
+	 * 否则 Redis 抖动导致 unlock 抛异常后, 该线程在这把锁上会被永久判定为"仍持有",
+	 * 以后每次 lock() 都撞上重入检测抛异常。
 	 */
 	protected final void doUnlock() {
 		if (!lockedThreadLocal.get()) {
@@ -149,15 +157,17 @@ abstract class AbstractLock implements Lock, AutoCloseable {
 
 		String threadName = Thread.currentThread().getName();
 		String lockValue = valueThreadLocal.get();
-		boolean unlockSuccess = JedisUtils.unlock(key, lockValue);
-		if (!unlockSuccess) {
-			// value 不匹配: 锁已过期或已易主, 持有期间互斥可能已被破坏, 属于锁丢失
+		try {
+			boolean unlockSuccess = JedisUtils.unlock(key, lockValue);
+			if (!unlockSuccess) {
+				// value 不匹配: 锁已过期或已易主, 持有期间互斥可能已被破坏, 属于锁丢失
+				throw new OperationNotSupportedException(
+						"解锁失败: 锁已过期或已易主, 持有期间互斥可能已被破坏, key=" + key + ", value=" + lockValue);
+			}
+			log.debug(">>>>>> {} 解锁成功, key={}, value={} <<<<<<", threadName, key, lockValue);
+		} finally {
 			clearHoldState();
-			throw new OperationNotSupportedException(
-					"解锁失败: 锁已过期或已易主, 持有期间互斥可能已被破坏, key=" + key + ", value=" + lockValue);
 		}
-		log.debug(">>>>>> {} 解锁成功, key={}, value={} <<<<<<", threadName, key, lockValue);
-		clearHoldState();
 	}
 
 	@Override

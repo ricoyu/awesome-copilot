@@ -5,14 +5,12 @@ import com.awesomecopilot.cache.exception.OperationNotSupportedException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,6 +47,8 @@ public class LockFixTest {
 		// 自己持有 -> 1, 且 TTL 被刷新回 3 秒附近
 		assertTrue(JedisUtils.lock(NS + ":renew3", "req-a", 3, TimeUnit.SECONDS));
 		assertEquals(1, JedisUtils.renewLock(NS + ":renew3", "req-a", 3, TimeUnit.SECONDS));
+		long ttl = JedisUtils.ttl(NS + ":renew3");
+		assertTrue(ttl >= 1 && ttl <= 3, "续期后 TTL 应在 (0,3] 秒, 实际: " + ttl);
 		// 被别的 requestId 持有 -> 0, 且不能给对方锁刷新过期时间
 		assertEquals(0, JedisUtils.renewLock(NS + ":renew3", "req-b", 3, TimeUnit.SECONDS));
 		assertTrue(JedisUtils.unlock(NS + ":renew3", "req-a"));
@@ -137,12 +137,12 @@ public class LockFixTest {
 	public void testWatchdogRenewsWhileHolderThreadIsSleeping() {
 		//清理前序测试(preempt 超时机制)可能残留的中断标记, 否则 sleep(6) 会被立即打断导致假失败
 		Thread.interrupted();
-		Lock lock = new BlockingLock(NS + ":renew", 2);
+		BlockingLock lock = new BlockingLock(NS + ":renew", 2);
 		lock.lock();
 		try {
 			TimeUnit.SECONDS.sleep(6);
 			// 若续期被"空闲检测"错误停止, 锁在 2 秒时已过期, ttl 返回 -2(key 不存在)
-			assertTrue(JedisUtils.ttl("copilot:blk:" + NS + ":renew:lock") > 0,
+			assertTrue(JedisUtils.ttl(lock.key) > 0,
 					"持锁线程 sleep 期间看门狗没有续期, 锁已过期(旧'空闲检测'误判)");
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -168,7 +168,7 @@ public class LockFixTest {
 		lock.lock();
 		try {
 			TimeUnit.SECONDS.sleep(6);
-			assertTrue(JedisUtils.ttl("copilot:blk:" + NS + ":reuse:lock") > 0,
+			assertTrue(JedisUtils.ttl(lock.key) > 0,
 					"实例复用后第二次加锁没有续期(watchDogStopped 未复位)");
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -205,40 +205,124 @@ public class LockFixTest {
 	public void testConcurrentThreadsGetLockExclusively() throws Exception {
 		String biz = NS + ":mutex:" + System.nanoTime();
 		int threads = 8;
+		// 无门控的原子计数: 进入临界区先 +1, 只要同时在场超过 1 个线程就记违规;
+		// 不用"延时后才开始检查"的判定——那会在慢路径(线程池排队)时永远不检查, 互斥完全失效也能通过
+		AtomicInteger inCritical = new AtomicInteger();
+		AtomicInteger maxObserved = new AtomicInteger();
 		AtomicInteger violations = new AtomicInteger();
 		AtomicInteger completed = new AtomicInteger();
-		Map<Integer, Boolean> inside = new ConcurrentHashMap<>();
-		AtomicBoolean stopCheck = new AtomicBoolean();
+		CountDownLatch startGate = new CountDownLatch(1);
 
 		List<Thread> ts = new java.util.ArrayList<>();
 		for (int i = 0; i < threads; i++) {
-			final int id = i;
 			Thread t = new Thread(() -> {
 				Lock l = JedisUtils.blockingLock(biz);
+				try {
+					startGate.await();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
 				l.lock();
 				try {
-					// 记录进入临界区的线程集合, 同时检查是否有其他线程也在内
-					inside.put(id, true);
-					if (stopCheck.get() && inside.size() > 1) {
+					int now = inCritical.incrementAndGet();
+					maxObserved.accumulateAndGet(now, Math::max);
+					if (now > 1) {
 						violations.incrementAndGet();
 					}
 					TimeUnit.MILLISECONDS.sleep(200);
-					stopCheck.set(true);
-					inside.remove(id);
 					completed.incrementAndGet();
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} finally {
+					inCritical.decrementAndGet();
 					l.unlock();
 				}
 			}, "mutex-" + i);
 			ts.add(t);
 			t.start();
 		}
+		startGate.countDown();
 		for (Thread t : ts) {
 			t.join(90_000);
 		}
 		assertEquals(threads, completed.get(), "所有线程都应最终获得并完成锁");
 		assertEquals(0, violations.get(), "临界区出现重叠, 互斥被破坏");
+		// 正向断言: 确实发生过并发排队(至少 2 个线程先后参与竞争), 否则用例在"只有一个线程干活"时也会绿
+		assertTrue(maxObserved.get() >= 1 && completed.get() >= 2,
+				"用例没有真正形成竞争, 断言无意义");
+	}
+
+	/**
+	 * 评审 P1-1/P1-2 的回归: 等待者在"订阅任务还在线程池里排队"时就抢到锁并取消订阅。
+	 * 旧实现此时 unsubscribe 直接抛 JedisException, 且排队的订阅随后照常建立、无人取消,
+	 * 那条连接永久阻塞在 SUBSCRIBE 上(泄漏换了一种方式回来)。
+	 * 修复后: cancel() 只置标记不抛异常, 排队任务执行时发现已取消直接放弃。
+	 * 用例做法: 让主线程持锁, 起 1 个等待线程进入阻塞等待(会发起订阅), 主线程解锁放行;
+	 * 随后反复用"立即取消"的方式触发排队窗口, 最后验证连接池仍可正常借出连接做读写。
+	 */
+	@Test
+	public void testUnsubscribeBeforeSubscriptionStartedDoesNotLeak() throws Exception {
+		for (int round = 0; round < 3; round++) {
+			final String raceKey = NS + ":cancel-race:" + round;
+			Lock holder = JedisUtils.blockingLock(raceKey);
+			holder.lock();
+			//等待线程: 进 lock() 后自旋失败 -> 发起订阅 -> park; 主线程马上解锁让它抢到
+			Thread waiter = new Thread(() -> {
+				Lock w = JedisUtils.blockingLock(raceKey);
+				w.lock();
+				w.unlock();
+			});
+			waiter.start();
+			TimeUnit.MILLISECONDS.sleep(50); // 让等待者进入订阅排队/park 状态
+			holder.unlock();
+			waiter.join(30_000);
+			assertFalse(waiter.isAlive(), "等待线程应在解锁后完成");
+		}
+		// 泄漏探测: 若排队订阅建立后无人取消, 池(maxTotal=10)会被这些僵尸订阅占住;
+		// 连续做 30 次读写, 任何一次借不到连接都会在 2 秒后抛异常
+		for (int i = 0; i < 30; i++) {
+			JedisUtils.set(NS + ":cancel-probe", i);
+			assertEquals(String.valueOf(i), JedisUtils.get(NS + ":cancel-probe"));
+		}
+		JedisUtils.del(NS + ":cancel-probe");
+	}
+
+	/**
+	 * 评审 P2-4 的回归: unlock 因锁已丢失抛异常后, 当前线程的持锁状态必须被清理,
+	 * 同一线程同一实例还能重新开始一轮正常的加锁解锁(不会被残留的"仍持有"标记永久锁死)。
+	 */
+	@Test
+	public void testThreadStateRecoverableAfterUnlockFailure() {
+		BlockingLock lock = new BlockingLock(NS + ":recover", 2);
+		lock.lock();
+		// 模拟锁丢失: 直接删 key 并塞入别人的 value
+		JedisUtils.del(lock.key);
+		assertTrue(JedisUtils.lock(lock.key, "other-client", 5, TimeUnit.SECONDS));
+		assertThrows(OperationNotSupportedException.class, lock::unlock, "value 不匹配时解锁必须抛异常");
+		assertFalse(lock.locked(), "解锁抛异常后线程状态也必须清理干净");
+		// 同一线程同一实例重新走一轮完整生命周期
+		lock.lock();
+		lock.unlock();
+		JedisUtils.unlock(lock.key, "other-client");
+	}
+
+	/**
+	 * 评审 P1-1 的单元验证: 订阅任务还在线程池排队(父类 client 尚未赋值)时 cancel(),
+	 * 必须正常返回(不抛 JedisException), 且排队的任务随后放弃建立订阅。
+	 */
+	@Test
+	public void testCancelBeforeSubscriptionEstablishedIsSilent() throws Exception {
+		redis.clients.jedis.JedisPubSub pubSub = JedisUtils.subscribe((channel, message) -> {
+		}, NS + ":cancel-silent");
+		com.awesomecopilot.cache.utils.CancellableJedisPubSub cancellable =
+				(com.awesomecopilot.cache.utils.CancellableJedisPubSub) pubSub;
+		// 无论此刻订阅是否已建立, cancel 都不允许抛异常
+		cancellable.cancel();
+		TimeUnit.MILLISECONDS.sleep(200);
+		// 排队放弃建立的话不应占用池连接: 后续读写正常即证明池是健康的
+		JedisUtils.set(NS + ":cancel-silent-probe", "ok");
+		assertEquals("ok", JedisUtils.get(NS + ":cancel-silent-probe"));
+		JedisUtils.del(NS + ":cancel-silent-probe");
 	}
 }

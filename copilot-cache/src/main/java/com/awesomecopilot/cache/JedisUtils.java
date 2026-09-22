@@ -12,6 +12,7 @@ import com.awesomecopilot.cache.operations.JedisClusterOperations;
 import com.awesomecopilot.cache.operations.JedisOperations;
 import com.awesomecopilot.cache.status.HSet;
 import com.awesomecopilot.cache.status.TTL;
+import com.awesomecopilot.cache.utils.CancellableJedisPubSub;
 import com.awesomecopilot.cache.utils.UnMarshaller;
 import com.awesomecopilot.common.lang.concurrent.CopilotThreadExecutor;
 import com.awesomecopilot.common.lang.utils.IOUtils;
@@ -325,8 +326,8 @@ public final class JedisUtils {
 	 * @return boolean 表示是否设置成功
 	 */
 	public static boolean set(String key, String value, long expires, TimeUnit timeUnit) {
-		Objects.requireNonNull(timeUnit);
-		return set(toBytes(key), toBytes(value), toBytes(expires, timeUnit));
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		return set(toBytes(key), toBytes(value), toBytes(expireInSeconds));
 	}
 	
 	/**
@@ -338,8 +339,8 @@ public final class JedisUtils {
 	 * @return String
 	 */
 	public static boolean set(String key, Object value, long expires, TimeUnit timeUnit) {
-		Objects.requireNonNull(timeUnit);
-		return set(toBytes(key), toBytes(value), toBytes(expires, timeUnit));
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		return set(toBytes(key), toBytes(value), toBytes(expireInSeconds));
 	}
 	
 	/**
@@ -351,8 +352,8 @@ public final class JedisUtils {
 	 * @return boolean 表示是否设置成功
 	 */
 	public static boolean set(Object key, String value, long expires, TimeUnit timeUnit) {
-		Objects.requireNonNull(key);
-		return set(toBytes(key), toBytes(value), toBytes(expires, timeUnit));
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		return set(toBytes(key), toBytes(value), toBytes(expireInSeconds));
 	}
 	
 	/**
@@ -364,9 +365,8 @@ public final class JedisUtils {
 	 * @return
 	 */
 	public static boolean set(Object key, Object value, long expires, TimeUnit timeUnit) {
-		Objects.requireNonNull(key);
-		Objects.requireNonNull(timeUnit);
-		return set(toBytes(key), toBytes(value), toBytes(expires, timeUnit));
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		return set(toBytes(key), toBytes(value), toBytes(expireInSeconds));
 	}
 	
 	/**
@@ -377,9 +377,7 @@ public final class JedisUtils {
 	 * @return true 表示设置成功
 	 */
 	public static boolean set(byte[] key, byte[] value, byte[] expires) {
-		String sampleKey = "setExpire.lua";
-		
-		long result = (long)  evalLua("setExpire.lua", key, 1,
+		long result = (long) evalLua("setExpire.lua", key, 1,
 				key, value, expires);
 		return result == 1;
 	}
@@ -402,9 +400,7 @@ public final class JedisUtils {
 	}
 	
 	public static boolean casNumber(byte[] key, byte[] value, byte[] mode) {
-		String sampleKey = "cas.lua";
-		
-		long result = (long)  evalLua("cas.lua", key, 1,
+		long result = (long) evalLua("cas.lua", key, 1,
 				key, value, mode);
 		return result == 1;
 	}
@@ -457,19 +453,30 @@ public final class JedisUtils {
 	 * @param timeUnit 过期单位, 毫秒、秒等
 	 * @return boolean    是否设置成功
 	 */
+	/**
+	 * 校验并换算过期时间: TimeUnit.toSeconds 向下取整, 500 毫秒会变成 0,
+	 * 而 EXPIRE key 0 的语义是立即删除该 key——调用方拿到"成功"返回值但 key 已不存在,
+	 * 所以换算后必须 >= 1 秒才允许继续。需要毫秒级租期请改用 PX/PEXPIRE 系的接口。
+	 *
+	 * @param expires  过期时间
+	 * @param timeUnit 时间单位
+	 * @return long 换算后的秒数(>= 1)
+	 */
+	private static long requireAtLeastOneSecond(long expires, TimeUnit timeUnit) {
+		Objects.requireNonNull(timeUnit);
+		long seconds = timeUnit.toSeconds(expires);
+		if (seconds <= 0) {
+			throw new IllegalArgumentException(
+					"过期时间换算成秒后必须 >= 1, 实际: " + expires + " " + timeUnit + " (换算后 " + seconds + " 秒)");
+		}
+		return seconds;
+	}
+	
 	public static boolean setnx(String key, Object value, long expires, TimeUnit timeUnit) {
 		Objects.requireNonNull(key);
-		Objects.requireNonNull(timeUnit);
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
 		
-		long expireInSeconds = timeUnit.toSeconds(expires);
-		// toSeconds 向下取整: 500ms 会变成 0, 而 EXPIRE key 0 的语义是立即删除该 key,
-		// 结果就是 setnx.lua 返回"加锁成功"但 key 瞬间消失, 互斥完全失效, 所以必须拒绝
-		if (expireInSeconds <= 0) {
-			throw new IllegalArgumentException(
-					"过期时间换算成秒后必须 >= 1, 实际: " + expires + " " + timeUnit + " (换算后 " + expireInSeconds + " 秒)");
-		}
-		
-		long result = (Long) evalLua("setnx.lua", key, 1, toBytes(key), toBytes(value), toBytes(expireInSeconds));
+		Long result = (Long) evalLua("setnx.lua", key, 1, toBytes(key), toBytes(value), toBytes(expireInSeconds));
 		
 		return result == 1;
 	}
@@ -487,10 +494,7 @@ public final class JedisUtils {
 	public static int renewLock(String key, String requestId, long expires, TimeUnit timeUnit) {
 		Objects.requireNonNull(key);
 		Objects.requireNonNull(requestId);
-		long expireInSeconds = timeUnit.toSeconds(expires);
-		if (expireInSeconds <= 0) {
-			throw new IllegalArgumentException("续期时间换算成秒后必须 >= 1, 实际: " + expires + " " + timeUnit);
-		}
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
 		Long result = (Long) evalLua("renew.lua", key, 1, toBytes(key), toBytes(requestId), toBytes(expireInSeconds));
 		return result == null ? -1 : result.intValue();
 	}
@@ -514,10 +518,8 @@ public final class JedisUtils {
 	 * @return
 	 */
 	public static <T> T get(String key, Class<T> clazz, long expires, TimeUnit timeUnit) {
-		String sampleKey = "getAndSetExpire.lua";
-		
-		long expireInSeconds = timeUnit.toSeconds(expires);
-		byte[] value = (byte[])  evalLua("getAndSetExpire.lua", key, 1,
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		byte[] value = (byte[]) evalLua("getAndSetExpire.lua", key, 1,
 				toBytes(key),
 				toBytes(expireInSeconds));
 		return toObject(value, clazz);
@@ -737,11 +739,8 @@ public final class JedisUtils {
 	 * @return Long
 	 */
 	public static Long incr(String key, long expires, TimeUnit timeUnit) {
-		String sampleKey = "incrExpire.lua";
-		
-		
-		long expireInSeconds = timeUnit.toSeconds(expires);
-		long currentValue = (long)  evalLua("incrExpire.lua", key, 1,
+		long expireInSeconds = requireAtLeastOneSecond(expires, timeUnit);
+		long currentValue = (long) evalLua("incrExpire.lua", key, 1,
 				toBytes(key),
 				toBytes(expireInSeconds));
 		return currentValue;
@@ -845,7 +844,7 @@ public final class JedisUtils {
 			for (int i = 0; i < values.length; i++) {
 				objects[i + 2] = toBytes(values[i]);
 			}
-			return (Long)  evalLua("lpush.lua", key, 1,
+			return (Long) evalLua("lpush.lua", key, 1,
 				objects);
 		}
 		
@@ -1778,7 +1777,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, new String(key, UTF_8));
-			Long result = (Long)  evalLua("hash.lua", key, 2,
+			Long result = (Long) evalLua("hash.lua", key, 2,
 				key, // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hset"), // 调用的lua function名字
@@ -1853,7 +1852,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] data = (byte[])  evalLua("hash.lua", key, 2,
+			byte[] data = (byte[]) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hget"), // 调用的lua function名字
@@ -2106,7 +2105,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			return (Long)  evalLua("hash.lua", key, 2,
+			return (Long) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hdel"), // 调用的lua function名字
@@ -2128,7 +2127,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] data = (byte[])  evalLua("hash.lua", key, 2,
+			byte[] data = (byte[]) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
 					toBytes("hdelGet"), // 调用的lua function名字
@@ -2154,7 +2153,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long)  evalLua("hash.lua", key, 2,
+			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("ttl"),
@@ -2190,7 +2189,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long)  evalLua("hash.lua", key, 2,
+			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("expire"),
@@ -2214,7 +2213,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			Long result = (Long)  evalLua("hash.lua", key, 2,
+			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
 					toBytes("persist"),
@@ -2230,7 +2229,7 @@ public final class JedisUtils {
 		public static long time() {
 			
 			
-			long milis = (long)  evalLua("hash.lua", "hash.lua", 0,
+			long milis = (long) evalLua("hash.lua", "hash.lua", 0,
 				toBytes("time"));
 			return milis;
 		}
@@ -2244,7 +2243,7 @@ public final class JedisUtils {
 			
 			
 			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
-			byte[] bytes = (byte[])  evalLua("hash.lua", key, 1,
+			byte[] bytes = (byte[]) evalLua("hash.lua", key, 1,
 				toBytes(zsetKey),
 					toBytes("expiredFields"));
 			String json = UnMarshaller.toString(bytes);
@@ -2503,7 +2502,7 @@ public final class JedisUtils {
 		public static boolean slidingWindows(String key, String member, long score, long windowSize, long limitCount) {
 			
 			
-			Long result = (Long)  evalLua("slidingWindow.lua", key, 1,
+			Long result = (Long) evalLua("slidingWindow.lua", key, 1,
 				toBytes(key),
 					toBytes(member),
 					toBytes(score),
@@ -2530,7 +2529,7 @@ public final class JedisUtils {
 			
 			
 			
-			long result = (long)  evalLua("rateLimit.lua", key, 1,
+			long result = (long) evalLua("rateLimit.lua", key, 1,
 				toBytes(join(":", "rate", "limit", key)),
 					toBytes(expire), toBytes(count));
 			return result == 1;
@@ -2741,7 +2740,7 @@ public final class JedisUtils {
 		
 		
 		
-		byte[] value = (byte[])  evalLua("delGet.lua", key, 1,
+		byte[] value = (byte[]) evalLua("delGet.lua", key, 1,
 				key);
 		
 		return value;
@@ -2828,7 +2827,7 @@ public final class JedisUtils {
 	 * @return JedisPubSub 用于取消订阅
 	 */
 	public static JedisPubSub subscribe(MessageListener messageListener, String... chnannels) {
-		JedisPubSub jedisPubSub = new JedisPubSub() {
+		JedisPubSub jedisPubSub = new CancellableJedisPubSub() {
 			
 			@Override
 			public void onMessage(String channel, String message) {
@@ -2858,7 +2857,7 @@ public final class JedisUtils {
 	 * @return JedisPubSub 用于取消订阅
 	 */
 	public static JedisPubSub psubscribe(MessageListener messageListener, String... chnannelPatterns) {
-		JedisPubSub jedisPubSub = new JedisPubSub() {
+		JedisPubSub jedisPubSub = new CancellableJedisPubSub() {
 			@Override
 			public void onPMessage(String pattern, String channel, String message) {
 				messageListener.onMessage(channel, message);
@@ -2870,12 +2869,21 @@ public final class JedisUtils {
 	
 	/**
 	 * 取消订阅
+	 * <p>
+	 * 传入 JedisUtils.subscribe/psubscribe 返回的实例: 它们都是 CancellableJedisPubSub,
+	 * cancel() 覆盖两种时序(订阅已建立→发 UNSUBSCRIBE; 订阅还在排队→置标记让任务放弃建立), 不抛异常。
+	 * 若是用户自己 new 的普通 JedisPubSub, 退化为直接 unsubscribe(订阅未建立时 Jedis 会抛 JedisException,
+	 * 由调用方决定怎么处理)。
 	 *
 	 * @param jedisPubSub
 	 * @param channel
 	 */
 	public static void unsubscribe(JedisPubSub jedisPubSub, String channel) {
-		jedisPubSub.unsubscribe(channel);
+		if (jedisPubSub instanceof CancellableJedisPubSub cancellable) {
+			cancellable.cancel();
+		} else {
+			jedisPubSub.unsubscribe(channel);
+		}
 	}
 	
 	/**

@@ -3,6 +3,7 @@ package com.awesomecopilot.cache.operations;
 import com.awesomecopilot.cache.concurrent.ThreadPool;
 import com.awesomecopilot.cache.exception.JedisException;
 import com.awesomecopilot.cache.utils.ByteUtils;
+import com.awesomecopilot.cache.utils.CancellableJedisPubSub;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -440,8 +441,16 @@ public class JedisPoolOperations implements JedisOperations {
 	}
 	
 	/**
-	 * 订阅消息用的Jedis实例不要用完就关掉, 否则接收消息的时候会抛异常
-	 * redis.clients.jedis.exceptions.JedisConnectionException: Unexpected end of stream.
+	 * 订阅频道.
+	 * <p>
+	 * 三个要点:
+	 * 1. 借出的 Jedis 必须归还: 正常取消订阅后 subscribe() 返回, 届时把连接还给池;
+	 * 否则每个订阅者永久占用 1 条连接, 等待者一多连接池就被耗尽。
+	 * 2. 订阅任务排队期间调用方可能已经取消(cancel 的 JedisPubSub): 任务开始执行时先检查,
+	 * 已取消就不再建立订阅, 否则那条连接会永远阻塞在没人取消的 SUBSCRIBE 上。
+	 * 3. 异常退出时不能把连接还回池: subscribe() 因异常返回时服务端可能仍处于 SUBSCRIBE 状态,
+	 * 而 Jedis 5.0.2 的 passivateObject 是空实现, 不会重置订阅状态——这样的连接还给池后,
+	 * 下一个借用者发普通命令会读到 pub/sub 帧, 造成协议错乱。因此异常路径一律销毁连接(returnBrokenResource)。
 	 *
 	 * @param jedisPubSub
 	 * @param channels
@@ -449,15 +458,27 @@ public class JedisPoolOperations implements JedisOperations {
 	@Override
 	public void subscribe(JedisPubSub jedisPubSub, String... channels) {
 		//这边必须要走多线程, 否则会阻塞, 比如SpringBoot启动的时候, 如果有订阅消息的操作, 会阻塞SpringBoot启动
-		//借出的 Jedis 必须归还: subscribe() 在 unsubscribe 后正常返回, try-with-resources 届时把连接还给池;
-		//不归还的话每个订阅者永久占用 1 条连接, 等待者一多连接池就被耗尽
 		THREAD_POOL.execute(() -> {
-			try (Jedis jedis = pool.getResource()) {
+			if (isCancelled(jedisPubSub)) {
+				log.debug("订阅在排队期间已被取消, 不再建立订阅: {}", String.join(",", channels));
+				return;
+			}
+			Jedis jedis = pool.getResource();
+			try {
 				jedis.subscribe(jedisPubSub, channels);
+				pool.returnResource(jedis);
 			} catch (Exception e) {
 				log.error("订阅 channel {} 时发生异常", String.join(",", channels), e);
+				pool.returnBrokenResource(jedis);
 			}
 		});
+	}
+
+	/**
+	 * JedisPubSub 是否已被取消(仅识别 CancellableJedisPubSub, 普通实例视为未取消)
+	 */
+	private static boolean isCancelled(JedisPubSub jedisPubSub) {
+		return jedisPubSub instanceof CancellableJedisPubSub sub && sub.isCancelled();
 	}
 	
 	/**
@@ -470,10 +491,17 @@ public class JedisPoolOperations implements JedisOperations {
 	@Override
 	public void psubscribe(JedisPubSub jedisPubSub, String... patterns) {
 		THREAD_POOL.execute(() -> {
-			try (Jedis jedis = pool.getResource()) {
+			if (isCancelled(jedisPubSub)) {
+				log.debug("pattern 订阅在排队期间已被取消, 不再建立订阅: {}", String.join(",", patterns));
+				return;
+			}
+			Jedis jedis = pool.getResource();
+			try {
 				jedis.psubscribe(jedisPubSub, patterns);
+				pool.returnResource(jedis);
 			} catch (Exception e) {
 				log.error("订阅 pattern {} 时发生异常", String.join(",", patterns), e);
+				pool.returnBrokenResource(jedis);
 			}
 		});
 	}

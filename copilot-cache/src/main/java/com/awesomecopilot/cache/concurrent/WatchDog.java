@@ -85,6 +85,11 @@ final class WatchDog implements Runnable {
 	void schedule() {
 		long intervalMillis = TimeUnit.SECONDS.toMillis(leaseSeconds) / 3;
 		future = POOL.scheduleWithFixedDelay(this, intervalMillis, intervalMillis, TimeUnit.MILLISECONDS);
+		// 赋值与 stop() 竞态的补漏: 若安排期间已被停止(future 当时还是 null, 没能取消),
+		// 这里补一次取消, 避免一个每轮进来直接 return 的空转任务永久留在调度池里
+		if (stopped) {
+			future.cancel(false);
+		}
 	}
 
 	@Override

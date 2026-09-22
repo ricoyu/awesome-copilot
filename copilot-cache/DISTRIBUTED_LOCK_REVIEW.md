@@ -98,7 +98,7 @@ public void subscribe(JedisPubSub jedisPubSub, String... channels) {
 
 #### （5）同线程重入 = 自己等自己（BlockingLock.java:111-188）
 
-`lock()` 开头不检查 `lockedThreadLocal`，同一线程对同一实例再次 `lock()`，setnx 必然失败（key 是自己写的，但 setnx 只看 key 存在与否），然后进入自旋 + 30 秒 park 循环——**等待的对象是它自己，它不可能自己给自己解锁**。只能等第一次加的锁因为看门狗续期被"空闲检测"错误停掉、或达到 100 秒上限而过期后才能抢到。表现为几十秒到一分多钟的无响应。javadoc 和 Lock 接口（Lock.java:37）都没说"不支持重入"，必须补文档，或 lock() 开头 `if (lockedThreadLocal.get()) throw` 快速失败。
+`lock()` 开头不检查 `lockedThreadLocal`，同一线程对同一实例再次 `lock()`，setnx 必然失败（key 是自己写的，但 setnx 只看 key 存在与否），然后进入自旋 + 30 秒 park 循环——**等待的对象是它自己，它不可能自己给自己解锁**。只能等第一次加的锁因为看门狗续期被"空闲检测"错误停掉、或达到 100 秒上限而过期后才能抢到。表现为几十秒到一分多钟的无响应。javadoc 和 Lock 接口（Lock.java:37）都没说"不支持重入"，必须补文档，或 lock() 开头 `if (lockedThreadLocal.get()) throw`，检测到重入直接抛异常，不让它进入等待。
 
 #### （6）stopListener 与异步订阅的时序竞态（BlockingLock.java:159-177 + JedisPoolOperations.java:450）
 
@@ -134,7 +134,7 @@ public void subscribe(JedisPubSub jedisPubSub, String... channels) {
 
 1. **watchDogStopped 永不复原**（NonBlockingLock.java:61, 225）：与 BlockingLock 完全相同的 bug，同类复用（比如 `new NonBlockingLock` 存字段）第二次加锁后不续期。且它是实例字段配 ThreadLocal 线程池，跨线程互相干扰的问题同样存在。
 2. **续期硬上限约 100 秒**（:171, 194）：`isThreadProcessingBusiness` 已被简化成 `thread.isAlive()`（:255-257）——这个方向是对的——但 MAX_RENEW_COUNT=10 × 每 10 秒一次 = 100 秒后强制停续期。业务超过 100 秒照样丢锁。上限应配置化 + 告警。
-3. **lock() 拿不到锁时静默返回**（:107-118）：自旋 32 次失败后什么都不抛，调用方必须记得 `locked()` 判断——Lock 接口契约（Lock.java:31）确实这么写了，junit 示例也这么用了，但"32 次毫无间隔的立即自旋"（一次 EVALSHA 约 1ms，整个自旋窗口 <50ms）对一次 Redis 抖动（默认 socketTimeout 见 redis.properties 是 1000ms）毫无容忍度，抖动场景下等于必然拿不到锁。至少给自旋之间加 1~2ms 退避。
+3. **lock() 拿不到锁时不声不响直接返回**（:107-118）：自旋 32 次失败后什么都不抛，调用方必须记得 `locked()` 判断——Lock 接口契约（Lock.java:31）确实这么写了，junit 示例也这么用了，但"32 次毫无间隔的立即自旋"（一次 EVALSHA 约 1ms，整个自旋窗口 <50ms）对一次 Redis 抖动（默认 socketTimeout 见 redis.properties 是 1000ms）毫无容忍度，抖动场景下等于必然拿不到锁。至少给自旋之间加 1~2ms 退避。
 4. **unlock 语义与 BlockingLock 不一致**：BlockingLock 解锁失败抛异常（BlockingLock.java:210），NonBlockingLock 解锁失败只 warn（NonBlockingLock.java:130-131）。两个类应统一为"解锁失败=锁已丢失，抛专用异常"，让调用方能感知。
 5. 失败路径 `tryLock` 清理了 valueThreadLocal（:96）但没 remove `lockedThreadLocal`——因为有 `withInitial(false)` 所以逻辑上无害，不过在线程池复用场景这两个 ThreadLocal 永远留着条目，建议完整 remove。
 6. 同样有 verifyLock 多余往返问题（:288-306），同 2.2(4)。
@@ -204,11 +204,47 @@ public void subscribe(JedisPubSub jedisPubSub, String... channels) {
 **P2（清理与文档）**
 10. 删死代码：`interruptExecutorThread`、`checkLockStackInCurrentThread`、`WatchDog.java`、被注释的旧 lock()、NonBlockingLock 的 notifyChannel 字段；修正 blockingLock javadoc 的 nblk/blk 复制错误。
 11. 集群模式 subscribe 未实现 → 在 `blockingLock` javadoc 标注，或实现 cluster 版订阅。
-12. 补并发测试：双线程互斥断言、实例复用二次加锁续期断言（针对 P0-1）、等待者数量>连接池大小时不卡死断言（针对 P0-2）、重入抛异常断言。
+12. 补并发测试：双线程互斥断言、实例复用二次加锁续期断言（针对 P0-1）、等待者数量>连接池大小时不卡死断言（针对 P0-2）、重入立即抛异常的断言。
 
 ---
 
 ## 附：本次分析未覆盖
 
-- 未连接真实 Redis 运行任何用例（本机 6379 不通），所有"行为"论断基于代码与 Redis/Lua/Jedis 的公开语义；P0 修复落地前建议先在有 Redis 的环境跑一轮双进程互斥实证。
+- 未连接真实 Redis 运行任何用例（本机 6379 不通），所有"行为"论断基于代码与 Redis/Lua/Jedis 的公开语义；P0 修复实现之前，建议先在有 Redis 的环境跑一轮双进程互斥实证。
 - `ReadWriteLock` 接口（readWriteLock() 无实现类）不在本次三个入口范围内，未展开。
+
+
+---
+
+## 修复台账（2026-09-22 实现完成，Redis 实测环境：WSL2）
+
+验证方式：`LockFixTest`（11 用例）+ 订阅相关回归（AuthUtilsTest 5、JedisLockTest 2、JedisUtilsLockTest 1）全绿；
+关键行为均为连接真实 Redis 实测，不再是静态推断。
+
+| 条目 | 状态 | 落点 / 说明 |
+|---|---|---|
+| P0-1 watchDogStopped 永不复位 | ✅ 已修 | 续期状态全部 ThreadLocal 化 + 独立 WatchDog 任务对象；`testReusedInstanceRenewsOnSecondAcquire` 覆盖 |
+| P0-2 subscribe 连接泄漏 | ✅ 已修 | `JedisPoolOperations.subscribe/psubscribe`：正常退订归还池；异常路径销毁连接（Jedis 5.0.2 passivateObject 为空实现，订阅态连接还池会污染下一个借用者）；排队期间被取消的订阅不再建立（CancellableJedisPubSub）；`testWaitingSubscribersReturnConnectionsToPool` + `testUnsubscribeBeforeSubscriptionStartedDoesNotLeak` 覆盖 |
+| P0-3 看门狗空闲检测误判 / 100 秒上限 | ✅ 已修 | 删除栈深度/线程状态启发式；上限改 360 次且可用 `-Dcopilot.cache.lock.watchdog.max-renew-count=N` 调整；`testWatchdogRenewsWhileHolderThreadIsSleeping` 覆盖 |
+| P0-4 亚秒租期换算成 0 | ✅ 已修 | `requireAtLeastOneSecond` 统一校验，覆盖 setnx/lock/renewLock/set×4/getAndSetExpire/incr；`testSubSecondLeaseIsRejected` 覆盖。毫秒级租期需要 PX/PEXPIRE 实现，本次未做（范围外） |
+| P1-5 verifyLock 多余 GET | ✅ 已修 | 加锁回到单次往返（setnx.lua 原子写 NX+TTL） |
+| P1-6 每次加锁新建线程池 / awaitTermination | ✅ 已修 | 共享静态守护调度池；锁实例上不再有每实例线程池 |
+| P1-7 同线程重入自行等待 | ✅ 已修 | beginLock 检测 lockedThreadLocal 为 true 直接抛 OperationNotSupportedException；同线程重入立即抛异常的测试 `testSameThreadReentrantLockFailsFast` 覆盖 |
+| P1-8 NOSCRIPT 后永久不可用 | ✅ 已修 | `evalLua` 统一入口：捕获 NOSCRIPT → 删缓存 → scriptLoad → 重试一次；`testLockWorksAfterScriptCacheFlushed` 覆盖（SCRIPT FLUSH 实测）。集群模式下 sampleKey 路由问题见"未覆盖" |
+| P1-9 解锁失败语义 | ✅ 已修 | 统一抛 OperationNotSupportedException；doUnlock 用 try/finally 保证线程状态一定清理（解锁失败后线程不会被"仍持有"标记锁死）；Lock 接口 javadoc 的异常类型同步修正 |
+| P2-10 死代码清理 | ✅ 已修 | 删 interruptExecutorThread/checkLockStackInCurrentThread、注释掉的旧 lock()、4 个 sampleKey 死变量；WatchDog.java 空壳类名由新实现续用（评审确认原类引用数为 0）；两个锁类公共部分抽取为 AbstractLock |
+| P2-11 集群订阅未实现 | ⛔ 未修（按建议标注） | blockingLock javadoc 已写明：cluster 下等待者只能靠 park 超时重试 |
+| P2-12 并发测试补齐 | ✅ 已修 | 双线程互斥（原子计数无门控 + 正向竞争断言）、实例复用二次续期、等待者>池容量连接归还、重入抛异常，均已实现并跑绿 |
+
+评审补充发现（同一轮一并修复）：
+- interrupt 标记被 `Thread.interrupted()` 清除后丢失 → beginLock/park 循环改 `isInterrupted()`，标记保留给调用方。
+- finally 里 stopListener 抛异常替换原始异常 → 已捕获降级为 warn。
+- 解锁失败时 BlockingLock 不再跳过 publish（等待者可提前被唤醒重试）。
+- ifLocked 的 finally 解锁失败改记 warn，不替换 task 业务异常。
+- 续期失败原因区分"已过期/已易主"：renew.lua 返回 1/-1/0，renewLock 返回 int，日志可定位；`testRenewLockReturnsDistinguishableResults` 覆盖。
+
+未覆盖 / 遗留（后续再议）：
+- Redis Cluster 的 NOSCRIPT 重试按 sampleKey 路由，跨槽时重试仍可能落错节点；AuthUtils 的 3 处 evalsha 未走 evalLua 重试——同根因，属模块级脚本治理，不在锁修复批次。
+- 报告初版 §2.2(6) 写 unsubscribe 未连接时抛 IllegalStateException，实测为 JedisException("... is not connected to a Connection.")，以本台账为准。
+- 测试配置 redis.properties 含本机 WSL Redis 地址，属本地调试文件。
+- `ReadWriteLock` 接口无实现类，未展开。

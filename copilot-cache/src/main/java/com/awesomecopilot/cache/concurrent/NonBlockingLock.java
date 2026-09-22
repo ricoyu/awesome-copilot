@@ -114,7 +114,12 @@ public class NonBlockingLock extends AbstractLock {
 				log.error("task执行异常", e);
 				throw e;
 			} finally {
-				unlock();
+				// 语义是"任务结束尽力释放": 解锁失败(锁已丢失)记 warn, 不能用它替换 task 的业务异常
+				try {
+					unlock();
+				} catch (Exception e) {
+					log.warn("task 执行完毕后解锁失败, key 的状态已清理, 原因: {}", e.getMessage());
+				}
 			}
 		} else {
 			log.warn("加锁失败, task未执行");

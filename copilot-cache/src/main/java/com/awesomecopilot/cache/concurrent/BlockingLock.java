@@ -105,7 +105,7 @@ public class BlockingLock extends AbstractLock {
 				 * 本线程过完租期也会自动醒来(锁最迟在租期后过期), 防止死锁
 				 */
 				LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(defaultTimeout));
-				if (Thread.interrupted()) {
+				if (Thread.currentThread().isInterrupted()) {
 					throw new LockThreadInterruptedException("线程被中断了");
 				}
 				if (JedisUtils.setnx(key, lockValue, defaultTimeout, TimeUnit.SECONDS)) {
@@ -122,7 +122,12 @@ public class BlockingLock extends AbstractLock {
 			// 如果没拿到锁, 清理ThreadLocal状态, 避免线程池线程复用时的残留与订阅泄漏
 			if (!lockedThreadLocal.get()) {
 				clearHoldState();
-				stopListener();
+				// stopListener 抛异常不能替换正在传播的原始异常(比如中断异常), 清理尽力而为即可
+				try {
+					stopListener();
+				} catch (Exception e) {
+					log.warn("取消锁通知订阅失败, key={}", key, e);
+				}
 			}
 		}
 	}
@@ -142,13 +147,17 @@ public class BlockingLock extends AbstractLock {
 
 	@Override
 	public void unlock() {
-		doUnlock();
-		/**
-		 * 通知其他线程可以重新获取锁了, 把当前线程名作为消息发出去, 方便记log
-		 */
-		JedisUtils.publish(notifyChannel, Thread.currentThread().getName());
-		log.debug(">>>>>> {} 发布消息, 现在其他线程可以重新获取锁, key={} <<<<<<",
-				Thread.currentThread().getName(), key);
+		try {
+			doUnlock();
+		} finally {
+			/**
+			 * 通知其他线程可以重新获取锁了, 把当前线程名作为消息发出去, 方便记log。
+			 * 即使本次解锁失败(锁已过期/易主)也要发: 等待者被唤醒后重试 setnx 无害且有益
+			 */
+			JedisUtils.publish(notifyChannel, Thread.currentThread().getName());
+			log.debug(">>>>>> {} 发布消息, 现在其他线程可以重新获取锁, key={} <<<<<<",
+					Thread.currentThread().getName(), key);
+		}
 	}
 
 	/**

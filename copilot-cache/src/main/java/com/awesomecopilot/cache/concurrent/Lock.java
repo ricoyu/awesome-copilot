@@ -38,8 +38,10 @@ public interface Lock {
 	
 	/**
 	 * 释放锁。需要先检查是否成功获取锁，没获得锁就调用该方法将抛异常
+	 * <p>
+	 * 锁在本线程持有期间已过期或被别的客户端获取时(value 不匹配), 同样抛异常提示"锁已丢失"
 	 *
-	 * @throws IllegalMonitorStateException
+	 * @throws com.awesomecopilot.cache.exception.OperationNotSupportedException 当前线程未持有锁, 或解锁时 value 不匹配
 	 */
 	public void unlock();
 	
