@@ -12,6 +12,8 @@ package com.awesomecopilot.common.lang.exception;
  * @version 1.0
  */
 public class InvalidCodeException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
 	
 	public InvalidCodeException() {
 	}

@@ -11,6 +11,8 @@ package com.awesomecopilot.common.lang.exception;
  * @version 1.0
  */
 public class SqlParseException extends RuntimeException{
+	private static final long serialVersionUID = 1L;
+
 	
 	public SqlParseException() {
 	}

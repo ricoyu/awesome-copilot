@@ -14,6 +14,8 @@ import com.awesomecopilot.common.lang.errors.ErrorType;
  * @version 1.0
  */
 public class ApplicationException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
 	
 	private String code = "500";
 	

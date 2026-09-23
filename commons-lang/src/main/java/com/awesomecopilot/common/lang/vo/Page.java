@@ -132,11 +132,6 @@ public class Page implements Serializable {
 		return this;
 	}
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(pageNum, pageSize, totalPages, totalCount, order, orders);
-	}
-
 	/**
 	 * Based on record return from sql query, determine if there is another page
 	 * 
@@ -168,6 +163,10 @@ public class Page implements Serializable {
 
 	public void setPageSize(int pageSize) {
 		this.pageSize = pageSize;
+		//P2-31(CODE_REVIEW_REPORT): 修复前只有 setTotalCount 触发重算——实测
+		//setTotalCount(95) 后 totalPages=10, 再 setPageSize(20) 仍 10(期望 5)。
+		//Jackson 反序列化按字段顺序先 total 后 pageSize 时必踩。同步重算。
+		updatePagingStatus();
 	}
 
 	@JsonIgnore

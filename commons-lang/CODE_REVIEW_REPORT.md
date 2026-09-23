@@ -5909,14 +5909,14 @@ RED 证据与修法要点：
 | 8 | toByteArray(ByteChannel) 恒 0 读永久自旋（评2-P2） | 属实 | 已修：连续 1 万次 0 读抛 IOException；偶发 0 读后恢复给数据的路径实测不误杀 |
 | 9 | createParentDir 对不带目录的相对文件名 return false 与 javadoc 矛盾，copy 无声失败（评2-P2） | 属实 | 已修：采纳评审方案 toAbsolutePath().getParent()（仅根路径仍判空），copy 不带目录的相对文件名实测可写入 |
 | 10 | toBigDecimal(Float) 走 doubleValue 放大噪声（1.1f→1.100000023841858）（评3-P2） | 属实 | 已修：Float 走 `new BigDecimal(Float.toString(f))`；NaN/Infinity 抛 NumberFormatException 维持不变 |
-| 11 | ApplicationException(Throwable) 在 cause 无消息时 message 仍 null（评3-P2） | 属实 | 已修：无消息时兜底 cause.toString()，保留异常类型信息 |
+| 11 | ApplicationException(Throwable) 在 cause 无消息时 message 仍 null（评3-P2） | 属实 | 已修：无消息时改用 cause.toString() 作为消息，保留异常类型信息 |
 | 12 | ServiceException 新增字段致计算 UID 漂移（评3-P2） | 属实 | 已修：显式声明 serialVersionUID=3645985928446181182L（即原计算值），后续加字段不再破坏反序列化 |
 | 13 | 空 order 段(" "、",id:asc")现在把 orderBy="" 塞进 page.order，JPA 入口 root.get("") 抛查询期异常（评3-P2） | 属实 | 已修：trim 后为空的段跳过不产出排序项（JPA 入口维持修复前"整条忽略"语义） |
 | 14 | 提交失败时 lastPrintTime 照样推进，10 分钟窗口被无谓吃掉（评2-P2） | 属实 | 已修：时间戳推进移到 execute 成功之后；新增确定性用例（反射关停执行器→提交必抛→permits=1 且时间戳不推进） |
 | 15 | AbortWithReportPolicyGuardTest 无 RED 能力（评2-P2，修复前压测同样通过） | 属实 | 部分处置：发现 14 的新用例提供确定性验证（不依赖竞态）；原压测用例保留作"修复后许可不丢"的行为锁；泄漏路径封死性以代码直读+评审逐行副本强制交错(修复后 permits=1/修复前 0)为准 |
 | 16 | 虚拟时间过渡毫秒(==lastTimestamp)仍用低位 sequence（评2-P2） | 属实但属残余 | 不修：该毫秒挂钟已真实走过，对端在挂钟到达前不会用到它，且本进程从当前值连续发号不改变与"未来虚拟毫秒"(已错开)的关系；收紧它要牺牲正常模式语义。报告留痕 |
 | 17 | 虚拟毫秒容量减半，>2.048M/s 持续发号时虚拟时间跑赢挂钟的裕度变差（评2-P2） | 推演成立，属收紧型取舍的已知代价 | 不修（记录）：触发前提是回拨后以接近极限速率持续发号满 60 秒，报告 Javadoc 已声明超限人工介入；若未来实测碰到再改低起点(如 1024) |
-| 18 | JPACriteriaQuery 仍只读 getOrder()，第二级排序在 JPA 入口丢弃；PageDeserializer 同样只填 orders；Boolean "1"/"Y" 仍 false；MathUtils.round 负 precision 不校验；DoubleValueHandler 缺 Double/String 分支；toInt(BigInteger) 溢出未修；TIME_ZONE_LOCALE 表别名 ID 查不到；PT_DATE_EN_8 与注释样例不符；Scanner close 传染的测试写法等 | 属实但超出本轮点名范围 | 记入待办不改（按编号另行处置）；仅 PT_DATE_EN_8 顺手修了正则(\d{1}→\d{1,2})——它属于 P1-16 同一张表的位数笔误 |
+| 18 | JPACriteriaQuery 仍只读 getOrder()，第二级排序在 JPA 入口丢弃；PageDeserializer 同样只填 orders；Boolean "1"/"Y" 仍 false；MathUtils.round 负 precision 不校验；DoubleValueHandler 缺 Double/String 分支；toInt(BigInteger) 溢出未修；TIME_ZONE_LOCALE 表别名 ID 查不到；PT_DATE_EN_8 与注释样例不符；Scanner close 传染的测试写法等 | 属实但超出本轮点名范围 | 记入待办不改（按编号另行处置）；仅 PT_DATE_EN_8 同时修复了正则(\d{1}→\d{1,2})——它属于 P1-16 同一张表的位数笔误 |
 
 行为变更补充（在 P1 批次修复记录之上）：DateFormatterHolder 默认入口从"JVM 默认 locale"固定为 CHINA（兑现 javadoc，en/fr 机器输出变为中文月份名/星期名）；(pattern,locale) 入口键含默认时区后，运行期改默认时区的调用会拿到新时区实例（旧行为是拿过期实例）。
 
@@ -6078,18 +6078,18 @@ RED 证据与修法要点：
 - `lookup(Class,String)`:361-364——实测 `lookupEnum(DayOfWeek.class, "")` 抛 IllegalArgumentException，而按属性匹配的姊妹重载对空串返回 null；表单没填时一个给 null 一个给异常。统一返回 null。
 - `lookupEnum` Long 分支:296-301——`value.intValue() == propertyValue.intValue()`，4294967297L 与 1L 的 intValue 都是 1，会命中错误枚举；BigInteger 分支(:345 区)同病。用 `longValue()`/`equals` 比较。
 
-### P2-26 ValueHandlerFactory 残余三处（Short null / BigDecimal 报错文案 / render 后缀） [实测+直读]
+### P2-26 ValueHandlerFactory 残余三处（Short null / BigDecimal 报错文案 / render 后缀） [实测+直读] ✅【已修复 2026-09-23：RED 9 用例全 FAIL（含 NPE/{3}字面量/abcF/convert(null)=0 等实测现象），修复后 GREEN 9/9】
 
 - `ShortValueHandler.convert(null)`:465-467——实测返回 0，同文件其余 handler 全部返回 null；DB 的 NULL smallint 列会变成 0。改 `return null`。
 - `BigDecimalValueHandler`:202-224——实测 `convert(100L, BigDecimal.class)` 抛异常且消息写 `to requested type [java.lang.Float]`（复制粘贴痕迹，把人引错排查方向）；Long/Short/String 本可无损转换却直接拒绝。补分支、改 `unknownConversion(value, BigDecimal.class)`。
 - `StringValueHandler.render`/`DateValueHandler.render`:262、316——实测 `render("abc")` 返回 `abcF`、日期渲染返回 `Thu Jan 01 ... 1970F`——`+ 'F'` 只该出现在浮点 handler 上。String 应带引号、Date 去掉后缀。
 
-### P2-27 Transformers 与 handler 入口两处（模板 {3} / List+NPE） [实测]
+### P2-27 Transformers 与 handler 入口两处（模板 {3} / List+NPE） [实测] ✅【已修复 2026-09-23：RED 9 用例全 FAIL（含 NPE/{3}字面量/abcF/convert(null)=0 等实测现象），修复后 GREEN 9/9】
 
 - `Transformers.java:38`——消息模板写了 `{3}` 但只传 3 个参数，实测异常文本结尾是字面量 `to expected type[{3}]`，真正想转的目标类型丢了。改 `{2}`。
 - `determineAppropriateHandler(List.class, null)`:661-669——实测 NPE（`GenericTypeInspector` 直接 `field.getType()`）；单参重载对 List 永远返回 null，`Transformers.convert(任何List, List.class)` 必抛"没有合适的 handler"——集合转换能力存在但两个入口都走不到。
 
-### P2-28 ReflectionUtils / ClassUtils 簇（缓存数组共享 / 三处无消息 NPE / 只写不读的缓存） [实测]
+### P2-28 ReflectionUtils / ClassUtils 簇（缓存数组共享 / 三处无消息 NPE / 只写不读的缓存） [实测] ✅【已修复 2026-09-23，见 ReflectionUtilsP2FixTest：RED 5/9 复现（含 Pattern.matcher NPE、NoSuchMethod、数组共享）→ GREEN 9/9；commons-lang 全量 289 零失败；下游 json/orm/workbook/validation 编译通过】
 
 - `getDeclaredFields/getDeclaredMethods`:369-376、1074-1093——把缓存数组本体交给调用方；实测两次调用返回同一实例（`a==b` true），任一处 `a[0]=null` 之后全 JVM 后续调用拿到的字段列表就是坏的，故障随机且无法归位。返回副本或用 javadoc 声明只读，并改用 `cache.get(clazz, loader)` 原子加载。
 - `getFieldValue(String, Class)`:425-448——对实例字段执行 `field.get(null)`，实测抛一条没有任何消息的 NPE，看不出是"字段不是静态的"。加 `Modifier.isStatic` 断言。
@@ -6109,13 +6109,13 @@ RED 证据与修法要点：
 - 现象：判断 500MB 上传文件是否超限会先分配 500MB 堆内存，读的过程中文件被追加还会拿到不一致长度；同参数 `(long fileSize, ...)` 重载本来就有正确实现。
 - 修法：`Files.size(path)` 直接比较。
 
-### P2-31 分页/排序 VO 簇（totalPages 不重算 / hashCode 与 equals 半套 / DIRECTION 非法值降级） [实测]
+### P2-31 分页/排序 VO 簇（totalPages 不重算 / hashCode 与 equals 半套 / DIRECTION 非法值降级） [实测] ✅【已修复 2026-09-23，见 PageOrderBeanP2FixTest：RED 3/6（totalPages 停留旧值、of 两种非法输入两种策略）→ GREEN 6/6；commons-lang 全量 295 零失败；下游 orm/json 编译通过】
 
 - `vo/Page.java:107、169-171`——实测 `setTotalCount(95)` 后 `totalPages=10`，再 `setPageSize(20)` 仍 10（期望 5）：只有 setTotalCount 触发重算。Jackson 按字段顺序先 total 后 pageSize 反序列化时必踩。
 - `vo/Page.java:135-138`——`hashCode` 基于全部可变字段但没重写 `equals`：Page 进 HashSet 后调一次 setter 就再也 contains 不到自己。纯 DTO 用默认标识语义即可，删 hashCode。
 - `vo/OrderBean.java:69-76`——`DIRECTION.of("xyz")` 实测返回 ASC 不抛异常（只有一条 ERROR 日志），而 `of(null)` 抛 NPE：两种非法输入两种相反策略。统一为抛 `IllegalArgumentException`（`PageDTO:52` 正在用它，前端参数拼错时查询顺序会反）。
 
-### P2-32 UrlUtils.encodeUrl 丢掉 #fragment 与 URL 内凭证 [实测]
+### P2-32 UrlUtils.encodeUrl 丢掉 #fragment 与 URL 内凭证 [实测] ✅【已修复 2026-09-23，见 UrlUtilsP2FixTest：旧版对照探针复现 4 现象（frag 丢失/凭证丢失/%2520/= 混淆）→ 修复后 GREEN 6/6；commons-lang 全量 301 零失败】
 
 - 位置：`utils/UrlUtils.java:26-46`
 - 现象：重建 URL 只拼 协议+主机+端口+路径+查询；实测 `https://ex.com/a?q=hello world#frag` 编码后 `#frag` 消失，`https://u:p@ex.com/p` 的用户名密码被整段丢弃（后续请求以未认证身份发出）。另外查询串整体 encode 后再把 `%3D/%26` 换回 `=&`，原值里本来就有的 `%xx` 会被二次编码。
@@ -6154,7 +6154,7 @@ RED 证据与修法要点：
 - 同文件 `:253、:269-281`——`nextId()` 是 `synchronized`，等待时钟回拨的 `sleep(1)` 循环（最长 1 秒）在临界区内执行：一次轻微回拨会把全部取号线程（包括与本次无关的）在同一把锁上排队最多 1 秒。等待移出临界区或直接走虚拟补偿分支。
 - `utils/WorkerIdGenerator.java:70-76`——`% 32` 的推导同网段尾段相同/PID 差 32 倍必撞，且跨进程无租约、冲突只打一条 WARN。类注释已如实披露"约1/32概率撞"并要求生产显式配置 workerId，属知情设计，故按 P2 记录：建议把"检测到同机多 JVM 撞号"从 WARN 升级为启动失败。
 
-### P2-39 杂项小缺陷簇 [实测+直读]
+### P2-39 杂项小缺陷簇 [实测+直读] ◐部分修复(2026-09-23, 见 MiscClusterP2FixTest)：Types/ArrayTypes 补全+遍历构建、PropertyUtils 空壳删除、17 个异常类补 serialVersionUID、BusinessException messageParams 改可变列表、printArray 转 slf4j、DateConstants EN 系列补往返测试守住(正则与格式器现均为连字符, 报告记录的分隔符不一致已在 P1-16 批次消除); TraceId 死计算已随 P1-24 批次消除。尚未处置: ErrorTypes 码格式统一、AbstractErrorType 去 @Data、ErrorType.message() 默认 null、FileUtils MD5 截 12 位——这四处改动对外可见(响应 code 值/公共 API/已入库文件名), 待业主逐项拍板。
 
 - `utils/AlgorithmUtils.java:54`、`utils/TraceId.java:40`——各自有一处"结果被丢弃的死计算"：`traceId()` 每请求做一次 `DateUtils.format(new Date(), ...)` 再扔掉（注释还写 REQ- 前缀、实际 TID-）；`randomArr` 的 `printArray` 用 `System.out`。
 - `utils/Types.java:22-37` + `ArrayTypes`——数组类型注册表缺 `boolean[]/short[]/byte[]/char[]`，未命中 `get` 返回 null 且没有任何提示；且 Types 与 ArrayTypes 是两份手写清单、copilot-cache 里还有第三份孪生实现，迟早分叉。遍历 `ArrayTypes.values()` 统一构建。

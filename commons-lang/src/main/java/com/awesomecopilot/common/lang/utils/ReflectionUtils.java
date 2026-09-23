@@ -161,7 +161,7 @@ public class ReflectionUtils {
 		Class<?> searchType = obj.getClass();
 		
 		while (Object.class != searchType && searchType != null) {
-			Field[] fields = getDeclaredFields(searchType);
+			Field[] fields = cachedDeclaredFields(searchType);
 			for (Field field : fields) {
 				if (name.equals(field.getName())) {
 					return true;
@@ -277,7 +277,7 @@ public class ReflectionUtils {
 		Assert.isTrue(name != null || type != null, "Either name or type of the field must be specified");
 		Class<?> searchType = clazz;
 		while (Object.class != searchType && searchType != null) {
-			Field[] fields = getDeclaredFields(searchType);
+			Field[] fields = cachedDeclaredFields(searchType);
 			for (Field field : fields) {
 				if ((name == null || name.equals(field.getName())) &&
 						(type == null || type.equals(field.getType()))) {
@@ -306,7 +306,7 @@ public class ReflectionUtils {
 		// 遍历类层级（直到Object类停止）
 		while (Object.class != searchType && searchType != null) {
 			// 从缓存获取当前类声明的字段
-			Field[] declaredFields = getDeclaredFields(searchType);
+			Field[] declaredFields = cachedDeclaredFields(searchType);
 			for (Field field : declaredFields) {
 				// 检查字段是否标注了目标注解
 				if (field.isAnnotationPresent(annotationClass)) {
@@ -342,10 +342,15 @@ public class ReflectionUtils {
 	public static Field findFieldRelaxable(Class<?> clazz, String name, Class<?> type) {
 		Assert.notNull(clazz, "Class must not be null");
 		Assert.isTrue(name != null || type != null, "Either name or type of the field must be specified");
-		name = flaxableNamePattern.matcher(name).replaceAll("");
+		//P2-28(CODE_REVIEW_REPORT): 上一行 Assert 明确允许 name==null(按类型查找), 但修复前
+		//这里直接 flaxableNamePattern.matcher(name) 实测抛 Pattern 内部 NPE——循环里
+		//name == null 的判断成了永远走不到的死代码。null 时跳过"放宽匹配"的名字归一化。
+		if (name != null) {
+			name = flaxableNamePattern.matcher(name).replaceAll("");
+		}
 		Class<?> searchType = clazz;
 		while (Object.class != searchType && searchType != null) {
-			Field[] fields = getDeclaredFields(searchType);
+			Field[] fields = cachedDeclaredFields(searchType);
 			for (Field field : fields) {
 				if ((name == null || name.equalsIgnoreCase(field.getName())) &&
 						(type == null || type.equals(field.getType()))) {
@@ -367,12 +372,19 @@ public class ReflectionUtils {
 	 * @see Class#getDeclaredFields()
 	 */
 	public static Field[] getDeclaredFields(Class<?> clazz) {
-		Field[] result = declaredFieldsCache.getIfPresent(clazz);
-		if (result == null) {
-			result = clazz.getDeclaredFields();
-			declaredFieldsCache.put(clazz, (result.length == 0 ? NO_FIELDS : result));
-		}
-		return result;
+		//P2-28(CODE_REVIEW_REPORT): 修复前把缓存数组本体交给调用方——实测两次调用返回
+		//同一实例, 任一处 a[0]=null 之后全 JVM 后续调用拿到的字段列表就是坏的(缓存被外
+		//部改穿)。返回副本; 包内自有遍历逻辑走 cachedDeclaredFields 免复制。
+		return cachedDeclaredFields(clazz).clone();
+	}
+
+	/** 缓存数组直供(内部专用, 调用方不得写入): 见 getDeclaredFields 的 P2-28 说明。 */
+	private static Field[] cachedDeclaredFields(Class<?> clazz) {
+		//Caffeine 的 get(key, loader) 原子加载, 替代 getIfPresent+put 两步(并发时省一次反射)
+		return declaredFieldsCache.get(clazz, k -> {
+			Field[] fields = k.getDeclaredFields();
+			return fields.length == 0 ? NO_FIELDS : fields;
+		});
 	}
 
 	public static Object getField(Field field, Object target) {
@@ -434,6 +446,13 @@ public class ReflectionUtils {
 			return null;
 		}
 		
+		//P2-28(CODE_REVIEW_REPORT): 本方法定位是"获取某个静态字段的值", 但修复前对实例
+		//字段执行 field.get(null) 实测抛一条没有任何消息的 NullPointerException——
+		//看不出是"字段不是静态的"。显式校验并报错点名。
+		if (!Modifier.isStatic(field.getModifiers())) {
+			throw new IllegalArgumentException("Field '" + fieldName + "' on " + targetClass.getName()
+					+ " is not static; use getFieldValue(String, Object) with an instance instead");
+		}
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("Getting field '%s' target class [%s]", fieldName, targetClass));
 		}
@@ -505,7 +524,7 @@ public class ReflectionUtils {
 		Assert.notNull(methodName, "Method name must not be null");
 		Class<?> searchType = clazz;
 		while (searchType != null) {
-			Method[] methods = (searchType.isInterface() ? searchType.getMethods() : getDeclaredMethods(searchType));
+			Method[] methods = (searchType.isInterface() ? searchType.getMethods() : cachedDeclaredMethods(searchType));
 			for (Method method : methods) {
 				if (methodName.equals(method.getName()) && (paramTypes == null || Arrays.equals(paramTypes, method.getParameterTypes()))) {
 					return method;
@@ -636,6 +655,35 @@ public class ReflectionUtils {
 		Class<?> clazz = getClass(className);
 		return invokeStatic(methodName, clazz);
 	}
+
+	/**
+	 * invokeStatic 的回退查找: 在 clazz 的全部公开方法(含继承)里找"名字相同、静态、
+	 * 参数个数一致、每个实参都可赋值给对应形参"的方法。ClassUtils.isAssignable 同时
+	 * 处理基本类型与包装类配对(实参 Integer.class 可匹配形参 int.class)。
+	 */
+	private static Method findAssignableStaticMethod(Class<?> clazz, String methodName, Object[] args) {
+		int argCount = args == null ? 0 : args.length;
+		for (Method m : clazz.getMethods()) {
+			if (!m.getName().equals(methodName) || !Modifier.isStatic(m.getModifiers())) {
+				continue;
+			}
+			Class<?>[] params = m.getParameterTypes();
+			if (params.length != argCount) {
+				continue;
+			}
+			boolean matched = true;
+			for (int i = 0; i < params.length; i++) {
+				if (!ClassUtils.isAssignable(params[i], args[i].getClass())) {
+					matched = false;
+					break;
+				}
+			}
+			if (matched) {
+				return m;
+			}
+		}
+		return null;
+	}
 	
 	/**
 	 * 调用给定类的静态方法, 找不到指定方法同样抛RuntimeException
@@ -662,12 +710,25 @@ public class ReflectionUtils {
 			}
 		}
 		try {
-			Method method = clazz.getMethod(methodName, parameterTypes);
+			Method method = parameterTypes == null ? clazz.getMethod(methodName) : clazz.getMethod(methodName, parameterTypes);
 			return method.invoke(null, args);
 		} catch (NoSuchMethodException e) {
-			String msg = "No such method " + methodName;
-			log.error(msg, e);
-			throw new RuntimeException(msg, e);
+			//P2-28(CODE_REVIEW_REPORT): getMethod 按实参运行时类型"精确"匹配——实测
+			//方法声明为 Collection 参数、实参传 ArrayList 时报 NoSuchMethod(方法明明可接收)。
+			//精确匹配失败后回退: 在全部公开方法里找"名字相同 + 逐参可赋值"的方法。
+			Method fallback = findAssignableStaticMethod(clazz, methodName, args);
+			if (fallback == null) {
+				String msg = "No such method " + methodName;
+				log.error(msg, e);
+				throw new RuntimeException(msg, e);
+			}
+			try {
+				return fallback.invoke(null, args);
+			} catch (IllegalAccessException | InvocationTargetException e2) {
+				String msg = "Invoke method " + methodName + " failed!";
+				log.error(msg, e2);
+				throw new RuntimeException(msg, e2);
+			}
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			String msg = "Invoke method " + methodName + " failed!";
 			log.error(msg, e);
@@ -915,7 +976,7 @@ public class ReflectionUtils {
 	 * @since 4.2
 	 */
 	public static void doWithLocalMethods(Class<?> clazz, MethodCallback mc) {
-		Method[] methods = getDeclaredMethods(clazz);
+		Method[] methods = cachedDeclaredMethods(clazz);
 		for (Method method : methods) {
 			try {
 				mc.doWith(method);
@@ -957,7 +1018,7 @@ public class ReflectionUtils {
 	 */
 	public static void doWithMethods(Class<?> clazz, MethodCallback mc, MethodFilter mf) {
 		// Keep backing up the inheritance hierarchy.
-		Method[] methods = getDeclaredMethods(clazz);
+		Method[] methods = cachedDeclaredMethods(clazz);
 		//methods = filterProxyMethods(clazz, methods);
 		for (Method method : methods) {
 			if (mf != null && !mf.matches(method)) {
@@ -1072,6 +1133,12 @@ public class ReflectionUtils {
 	 * @see Class#getDeclaredMethods()
 	 */
 	public static Method[] getDeclaredMethods(Class<?> clazz) {
+		//P2-28(CODE_REVIEW_REPORT): 同 getDeclaredFields——缓存数组本体不外流, 返回副本。
+		return cachedDeclaredMethods(clazz).clone();
+	}
+
+	/** 缓存数组直供(内部专用, 调用方不得写入): 见 getDeclaredMethods 的 P2-28 说明。 */
+	private static Method[] cachedDeclaredMethods(Class<?> clazz) {
 		Method[] result = declaredMethodsCache.getIfPresent(clazz);
 		if (result == null) {
 			Method[] declaredMethods = clazz.getDeclaredMethods();

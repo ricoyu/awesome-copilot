@@ -35,7 +35,9 @@ public final class Transformers {
 		
 		ValueHandlerFactory.ValueHandler valueHandler = ValueHandlerFactory.determineAppropriateHandler(targetType);
 		if (valueHandler == null) {
-			String msg = format("Cannot transform value[{0}] of type[{1}] to expected type[{3}]", value, value.getClass(), targetType);
+			//P2-27(CODE_REVIEW_REPORT): 修复前模板写 {3} 但只传 3 个参数(下标 0~2)——
+			//实测异常文本以字面量 "to expected type[{3}]" 结尾, 真正要转的目标类型没打出来。
+			String msg = format("Cannot transform value[{0}] of type[{1}] to expected type[{2}]", value, value.getClass(), targetType);
 			throw new NoSuitableValueHandlerException(msg);
 		}
 		return (T) valueHandler.convert(value);

@@ -191,7 +191,9 @@ public class ValueHandlerFactory {
 
 		@Override
 		public String render(Double value) {
-			return value.toString() + 'F';
+			//P2-26(CODE_REVIEW_REPORT): 修复前后缀是 'F'——那是 Float 的字面量后缀(见
+			//FloatValueHandler), java 里 Double 字面量后缀是 D(1.5d)。
+			return value.toString() + 'D';
 		}
 	}
 
@@ -221,7 +223,20 @@ public class ValueHandlerFactory {
 				return BigDecimal.valueOf(((Integer) value).doubleValue());
 			}
 
-			throw unknownConversion(value, Float.class);
+			//P2-26(CODE_REVIEW_REPORT): Long/Short/String 本可无损转 BigDecimal, 修复前
+			//实测 convert(100L) 直接抛异常, 且报错消息写的是 "requested type [java.lang.Float]"
+			//(从 Float handler 复制粘贴的痕迹)。补分支并修正文案。
+			if (Long.class.isInstance(value)) {
+				return BigDecimal.valueOf((Long) value);
+			}
+			if (Short.class.isInstance(value)) {
+				return BigDecimal.valueOf((Short) value);
+			}
+			if (String.class.isInstance(value)) {
+				return new BigDecimal((String) value);
+			}
+
+			throw unknownConversion(value, BigDecimal.class);
 		}
 
 		@Override
@@ -260,7 +275,9 @@ public class ValueHandlerFactory {
 
 		@Override
 		public String render(Date value) {
-			return value.toString() + 'F';
+			//P2-26(CODE_REVIEW_REPORT): 修复前实测返回 "Thu Jan 01 ... 1970F"——
+			//日期没有浮点字面量后缀一说, 'F' 是从数值 handler 复制过来的。
+			return value.toString();
 		}
 	}
 
@@ -314,7 +331,9 @@ public class ValueHandlerFactory {
 
 		@Override
 		public String render(String value) {
-			return value.toString() + 'F';
+			//P2-26(CODE_REVIEW_REPORT): 修复前实测 render("abc") 返回 "abcF"。
+			//字符串渲染成 java 字面量应带双引号。
+			return "\"" + value + "\"";
 		}
 	}
 
@@ -465,8 +484,10 @@ public class ValueHandlerFactory {
 
 		@Override
 		public Short convert(Object value) {
+			//P2-26(CODE_REVIEW_REPORT): 修复前实测 convert(null) 返回 0——同文件其余
+			//handler 对 null 一律返回 null, DB 的 NULL smallint 列经这里会变成 0。统一返回 null。
 			if (value == null) {
-				return 0;
+				return null;
 			}
 			if (Short.class.isInstance(value)) {
 				return (Short) value;
@@ -611,6 +632,13 @@ public class ValueHandlerFactory {
 		if (LocalTime.class.equals(targetType)) {
 			return (ValueHandler<T>) LocalTimeValueHandler.INSTANCE;
 		}
+		//P2-27(CODE_REVIEW_REPORT): 修复前实测 Transformers.convert("[a, b, c]", List.class)
+		//永远抛 NoSuitableValueHandlerException——单参入口完全不认 List, 集合转换能力
+		//(StringListValueHandler)只有带 Field 的两参入口能走到。无 field 可查元素类型,
+		//给默认的 String 列表 handler(元素本来就是任意值的字符串形式)。
+		if (List.class.equals(targetType)) {
+			return (ValueHandler<T>) StringListValueHandler.INSTANCE;
+		}
 
 		return null;
 	}
@@ -662,6 +690,12 @@ public class ValueHandlerFactory {
 			return (ValueHandler<T>) LocalTimeValueHandler.INSTANCE;
 		}
 		if (List.class.equals(targetType)) {
+			//P2-27(CODE_REVIEW_REPORT): 修复前 field==null 时实测 NPE——
+			//GenericTypeInspector.inspectGenericTypes 直接调 field.getType()。无 field 可查
+			//元素类型时退化为默认的 String 列表 handler(列表元素转 String 是最通用需求)。
+			if (field == null) {
+				return (ValueHandler<T>) StringListValueHandler.INSTANCE;
+			}
 			String type = GenericTypeInspector.inspectGenericTypes(field);
 			if ("java.lang.String".equalsIgnoreCase(type)) {
 				return (ValueHandler<T>) StringListValueHandler.INSTANCE;
@@ -669,6 +703,8 @@ public class ValueHandlerFactory {
 			if ("java.lang.Integer".equalsIgnoreCase(type)) {
 				return (ValueHandler<T>) IntegerListValueHandler.INSTANCE;
 			}
+			//元素类型不受支持: 与上面两支一样显式返回 null, 语义不变但意图写明
+			return null;
 		}
 
 		return null;

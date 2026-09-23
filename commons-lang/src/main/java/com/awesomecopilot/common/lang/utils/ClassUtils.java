@@ -122,13 +122,6 @@ public abstract class ClassUtils {
 	 */
 	private static final Set<Class<?>> javaLanguageInterfaces;
 
-	/**
-	 * Cache for equivalent methods on an interface implemented by the declaring class.
-	 */
-	private static final Cache<Method, Method> interfaceMethodCache = Caffeine.newBuilder()
-			.maximumSize(1000)
-			.expireAfterWrite(1, MINUTES)
-			.build();
 
 
 	static {
@@ -1389,10 +1382,10 @@ public abstract class ClassUtils {
 		if (!Modifier.isPublic(method.getModifiers()) || method.getDeclaringClass().isInterface()) {
 			return method;
 		}
-		// Try cached version of method in its declaring class
 		Method result =
 				findInterfaceMethodIfPossible(method, method.getDeclaringClass(), Object.class);
-		interfaceMethodCache.put(method, result);
+		//P2-28(CODE_REVIEW_REPORT): 此处原有 interfaceMethodCache.put——但该缓存全文件
+		//没有任何读取点(只写不读, 昂贵查找每次照跑, 缓存纯占内存), 已删除。
 		if (result == method && targetClass != null) {
 			// No interface method found yet -> try given target class (possibly a subclass of the
 			// declaring class, late-binding a base class method to a subclass-declared interface:

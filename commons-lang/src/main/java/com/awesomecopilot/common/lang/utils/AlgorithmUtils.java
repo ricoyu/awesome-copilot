@@ -1,4 +1,7 @@
-package com.awesomecopilot.common.lang.utils;
+package com.awesomecopilot.common.lang.utils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 提供随机数
@@ -11,7 +14,9 @@ package com.awesomecopilot.common.lang.utils;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-public final class AlgorithmUtils {
+public final class AlgorithmUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(AlgorithmUtils.class);
 
     /**
      * 返回一个数组, 数组长度是<=指定长度, 数组的每个元素不超过指定的最大值
@@ -52,15 +57,17 @@ public final class AlgorithmUtils {
             return;
         }
 
-        System.out.print("{");
-        for (int i = 0; i < nums.length; i++) {
-            if (i == nums.length - 1) {
-                System.out.print(nums[i]);
-            } else {
-                System.out.print(nums[i] + ", ");
+        //P2-39(CODE_REVIEW_REPORT): 库代码统一走 slf4j, 修复前直接 System.out
+        if (log.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder("{");
+            for (int i = 0; i < nums.length; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(nums[i]);
             }
+            log.debug("{}", sb.append("}"));
         }
-        System.out.println("}");
     }
 
     public static boolean arrayEquals(int[] arr1, int[] arr2) {

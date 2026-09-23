@@ -19,15 +19,12 @@ public final class Types {
 	private static final Map<String, ArrayTypes> arrayTypeMap = new ConcurrentHashMap<>();
 	
 	static {
-		arrayTypeMap.put(ArrayTypes.LONG.getClassName(), ArrayTypes.LONG);
-		arrayTypeMap.put(ArrayTypes.LONG_WRAPPER.getClassName(), ArrayTypes.LONG_WRAPPER);
-		arrayTypeMap.put(ArrayTypes.INTEGER.getClassName(), ArrayTypes.INTEGER);
-		arrayTypeMap.put(ArrayTypes.INTEGER_WRAPPER.getClassName(), ArrayTypes.INTEGER_WRAPPER);
-		arrayTypeMap.put(ArrayTypes.STRING.getClassName(), ArrayTypes.STRING);
-		arrayTypeMap.put(ArrayTypes.DOUBLE.getClassName(), ArrayTypes.DOUBLE);
-		arrayTypeMap.put(ArrayTypes.DOUBLE_WRAPPER.getClassName(), ArrayTypes.DOUBLE_WRAPPER);
-		arrayTypeMap.put(ArrayTypes.FLOAT.getClassName(), ArrayTypes.FLOAT);
-		arrayTypeMap.put(ArrayTypes.FLOAT_WRAPPER.getClassName(), ArrayTypes.FLOAT_WRAPPER);
+		//P2-39(CODE_REVIEW_REPORT): 修复前这里是逐个手写的 9 行 put——和 ArrayTypes 枚举
+		//是两份要同时维护的清单, 枚举补了新类型而这里忘跟就会返回 null。
+		//遍历 values() 统一构建, ArrayTypes 成为唯一维护点。
+		for (ArrayTypes arrayType : ArrayTypes.values()) {
+			arrayTypeMap.put(arrayType.getClassName(), arrayType);
+		}
 	}
 	
 	public static ArrayTypes arrayTypes(Object value) {

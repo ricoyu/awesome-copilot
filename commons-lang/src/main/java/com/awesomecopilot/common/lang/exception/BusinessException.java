@@ -19,6 +19,8 @@ import java.util.List;
  * @version 1.0
  */
 public class BusinessException extends RuntimeException {
+	private static final long serialVersionUID = 1L;
+
 	
 	private String code;
 	
@@ -49,7 +51,9 @@ public class BusinessException extends RuntimeException {
 		this.code = errorType.code();
 		this.msgTemplate = errorType.msgTemplate();
 		this.message = errorType.message();
-		this.messageParams = Arrays.asList(messageParams);
+		//P2-39(CODE_REVIEW_REPORT): 修复前是 Arrays.asList——定长视图, 调用方
+		//getMessageParams().add(...) 实测抛 UnsupportedOperationException。拷成可变列表。
+		this.messageParams = new ArrayList<>(Arrays.asList(messageParams));
 	}
 	
 	public BusinessException(String code, String message) {

@@ -23,8 +23,10 @@ public class SlidingWindowTest {
             }
         }
 
-        // 等待 1 秒后，限流窗口应重置，允许新的请求
-        Thread.sleep(1000);
+        // 等待限流窗口重置。注意：canPass 判断过期用的是"距今严格大于窗口长度"，
+        // 而 currentTimeMillis 按毫秒取整——只睡 1000ms 时差值可能恰好等于 1000，
+        // 旧记录不算过期、配额没释放，全量套件里实测会随机失败。多等 100ms 留边界余量。
+        Thread.sleep(1100);
         assertTrue(slidingWindow.canPass());
     }
 }
