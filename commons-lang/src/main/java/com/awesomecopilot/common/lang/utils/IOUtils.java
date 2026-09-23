@@ -134,6 +134,10 @@ public class IOUtils {
 
 	/**
 	 * 从InputStream读取字符串
+	 * P2-6: 修复前用 Scanner 读——Scanner 会捕获底层 IOException 不上抛(hasNextLine 直接
+	 * 返回 false, 探针实测确认), 半截内容照常返回; 外层 catch 里的 log.warn(e.getMessage())
+	 * 又丢光堆栈。现改用 BufferedReader: 读失败抛 IOException, 包成 IORuntimeException 上抛,
+	 * 半截内容不再外流。
 	 *
 	 * @param in
 	 * @return String
@@ -141,18 +145,17 @@ public class IOUtils {
 	public static String readFileAsString(InputStream in) {
 		StringBuilder result = new StringBuilder();
 		boolean firstLine = true;
-		try (Scanner scanner = new Scanner(in)) {
-			while (scanner.hasNextLine()) {
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, UTF_8))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
 				if (!firstLine) {
 					result.append(System.lineSeparator());
 				}
-				String line = scanner.nextLine();
 				result.append(line);
 				firstLine = false;
 			}
-			scanner.close();
-		} catch (Exception e) {
-			log.warn(e.getMessage());
+		} catch (IOException e) {
+			throw new IORuntimeException("read file content from InputStream failed", e); //P2-6
 		}
 		return result.toString();
 	}
@@ -160,15 +163,20 @@ public class IOUtils {
 
 	/**
 	 * 读取文件系统中的文件
+	 * P2-13: 修复前文件不存在(FileNotFoundException 只记了一条 log.warn)返回空串,
+	 * 与"文件存在但内容为空"完全无法区分; 现文件不存在/读取失败都抛 IORuntimeException。
 	 *
 	 * @param filePath
 	 * @return String
 	 */
 	public static String readFileAsString(String filePath) {
-		StringBuilder result = new StringBuilder();
 		File file = new File(filePath);
+		if (!file.exists()) { //P2-13: 先判断存在性, 不存在直接抛, 不再伪装成空串
+			throw new IORuntimeException("file not found: " + filePath);
+		}
+		StringBuilder result = new StringBuilder();
 		boolean firstLine = true;
-		try (Scanner scanner = new Scanner(file)) {
+		try (Scanner scanner = new Scanner(file, UTF_8)) { //P2-13: 固定 UTF-8, 修复前用平台默认字符集
 			while (scanner.hasNextLine()) {
 				if (!firstLine) {
 					result.append(System.lineSeparator());
@@ -177,15 +185,15 @@ public class IOUtils {
 				result.append(line);
 				firstLine = false;
 			}
-			scanner.close();
-		} catch (IOException e) {
-			log.warn(e.getMessage());
+		} catch (IOException e) { //P2-13: 读取中途失败不再返回半截内容
+			throw new IORuntimeException("read file failed: " + filePath, e);
 		}
 		return result.toString();
 	}
 
 	/**
 	 * 读取文件系统中的文件
+	 * P2-13(同类): 修复前文件不存在返回空串, 与空文件无法区分; 现抛 IORuntimeException。
 	 *
 	 * @param file
 	 * @return String
@@ -194,10 +202,13 @@ public class IOUtils {
 		if (file == null) {
 			return null;
 		}
+		if (!file.exists()) { //P2-13(同类)
+			throw new IORuntimeException("file not found: " + file);
+		}
 
 		boolean firstLine = true;
 		StringBuilder result = new StringBuilder();
-		try (Scanner scanner = new Scanner(file)) {
+		try (Scanner scanner = new Scanner(file, UTF_8)) { //P2-13(同类): 固定 UTF-8
 			while (scanner.hasNextLine()) {
 				if (!firstLine) {
 					result.append(System.lineSeparator());
@@ -206,9 +217,8 @@ public class IOUtils {
 				result.append(line);
 				firstLine = false;
 			}
-			scanner.close();
-		} catch (IOException e) {
-			log.warn(e.getMessage());
+		} catch (IOException e) { //P2-13(同类): 不再返回半截内容
+			throw new IORuntimeException("read file failed: " + file, e);
 		}
 		return result.toString();
 	}
@@ -392,13 +402,16 @@ public class IOUtils {
 
 	/**
 	 * 将多个块合并成一个文件
+	 * P2-11: 修复前用 new FileOutputStream(destFile, true) 打开, 是追加语义——
+	 * 目标文件已存在时旧内容不删, 重复调用越拼越长(实测目标 OLD 合并 A/B 得到 OLDA),
+	 * "merge"这个名字没有表达追加。现改为覆盖语义: 每次合并结果就是各块内容依次拼接。
 	 *
 	 * @param destFile
 	 * @param blocks
 	 */
 	public static void merge(String destFile, String... blocks) {
 		byte[] buffer = new byte[1024];
-		try (OutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destFile), true))) {
+		try (OutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destFile), false))) { //P2-11: true→false, 覆盖
 			for (String block : blocks) {
 				try (InputStream is = new BufferedInputStream(new FileInputStream(new File(block)))) {
 					int len;
@@ -474,6 +487,10 @@ public class IOUtils {
 
 	/**
 	 * 读取classpath下某个文件，返回InputStream
+	 * P2-16: 修复前未命中时会走到最后的 resolver 通配扫描(classpath 双星号模式),
+	 * 把整条 classpath 的每个目录/jar 都枚举一遍(实测首次未命中 144ms,
+	 * 平均 24ms/次), 且每次重复调用都重扫。现加"未命中负缓存"(60 秒 TTL):
+	 * 同一路径在 TTL 内再次查询直接返回 null, 不再扫描; TTL 到期后允许命中新放入的文件。
 	 *
 	 * @param fileName
 	 * @return
@@ -482,7 +499,43 @@ public class IOUtils {
 		if (isBlank(fileName)) {
 			return null;
 		}
+		if (isKnownMiss(fileName)) { //P2-16: 负缓存命中, 直接返回
+			return null;
+		}
+		InputStream in = doReadClasspathFileAsInputStream(fileName);
+		if (in == null) {
+			markMiss(fileName); //P2-16: 记录未命中, TTL 内不再重扫
+		}
+		return in;
+	}
 
+	/** P2-16: 负缓存条目上限, 超过整体清空, 防止无界增长 */
+	private static final int MISS_CACHE_MAX_ENTRIES = 1024;
+	/** P2-16: 未命中结果缓存有效期(毫秒) */
+	private static final long MISS_CACHE_TTL_MILLIS = 60_000L;
+	private static final java.util.concurrent.ConcurrentHashMap<String, Long> classpathMissCache =
+			new java.util.concurrent.ConcurrentHashMap<>();
+
+	private static boolean isKnownMiss(String fileName) {
+		Long missedAt = classpathMissCache.get(fileName);
+		if (missedAt == null) {
+			return false;
+		}
+		if (System.currentTimeMillis() - missedAt > MISS_CACHE_TTL_MILLIS) {
+			classpathMissCache.remove(fileName); //过期, 放行重新查找
+			return false;
+		}
+		return true;
+	}
+
+	private static void markMiss(String fileName) {
+		if (classpathMissCache.size() >= MISS_CACHE_MAX_ENTRIES) {
+			classpathMissCache.clear();
+		}
+		classpathMissCache.put(fileName, System.currentTimeMillis());
+	}
+
+	private static InputStream doReadClasspathFileAsInputStream(String fileName) {
 		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 		if (fileName.startsWith("classpath")) {
 			Resource resource = resolver.getResource(fileName);
@@ -861,6 +914,8 @@ public class IOUtils {
 
 	/**
 	 * Delete a file if exists
+	 * P2-21: 修复前 catch 后仍 return true——删除失败(如文件被占用/无权限)调用方也以为删成功了。
+	 * 现返回 Files.deleteIfExists 的真实结果: 删除成功 true, 目标不存在或删失败 false。
 	 *
 	 * @param path
 	 * @return
@@ -868,15 +923,16 @@ public class IOUtils {
 	public static boolean deleteFile(Path path) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		try {
-			Files.deleteIfExists(path);
+			return Files.deleteIfExists(path); //P2-21
 		} catch (IOException e) {
 			log.warn(format("Delete file {0} failed", path), e);
+			return false; //P2-21
 		}
-		return true;
 	}
 
 	/**
 	 * Delete a file if exists
+	 * P2-21: 同 Path 重载, 修复前删除失败也返回 true。
 	 *
 	 * @param path
 	 * @return
@@ -884,11 +940,11 @@ public class IOUtils {
 	public static boolean deleteFile(String path) {
 		Objects.requireNonNull(path, "path cannot be null!");
 		try {
-			Files.deleteIfExists(Path.of(path));
+			return Files.deleteIfExists(Path.of(path)); //P2-21
 		} catch (IOException e) {
 			log.warn(format("Delete file {0} failed", path), e);
+			return false; //P2-21
 		}
-		return true;
 	}
 
 	/**
@@ -1006,19 +1062,21 @@ public class IOUtils {
 
 	/**
 	 * 将path代表的文件写入OutputStream
+	 * P2-10: 修复前 out.write 抛 IOException 时, 循环后面的 inputStream.close() 永远执行不到,
+	 * 源文件句柄泄漏到 GC 回收才释放。现用 try-with-resources 保证任何出口都关流。
 	 *
 	 * @param path
 	 * @param out
 	 * @throws IOException
 	 */
 	public static void copy(Path path, final OutputStream out) throws IOException {
-		InputStream inputStream = Files.newInputStream(path, READ);
-		final byte[] buf = new byte[2048];
-		int len;
-		while ((len = inputStream.read(buf)) != -1) {
-			out.write(buf, 0, len);
+		try (InputStream inputStream = Files.newInputStream(path, READ)) { //P2-10
+			final byte[] buf = new byte[2048];
+			int len;
+			while ((len = inputStream.read(buf)) != -1) {
+				out.write(buf, 0, len);
+			}
 		}
-		inputStream.close();
 	}
 	
 /*	public static void copy(final InputStream in, final OutputStream out) throws IOException {
@@ -1176,8 +1234,11 @@ public class IOUtils {
 		if (suffix != null && suffix.indexOf(".") != 0) {
 			suffix = "." + suffix;
 		}
+		//P2-12: 修复前 suffix 传 null 时 fileName + suffix 拼出字面量 "null"
+		//(实测 ...wprobenull), 临时文件名带脏后缀; null 视作无后缀
+		String tail = suffix == null ? "" : suffix;
 		String tempDir = System.getProperty("java.io.tmpdir");
-		return Paths.get(tempDir, fileName + suffix).toFile();
+		return Paths.get(tempDir, fileName + tail).toFile();
 	}
 
 	/**
@@ -1588,20 +1649,9 @@ public class IOUtils {
 			return false;
 		}
 
-		byte[] data;
-		try {
-			data = Files.readAllBytes(file.toPath());
-		} catch (IOException e) {
-			log.error("", e);
-			throw new IORuntimeException(e);
-		}
-		SizeUnit sizeUnit = SizeUnit.parse(unit);
-		if (sizeUnit == null) {
-			return false;
-		}
-
-		long limitBytes = sizeUnit.toBytes(size);
-		return data.length > limitBytes;
+		//P2-30: 修复前用 Files.readAllBytes 把整个文件读进堆, 只为拿一个长度
+		//(实测判断 80MB 文件是否超 1MB 要把 80MB 全读进来); 只需元数据, 用 file.length()。
+		return isExceedLimitSize(file.length(), size, unit);
 	}
 
 	/**
@@ -1655,15 +1705,8 @@ public class IOUtils {
 			return false;
 		}
 
-		byte[] data;
-		try {
-			data = Files.readAllBytes(file.toPath());
-		} catch (IOException e) {
-			log.error("", e);
-			throw new IORuntimeException(e);
-		}
-
-		return isBetweenLimitSize(data.length, lowerBound, lowerBoundUnit, upperBound, upperBoundUnit);
+		//P2-30: 同 isExceedLimitSize(File)——修复前 readAllBytes 整个文件进堆只为拿长度
+		return isBetweenLimitSize(file.length(), lowerBound, lowerBoundUnit, upperBound, upperBoundUnit);
 	}
 
 	/**

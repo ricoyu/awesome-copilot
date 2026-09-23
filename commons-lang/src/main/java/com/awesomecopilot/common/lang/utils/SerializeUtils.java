@@ -1,5 +1,6 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.exception.SerializeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +12,12 @@ import java.io.ObjectOutputStream;
 /**
  * 传统JDK的序列化/反序列化
  * <p>
- * Copyright: Copyright (c) 2021-01-17 20:59
+ * P2-9(CODE_REVIEW_REPORT): 修复前 serialize/deserialize 把异常捕获后只 log.error
+ * 再返回 null——调用方分不清"值本来就是空"和"字节损坏/对象不可序列化", 缓存存坏时
+ * 表现成"值不存在"继续往下走。现统一契约: 入参 null 返回 null, 真正失败抛
+ * SerializeException(携带原始 cause)。
+ * <p>
+ * Copyright: (C), 2021-01-17 20:59
  * <p>
  * Company: Information & Data Security Solutions Co., Ltd.
  * <p>
@@ -24,20 +30,17 @@ public class SerializeUtils {
 	private static final Logger logger = LoggerFactory.getLogger(SerializeUtils.class);
 	
 	public static byte[] serialize(Object object) {
-		ObjectOutputStream objectOutputStream = null;
-		ByteArrayOutputStream byteArrayOutputStream = null;
-		try {
-			byteArrayOutputStream = new ByteArrayOutputStream();
-			objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-			objectOutputStream.writeObject(object);
-			byte[] bytes = byteArrayOutputStream.toByteArray();
-			return bytes;
-		} catch (Exception e) {
-			logger.error("序列化对象异常[" + e.getMessage() + "]", e);
-		} finally {
-			close(objectOutputStream, byteArrayOutputStream);
+		if (object == null) { //P2-9: 入参 null 返回 null, 与反序列化方向对称
+			return null;
 		}
-		return null;
+		try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+		     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+			objectOutputStream.writeObject(object);
+			return byteArrayOutputStream.toByteArray();
+		} catch (Exception e) { //P2-9: 失败不再降级成 null
+			logger.error("序列化对象异常[" + e.getMessage() + "]", e);
+			throw new SerializeException("serialize object failed: " + object.getClass().getName(), e);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -45,43 +48,12 @@ public class SerializeUtils {
 		if (bytes == null) {
 			return null;
 		}
-		ByteArrayInputStream byteArrayInputStream = null;
-		ObjectInputStream objectInputStream = null;
-		try {
-			byteArrayInputStream = new ByteArrayInputStream(bytes);
-			objectInputStream = new ObjectInputStream(byteArrayInputStream);
+		try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+		     ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
 			return (T) objectInputStream.readObject();
-		} catch (Exception e) {
+		} catch (Exception e) { //P2-9: 垃圾字节不再降级成 null
 			logger.error("反序列化对象异常[" + e.getMessage() + "]", e);
-		} finally {
-			close(objectInputStream, byteArrayInputStream);
-		}
-		return null;
-	}
-	
-	private static void close(ObjectOutputStream objectOutputStream, ByteArrayOutputStream byteArrayOutputStream) {
-		try {
-			if (byteArrayOutputStream != null) {
-				byteArrayOutputStream.close();
-			}
-			if (objectOutputStream != null) {
-				objectOutputStream.close();
-			}
-		} catch (Exception e) {
-			logger.error("关闭IO资源异常[" + e.getMessage() + "]", e);
-		}
-	}
-	
-	private static void close(ObjectInputStream objectInputStream, ByteArrayInputStream byteArrayInputStream) {
-		try {
-			if (objectInputStream != null) {
-				objectInputStream.close();
-			}
-			if (byteArrayInputStream != null) {
-				byteArrayInputStream.close();
-			}
-		} catch (Exception e) {
-			logger.error("关闭IO资源异常[" + e.getMessage() + "]", e);
+			throw new SerializeException("deserialize bytes failed", e);
 		}
 	}
 }

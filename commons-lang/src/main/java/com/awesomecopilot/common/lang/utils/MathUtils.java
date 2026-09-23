@@ -389,9 +389,13 @@ public class MathUtils {
 	
 	/**
 	 * 提供（相对）精确的除法运算。当发生除不尽的情况时，由scale参数指 定精度，以后的数字四舍五入。
+	 * <p>
+	 * P2-23(CODE_REVIEW_REPORT): 补契约说明——v2 为 0 时抛 ArithmeticException
+	 * (BigDecimal.divide 的行为), 与 add/sub/mul 的"null 归零"不同, 除零是调用错误,
+	 * 不返回 null——返回 null 会让调用方把脏数据继续传下去)。
 	 *
 	 * @param v1        被除数
-	 * @param v2        除数
+	 * @param v2        除数, 不可为 0
 	 * @param precision 表示表示需要精确到小数点以后几位。
 	 * @return 两个参数的商
 	 */
@@ -422,6 +426,11 @@ public class MathUtils {
 	 * @return 四舍五入后的结果
 	 */
 	public static double round(double v, int precision) {
+		// P2-23(CODE_REVIEW_REPORT): 修复前缺 precision<0 校验——round(1.55,-1) 按
+		//"十位取整"返回 0.0 且不报错(同文件 formatDouble 却有校验)。现补齐。
+		if (precision < 0) {
+			throw new IllegalArgumentException("precision不能为负数");
+		}
 		BigDecimal b = BigDecimal.valueOf(v); //P1-18
 		BigDecimal one = new BigDecimal("1");
 		double value = b.divide(one, precision, BigDecimal.ROUND_HALF_UP).doubleValue();
@@ -524,7 +533,10 @@ public class MathUtils {
 		if (precision < 0) {
 			throw new IllegalArgumentException("precision不能为负数");
 		}
-		StringBuilder format = new StringBuilder(v.compareTo(BigDecimal.ZERO) == 0 ? "0" : ",000");
+		// P2-23(CODE_REVIEW_REPORT): 修复前整数部分模板是 ",000"——DecimalFormat 会把整数
+		// 部分补足 3 位, 实测 format2Currency(5,2)="005.00"、(99,2)="099.00"。现 ",##0":
+		// 千分位分组保留(12345.5→12,345.50), 不再补前导零(5→5.00)。
+		StringBuilder format = new StringBuilder(v.compareTo(BigDecimal.ZERO) == 0 ? "0" : ",##0");
 		if (precision > 0) {
 			format.append(".");
 			for (int i = 0; i < precision; i++) {
@@ -567,9 +579,11 @@ public class MathUtils {
 	 * <blockquote><pre>
 	 * value1为null, value2不为null	false
 	 * value1不为null, value2为null	false
-	 * value1, value2都为null		false
+	 * value1, value2都为null		true
 	 * 否则比较其long值
 	 * </pre></blockquote>
+	 * P2-23(CODE_REVIEW_REPORT): 修复前这张表写"都为 null 返回 false", 实现返回 true——
+	 * 注释抄错了(longEqual 的注释与实现一致, 可对照)。现改注释, 行为保持实现。
 	 *
 	 * @param v1
 	 * @param v2
@@ -709,11 +723,13 @@ public class MathUtils {
 		}
 		
 		if (value instanceof Long) {
-			return ((Long) value).intValue();
+			// P2-23(CODE_REVIEW_REPORT): 修复前 ((Long) value).intValue() 直接截断——
+			// 实测 toInteger(3000000000L) 返回 -1294967296 不报错。现溢出抛 ArithmeticException。
+			return Math.toIntExact((Long) value);
 		}
 		
 		if (value instanceof Double) {
-			return ((Double) value).intValue();
+			return ((Double) value).intValue(); //保留原行为: 截断(报告仅要求修 Long 溢出不报错的问题)
 		}
 		
 		if (value instanceof BigDecimal) {
@@ -757,7 +773,9 @@ public class MathUtils {
 	
 	public static Double toDouble(Object value, boolean toNegative) {
 		Double v = toDouble(value);
-		if (toNegative && value != null) {
+		// P2-23(CODE_REVIEW_REPORT): 修复前 toDouble("abc", true) 实测抛 NullPointerException
+		// ——内层 toDouble 对不可转换值返回 null, 下面 0 - v 拆箱直接 NPE。现先判 null。
+		if (toNegative && v != null) {
 			return 0 - v;
 		}
 		return v;

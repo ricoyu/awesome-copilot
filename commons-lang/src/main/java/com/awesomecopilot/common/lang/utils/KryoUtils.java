@@ -1,8 +1,11 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.exception.SerializeException;
 import com.esotericsoftware.kryo.kryo5.Kryo;
 import com.esotericsoftware.kryo.kryo5.io.Input;
 import com.esotericsoftware.kryo.kryo5.io.Output;
+import com.esotericsoftware.kryo.kryo5.objenesis.strategy.StdInstantiatorStrategy;
+import com.esotericsoftware.kryo.kryo5.util.DefaultInstantiatorStrategy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,7 +15,9 @@ import java.util.Base64;
  * Kryo序列化/反序列化
  * <p>
  * 优势: 不需要实现Serializble接口; 反序列化不需要提供Class对象
- * 限制: 对象需要有默认构造函数; 只能在Java生态圈用, 不能跨语言
+ * 限制: 只能在Java生态圈用, 不能跨语言
+ * (P2-15 修复后"对象需要有默认构造函数"这一限制已解除: 没有无参构造的类
+ * 走 StdInstantiator fallback 也能反序列化)
  *
  * <p>
  * Copyright: (C), 2021-01-19 20:35
@@ -52,8 +57,13 @@ public final class KryoUtils {
 		 */
 		instance.setRegistrationRequired(false);
 		
-		//Fix the NPE bug when deserializing Collections.
-		instance.getInstantiatorStrategy();
+		//P2-15(CODE_REVIEW_REPORT): 修复前这里写的是 instance.getInstantiatorStrategy()——
+		//调了 getter 把返回值丢弃, 注释声称的 "Fix the NPE bug" 实际什么配置都没生效,
+		//还误导后续维护者。现改为真的设置 fallback 策略: 没有无参构造的类走 StdInstantiator
+		//(探针实测: 默认策略反序列化无无参构造的类抛 "Class cannot be created
+		//(missing no-arg constructor)", 配置后往返成功; 原有 ArrayList 往返行为不受影响)。
+		//注意: 该配置不改变已有字节流的格式, Redis 里旧缓存仍可正常读取。
+		instance.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 		
 		return instance;
 	});
@@ -66,11 +76,17 @@ public final class KryoUtils {
 	 * @return 序列化后的字节数组
 	 */
 	public static <T> byte[] toBytes(T obj) {
+		if (obj == null) { //P2-9: 统一 null 语义, 入参 null 返回 null
+			return null;
+		}
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		Output output = new Output(byteArrayOutputStream);
-		
-		kryo.get().writeClassAndObject(output, obj);
-		output.flush();
+		try { //P2-9: 写失败统一包 SerializeException
+			kryo.get().writeClassAndObject(output, obj);
+			output.flush();
+		} catch (Exception e) {
+			throw new SerializeException("kryo serialize failed: " + obj.getClass().getName(), e);
+		}
 		
 		return byteArrayOutputStream.toByteArray();
 	}
@@ -84,10 +100,18 @@ public final class KryoUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T toObject(byte[] bytes) {
+		if (bytes == null || bytes.length == 0) {
+			//P2-9: 修复前 toObject(null) 直接 NullPointerException(与 FstUtils 的返回 null 不一致);
+			//空字节数组不是任何对象的有效编码, 一并视为 null(与 FstUtils 一致)
+			return null;
+		}
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
 		Input input = new Input(byteArrayInputStream);
-		
-		return (T) kryo.get().readClassAndObject(input);
+		try {
+			return (T) kryo.get().readClassAndObject(input);
+		} catch (Exception e) { //P2-9: 坏字节统一包 SerializeException
+			throw new SerializeException("kryo deserialize failed", e);
+		}
 	}
 	
 	/**
@@ -99,7 +123,11 @@ public final class KryoUtils {
 	 * @return 序列化后的字符串
 	 */
 	public static <T> String writeToString(T obj) {
-		return Base64.getUrlEncoder().encodeToString(toBytes(obj));
+		byte[] bytes = toBytes(obj);
+		if (bytes == null) { //P2-9: 入参 null 返回 null(修复前 encodeToString(null) 抛 NPE)
+			return null;
+		}
+		return Base64.getUrlEncoder().encodeToString(bytes);
 	}
 	
 	/**
@@ -111,6 +139,9 @@ public final class KryoUtils {
 	 * @return 原对象
 	 */
 	public static <T> T readFromString(String str) {
+		if (str == null) { //P2-9: 入参 null 返回 null(修复前 Base64.decode(null) 抛 NPE)
+			return null;
+		}
 		return toObject(Base64.getUrlDecoder().decode(str));
 	}
 }

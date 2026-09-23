@@ -143,8 +143,8 @@ public final class DateConstants {
 	
 	/**
 	 * yyyy-MM-dd HH:mm:ss.SSS (带毫秒). 显式分支的价值是短路与语义明确:
-	 * 兜底 finalShot(PT_ALL) 本也能拼出同样的3位毫秒模式解析成功(实测), 但要扫完
-	 * 前面全部20+个模式才落到兜底, 且依赖其隐式拼装. Date 输出格式(带.SSS)在
+	 * 最后一个 finalShot(PT_ALL) 本也能拼出同样的3位毫秒模式解析成功(实测), 但要扫完
+	 * 前面全部20+个模式才落到最后一个, 且依赖其隐式拼装. Date 输出格式(带.SSS)在
 	 * copilot-json 的 ObjectMapperDecorator 中设定, 这里给它一条明确的识别路径.
 	 */
 	public static final Pattern PT_ISO_DATETIME_MILLIS = compile("\\d{4}-\\d{2}-\\d{2}(\\s+)\\d{2}:\\d{2}:\\d{2}\\.\\d{3}");
@@ -390,7 +390,12 @@ public final class DateConstants {
 	public static final TimeZone INDIA = TimeZone.getTimeZone("Asia/Calcutta");
 	public static final TimeZone JAPAN = TimeZone.getTimeZone("Asia/Tokyo");
 	
-	public static final Map<String, Locale> TIME_ZONE_LOCALE_HASH_MAP;
+	private static final Map<String, Locale> TIME_ZONE_LOCALE_HASH_MAP;
+	/**
+	 * P2-36: 修复前是 public 可变 HashMap(final 只锁引用), 任意调用方可 put/remove/clear
+	 * 这张全局表, 并发写还有结构损坏风险。降为 private, 外部只经本方法取值;
+	 * 表本体同时套 unmodifiableMap 双保险。
+	 */
 	static {
 		Map<String, Locale> map = new HashMap<>();
 		//键为 timezone.getID(), 取值方必须传同一个 getID() 字符串(P1-3: 键类型曾错用 TimeZone, 查询恒 null)
@@ -401,7 +406,14 @@ public final class DateConstants {
 		map.put(LONDON.getID(), Locale.ENGLISH);
 		map.put(INDIA.getID(), Locale.ENGLISH);
 		map.put(JAPAN.getID(), Locale.JAPAN);
-		TIME_ZONE_LOCALE_HASH_MAP = Collections.unmodifiableMap(map); //P2-36: 原为 public 可变表
+		TIME_ZONE_LOCALE_HASH_MAP = Collections.unmodifiableMap(map);
+	}
+
+	/**
+	 * 按 TimeZone/ZoneId 的 getID() 查惯用 Locale; 表里没有返回 null(调用方走默认 Locale)。
+	 */
+	public static Locale localeOf(String zoneId) {
+		return zoneId == null ? null : TIME_ZONE_LOCALE_HASH_MAP.get(zoneId);
 	}
 	
 	public static final ZoneId ZONE_ID_SHANG_HAI = ZoneId.of("Asia/Shanghai");

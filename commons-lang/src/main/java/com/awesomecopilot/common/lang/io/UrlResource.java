@@ -216,7 +216,10 @@ public class UrlResource extends AbstractFileResolvingResource {
 		super.customizeConnection(con);
 		String userInfo = this.url.getUserInfo();
 		if (userInfo != null) {
-			String encodedCredentials = Base64.getUrlEncoder().encodeToString(userInfo.getBytes(UTF_8));
+			//P2-5: 修复前用 Base64.getUrlEncoder()(字母表含 -_), 而 RFC 7617 规定 Basic 凭据
+			//用标准字母表(+/)——用户名/密码字节里恰好出现索引 62/63 的字符时, 严格的服务端
+			//解码失败, 表现为间歇性 401, 极难排查。同时改用无填充换行的 getEncoder。
+			String encodedCredentials = Base64.getEncoder().encodeToString(userInfo.getBytes(UTF_8));
 			con.setRequestProperty(AUTHORIZATION, "Basic " + encodedCredentials);
 		}
 	}

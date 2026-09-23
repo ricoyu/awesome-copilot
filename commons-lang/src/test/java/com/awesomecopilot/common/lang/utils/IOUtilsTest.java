@@ -37,23 +37,37 @@ public class IOUtilsTest {
 	}
 	
 	@Test
-	public void testReadFromWorkDir() {
-		String workDir = System.getProperty("user.dir");
-		String content = readFileAsString(workDir + "/application.yml");
-		System.out.println(content);
+	public void testReadFromWorkDir(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws java.io.IOException {
+		//2026-09-23 改造(P2-13): 原来读 user.dir 下的 application.yml(该文件不存在,
+		//旧实现捕获异常后返回空串所以"看起来正常"); 现自建文件校验真实内容
+		java.nio.file.Path f = tempDir.resolve("workdir-sample.yml");
+		java.nio.file.Files.write(f, "key: value\n".getBytes("UTF-8"));
+		String content = readFileAsString(f.toString());
+		assertEquals("key: value", content);
 	}
 	
 	@Test
-	public void testReadFromFileSystem() {
-		String content = readFileAsString("D:\\Learning\\awesome-copilot\\commons-lang\\application.yml");
-		System.out.println(content);
+	public void testReadMissingFileThrowsInsteadOfEmptyString() {
+		//P2-13: 文件不存在必须能感知(修复前返回空串, 与空文件无法区分)
+		org.junit.jupiter.api.Assertions.assertThrows(
+				com.awesomecopilot.common.lang.exception.IORuntimeException.class,
+				() -> readFileAsString("D:\\no-such-dir\\no-such-file-9f3a.yml"));
+	}
+	
+	@Test
+	public void testReadFromFileSystem(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws java.io.IOException {
+		//2026-09-23 改造(P2-13): 原来读某台机器手工准备的绝对路径(不存在, 旧实现捕获异常后
+		//返回空串); 改为自建文件并校验内容
+		java.nio.file.Path f = tempDir.resolve("fs-sample.txt");
+		java.nio.file.Files.write(f, "hello\nworld".getBytes("UTF-8"));
+		String content = readFileAsString(f.toString());
+		assertEquals("hello" + System.lineSeparator() + "world", content);
 	}
 	
 	@Test
 	public void testFileSeparator() {
 		System.out.println(DIR_SEPARATOR);
-		System.out.println(readClassPathFileAsString("application.yml"));;
-		System.out.println(readFileAsString("D:\\Dropbox\\doc\\bw.txt"));;
+		System.out.println(readClassPathFileAsString("application.yml"));
 	}
 	
 	@Test

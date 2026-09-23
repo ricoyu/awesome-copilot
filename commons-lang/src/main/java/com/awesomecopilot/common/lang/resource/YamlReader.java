@@ -129,12 +129,15 @@ public class YamlReader implements YamlOps {
 		for (String suffix : YAML_SUFFIXES) {
 			InputStream inputStream = streamProvider.apply(suffix);
 			if (inputStream != null) {
-				try {
-					Map<String, Object> result = yaml.load(inputStream);
-					inputStream.close();
-					return result;
-				} catch (IOException e) {
-					log.warn(e.getMessage());
+				//P2-20: 修复前 yaml.load 与 in.close 同在一个 try 且只 catch IOException——
+				//YAMLException 是 RuntimeException 直接穿出, 一个语法错误的 config 覆盖文件
+				//会让整个 YamlReader 构造失败, classpath 里的默认配置回退不了; 且穿出时流没关。
+				//现在 try-with-resources 保证任何出口都关流; 捕获 Exception 跳过坏文件继续找下一优先级。
+				//设计取舍: 坏文件只 WARN 跳过(不再让高优先级压垮低优先级), 见下方日志。
+				try (InputStream in = inputStream) {
+					return yaml.load(in);
+				} catch (Exception e) {
+					log.warn("YAML 文件解析失败, 跳过该文件继续按优先级查找: {}", resource + suffix, e);
 				}
 			}
 		}

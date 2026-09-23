@@ -5942,122 +5942,122 @@ RED 证据与修法要点：
 - 现象：`tokensToAdd` 先从 `pendingRefillMillis` 扣掉，`compareAndSet` 失败（说明有并发 acquire）就直接返回——这批令牌丢失，实际放行速率低于配置值。
 - 修法：CAS 失败时把 `tokensToAdd` 退回 `pendingRefillMillis`，或改用 `accumulateAndGet` 一步完成。另外该类每个实例自带一个调度线程池且没有 `finalize`/`Cleaner` 保护，用完必须显式 `shutdown()`（接口 `RateLimiter` 层面可加 `AutoCloseable`）。
 
-### P2-4 DateUtils.dateDiff(Date, Date) 是"整除 24 小时"不是"相差几天" [实测]
+### P2-4 DateUtils.dateDiff(Date, Date) 是"整除 24 小时"不是"相差几天" [实测] ✅已修复(2026-09-23)
 
 - 位置：`utils/DateUtils.java:987-991`（`TimeUnit.DAYS.convert(millisDiff, MILLISECONDS)`）
 - 现象：相隔 23 小时的两个 Date 返回 0；javadoc 写"相差多少天"，同族的 `dateDiff(LocalDate, LocalDate)` 却是按日历天算——两个重载语义不同但名字相同。
 - 修法：Date 版内部转 `LocalDate`（按系统或入参时区）再 `ChronoUnit.DAYS.between`，与 LocalDate 版保持一致。
 
-### P2-5 UrlResource 的 Basic 认证用了 URL-safe Base64 字母表 [直读]
+### P2-5 UrlResource 的 Basic 认证用了 URL-safe Base64 字母表 [直读] ✅已修复(2026-09-23)
 
 - 位置：`io/UrlResource.java:219-220`（`Base64.getUrlEncoder()`）
 - 现象：RFC 7617 规定 Basic 凭据用标准字母表（`+/`）；url-safe 表输出 `-_`，严格的服务端会解码失败，表现为间歇性 401（是否触发取决于用户名/密码字节里恰好出现索引 62/63 的字符）——极难排查。
 - 修法：改 `Base64.getEncoder()`。
 
-### P2-6 IOUtils 多处 `catch (Exception e) { log.warn(e.getMessage()); return 部分结果; }` [直读]
+### P2-6 IOUtils 多处 `catch (Exception e) { log.warn(e.getMessage()); return 部分结果; }` [直读]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:148-156`（`readFileAsString(InputStream)`，读一半失败返回半截内容 + 只打 message 不带堆栈）、`:381-383`（close 链里 `catch (Exception e) { }` 空处理）等 17 处
 - 现象：调用方拿到"看起来成功"的截断结果，故障现场只剩一行 message。
 - 修法：IO 读取失败应抛 `IORuntimeException`（包里已有）而不是返回半截；至少把异常对象带进日志。
 
-### P2-7 PropertyReader.getInt(property, defaultValue) 把配置里的真实值 -1 当成"没有值" [实测]
+### P2-7 PropertyReader.getInt(property, defaultValue) 把配置里的真实值 -1 当成"没有值" [实测] ✅已修复(2026-09-23)
 
 - 位置：`resource/PropertyReader.java:123-129`（带默认值的重载复用 `getInt(property)` 再用 `value == -1 ? defaultValue : value`）
 - 现象：探针验证 `probe.neg=-1` 时 `getInt("probe.neg", 5)` 返回 5（真实值被默认值顶掉）；`getInt("probe.pos", 5)` 返回 7（正常值不受影响）。
 - 修法：带默认值的重载直接读原始字符串自行解析（属性不存在/空/解析失败 → defaultValue，其余原样返回），不要用 -1 当哨兵。
 
-### P2-8 PropertyReader 的两个 FileInputStream 永不关闭 [实测]
+### P2-8 PropertyReader 的两个 FileInputStream 永不关闭 [实测] ✅已修复(2026-09-23)
 
 - 位置：`resource/PropertyReader.java:67`、`:75`（`new PropertyResourceBundle(new FileInputStream(...))`）
 - 现象：`PropertyResourceBundle` 没有 close()（JDK 21 javap 确认），交出去的 FileInputStream 构造完就没人管，句柄等 Cleaner/GC 延迟释放。按 readme 建议静态复用时影响有限，但 `TransportClientFactory`、`RestSupport` 这类"每次启动 new 一个"的用法会在 GC 前累积句柄。
 - 修法：`try (FileInputStream in = new FileInputStream(file)) { bundle = new PropertyResourceBundle(new InputStreamReader(in, UTF_8)); }`——内容在构造器里已读完，出块即关安全。
 
-### P2-9 SerializeUtils / KryoUtils / ProtostuffUtils 把异常降级成 null，且三者空值语义互不一致 [实测+直读]
+### P2-9 SerializeUtils / KryoUtils / ProtostuffUtils 把异常降级成 null，且三者空值语义互不一致 [实测+直读]  ✅已修复(2026-09-23, 见 SerializeP2FixTest)
 
 - 位置：`utils/SerializeUtils.java:35-40、:54-59`；`utils/KryoUtils.java:82-83`（`toObject(null)` 抛 NPE）；`utils/ProtostuffUtils.java:50-54`（`toBytes(null)` 返回 `byte[0]`，`toObject(byte[0])` 返回字段全默认值的对象而不是 null）
 - 现象：探针确认 `SerializeUtils.deserialize(垃圾字节)` 返回 null、`serialize(不可序列化对象)` 返回 null——调用方分不清"值本来就是空""字节损坏""对象不可序列化"三种情况；缓存里存坏时会表现成"值不存在"继续往下走。`FstUtils.toObject(null)` 返回 null、`KryoUtils.toObject(null)` 抛 NPE——同一门面族行为不一致。
 - 修法：反序列化失败抛 `SerializeException`（包内已有异常族），null 语义只在入参为 null 时返回并三个类统一。
 
-### P2-10 IOUtils.copy(Path, OutputStream) 写失败时输入流不关闭 [直读]
+### P2-10 IOUtils.copy(Path, OutputStream) 写失败时输入流不关闭 [直读]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:1006-1014`（`inputStream.close()` 在 while 循环之后，无 finally）
 - 现象：`out.write` 抛 IOException（磁盘满、连接断）时输入流句柄泄漏到 GC。
 - 修法：try-with-resources 包住 `Files.newInputStream(path)`。
 
-### P2-11 IOUtils.merge 是追加语义，合并到已存在文件不会清空目标 [实测]
+### P2-11 IOUtils.merge 是追加语义，合并到已存在文件不会清空目标 [实测]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:399-413`（`new FileOutputStream(new File(destFile), true)`）
 - 现象：目标原有内容 `OLD`，合并后为 `OLDAB`。方法名没有表达"追加"，重复调用会把文件越拼越长。
 - 修法：改覆盖语义或改名 `appendMerge` 并在 javadoc 写明。
 
-### P2-12 IOUtils.tempFile(fileName, null) 生成的文件名带 "null" 字样 [实测]
+### P2-12 IOUtils.tempFile(fileName, null) 生成的文件名带 "null" 字样 [实测]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:1166-1173`（`:1172` `fileName + suffix` 字符串拼接）
 - 现象：探针确认返回 `...\wprobenull`。
 - 修法：`String name = suffix == null ? fileName : fileName + suffix;`
 
-### P2-13 IOUtils.readFileAsString 读不到文件返回空串，且用平台默认字符集 [实测]
+### P2-13 IOUtils.readFileAsString 读不到文件返回空串，且用平台默认字符集 [实测]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:167-185`、`:141`（`Scanner(file)` 无 charset 参数 → `Charset.defaultCharset()`）
 - 现象：文件不存在 → 返回 `""`，调用方无法区分"空文件"与"不存在"；探针在 `-Dfile.encoding=GBK` 下读 UTF-8 中文文件得到乱码，而同类 `readFile(Path)`（固定 UTF-8）正确——同包内编码策略不一致，部署环境换 platform encoding 才暴露。
 - 修法：不存在时返回 null 或抛异常；`new Scanner(file, StandardCharsets.UTF_8)`。
 
-### P2-14 FileUtils.isImage 消耗调用方的输入流且不重置 [实测]
+### P2-14 FileUtils.isImage 消耗调用方的输入流且不重置 [实测]  ✅已修复(2026-09-23, 见 FileUtilsP2FixTest)
 
 - 位置：`utils/FileUtils.java:121-127`（`ImageIO.read(inputStream)`）
 - 现象：探针用 69 字节 PNG 验证：调用 `isImage` 后原流只剩 16 字节可读——"先判断是不是图片、再保存同一个流"的上传流程会保存出残缺文件。
 - 修法：内部 mark/reset（必要时包 BufferedInputStream），或 javadoc 写明"会消费流"。
 
-### P2-15 KryoUtils 里"Fix the NPE bug"注释是空操作 [直读]
+### P2-15 KryoUtils 里"Fix the NPE bug"注释是空操作 [直读]  ✅已修复(2026-09-23, 见 SerializeP2FixTest)
 
 - 位置：`utils/KryoUtils.java:52-53`（`kryo.getInstantiatorStrategy();` 调了 getter、返回值丢弃）
 - 现象：注释声称修复了集合反序列化 NPE，实际什么配置都没生效；误导后续维护者。
 - 修法：删掉，或真的 `kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()))`。
 
-### P2-16 IOUtils.readClasspathFileAsInputStream 未命中时会扫描整个 classpath [实测]
+### P2-16 IOUtils.readClasspathFileAsInputStream 未命中时会扫描整个 classpath [实测]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:528-539`（未命中退化为 `classpath*:/**/文件名` 通配查询）
 - 现象：本机 43 项 classpath 下，一次未命中 144ms、平均 24ms/次；`SnowflakeId` 构造、各配置读取的回退路径都会踩。
 - 修法：把"未命中"结果缓存；或先 `ClassLoader.getResource` 精确查，再退通配。
 
-### P2-17 ArrayUtils.nonNull 返回 Object[]，按 T[] 接收抛 ClassCastException；且行为与名字不符 [实测]
+### P2-17 ArrayUtils.nonNull 返回 Object[]，按 T[] 接收抛 ClassCastException；且行为与名字不符 [实测]  ✅已修复(2026-09-23, 见 ArrayGenericResourcesP2FixTest)
 
 - 位置：`utils/ArrayUtils.java:29-38`
 - 现象：`String[] a = ArrayUtils.nonNull("b","a","a")` 抛 `[Ljava.lang.Object; cannot be cast to [Ljava.lang.String;`；改用 Object[] 接收能跑，但结果是 `[a, b]`——一个叫"nonNull"的方法悄悄做了排序+去重。仓库内唯一调用点 `copilot-orm/.../QueryUtils.java:191` 把它塞进 `Map<String,Object>` 不会当场触发，但任何 `String[] a = ArrayUtils.nonNull(...)` 式接收就会抛 ClassCastException。
 - 修法：`stream(args).filter(Objects::nonNull).toArray(size -> (T[]) Array.newInstance(componentType, size))`，去掉 sorted/distinct（要排序去重另行提供方法）。
 
-### P2-18 GenericUtils.getTypeArgument 只看第一个泛型接口，嵌套泛型抛 ClassCastException [实测]
+### P2-18 GenericUtils.getTypeArgument 只看第一个泛型接口，嵌套泛型抛 ClassCastException [实测]  ✅已修复(2026-09-23, 见 ArrayGenericResourcesP2FixTest)
 
 - 位置：`utils/GenericUtils.java:31-47`
 - 现象：`class X<T> implements Supplier<T>, Comparable<String>` 返回 null（第一个接口的实参是类型变量，内层 break 后外层也 break，第二个接口不再看）；`Supplier<Map<String,...>>` 直接把 `ParameterizedType` 强转 `Class` 抛异常。
 - 修法：外层遍历所有接口找到"非类型变量"的实参再返回；返回类型收窄前判 `instanceof Class`。
 
-### P2-19 Resources.getResourcesFromDirectory 在目录列不出来时抛 NPE [实测]
+### P2-19 Resources.getResourcesFromDirectory 在目录列不出来时抛 NPE [实测]  ✅已修复(2026-09-23, 见 ArrayGenericResourcesP2FixTest)
 
 - 位置：`utils/Resources.java:59` 与 `:89`（`for (File file : fileList)` 未判 `listFiles()` 的 null）
 - 现象：`File.listFiles()` 在权限不足/IO 错误时返回 null，直接 NPE。该方法在未命中路径上每次 classpath 扫描都会走（见 P2-16）。
 - 修法：`File[] fileList = directory.listFiles(); if (fileList == null) return files;`
 
-### P2-20 YamlReader.loadFirst 解析失败时流不关闭、异常直接抛出 [直读]
+### P2-20 YamlReader.loadFirst 解析失败时流不关闭、异常直接抛出 [直读] ✅已修复(2026-09-23)
 
 - 位置：`resource/YamlReader.java:132-138`（`yaml.load(inputStream)` 与 `in.close()` 同在一个 try 里，且只 catch IOException；YAMLException 是 RuntimeException 直接穿透）
 - 影响：一个语法错误的 config 覆盖文件会让整个 YamlReader 构造失败，classpath 里的默认配置不会回退。
 - 修法：try-with-resources；是否按优先级回退到下一文件需在 javadoc 写明设计取舍。
 
-### P2-21 IOUtils.deleteFile 删除失败也返回 true [实测]
+### P2-21 IOUtils.deleteFile 删除失败也返回 true [实测]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:860-884`（两个重载都是 `catch (IOException e) { log.warn(...) }` 后无条件 `return true;`）
 - 现象：探针删除只读文件（Windows 抛 AccessDeniedException）返回 true，随后 `Files.exists()` 仍为 true——调用方以为删掉了。
 - 修法：直接 `return Files.deleteIfExists(path);`，catch 里 return false。
 
-### P2-22 StringUtils 四方法问题（format 千分位 / lastN 越界 / padStringWithZeros 方向 / removeAllQuotes 删反斜杠） [实测]
+### P2-22 StringUtils 四方法问题（format 千分位 / lastN 越界 / padStringWithZeros 方向 / removeAllQuotes 删反斜杠） [实测]  ✅已修复(2026-09-23, 见 StringUtilsP2FixTest)
 
 - `format(template, Object...)`:1210-1223——只有 Long 参数被转字符串绕开 MessageFormat 的本地化，`format("计数:{0}", 1234)` 实测输出 `计数:1,234`（Integer、BigDecimal 都被加千分位）；拼订单号/ID 时数字被改写。修法：`value instanceof Number` 统一 `toString()`。
 - `lastN`:1174-1178——`lastN("abc",5)` 实测抛 `StringIndexOutOfBoundsException: Range [-2, 3)`；n 为负同理。同类的 `subStr` 是捕获越界返回 null，两个方法约定相反。修法：`n<=0` 返回 ""，`n>=length` 返回原串。
 - `padStringWithZeros`:1307-1321——名字叫"补位"，实测 `padStringWithZeros("123",6)`=`123000`（右补零，数值放大 1000 倍；常见需求是左补零）。仓库内零调用。修法：左补或改名 `appendZerosToTail`。
 - `removeAllQuotes`:1004-1010——字符类 `[\\"\\\\]` 同时删反斜杠，实测 `removeAllQuotes("C:\\data\\x")` 返回 `C:datax`（Windows 路径分隔符全丢）；对含转义引号的 JSON 也会先破坏结构。修法：`str.replace("\\\\"", "\\"").replace("\\"", "")` 分两步，不动反斜杠。
 
-### P2-23 MathUtils 数值簇（toDouble NPE / format2Currency 前导零 / div 除零 / toInteger 溢出 / equals 注释相反） [实测+直读]
+### P2-23 MathUtils 数值簇（toDouble NPE / format2Currency 前导零 / div 除零 / toInteger 溢出 / equals 注释相反） [实测+直读]  ✅已修复(2026-09-23, 见 MathUtilsP2FixTest)
 
 - `toDouble(Object,true)`:758-763——实测 `toDouble("abc", true)` 抛 NPE：内层 `toDouble(value)` 对不可转换值返回 null，`0 - v` 对 null 拆箱直接抛 NPE。修法：先 `if (v == null) return null;`。
 - `format2Currency`:520-536——模式 `,000` 让整数部分补足 3 位，实测 `format2Currency(5,2)`=`"005.00"`、`(99,2)`=`"099.00"`（12345.5 正常）。修模式改 `#,##0`。`copilot-json` 的 `MoneySerializer:28` 用的就是它。
@@ -6066,14 +6066,14 @@ RED 证据与修法要点：
 - `equals(Long,Long)`:566 javadoc 表写"都为 null 返回 false"，实测返回 true（`longEqual` 的注释与实现一致，说明这份抄错）。改注释。
 - 性能附注：`round/format/formatDouble/format2Currency` 每次新建 `DecimalFormat`，子代理实测比复用实例慢约 5 倍（1.7μs vs 0.34μs/次）——热路径可加按 precision 缓存。
 
-### P2-24 DateUtils 簇（milisToNextHour 毫秒 / CTT 忽略参数 / Objects.nonNull 空操作 / null 约定不一致） [实测]
+### P2-24 DateUtils 簇（milisToNextHour 毫秒 / CTT 忽略参数 / Objects.nonNull 空操作 / null 约定不一致） [实测] ✅已修复(2026-09-23)
 
 - `milisToNextHour`:929-936——只清了分秒没清毫秒，实测返回值毫秒位=999，用它做整点定时的调用点会持续后移最多 999ms。加 `calendar.set(Calendar.MILLISECOND, 0)`。
 - `toLocalDateTimeCTT(LocalDate, ZoneId)`:861-864——方法体两次用 `ZONE_ID_SHANG_HAI`，形参 `zoneId` 一次都没用；实测传纽约时区拿回的仍是东八区值。要么按参数实现，要么删参数。
 - `:672` 与 `:790` 的 `Objects.nonNull(zoneId);`——该方法只返回布尔不抛异常，写了等于没写，null 时最终在 JDK 内部抛无主语 NPE。改 `Objects.requireNonNull(zoneId, ...)`。
 - `toLocalDateTime(LocalDate)`:837-840 传 null 抛 NPE，而同族 `toLocalDate(Date)`、`toLocalDateTime(Date)` 传 null 返回 null——实测同一类三种约定并存。
 
-### P2-25 EnumUtils 两处（lookup 空串抛异常 / Long 比较 intValue 截断） [实测+直读]
+### P2-25 EnumUtils 两处（lookup 空串抛异常 / Long 比较 intValue 截断） [实测+直读]  ✅已修复(2026-09-23, 见 EnumUtilsP2FixTest)
 
 - `lookup(Class,String)`:361-364——实测 `lookupEnum(DayOfWeek.class, "")` 抛 IllegalArgumentException，而按属性匹配的姊妹重载对空串返回 null；表单没填时一个给 null 一个给异常。统一返回 null。
 - `lookupEnum` Long 分支:296-301——`value.intValue() == propertyValue.intValue()`，4294967297L 与 1L 的 intValue 都是 1，会命中错误枚举；BigInteger 分支(:345 区)同病。用 `longValue()`/`equals` 比较。
@@ -6097,13 +6097,13 @@ RED 证据与修法要点：
 - `invokeStatic`:648-676——按实参运行时类型精确 `getMethod`；实测 `invokeStatic("size", Collection.class, new ArrayList<>())` 报 NoSuchMethod（方法明明存在）。精确匹配失败后回退可赋值性查找（同文件 `invokeMethod` 已有该逻辑）。
 - `ClassUtils.interfaceMethodCache`:128、1395——全文件只有声明与 `put`，没有任何读取点；昂贵查找每次照跑，缓存纯占内存。要么 `get(method, loader)`，要么删。
 
-### P2-29 FileUtils.cleanFilename 幂等短路放行路径穿越 + toLowerCase 随默认 Locale [实测]
+### P2-29 FileUtils.cleanFilename 幂等短路放行路径穿越 + toLowerCase 随默认 Locale [实测]  ✅已修复(2026-09-23, 见 FileUtilsP2FixTest)
 
 - 位置：`utils/FileUtils.java:62-64、68`
 - 现象：前 12 位形如 `[a-f0-9]{12}_` 就原样返回；实测 `"abcdef123456_../../evil.txt"` 清洗后 `../` 原样保留（若返回值参与拼接存储路径即为路径穿越）。另外 `toLowerCase()` 无 Locale 参数，实测土耳其语环境同一输入生成另一哈希前缀（`I→ı`），"同一文件名总是得到同一结果"的契约被破坏。
 - 修法：短路前先校验不含 `..` `/` `\`；`toLowerCase(Locale.ROOT)`。
 
-### P2-30 IOUtils.isExceedLimitSize(File)/isBetweenLimitSize(File) 把整个文件读进堆只为拿长度 [直读]
+### P2-30 IOUtils.isExceedLimitSize(File)/isBetweenLimitSize(File) 把整个文件读进堆只为拿长度 [直读]  ✅已修复(2026-09-23, 见 IOUtilsP2FixTest)
 
 - 位置：`utils/IOUtils.java:1581-1601、1647-1663`（`Files.readAllBytes(file.toPath())` 后只用 `data.length`）
 - 现象：判断 500MB 上传文件是否超限会先分配 500MB 堆内存，读的过程中文件被追加还会拿到不一致长度；同参数 `(long fileSize, ...)` 重载本来就有正确实现。
@@ -6139,7 +6139,7 @@ RED 证据与修法要点：
 - `context/ThreadContext.java:48-54`——`getResources()` 返回拷贝：`ThreadContext.getResources().put(k,v)` 这种常见写法编译通过、值被丢弃。
 - 同文件 `:66-69`——`setResources(emptyMap)` 直接 return，与 javadoc "This operation overwrites everything that existed previously" 相反：想按文档清空只能改用 `remove()`。
 
-### P2-36 DateConstants.TIME_ZONE_LOCALE_HASH_MAP 是 public 可变 HashMap [直读]
+### P2-36 DateConstants.TIME_ZONE_LOCALE_HASH_MAP 是 public 可变 HashMap [直读] ✅已修复(2026-09-23)
 
 - `constants/DateConstants.java:392`——`final` 只锁引用，任意调用方可 put/remove/clear 这张全局表，并发写还有结构损坏风险；同类的 Pattern/TimeZone 常量都不可变，唯独它是例外。（它的键类型错用见 P1-3。）改 `Collections.unmodifiableMap` 并降为 private。
 

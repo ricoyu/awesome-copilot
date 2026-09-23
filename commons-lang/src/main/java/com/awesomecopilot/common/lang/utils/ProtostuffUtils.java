@@ -1,13 +1,12 @@
 package com.awesomecopilot.common.lang.utils;
 
+import com.awesomecopilot.common.lang.exception.SerializeException;
 import com.awesomecopilot.common.lang.resource.PropertyReader;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  */
 public final class ProtostuffUtils {
-	private static final Logger log = LoggerFactory.getLogger(ProtostuffUtils.class);
 	/**
 	 * 缓存Schema
 	 */
@@ -42,6 +40,8 @@ public final class ProtostuffUtils {
 	
 	/**
 	 * 序列化方法，把指定对象序列化成字节数组
+	 * P2-9(CODE_REVIEW_REPORT): 修复前 obj==null 返回 byte[0]——调用方把它和"空消息"
+	 * 混在一起, 且与同族 FstUtils.toBytes(null) 返回 null 不一致。现统一为返回 null。
 	 *
 	 * @param obj
 	 * @param <T>
@@ -49,8 +49,7 @@ public final class ProtostuffUtils {
 	 */
 	public static <T> byte[] toBytes(T obj) {
 		if (obj == null) {
-			log.info("obj is null, return byte[0]");
-			return new byte[0];
+			return null; //P2-9: 统一 null 语义(修复前返回 byte[0] 并 log.info)
 		}
 		
 		Class<T> clazz = (Class<T>) obj.getClass();
@@ -58,6 +57,8 @@ public final class ProtostuffUtils {
 		LinkedBuffer buffer = LinkedBuffer.allocate();
 		try {
 			return ProtobufIOUtil.toByteArray(obj, schema, buffer);
+		} catch (Exception e) { //P2-9: 失败统一包 SerializeException, 保留原始 cause
+			throw new SerializeException("protostuff serialize failed: " + clazz.getName(), e);
 		} finally {
 			buffer.clear();
 		}
@@ -65,15 +66,26 @@ public final class ProtostuffUtils {
 	
 	/**
 	 * 反序列化方法，将字节数组反序列化成指定Class类型
+	 * P2-9(CODE_REVIEW_REPORT): 修复前 toBytes(null) 产生的 byte[0] 喂回来会得到
+	 * "字段全默认值的对象"而不是 null——坏数据被伪装成正常对象。现:
+	 * bytes 为 null/空 → 返回 null; 解析失败 → 抛 SerializeException。
+	 *
 	 * @param bytes
 	 * @param clazz
 	 * @param <T>
 	 * @return T
 	 */
 	public static <T> T toObject(byte[] bytes, Class<T> clazz) {
+		if (bytes == null || bytes.length == 0) { //P2-9: 空/坏输入不再造"默认值对象"
+			return null;
+		}
 		Schema<T> schema = getSchema(clazz);
 		T obj = schema.newMessage();
-		ProtobufIOUtil.mergeFrom(bytes, obj, schema);
+		try {
+			ProtobufIOUtil.mergeFrom(bytes, obj, schema);
+		} catch (Exception e) { //P2-9
+			throw new SerializeException("protostuff deserialize failed: " + clazz.getName(), e);
+		}
 		return obj;
 	}
 	

@@ -240,7 +240,7 @@ public abstract class StringUtils {
 	 * <p>2026-09-21 起随机源从 RandomStringUtils(底层 ThreadLocalRandom, 非密码学安全)
 	 * 换成 SecureRandom: 这类值一旦可预测就等于交出对应会话/幂等凭证.
 	 * ThreadLocalRandom 与 SecureRandom 都均匀取值, 单测统计上无法区分,
-	 * 落地验证 = javap 确认字节码不再引用 RandomStringUtils + StringUtilsUniqueKeyTest 契约(长度/字符集/不重复).
+	 * 验证方式 = javap 确认字节码不再引用 RandomStringUtils + StringUtilsUniqueKeyTest 契约(长度/字符集/不重复).
 	 *
 	 * @return
 	 */
@@ -1006,8 +1006,10 @@ public abstract class StringUtils {
 			return null;
 		}
 
-		// 使用正则表达式去掉字符串中所有的双引号（包括转义的和非转义的）
-		return str.replaceAll("[\"\\\\\"]", "");
+		// P2-22(CODE_REVIEW_REPORT): 修复前用字符类一次删除——把反斜杠也一起删了,
+		// 实测 removeAllQuotes("C:\data\x") 返回 "C:datax"(Windows 路径分隔符全丢)。
+		// 现分两步: 先删转义引号(反斜杠+引号两个字符), 再删未转义的引号; 其余反斜杠不动。
+		return str.replace("\\\"", "").replace("\"", "");
 	}
 	
 	/**
@@ -1175,6 +1177,15 @@ public abstract class StringUtils {
 		if (source == null) {
 			return null;
 		}
+		// P2-22(CODE_REVIEW_REPORT): 修复前直接 source.substring(length - n), n>长度 或
+		// n<0 实测抛 StringIndexOutOfBoundsException: Range [-2, 3)。现与同类 subStr
+		// 的宽容约定一致: n<=0 返回空串, n>=length 返回原串。
+		if (n <= 0) {
+			return "";
+		}
+		if (n >= source.length()) {
+			return source;
+		}
 		return source.substring(source.length() - n);
 	}
 	
@@ -1213,8 +1224,11 @@ public abstract class StringUtils {
 		Object[] replacements = new Object[values.length];
 		for (int i = 0; i < values.length; i++) {
 			Object value = values[i];
-			if (value instanceof Long) {
-				replacements[i] = (value == null ? "" : value.toString());
+			// P2-22(CODE_REVIEW_REPORT): 修复前只对 Long 做 toString, Integer/BigDecimal 等
+			// 仍交给 MessageFormat 本地化——实测 format("计数:{0}", 1234) 输出 "计数:1,234",
+			// 拼订单号/ID 时数字被加千分位改写。现所有 Number 统一 toString()。
+			if (value instanceof Number) {
+				replacements[i] = value.toString();
 			} else {
 				replacements[i] = value;
 			}
@@ -1299,7 +1313,10 @@ public abstract class StringUtils {
 	}
 
 	/**
-	 * 如果str的长度不足len, 那么在尾部追加"0"补足len长度
+	 * 如果str的长度不足len, 那么在左侧追加"0"补足len长度
+	 * P2-22(CODE_REVIEW_REPORT): 修复前是右补零(padStringWithZeros("123",6) 实测返回
+	 * 123000——数值放大 1000 倍), 与方法名"padZeros(补零)"的常规需求(保持数值不变)相反。
+	 * 现改为左补零: "123"→"000123"。仓库内原零调用, 契约变更无存量影响。
 	 * @param str
 	 * @param len
 	 * @return String
@@ -1312,10 +1329,11 @@ public abstract class StringUtils {
 			throw new IllegalArgumentException("The length cannot be negative");
 		}
 
-		StringBuilder sb = new StringBuilder(str);
-		while (sb.length() < len) {
-			sb.append('0');
+		StringBuilder sb = new StringBuilder();
+		for (int i = str.length(); i < len; i++) {
+			sb.append('0'); //P2-22: 左补
 		}
+		sb.append(str);
 
 		return sb.toString();
 	}

@@ -64,15 +64,22 @@ public class PropertyReader {
 			logger.debug("找不到{}", resource+".properties");
 		}
 		try {
-			this.resourceBundle2 = new PropertyResourceBundle(new FileInputStream(WORKING_DIR + FILE_SEPRATOR + resource + RESOURCE_SUFFIX));
+			//P2-8: 修复前 FileInputStream 交给 PropertyResourceBundle 后就没人关——
+			//PropertyResourceBundle 没有 close()(JDK 21 javap 确认), 句柄要等 Cleaner/GC 才释放,
+			//Windows 实测构造完成立刻删该文件会报"另一个程序正在使用此文件"。
+			//bundle 在构造器里已把内容读完, try-with-resources 出块即关安全。
+			try (FileInputStream in = new FileInputStream(WORKING_DIR + FILE_SEPRATOR + resource + RESOURCE_SUFFIX)) {
+				this.resourceBundle2 = new PropertyResourceBundle(in);
+			}
 		} catch (Throwable e) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("找不到{}", WORKING_DIR + "/" + resource);
 			}
 		}
 		try {
-			this.resourceBundle3 =
-					new PropertyResourceBundle(new FileInputStream(WORKING_DIR + FILE_SEPRATOR + "config" + FILE_SEPRATOR + resource + RESOURCE_SUFFIX));
+			try (FileInputStream in = new FileInputStream(WORKING_DIR + FILE_SEPRATOR + "config" + FILE_SEPRATOR + resource + RESOURCE_SUFFIX)) {
+				this.resourceBundle3 = new PropertyResourceBundle(in); //P2-8: 同上
+			}
 		} catch (Throwable e) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("找不到{}", WORKING_DIR + "/config/" + resource);
@@ -114,18 +121,27 @@ public class PropertyReader {
 	}
 	
 	/**
-	 * 返回属性对应的int值，值不存在或者不是数字则返回 defaultValue
+	 * 返回属性对应的int值，值不存在或者不是数字则返回 defaultValue<p/>
+	 * P2-7: 修复前本方法复用 getInt(property) 再判 value == -1 就返回默认值——
+	 * 配置里真实写了 -1 时会被默认值顶掉（实测 getInt("probe.neg",5) 返回 5）。
+	 * 现在直接读原始字符串自行解析：属性不存在/空白/解析失败才回默认值，其余原样返回。
+	 * （单参 getInt(property) 以 -1 作"缺失"哨兵是 readme 已文档化的行为，保持不变。）
 	 *
 	 * @param property
 	 * @param defaultValue
 	 * @return
 	 */
 	public int getInt(String property, int defaultValue) {
-		if (!isResourcePresent()) {
+		String value = getString(property);
+		if (value == null || "".equals(value.trim())) {
 			return defaultValue;
 		}
-		int value = getInt(property);
-		return value == -1 ? defaultValue : value;
+		try {
+			return Integer.parseInt(value.trim());
+		} catch (NumberFormatException e) {
+			logger.error("属性 {} 的值 [{}] 不是合法整数, 返回默认值 {}", property, value, defaultValue);
+			return defaultValue;
+		}
 	}
 	
 	/**

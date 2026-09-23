@@ -55,7 +55,13 @@ class Resources {
 	
 	private static List<File> getResourcesFromDirectory(File directory, Pattern pattern) {
 		List<File> files = new ArrayList<File>();
+		//P2-19(CODE_REVIEW_REPORT): File.listFiles() 在权限不足/IO 错误/目录被并发删除时
+		//返回 null, 修复前直接 for 遍历抛 NullPointerException(实测复现)。null 按"此目录
+		//无文件可读"处理, 不影响其余 classpath 元素的扫描。
 		File[] fileList = directory.listFiles();
+		if (fileList == null) {
+			return files;
+		}
 		for (File file : fileList) {
 			if (file.isDirectory()) {
 				files.addAll(getResourcesFromDirectory(file, pattern));
@@ -85,7 +91,11 @@ class Resources {
 	 */
 	private static List<File> getResourcesFromDirectory(File fileOrDirectory, String fileName) {
 		List<File> files = new ArrayList<File>();
+		//P2-19: 同 Pattern 重载, listFiles() 可能为 null(权限/IO/并发删除)
 		File[] fileList = fileOrDirectory.listFiles();
+		if (fileList == null) {
+			return files;
+		}
 		for (File file : fileList) {
 			if (file.isDirectory()) {
 				files.addAll(getResourcesFromDirectory(file, fileName));

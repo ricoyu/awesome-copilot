@@ -20,21 +20,27 @@ public final class ArrayUtils {
 	}
 
 	/**
-	 * 过滤Array中的null元素并排序
+	 * 过滤 Array 中的 null 元素(P2-17: 不再排序/去重, 只做名字所表达的过滤)
+	 * <p>
+	 * 修复前: (T[]) stream(args).filter(...).sorted().distinct().toArray() 产出的是
+	 * Object[], 调用方 String[] a = ArrayUtils.nonNull(...) 直接抛
+	 * ClassCastException: [Ljava.lang.Object; cannot be cast to [Ljava.lang.String;;
+	 * 且 sorted+distinct 与"nonNull"这个名字不符(实测 ["b","a","a"] 返回 [a, b])。
+	 * 现按入参的组件类型创建结果数组, 保持原顺序、不去重; 需要排序去重请自行用 stream。
 	 *
-	 * @param args
-	 * @return T[]
+	 * @param args 允许含 null, 允许为 null(返回 null)
+	 * @return T[] 与入参同组件类型的新数组
 	 */
-	@SuppressWarnings("unchecked")
 	public static final <T> T[] nonNull(T... args) {
 		if (args == null) {
 			return null;
 		}
-		return (T[]) stream(args)
+		@SuppressWarnings("unchecked")
+		Class<T> componentType = (Class<T>) args.getClass().getComponentType();
+		T[] filtered = stream(args)
 				.filter(Objects::nonNull)
-				.sorted()
-				.distinct()
-				.toArray();
+				.toArray(size -> (T[]) java.lang.reflect.Array.newInstance(componentType, size));
+		return filtered;
 	}
 
 	/**

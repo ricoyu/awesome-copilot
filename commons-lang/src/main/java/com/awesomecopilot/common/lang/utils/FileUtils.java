@@ -59,13 +59,19 @@ public final class FileUtils {
 		}
 
 		// 【关键新增逻辑】：如果已经是 clean 过的文件名，直接返回原样
-		if (CLEANED_FILENAME_PATTERN.matcher(trimmed).matches()) {
+		// P2-29(CODE_REVIEW_REPORT): 修复前这里无条件短路——实测 "abcdef123456_../../evil.txt"
+		// 清洗后 "../" 原样保留, 返回值若参与拼接存储路径即为路径穿越。
+		// 现短路前先校验不含 ".." "/" "\" , 含则按普通名字走完整清洗逻辑。
+		if (CLEANED_FILENAME_PATTERN.matcher(trimmed).matches()
+				&& !trimmed.contains("..") && !trimmed.contains("/") && !trimmed.contains("\\")) {
 			return trimmed;  // 幂等：不再处理，直接返回
 		}
 
 		// 下面是原有清洗逻辑（只对未 clean 过的文件名执行）
 
-		String lower = trimmed.toLowerCase();
+		// P2-29: 修复前 toLowerCase() 无 Locale——土耳其语默认 Locale 下 'I'→'ı'(无点小写i),
+		// 同一文件名在不同部署机器上哈希前缀不同, "同一个文件名总是得到相同结果"契约被破坏
+		String lower = trimmed.toLowerCase(Locale.ROOT);
 
 		String namePart;
 		String suffixPart = "";
@@ -80,6 +86,10 @@ public final class FileUtils {
 		String spaced = namePart.replaceAll("\\s+", "_");
 
 		String cleanedName = INVALID_CHAR_PATTERN.matcher(spaced).replaceAll("_");
+
+		// P2-29: 连续点折叠为单个下划线——".." 作为文件名成分在 File(dir,"..") 这类
+		// 拼接下会解析到父目录, 清洗函数不应输出含 ".." 的名字
+		cleanedName = cleanedName.replaceAll("\\.{2,}", "_");
 
 		cleanedName = CONTINUOUS_UNDERSCORE_PATTERN.matcher(cleanedName).replaceAll("_");
 
@@ -99,6 +109,13 @@ public final class FileUtils {
 
 	/**
 	 * 验证上传的文件是否为真实图片
+	 * P2-14(CODE_REVIEW_REPORT): 修复前 ImageIO.read(inputStream) 消耗调用方的流且不重置
+	 * (探针实测 68 字节 PNG 调用后只剩 16 字节可读)——"先判断是不是图片、再保存同一个流"
+	 * 的上传流程会保存出残缺文件。现: 入参流支持 mark/reset 时(ByteArrayInputStream、
+	 * BufferedInputStream 等)判断结束后位置复原, 调用方可继续使用;
+	 * 不支持 mark 的流(部分 ServletInputStream)无法回退(数据已被读进 JVM, 物理上收不回来),
+	 * 此时本方法会消费流。
+	 *
 	 * @param size    文件大小
 	 * @param inputStream 输入流
 	 * @return boolean
@@ -118,12 +135,24 @@ public final class FileUtils {
 			return false;
 		}
 
+		// 2. 可回退则 mark, 读完 reset, 把流位置原样交还调用方(P2-14)
+		boolean markable = inputStream.markSupported();
 		try {
+			if (markable) {
+				inputStream.mark(Math.max((int) Math.min(size, Integer.MAX_VALUE), 1));
+			}
 			BufferedImage image = ImageIO.read(inputStream);
 			return image != null;
 		} catch (IOException e) {
 			// 如果读取失败或IO异常，则不是有效图片
 			return false;
+		} finally {
+			if (markable) {
+				try {
+					inputStream.reset();
+				} catch (IOException ignored) { //mark 预算内必然可 reset, 到这里说明容器异常, 不再扩大失败面
+				}
+			}
 		}
 	}
 

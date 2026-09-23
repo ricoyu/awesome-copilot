@@ -71,7 +71,7 @@ final class DateFormatterHolder {
 		String key = pattern + "|#|!derived!|#|" + timezone.getID();
 		DateTimeFormatter format = formats.get(key);
 		if (format == null) {
-			Locale locale = TIME_ZONE_LOCALE_HASH_MAP.get(timezone.getID());
+			Locale locale = localeOf(timezone.getID()); //P2-36: 表降为 private, 经取值方法访问
 			if (locale == null) {
 				format = DateTimeFormatter.ofPattern(pattern);
 			} else {

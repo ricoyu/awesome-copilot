@@ -295,7 +295,9 @@ public final class EnumUtils {
 			Object objValue = ReflectionUtils.getFieldValue(property, enumObj);
 			if (objValue instanceof Long) {
 				Long propertyValue = (Long) objValue;
-				if (value != null && propertyValue != null && value.intValue() == propertyValue.intValue()) {
+				// P2-25(CODE_REVIEW_REPORT): 修复前 value.intValue() == propertyValue.intValue()
+				// 比较——4294967297L 与 1L 的 intValue 都是 1, 会命中错误枚举。用 longValue 比较。
+				if (value != null && propertyValue != null && value.longValue() == propertyValue.longValue()) {
 					return (T) enumObj;
 				}
 			}
@@ -342,7 +344,9 @@ public final class EnumUtils {
 			Object objValue = ReflectionUtils.getFieldValue(property, enumObj);
 			if (objValue instanceof BigInteger) {
 				BigInteger propertyValue = (BigInteger) objValue;
-				if (value != null && propertyValue != null && value.intValue() == propertyValue.intValue()) {
+				// P2-25(CODE_REVIEW_REPORT): 同 Long 分支——修复前 intValue() 截断比较,
+				// BigInteger 值超过 int 范围时会命中错误枚举。现用 equals 精确比较。
+				if (value != null && value.equals(propertyValue)) {
 					return (T) enumObj;
 				}
 			}
@@ -359,8 +363,11 @@ public final class EnumUtils {
 	 */
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	private static <T extends Enum> T lookup(Class clazz, String name) {
+		// P2-25(CODE_REVIEW_REPORT): 修复前空串/null 抛 IllegalArgumentException, 而按属性
+		// 匹配的姊妹重载 lookup(Class,String,String) 对空串返回 null——表单没填时一个给
+		// null 一个给异常, 调用方无所适从。统一返回 null。
 		if (isBlank(name)) {
-			throw new IllegalArgumentException("Invalid value " + name + " for " + clazz.getName() + ", must be" + EnumSet.allOf(clazz));
+			return null;
 		}
 		try {
 			return (T)Enum.valueOf(clazz, name);

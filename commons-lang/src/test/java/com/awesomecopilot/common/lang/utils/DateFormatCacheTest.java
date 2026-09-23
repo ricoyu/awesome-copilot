@@ -159,12 +159,10 @@ public class DateFormatCacheTest {
 				.isEqualTo(java.time.LocalDate.of(2020, 12, 25));
 	}
 
-	// ---------- P2-36 全局表可变 ----------
+	// ---------- P2-36 全局表可变(表已降 private, 不可变断言见 DateP2FixTest) ----------
 
 	@Test
-	public void testTimeZoneLocaleMapIsUnmodifiable() {
-		assertThatThrownBy(DateConstants.TIME_ZONE_LOCALE_HASH_MAP::clear)
-				.as("public 全局表不应允许调用方清空")
-				.isInstanceOf(UnsupportedOperationException.class);
+	public void testTimeZoneLocaleLookupStillServesGmtEnglish() {
+		assertThat(DateConstants.localeOf("GMT")).isEqualTo(Locale.ENGLISH);
 	}
 }

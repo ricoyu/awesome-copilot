@@ -686,7 +686,9 @@ public final class DateUtils {
 		if (date == null) {
 			return null;
 		}
-		Objects.nonNull(zoneId);
+		//P2-24: 修复前是 Objects.nonNull(zoneId)——只返回布尔不抛异常, 写了等于没写,
+		//null 一路穿透到 LocalDateTime.ofInstant 才在 JDK 内部抛一条主语含糊的 NPE(实测 message="zone")
+		Objects.requireNonNull(zoneId, "zoneId cannot be null!");
 		Instant instant = date.toInstant();
 		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, zoneId);
 		return localDateTime.toLocalDate();
@@ -804,7 +806,7 @@ public final class DateUtils {
 		if (date == null) {
 			return null;
 		}
-		Objects.nonNull(zoneId);
+		Objects.requireNonNull(zoneId, "zoneId cannot be null!"); //P2-24: 同 toLocalDate, 原 nonNull 是空操作
 		Instant instant = date.toInstant();
 		return LocalDateTime.ofInstant(instant, zoneId);
 	}
@@ -849,9 +851,13 @@ public final class DateUtils {
 	 * 用系统默认时区将LocalDate转成LocalDateTime
 	 *
 	 * @param localDate
-	 * @return LocalDateTime
+	 * @return LocalDateTime, localDate 为 null 时返回 null(P2-24: 与 toLocalDate(Date)、
+	 * toLocalDateTime(Date) 一致——修复前这里抛 NPE, 同族三方法三种 null 约定并存)
 	 */
 	public static LocalDateTime toLocalDateTime(LocalDate localDate) {
+		if (localDate == null) {
+			return null;
+		}
 		long milis = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
 		return LocalDateTime.ofInstant(Instant.ofEpochMilli(milis), ZoneId.systemDefault());
 	}
@@ -869,15 +875,22 @@ public final class DateUtils {
 	}
 	
 	/**
-	 * 用+8(东8区 Asia/Shanghai)将LocalDate转成LocalDateTime
+	 * 将 zoneId 时区里的这个本地日期的零点, 换算成东八区(CTT)的日期时间字面量
 	 *
-	 * @param localDate
-	 * @param zoneId
-	 * @return LocalDateTime
+	 * @param localDate 视为 zoneId 时区中的历法日期(取其零点)
+	 * @param zoneId    localDate 所处的时区
+	 * @return LocalDateTime(东八区字面量)
 	 */
 	public static LocalDateTime toLocalDateTimeCTT(LocalDate localDate, ZoneId zoneId) {
-		long milis = localDate.atStartOfDay(ZONE_ID_SHANG_HAI).toInstant().toEpochMilli();
-		return LocalDateTime.ofInstant(Instant.ofEpochMilli(milis), ZONE_ID_SHANG_HAI);
+		if (localDate == null) {
+			return null;
+		}
+		Objects.requireNonNull(zoneId, "zoneId cannot be null!");
+		//P2-24: 修复前方法体两次用 ZONE_ID_SHANG_HAI, 形参 zoneId 一次都没用——
+		//实测传纽约时区拿回的仍是东八区值。现在按参数换算: 源时区零点 → 东八区同一绝对时刻的字面量
+		return localDate.atStartOfDay(zoneId)
+				.withZoneSameInstant(ZONE_ID_SHANG_HAI)
+				.toLocalDateTime();
 	}
 	
 	/**
@@ -949,6 +962,7 @@ public final class DateUtils {
 		calendar.add(Calendar.HOUR, 1);
 		calendar.set(Calendar.MINUTE, 0);
 		calendar.set(Calendar.SECOND, 0);
+		calendar.set(Calendar.MILLISECOND, 0); //P2-24: 修复前没清毫秒, 实测残差=当时的毫秒位(0~999), 整点定时持续后移
 		return calendar.getTimeInMillis() - System.currentTimeMillis();
 	}
 	
@@ -995,7 +1009,12 @@ public final class DateUtils {
 	}
 	
 	/**
-	 * date1 - date2 相差多少天, date1早于date2返回负数
+	 * date1 - date2 相差多少个日历天, date1早于date2返回负数<p/>
+	 * P2-4: 修复前是毫秒差整除 24 小时(TimeUnit.DAYS.convert), 相隔 23 小时、
+	 * 跨两个日历日的入参返回 0, 而同名重载 dateDiff(LocalDate,LocalDate) 按日历天返回 -1——
+	 * 两个重载语义不同但名字相同。现在统一按日历天: 两个 Date 先按系统默认时区
+	 * 取历法日期再做 ChronoUnit.DAYS.between, 与 LocalDate 版的算法一致。
+	 * 行为变更: 原来"不足 24 小时算 0 天"的调用(如同一天内两个时刻)结果可能变为 ±1。
 	 *
 	 * @param date1
 	 * @param date2
@@ -1004,8 +1023,7 @@ public final class DateUtils {
 	public static long dateDiff(Date date1, Date date2) {
 		Objects.requireNonNull(date1, "date1 cannot be null!");
 		Objects.requireNonNull(date2, "date2 cannot be null!");
-		long diffInMillies = date1.getTime() - date2.getTime();
-		return TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
+		return ChronoUnit.DAYS.between(toLocalDate(date2), toLocalDate(date1));
 	}
 	
 	/**
