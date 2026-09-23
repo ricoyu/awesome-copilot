@@ -143,17 +143,53 @@ public class LeakyBucketRateLimiter implements RateLimiter {
     }
 
     /**
-     * 每个 1ms tick 的漏出逻辑，把"真实流逝的时间"换算成"应漏出的请求数"：
+     * leakTick —— 漏出线程每 1ms 跑一次的匀速漏出逻辑。
+     * <p>
+     * <h2>要解决的问题</h2>
+     * 需求是"每秒处理 leakRate 个请求"，但定时任务是固定 1ms 一跳。两个数字对不上：
+     * leakRate=3 时，平均 333,333,333 纳秒才该漏 1 个，一个 1ms 的 tick 里往往
+     * "还不够漏一个"；反过来若某次 tick 被 GC 或慢请求耽误了 100ms，这 100ms 里
+     * 该漏的 0.3 个也不能就这样丢掉。所以需要一套记账办法，把"任意长的真实时间"
+     * 换算成"应漏多少个"，误差跨 tick 结转。
+     * <p>
+     * <h2>记账模型：把时间当钱</h2>
+     * 想象每个请求的漏出要"付"一笔时间：<b>漏 1 个请求的价格
+     * perTokenNanos = 10亿纳秒 ÷ leakRate</b>（leakRate=3 → 每个约 3.33 亿纳秒）。
+     * 然后：
+     * <ul>
+     * <li><b>攒钱</b>：每次 tick 把距上次 tick 真实流逝的纳秒数存进 pendingNanos
+     * （配额池，就是"存款"）；</li>
+     * <li><b>算能买几个</b>：应漏数 due = 存款 ÷ 单价。存了 7 亿、单价 3.33 亿
+     * → due = 2，还余 3,333,334 纳秒零头；</li>
+     * <li><b>整笔花掉</b>：due × 单价从存款里扣走，注意扣的是"全部应漏数"
+     * 的钱——哪怕下面真正漏出的少于 due（队空了、被 capacity 截断），多付的钱也不退。
+     * 为什么不退：漏桶是"匀速"语义，错过的水滴就是错过了，不存在攒余额补漏；
+     * 只有除不尽的零头才留在池里滚存（见攒钱例 2）。</li>
+     * </ul>
+     * <h2>数字例子（leakRate=3，单价 333,333,333ns，容量 10）</h2>
      * <ol>
-     * <li>累计流逝纳秒进 pendingNanos（配额池）；</li>
-     * <li>应漏数 due = 配额池 ÷ 单请求配额（1e9/leakRate 纳秒），本轮配额全额扣走；</li>
-     * <li>due 封顶 capacity 后逐个 poll + 执行。队列先空则清零剩余配额并退出——
-     * 空闲时间攒出来的配额不允许在"队列刚有货"时一次性连发，
-     * 保证输出速率恒定（漏桶的匀速语义）。</li>
+     * <li><b>攒</b>：tick0 存款 0；tick1 流逝 1ms → 存 1,000,000ns，due = 1,000,000
+     * ÷ 333,333,333 = 0 → 直接返回，一个都不漏，存款留着。约 334 个 tick（333ms）
+     * 后存款凑够一个单价，才漏出第 1 个——宏观上就是 0.33 秒漏 1 个 = 每秒 3 个；</li>
+     * <li><b>结转</b>：凑够后存款 333,334,000，due=1，扣 333,333,333，剩 667ns
+     * 滚存到下一轮——长期平均速率因此精确等于 leakRate，不向下取整吃亏；</li>
+     * <li><b>队空清零</b>：桶空闲 10 秒后只有 1 个请求入队。此刻存款已高达 10ms
+     * = 30 个单价，due=30 但只有 1 个可漏。循环第 2 次 poll 拿到 null → 把剩余
+     * 存款清零、退出。若不清零，这 29 个"空闲攒出来的钱"会在下个 tick 起继续
+     * 兑换，把随后到达的请求成串放行——突发流量被瞬时消化，等于放弃了匀速。
+     * 这就是字段注释里"队列空了不允许下个 tick 一次性连发"的落点。</li>
      * </ol>
-     * <b>为什么不直接"每 tick 漏固定个数"</b>：调度间隔不精确（GC、任务占用、线程竞争），
-     * 固定个数会让长期速率偏离配置。按流逝时间换算则无论 tick 怎么抖动，
-     * 单位时间内漏出的请求数恒等于 leakRate。
+     * <h2>两个易忽略细节</h2>
+     * <ul>
+     * <li>花掉 due×单价 发生在 min(due, capacity) 截断<b>之前</b>：截断只限制
+     * 本轮最多漏 capacity 个（防一个极慢请求执行了 10 分钟后，下个 tick 因攒了
+     * 海量配额而连发数千个），但账要一次结清，逻辑更简单、也不留"补偿"入口；</li>
+     * <li>Math.max(1, ...) 防泄漏：leakRate 若配到超过 10 亿，1e9/leakRate 整除
+     * 得 0，后面除法直接除零崩溃，下限压到 1ns；</li>
+     * <li>首次 tick 的 lastNanos=0 特殊处理：System.nanoTime() 是 JVM 启动以来的
+     * 纳秒值（通常几十亿），不先把基准设为 now 的话，第一次就"存"进几十秒的配额，
+     * 开局桶被连发打满。</li>
+     * </ul>
      * <p>
      * <b>异常纪律</b>：任务体内必须不向外抛异常——scheduleAtFixedRate 的任务一旦抛出
      * 未捕获异常，后续所有执行会被取消，桶从此只进不出。runRequest 内部已自行兜住
@@ -161,28 +197,31 @@ public class LeakyBucketRateLimiter implements RateLimiter {
      */
     private void leakTick() {
         try {
+            //① 攒钱: 把距上次 tick 真实流逝的纳秒存进配额池
             long now = System.nanoTime();
             if (lastNanos == 0) {
                 lastNanos = now; //首次 tick 把基准设为当前, 不把"对象创建到首次执行"的空档记成配额
             }
             pendingNanos += now - lastNanos;
             lastNanos = now;
-            //单个请求占用的漏出时间配额, 纳秒
+            //② 单价: 漏 1 个请求要付的时间 = 1秒 ÷ leakRate; max(1,..) 防 leakRate>10亿时整除为 0 导致除零
             long perTokenNanos = Math.max(1, 1_000_000_000L / leakRate);
+            //③ 存款能买几个漏出名额(除不尽的零头留在池里滚存, 保证长期速率精确)
             long due = pendingNanos / perTokenNanos;
             if (due <= 0) {
-                return; //不足漏 1 个的配额, 全部结转
+                return; //还不够漏 1 个的配额, 全部结转, 本 tick 什么都不做
             }
-            //配额全额扣掉, 超出本轮处理能力(capacity)的部分作废——慢任务执行很久之后不做补偿式连续放行
+            //④ 整笔付账: 扣全部 due 个名额的钱, 哪怕实际漏出更少也不退——匀速语义,
+            //错过的时间不补; 也发生在 capacity 截断之前, 慢任务跑完回来不做补偿式连发
             pendingNanos -= due * perTokenNanos;
-            due = Math.min(due, capacity);
+            due = Math.min(due, capacity); //本轮最多漏 capacity 个
             for (long i = 0; i < due; i++) {
                 Runnable request = queue.poll();
                 if (request == null) {
-                    pendingNanos = 0; //队列空了, 攒下的配额作废, 不允许下个 tick 一次性连发
+                    pendingNanos = 0; //队列空了, 空闲攒下的余额清零作废, 防下个 tick 连发(见 javadoc 例3)
                     return;
                 }
-                runRequest(request); //在漏出线程内同步执行
+                runRequest(request); //在漏出线程内同步执行, 执行期间其余 tick 排队等待
             }
         } catch (Exception e) {
             //P2-33: 修复前用 System.err, 库代码统一走 slf4j
