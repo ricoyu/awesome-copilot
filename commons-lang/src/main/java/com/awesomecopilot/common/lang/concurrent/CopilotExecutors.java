@@ -121,13 +121,16 @@ public final class CopilotExecutors {
 	}
 	
 	/**
-	 * 线程池最大线程数, 默认CPU核心数的3倍
+	 * 线程池最大线程数, 默认CPU核心数的2倍
 	 * 太大了可能会把应用压垮, 如果不够, 可以自行调高
 	 *
 	 * @param maximumPoolSize
 	 * @return Executors
 	 */
 	public CopilotExecutors maxPoolSize(Integer maximumPoolSize) {
+		//P2-34: 修复前不校验 null, 要到 build() 拆箱时才抛一句没有主语的 NPE——
+		//犯错点(这里)与报错点(build)隔着整条链。在设置处立刻报。
+		Objects.requireNonNull(maximumPoolSize, "maximumPoolSize cannot be null!");
 		this.maximumPoolSize = maximumPoolSize;
 		return this;
 	}
@@ -189,6 +192,14 @@ public final class CopilotExecutors {
 	}
 	
 	public ExecutorService build() {
+		//P2-34: maxPoolSizeToCorePoolSize() 读调用当时的 corePoolSize, 链式顺序颠倒
+		//(先调它再设 core)会让 core > max, 修复前到 ThreadPoolExecutor 构造器才抛一句
+		//没有消息的 IllegalArgumentException。在入口处校验并说明两个值。
+		if (maximumPoolSize != null && corePoolSize > maximumPoolSize) {
+			throw new IllegalArgumentException(
+					"corePoolSize(" + corePoolSize + ") cannot be greater than maximumPoolSize("
+							+ maximumPoolSize + "), pool: " + poolName);
+		}
 		RejectedExecutionHandler handler = null;
 		
 		if (rejectPolicy instanceof RejectedExecutionHandler) {

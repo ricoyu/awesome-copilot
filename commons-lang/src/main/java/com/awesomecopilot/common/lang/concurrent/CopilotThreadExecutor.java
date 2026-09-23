@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
@@ -100,7 +101,7 @@ public class CopilotThreadExecutor extends ThreadPoolExecutor {
 		 * 线程池将要关闭事件
 		 * 此方法会等待线程池中的任务(包括正在执行的任务和队列中等待的任务)执行完毕再关闭
 		 */
-		monitor("ThreadPool will be shutdown:");
+		monitor("ThreadPool will be shutdown:", true);
 		super.shutdown();
 	}
 	
@@ -109,16 +110,19 @@ public class CopilotThreadExecutor extends ThreadPoolExecutor {
 		/*
 		 * 此方法会立即关闭线程池, 同时会返回队列中等待的任务
 		 */
-		monitor("ThreadPool going to immediately be shutdown:");
+		monitor("ThreadPool going to immediately be shutdown:", true);
 		/*
 		 * 这是在等待队列中还没有执行, 被丢弃的任务
 		 */
-		List<Runnable> dropTasks = null;
+		List<Runnable> dropTasks;
 		try {
 			dropTasks = super.shutdownNow();
 			log.error("ThreadPool discard task count:{}", dropTasks.size());
 		} catch (Exception e) {
+			//P2-34: ThreadPoolExecutor.shutdownNow() 契约返回非 null; 修复前这里返回 null,
+			//调用方对返回值 .size() 直接 NPE。降级为空列表(异常已带堆栈记录)。
 			log.error("ThreadPool shutdownNow error", e);
+			dropTasks = Collections.emptyList();
 		}
 		return dropTasks;
 	}
@@ -128,7 +132,9 @@ public class CopilotThreadExecutor extends ThreadPoolExecutor {
 		/*
 		 * 监控线程池运行时的各项指标
 		 */
-		monitor("ThreadPool monitor data:");
+		//P2-34: 修复前每执行一个任务就以 INFO 级别打印 13 个字段的监控行, 高 QPS 下日志量
+		//急剧增长、反过来拖慢被观测的池。降到 DEBUG: 排障时打开 DEBUG 即有全量数据, 平时不产出。
+		monitor("ThreadPool monitor data:", false);
 	}
 	
 	@Override
@@ -142,9 +148,15 @@ public class CopilotThreadExecutor extends ThreadPoolExecutor {
 	 * 监控线程池运行时的各项指标
 	 * 比如:任务等待数、任务异常信息、已完成任务数、核心线程数、最大线程数等
 	 *
-	 * @param title
+	 * @param title         事件标题
+	 * @param atErrorLevel  true 以 ERROR 输出(关停等低频关键事件); false 以 DEBUG 输出
+	 *                      (每任务监控行, 修复前是 INFO, 高 QPS 下刷屏, 见 P2-34;
+	 *                      级别不开时直接跳过 MessageFormat 拼接, 不产生格式化开销)
 	 */
-	private void monitor(String title) {
+	private void monitor(String title, boolean atErrorLevel) {
+		if (!atErrorLevel && !log.isDebugEnabled()) {
+			return;
+		}
 		try {
 			// 线程池监控信息记录
 			String threadPoolMonitor = MessageFormat.format(
@@ -174,7 +186,11 @@ public class CopilotThreadExecutor extends ThreadPoolExecutor {
 					this.isShutdown(),
 					this.isTerminated(),
 					Thread.currentThread().getName(), System.lineSeparator());
-			log.info(threadPoolMonitor);
+			if (atErrorLevel) {
+				log.error(threadPoolMonitor);
+			} else {
+				log.debug(threadPoolMonitor);
+			}
 		} catch (Exception e) {
 			log.error("ThreadPool monitor error", e);
 		}

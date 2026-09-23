@@ -5924,19 +5924,19 @@ RED 证据与修法要点：
 
 ## 四、P2 级问题（39 条）
 
-### P2-1 AbortWithReportPolicy 的线程 dump 内容被 SLF4J 丢弃 [实测]
+### P2-1 AbortWithReportPolicy 的线程 dump 内容被 SLF4J 丢弃 [实测] ✅已修复(2026-09-23)
 
 - 位置：`concurrent/AbortWithReportPolicy.java:121`（`log.error("thread dump info:", sb.toString())`）
 - 现象：探针确认输出只剩 `[thread dump info:]`——SLF4J 的 `error(String, Throwable)` 重载匹配失败后落到 `error(String, Object)`，format 里没有 `{}` 占位符时第二个参数直接不输出。这个类唯一的工作产出（线程快照）从来没有进过日志。
 - 修法：`log.error("thread dump info:\n{}", sb)`。
 
-### P2-2 Concurrent.IO_POOL 核心数=最大数 + 无界队列：积压只会被内存放大 [直读]
+### P2-2 Concurrent.IO_POOL 核心数=最大数 + 无界队列：积压只会被内存放大 [直读] ✅已修复(2026-09-23)
 
 - 位置：`concurrent/Concurrent.java:55、:94-99`（`new ThreadPoolExecutor(2N+1, 2N+1, 0L, MILLISECONDS, new LinkedBlockingQueue())`）
 - 现象：`LinkedBlockingQueue` 无参构造容量 `Integer.MAX_VALUE`，maximumPoolSize 永不生效、拒绝策略永不触发；下游变慢时任务无限积压直到 OOM。作为全框架共用的默认异步池，这是放大器。
 - 修法：给队列设上限（与框架内其它池一致的 2600 起步）并配 `AbortWithReportPolicy`。
 
-### P2-3 TokenBucketRateLimiter 补令牌 CAS 失败时本轮增量作废 [直读]
+### P2-3 TokenBucketRateLimiter 补令牌 CAS 失败时本轮增量作废 [直读] ✅已修复(2026-09-23)
 
 - 位置：`ratelimit/TokenBucketRateLimiter.java:56-66`
 - 现象：`tokensToAdd` 先从 `pendingRefillMillis` 扣掉，`compareAndSet` 失败（说明有并发 acquire）就直接返回——这批令牌丢失，实际放行速率低于配置值。
@@ -6121,14 +6121,14 @@ RED 证据与修法要点：
 - 现象：重建 URL 只拼 协议+主机+端口+路径+查询；实测 `https://ex.com/a?q=hello world#frag` 编码后 `#frag` 消失，`https://u:p@ex.com/p` 的用户名密码被整段丢弃（后续请求以未认证身份发出）。另外查询串整体 encode 后再把 `%3D/%26` 换回 `=&`，原值里本来就有的 `%xx` 会被二次编码。
 - 修法：用 `URI` 按组件重建并保留 `getRawFragment()`/userInfo，或在 javadoc 写明"片段与凭证会被丢弃"。
 
-### P2-33 限流器簇（LeakyBucket 停机丢任务 / System.out 刷屏 / TokenBucket 无参校验） [直读]
+### P2-33 限流器簇（LeakyBucket 停机丢任务 / System.out 刷屏 / TokenBucket 无参校验） [直读] ✅已修复(2026-09-23)
 
 - `ratelimit/LeakyBucketRateLimiter.java:68-71、101-115`——`shutdown()` 注释写"处理完队列中剩余请求"，实现是 `isRunning=false` 后 `processRequests` 每 tick 直接 return，桶里已 `submitRequest` 成功（对外已承诺接收）的任务被直接丢弃：不执行、不计数、无回调。修法：拆"停止接收"与"排空"两态，或至少 drain 后 log 剩余数。
 - 同文件 `:85`、`TokenBucketRateLimiter.java:108`——库代码用 `System.out`，每个漏出周期一条、永不停；`:48-49` `interval = 1000L/leakRate` 在 leakRate>1000 时被压到 1000/s 且整数截断使实际速率略高于配置。改 slf4j debug。
 - 同文件 `:74-84`——请求 poll 出桶后被转投同一个 2 线程 scheduler 的无界队列，`capacity` 不再是实际在途上界，无背压。
 - `TokenBucketRateLimiter.java:39-53`——构造器零参数校验：`refillRate<=0` 时令牌只出不进、桶空后全量拒绝且无告警（`LeakyBucketRateLimiter:35-40` 有同款校验，孪生类只修一边）。
 
-### P2-34 CopilotThreadExecutor / CopilotExecutors 两处 [直读]
+### P2-34 CopilotThreadExecutor / CopilotExecutors 两处 [直读] ✅已修复(2026-09-23)
 
 - `concurrent/CopilotThreadExecutor.java:127-131`——`beforeExecute` 每任务调一次 `monitor()`，每次用 `MessageFormat.format` 拼 13 个字段打一条 info：高 QPS 下日志量急剧增长、反过来拖慢被观测的池。改阈值触发/降 debug/参数化日志。
 - 同文件 `:108-123`——`shutdownNow()` 的 catch 分支返回 null，破坏 `ThreadPoolExecutor.shutdownNow()` 非 null 契约，调用方 `.size()` 直接 NPE。改返回 `Collections.emptyList()`。
@@ -6143,7 +6143,7 @@ RED 证据与修法要点：
 
 - `constants/DateConstants.java:392`——`final` 只锁引用，任意调用方可 put/remove/clear 这张全局表，并发写还有结构损坏风险；同类的 Pattern/TimeZone 常量都不可变，唯独它是例外。（它的键类型错用见 P1-3。）改 `Collections.unmodifiableMap` 并降为 private。
 
-### P2-37 FutureResult 两处 [直读]
+### P2-37 FutureResult 两处 [直读] ✅已修复(2026-09-23)
 
 - `concurrent/FutureResult.java:49-52、63-65、78-80`——`InterruptedException` 与业务异常混在一起 catch：`get()` 把中断包装成 `AsyncExecutionException`（上层分不清"失败"与"被取消"），`orElseGet` 直接丢弃中断信号继续走回落分支，且不 `Thread.currentThread().interrupt()` 恢复标记——线程池取消信号在此断链。
 - 同文件 `:43-48`——`get()` 里 `t instanceof CompletableFuture ? ((CF)t).get() : future.get()`：`:47` 对同一 future 重复 `get()` 是浪费；而 Supplier 本身返回 `CompletableFuture`（异步套异步的常见写法）会被误当包装层多解一层，语义随数据内容漂移。根因是配合 P1-22 的嵌套返回打的补丁，P1-22 修掉后这里应一并删。

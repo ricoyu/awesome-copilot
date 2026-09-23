@@ -89,6 +89,22 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 	}
 	
 	/**
+	 * 生成并输出线程 dump 文本到 error 日志（P2-1 修复时从 DUMP_EXECUTOR 的 lambda 里
+	 * 提取为独立方法，便于单测直接调用验证日志输出，不再依赖静态执行器状态）。
+	 */
+	void doThreadDump() {
+		ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+		StringBuilder sb = new StringBuilder();
+		for (ThreadInfo threadInfo : threadMxBean.dumpAllThreads(true, true)) {
+			sb.append(getThreadDumpString(threadInfo));
+		}
+		//P2-1: 修复前是 log.error("thread dump info:", sb.toString())——SLF4J 把它匹配到
+		//error(String, Object) 重载, 格式串里没有 {} 占位符时第二个参数被直接丢弃,
+		//实测日志只剩 "[thread dump info:]", 这个类唯一的工作产出(线程快照)从未进过日志。
+		log.error("thread dump info:\n{}", sb);
+	}
+
+	/**
 	 * 获取线程dump信息<p>
 	 * 注意: 该方法默认会记录所有线程和锁信息. 虽然方便debug, 使用时最好加开关和间隔调用, 否则可能会增加latency<p>
 	 * 1.当前线程的基本信息:id,name,state<p>
@@ -117,12 +133,7 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 			}
 			DUMP_EXECUTOR.execute(() -> {
 				try {
-					ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
-					StringBuilder sb = new StringBuilder();
-					for (ThreadInfo threadInfo : threadMxBean.dumpAllThreads(true, true)) {
-						sb.append(getThreadDumpString(threadInfo));
-					}
-					log.error("thread dump info:", sb.toString());
+					doThreadDump();
 				} catch (Exception e) {
 					log.error("thread dump error", e);
 				} finally {
@@ -130,7 +141,7 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 				}
 			});
 			//评审修复(2026-09-23): 时间戳在提交成功后才推进——放在 execute 之前时,
-			//执行器已关停导致提交抛异常, 10分钟窗口照样被吃掉, 之后一次都没 dump 却被限流挡住
+			//执行器已关停导致提交抛异常时, 10分钟窗口照样被推进, 之后想 dump 却被限流挡住
 			lastPrintTime = now;
 			submitted = true;
 		} catch (Exception e) {

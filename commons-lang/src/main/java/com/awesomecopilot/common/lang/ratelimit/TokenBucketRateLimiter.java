@@ -37,11 +37,27 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	 * @param refillIntervalMs 补充令牌的时间间隔(毫秒)
 	 */
 	public TokenBucketRateLimiter(long capacity, long refillRate, long refillIntervalMs) {
+		//P2-33: 修复前零参数校验——refillRate<=0 时令牌只出不进, 桶空后全量拒绝且无任何告警;
+		//capacity<=0 时永远拒绝。孪生类 LeakyBucketRateLimiter 有同款校验, 这里补齐。
+		if (capacity <= 0) {
+			throw new IllegalArgumentException("capacity must be positive");
+		}
+		if (refillRate <= 0) {
+			throw new IllegalArgumentException("refillRate must be positive");
+		}
+		if (refillIntervalMs <= 0) {
+			throw new IllegalArgumentException("refillIntervalMs must be positive");
+		}
 		this.capacity = capacity;
 		this.tokens = new AtomicLong(capacity); // 初始时桶是满的
 		this.refillRate = refillRate;
 		this.refillIntervalMs = refillIntervalMs;
-		this.scheduler = Executors.newSingleThreadScheduledExecutor();
+		this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+			//P2-3: 修复前默认线程工厂是非 daemon, 忘记 shutdown() 会挂住 JVM 退不出去
+			Thread t = new Thread(r, "token-bucket-refill");
+			t.setDaemon(true);
+			return t;
+		});
 
 		// 启动定时任务：按固定速率补充令牌
 		scheduler.scheduleAtFixedRate(
@@ -58,16 +74,23 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	private void refillTokens() {
 		pendingRefillMillis += refillRate * refillIntervalMs;
 		long tokensToAdd = pendingRefillMillis / 1000;
-		pendingRefillMillis %= 1000;
 		if (tokensToAdd <= 0) {
 			return;
 		}
-		long currentTokens = tokens.get();
-		long newTokens = Math.min(capacity, currentTokens + tokensToAdd);
-		if (tokens.compareAndSet(currentTokens, newTokens)) {
-			if (log.isDebugEnabled()) {
-				log.debug("[Refill] Tokens: " + newTokens); // 调试日志
-			}
+		//只扣除真正兑换成令牌的那部分毫秒配额(保持整除关系), 尾数留在池子里下次再兑
+		pendingRefillMillis -= tokensToAdd * 1000;
+		//P2-3: 修复前是 get -> 算新值 -> compareAndSet, CAS 失败(说明有并发 acquire)就直接返回,
+		//而 tokensToAdd 已经从 pendingRefillMillis 扣掉了——本轮增量作废。
+		//实测(高水位 8 消费者压测)46 万注入丢失 1~2 万令牌, 实际放行速率低于配置值。
+		//改为 accumulateAndGet 原子累加并封顶: 无论并发怎么扣减, 增量都完整入账。
+		tokens.accumulateAndGet(tokensToAdd, (current, add) -> {
+			long updated = current + add;
+			//current<=capacity 恒成立(入口满桶且每次累加都封顶), capacity 受构造校验为正数,
+			//相加溢出时结果必然远超 capacity, 收敛到上限即可, 不需要单独判溢出
+			return updated > capacity ? capacity : updated;
+		});
+		if (log.isDebugEnabled()) {
+			log.debug("[Refill] Tokens: {}", tokens.get()); // 调试日志
 		}
 	}
 
@@ -95,6 +118,14 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	 */
 	public void shutdown() {
 		scheduler.shutdown();
+	}
+
+	/**
+	 * 释放补令牌用的调度线程; 与 shutdown() 同义, 让 try-with-resources 可用（P2-3）。
+	 */
+	@Override
+	public void close() {
+		shutdown();
 	}
 
 	// 测试用例

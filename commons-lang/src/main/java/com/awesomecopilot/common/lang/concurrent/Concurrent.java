@@ -92,10 +92,15 @@ public final class Concurrent {
 	 * @return ExecutorService
 	 */
 	public static ExecutorService ioConcentratedFixedThreadPool() {
+		//P2-2: 修复前队列用无参 LinkedBlockingQueue(容量 Integer.MAX_VALUE), maximumPoolSize
+		//永不生效、拒绝策略永不触发, 下游变慢时任务无限积压直到内存耗尽。
+		//现在与框架内其它池一致: 队列上限 2600, 满了走 AbortWithReportPolicy 留现场并抛
+		//RejectedExecutionException, 让调用方拿到背压信号而不是等死。
 		ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(2 * NCPUS + 1, 2 * NCPUS + 1,
 				0L, TimeUnit.MILLISECONDS,
-				new LinkedBlockingQueue<Runnable>(),
-				defaultThreadFactory);
+				new LinkedBlockingQueue<Runnable>(2600),
+				defaultThreadFactory,
+				new AbortWithReportPolicy());
 		threadPoolExecutor.prestartAllCoreThreads();
 		return threadPoolExecutor;
 	}
