@@ -45,7 +45,8 @@ public final class PrimitiveUtils {
         if (Boolean.class.equals(clazz) || Boolean.TYPE.equals(clazz)) {
             return true;
         }
-        if (Character.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+        //P1-7: 原来是 Character.class || Short.TYPE —— 把 Character.TYPE 抄成了 Short.TYPE
+        if (Character.class.equals(clazz) || Character.TYPE.equals(clazz)) {
             return true;
         }
 
@@ -66,7 +67,7 @@ public final class PrimitiveUtils {
         if (Long.class.equals(clazz) || Long.TYPE.equals(clazz)) {
             return (T) Long.valueOf(toString(data));
         }
-        if (Double.class.equals(clazz)) {
+        if (Double.class.equals(clazz) || Double.TYPE.equals(clazz)) { //P1-7: 补 double.class 分支
             return (T) Double.valueOf(toString(data));
         }
         if (Float.class.equals(clazz) || Float.TYPE.equals(clazz)) {
@@ -78,7 +79,8 @@ public final class PrimitiveUtils {
         if (Short.class.equals(clazz) || Short.TYPE.equals(clazz)) {
             return (T) Short.valueOf(toString(data));
         }
-        if (Character.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+        //P1-7: 同上, Character.TYPE 曾被抄成 Short.TYPE
+        if (Character.class.equals(clazz) || Character.TYPE.equals(clazz)) {
             return (T) Character.valueOf(toString(data).charAt(0));
         }
         return null;
@@ -98,7 +100,7 @@ public final class PrimitiveUtils {
         if (Long.class.equals(clazz) || Long.TYPE.equals(clazz)) {
             return (T) Long.valueOf(toString(data));
         }
-        if (Double.class.equals(clazz)) {
+        if (Double.class.equals(clazz) || Double.TYPE.equals(clazz)) { //P1-7: 补 double.class 分支
             return (T) Double.valueOf(toString(data));
         }
         if (Float.class.equals(clazz) || Float.TYPE.equals(clazz)) {
@@ -110,7 +112,8 @@ public final class PrimitiveUtils {
         if (Short.class.equals(clazz) || Short.TYPE.equals(clazz)) {
             return (T) Short.valueOf(toString(data));
         }
-        if (Character.class.equals(clazz) || Short.TYPE.equals(clazz)) {
+        //P1-7: 同上, Character.TYPE 曾被抄成 Short.TYPE
+        if (Character.class.equals(clazz) || Character.TYPE.equals(clazz)) {
             return (T) Character.valueOf(toString(data).charAt(0));
         }
         return null;
@@ -166,7 +169,17 @@ public final class PrimitiveUtils {
             return BigDecimal.valueOf((Long) value);
         }
         if (value instanceof BigInteger) {
-            return BigDecimal.valueOf(((BigInteger) value).intValue());
+            //P1-15: 原走 intValue(), 超过 int 范围直接溢出(3000000000 -> -1294967296)
+            return new BigDecimal((BigInteger) value);
+        }
+        if (value instanceof Float) {
+            //P1-15: 原来没有浮点分支, double/float 落到末尾返回 ZERO(3.9 -> 0)
+            //评审修复(2026-09-23): Float 先经 Double 会放大二进制噪声(1.1f -> 1.100000023841858),
+            //走 Float.toString 得到最短十进制表示再构造
+            return new BigDecimal(Float.toString((Float) value));
+        }
+        if (value instanceof Double) {
+            return BigDecimal.valueOf((Double) value);
         }
         if (value instanceof BigDecimal) {
             return ((BigDecimal) value);
@@ -175,7 +188,8 @@ public final class PrimitiveUtils {
             return BigDecimal.valueOf(((Byte) value).intValue());
         }
         if (value instanceof String) {
-            return BigDecimal.valueOf(Integer.parseInt((String) value));
+            //P1-15: 原用 Integer.parseInt, 小数文本("1.5")抛 NumberFormatException
+            return new BigDecimal(((String) value).trim());
         }
         return BigDecimal.ZERO;
     }
@@ -219,6 +233,11 @@ public final class PrimitiveUtils {
         }
         if (value instanceof BigDecimal) {
             return ((BigDecimal) value).toString();
+        }
+        if (value instanceof String) {
+            //P1-7 连带修复: 原来没有 String 分支, toPrimitive("2.5", double.class) 时
+            //toString(data) 返回 null, Double.valueOf(null) 抛无主语 NPE
+            return (String) value;
         }
         if (value instanceof byte[]) {
             return new String((byte[]) value, UTF_8);

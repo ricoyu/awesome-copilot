@@ -105,12 +105,16 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 		if (!guard.tryAcquire()) {
 			return;
 		}
+		//P1-23: 修复前 tryAcquire 成功之后的第二个 10 分钟检查直接 return, 许可既不在本方法
+		//归还(只有 dump 任务体的 finally 归还), 任务又根本没提交——唯一许可永久丢失,
+		//之后所有 reject→threadDump 全部 tryAcquire 失败, dump 能力从此瘫痪且无任何提示。
+		//现在用 submitted 标记: 没成功提交 dump 任务就在 finally 归还许可。
+		boolean submitted = false;
 		try {
 			now = System.currentTimeMillis();
 			if (now - lastPrintTime < TEN_MINUTES_MILLS) {
 				return;
 			}
-			lastPrintTime = now;
 			DUMP_EXECUTOR.execute(() -> {
 				try {
 					ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
@@ -125,9 +129,16 @@ public class AbortWithReportPolicy implements RejectedExecutionHandler {
 					guard.release();
 				}
 			});
+			//评审修复(2026-09-23): 时间戳在提交成功后才推进——放在 execute 之前时,
+			//执行器已关停导致提交抛异常, 10分钟窗口照样被吃掉, 之后一次都没 dump 却被限流挡住
+			lastPrintTime = now;
+			submitted = true;
 		} catch (Exception e) {
-			guard.release();
 			log.error("thread dump submit error", e);
+		} finally {
+			if (!submitted) {
+				guard.release();
+			}
 		}
 	}
 	

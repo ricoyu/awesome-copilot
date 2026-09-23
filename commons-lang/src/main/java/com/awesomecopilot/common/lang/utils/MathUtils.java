@@ -22,8 +22,8 @@ public class MathUtils {
 	 * @return 两个参数的和
 	 */
 	public static double add(double v1, double v2, int precision) {
-		BigDecimal b1 = new BigDecimal(v1);
-		BigDecimal b2 = new BigDecimal(v2);
+		BigDecimal b1 = BigDecimal.valueOf(v1); //P1-18: 原 new BigDecimal(double) 取二进制近似值, 金额恒少一分
+		BigDecimal b2 = BigDecimal.valueOf(v2);
 		return b1.add(b2).setScale(precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	
@@ -92,8 +92,8 @@ public class MathUtils {
 	 * @return 两个参数的差
 	 */
 	public static double sub(double v1, double v2, int precision) {
-		BigDecimal b1 = new BigDecimal(v1);
-		BigDecimal b2 = new BigDecimal(v2);
+		BigDecimal b1 = BigDecimal.valueOf(v1); //P1-18: 原 new BigDecimal(double) 取二进制近似值, 金额恒少一分
+		BigDecimal b2 = BigDecimal.valueOf(v2);
 		return b1.subtract(b2).setScale(precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	
@@ -133,8 +133,8 @@ public class MathUtils {
 	 * @return 两个参数的积
 	 */
 	public static double mul(double v1, double v2, int precision) {
-		BigDecimal b1 = new BigDecimal(v1);
-		BigDecimal b2 = new BigDecimal(v2);
+		BigDecimal b1 = BigDecimal.valueOf(v1); //P1-18: 原 new BigDecimal(double) 取二进制近似值, 金额恒少一分
+		BigDecimal b2 = BigDecimal.valueOf(v2);
 		return b1.multiply(b2).setScale(precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	
@@ -396,8 +396,8 @@ public class MathUtils {
 	 * @return 两个参数的商
 	 */
 	public static double div(double v1, double v2, int precision) {
-		BigDecimal b1 = new BigDecimal(v1);
-		BigDecimal b2 = new BigDecimal(v2);
+		BigDecimal b1 = BigDecimal.valueOf(v1); //P1-18: 原 new BigDecimal(double) 取二进制近似值, 金额恒少一分
+		BigDecimal b2 = BigDecimal.valueOf(v2);
 		return b1.divide(b2, precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 	}
 	
@@ -422,7 +422,7 @@ public class MathUtils {
 	 * @return 四舍五入后的结果
 	 */
 	public static double round(double v, int precision) {
-		BigDecimal b = new BigDecimal(v);
+		BigDecimal b = BigDecimal.valueOf(v); //P1-18
 		BigDecimal one = new BigDecimal("1");
 		double value = b.divide(one, precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 		StringBuilder format = new StringBuilder("0");
@@ -450,7 +450,7 @@ public class MathUtils {
 		if (precision < 0) {
 			throw new IllegalArgumentException("precision不能为负数");
 		}
-		BigDecimal b = new BigDecimal(v);
+		BigDecimal b = BigDecimal.valueOf(v); //P1-18
 		BigDecimal one = new BigDecimal("1");
 		double value = b.divide(one, precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 		StringBuilder format = new StringBuilder("0");
@@ -471,7 +471,7 @@ public class MathUtils {
 		if (precision < 0) {
 			throw new IllegalArgumentException("precision不能为负数");
 		}
-		BigDecimal b = new BigDecimal(v);
+		BigDecimal b = BigDecimal.valueOf(v); //P1-18
 		BigDecimal one = new BigDecimal("1");
 		double value = b.divide(one, precision, BigDecimal.ROUND_HALF_UP).doubleValue();
 		StringBuilder format = new StringBuilder("0");

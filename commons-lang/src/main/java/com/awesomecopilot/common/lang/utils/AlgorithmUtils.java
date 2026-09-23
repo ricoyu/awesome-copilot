@@ -17,21 +17,32 @@ public final class AlgorithmUtils {
      * 返回一个数组, 数组长度是<=指定长度, 数组的每个元素不超过指定的最大值
      * 数组元素可能存在重复, 但是相邻两个数肯定不等
      *
-     * @param len      数组的最大长度
-     * @param maxValue 数组每个元素的最大值
+     * @param len      数组的最大长度(实际长度在 1 到 len-1 之间随机), 必须大于等于2
+     * @param maxValue 数组每个元素的最大值(取值范围 0 到 maxValue-1), 必须大于等于2,
+     *                 否则"相邻两数不等"无法满足
      * @return
+     * @throws IllegalArgumentException 退化入参(len<2 或 maxValue<2)——修复前实测会进入
+     *                                  do-while 死循环: len<=1 时随机长度恒为0; maxValue<=1 时
+     *                                  相邻两值必相等永远重不过
      */
     public static int[] randomArr(int len, int maxValue) {
-        int length = 0;
+        if (len < 2) {
+            throw new IllegalArgumentException("len必须大于等于2, 否则无法生成长度>=1的数组: " + len);
+        }
+        if (maxValue < 2) {
+            throw new IllegalArgumentException("maxValue必须大于等于2, 否则相邻两数无法不等: " + maxValue);
+        }
+        int length;
         do {
             length = (int) (Math.random() * len);
         } while (length == 0);
         int[] nums = new int[length];
         nums[0] = (int) (Math.random() * maxValue);
         for (int i = 1; i < length; i++) {
-            do {
-                nums[i] = (int) (Math.random() * maxValue);
-            } while (nums[i - 1] == nums[i]);
+            //P1-9: 原来 do-while 重采样, maxValue==1 时死循环。
+            //改为此前值加一个 1..maxValue-1 的随机偏移再取模: 一次成型不重采样,
+            //且 maxValule-1 个候选值各命中一次, 除前值外的每个值等概率
+            nums[i] = (int) ((nums[i - 1] + 1 + Math.random() * (maxValue - 1)) % maxValue);
         }
         return nums;
     }

@@ -3,6 +3,7 @@ package com.awesomecopilot.common.lang.constants;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -61,31 +62,31 @@ public final class DateConstants {
 	public static final DateTimeFormatter DTF_ISO_DATE_3 = ofPattern(FMT_ISO_DATE_3);
 	
 	/**
-	 * MM-dd-yyyy
+	 * MM-dd-yyyy（美式 月-日-年, 正则与格式串统一用连字符）
 	 */
-	public static final Pattern PT_DATE_EN = compile("\\d{2}-\\d{2}-\\\\d{4}");
-	public static final String FMT_DATE_FORMAT_EN = "MM/dd/yyyy";
+	public static final Pattern PT_DATE_EN = compile("\\d{2}-\\d{2}-\\d{4}");
+	public static final String FMT_DATE_FORMAT_EN = "MM-dd-yyyy";
 	public static final DateTimeFormatter DTF_DATE_FORMAT_EN = ofPattern(FMT_DATE_FORMAT_EN);
 	
 	/**
 	 * MM-d-yyyy
 	 */
-	public static final Pattern PT_DATE_EN_1 = compile("\\d{2}-\\d{1}-\\\\d{4}");
-	public static final String FMT_DATE_FORMAT_EN_1 = "MM/d/yyyy";
+	public static final Pattern PT_DATE_EN_1 = compile("\\d{2}-\\d{1}-\\d{4}");
+	public static final String FMT_DATE_FORMAT_EN_1 = "MM-d-yyyy";
 	public static final DateTimeFormatter DTF_DATE_FORMAT_EN_1 = ofPattern(FMT_DATE_FORMAT_EN_1);
 	
 	/**
 	 * M-dd-yyyy
 	 */
-	public static final Pattern PT_DATE_EN_2 = compile("\\d{1}-\\d{2}-\\\\d{4}");
-	public static final String FMT_DATE_FORMAT_EN_2 = "M/dd/yyyy";
+	public static final Pattern PT_DATE_EN_2 = compile("\\d{1}-\\d{2}-\\d{4}");
+	public static final String FMT_DATE_FORMAT_EN_2 = "M-dd-yyyy";
 	public static final DateTimeFormatter DTF_DATE_FORMAT_EN_2 = ofPattern(FMT_DATE_FORMAT_EN_2);
 	
 	/**
 	 * M-d-yyyy
 	 */
-	public static final Pattern PT_DATE_EN_3 = compile("\\d{1}-\\d{1}-\\\\d{4}");
-	public static final String FMT_DATE_FORMAT_EN_3 = "M/d/yyyy";
+	public static final Pattern PT_DATE_EN_3 = compile("\\d{1}-\\d{1}-\\d{4}");
+	public static final String FMT_DATE_FORMAT_EN_3 = "M-d-yyyy";
 	public static final DateTimeFormatter DTF_DATE_FORMAT_EN_3 = ofPattern(FMT_DATE_FORMAT_EN_3);
 	
 	/**
@@ -127,7 +128,7 @@ public final class DateConstants {
 	/**
 	 * d-MMM-yy
 	 */
-	public static final Pattern PT_DATE_FORMAT_EN_8 = compile("\\d{1}-\\w{3}-\\d{2}");
+	public static final Pattern PT_DATE_FORMAT_EN_8 = compile("\\d{1,2}-\\w{3}-\\d{2}"); //评审修复: 原 \d{1} 匹配不上注释样例 "15-Sep-18" (两位日)
 	public static final String FMT_DATE_FORMAT_EN_8 = "d-MMM-yy"; // 15-Sep-18 1-Sep-18 这种格式
 	public static final DateTimeFormatter DTF_DATE_FORMAT_EN_8 = ofPattern(FMT_DATE_FORMAT_EN_8);
 	
@@ -389,16 +390,18 @@ public final class DateConstants {
 	public static final TimeZone INDIA = TimeZone.getTimeZone("Asia/Calcutta");
 	public static final TimeZone JAPAN = TimeZone.getTimeZone("Asia/Tokyo");
 	
-	public static final Map<TimeZone, Locale> TIME_ZONE_LOCALE_HASH_MAP = new HashMap<>();
-	
+	public static final Map<String, Locale> TIME_ZONE_LOCALE_HASH_MAP;
 	static {
-		TIME_ZONE_LOCALE_HASH_MAP.put(CHINA, Locale.CHINA);
-		TIME_ZONE_LOCALE_HASH_MAP.put(GMT, Locale.ENGLISH);
-		TIME_ZONE_LOCALE_HASH_MAP.put(UTC, Locale.ENGLISH);
-		TIME_ZONE_LOCALE_HASH_MAP.put(PST, Locale.ENGLISH);
-		TIME_ZONE_LOCALE_HASH_MAP.put(LONDON, Locale.ENGLISH);
-		TIME_ZONE_LOCALE_HASH_MAP.put(INDIA, Locale.ENGLISH);
-		TIME_ZONE_LOCALE_HASH_MAP.put(JAPAN, Locale.JAPAN);
+		Map<String, Locale> map = new HashMap<>();
+		//键为 timezone.getID(), 取值方必须传同一个 getID() 字符串(P1-3: 键类型曾错用 TimeZone, 查询恒 null)
+		map.put(CHINA.getID(), Locale.CHINA);
+		map.put(GMT.getID(), Locale.ENGLISH);
+		map.put(UTC.getID(), Locale.ENGLISH);
+		map.put(PST.getID(), Locale.ENGLISH);
+		map.put(LONDON.getID(), Locale.ENGLISH);
+		map.put(INDIA.getID(), Locale.ENGLISH);
+		map.put(JAPAN.getID(), Locale.JAPAN);
+		TIME_ZONE_LOCALE_HASH_MAP = Collections.unmodifiableMap(map); //P2-36: 原为 public 可变表
 	}
 	
 	public static final ZoneId ZONE_ID_SHANG_HAI = ZoneId.of("Asia/Shanghai");

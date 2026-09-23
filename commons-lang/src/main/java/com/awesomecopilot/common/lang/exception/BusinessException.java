@@ -65,10 +65,13 @@ public class BusinessException extends RuntimeException {
 	}
 	
 	public BusinessException(String code, String messageTemplate, List<Object> messageParams, String defaultMesssage) {
+		//P1-21: 原来从未给 message 赋值(还把 msgTemplate 赋了两遍, 第4个参数整个丢弃),
+		//getMessage() 返回 null, 全局异常处理器一 trim 就 NPE
+		super(defaultMesssage);
 		this.code = code;
 		this.msgTemplate = messageTemplate;
 		this.messageParams = messageParams;
-		this.msgTemplate = messageTemplate;
+		this.message = defaultMesssage;
 	}
 	
 	public String getCode() {

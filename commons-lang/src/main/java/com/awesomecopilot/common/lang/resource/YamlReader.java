@@ -219,8 +219,6 @@ public class YamlReader implements YamlOps {
 		 * 
 		 * 把spring.profiles.active这种key根据.拆开来
 		 */
-		String[] paths = path.split("\\.");
-		
 		List<Map<String, Object>> yamls = asList(yaml3, yaml2, yaml1);
 		
 		//先看ip.db.path整体作为一个key能不能找到
@@ -237,30 +235,34 @@ public class YamlReader implements YamlOps {
 			}
 		}
 		
+		//再按 . 拆开的 key 逐层下钻(P1-14: 单个源下钻失败要换下一个源, 见 drillDown)
+		return drillDown(yamls, path);
+	}
+	
+	/**
+	 * 按 . 拆分的 key 在一组 yaml 源(按优先级从高到低)里逐层下钻取值。
+	 * <p>
+	 * P1-14: 修复前某层取不到就直接 return null——高优先级文件里只有半个 key 前缀
+	 * (如只有 copilot.other, 没有 copilot.text)时, 低优先级文件里的完整值被整个挡掉。
+	 * 现在该源下钻失败即换下一个源, 全部源试完才返回 null。
+	 * 中途节点不是 Map(值是标量)时同样视为该源无此路径, 不抛 ClassCastException。
+	 */
+	@SuppressWarnings("unchecked")
+	static Object drillDown(List<Map<String, Object>> yamls, String path) {
+		String[] paths = path.split("\\.");
 		for (Map<String, Object> yaml : yamls) {
 			Object temp = yaml;
-			
-			/*
-			 * 先取工作目录config目录下的yaml文件
-			 * 如果读到对应的配置项, 那么直接返回, 因为它的优先级最高
-			 */
+			for (int i = 0; i < paths.length && temp != null; i++) {
+				if (!(temp instanceof Map)) {
+					temp = null; //当前层是标量, 无法继续下钻
+					break;
+				}
+				temp = ((Map<Object, Object>) temp).get(paths[i]);
+			}
 			if (temp != null) {
-				for (int i = 0; i < paths.length; i++) {
-					String property = paths[i];
-					if (temp == null) {
-						log.debug("属性 {} 不存在", property);
-						return null;
-					}
-					temp = ((Map) temp).get(property);
-				}
-				
-				if (temp != null) {
-					return temp;
-				}
-				
+				return temp;
 			}
 		}
-		
 		return null;
 	}
 	

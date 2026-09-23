@@ -16,9 +16,18 @@ import com.awesomecopilot.common.lang.errors.ErrorTypes;
  */
 public class ServiceException extends RuntimeException {
 
+	//评审修复(2026-09-23): 本批新增 msgTemplate 字段使计算 UID 变化; 显式声明防止未来再加字段再次漂移
+	private static final long serialVersionUID = 3645985928446181182L;
+
 	private String code;
 
 	private String message;
+	
+	/**
+	 * P1-21: 原来三参构造(code, messageTemplate, defaultMesssage)里的 messageTemplate
+	 * 参数无人接收、也没有 getter, 与 BusinessException 同名构造器行为不一致。补上字段与 getter。
+	 */
+	private String msgTemplate;
 
 	public ServiceException() {
 	}
@@ -42,7 +51,9 @@ public class ServiceException extends RuntimeException {
 	}
 
 	public ServiceException(String code, String messageTemplate, String defaultMesssage) {
+		super(defaultMesssage);
 		this.code = code;
+		this.msgTemplate = messageTemplate;
 		this.message = defaultMesssage;
 	}
 
@@ -59,6 +70,10 @@ public class ServiceException extends RuntimeException {
 		return message;
 	}
 	
+	public String getMsgTemplate() {
+		return msgTemplate;
+	}
+
 	public void setMessage(String message) {
 		this.message = message;
 	}

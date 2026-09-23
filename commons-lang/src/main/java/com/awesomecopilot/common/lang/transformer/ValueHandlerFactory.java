@@ -179,7 +179,8 @@ public class ValueHandlerFactory {
 			}
 
 			if (value instanceof Float) {
-				return (Double) value;
+				//P1-4: 原来直接 (Double) 强转 Float, 必抛 ClassCastException
+				return ((Float) value).doubleValue();
 			}
 
 			if (BigDecimal.class.isInstance(value)) {
@@ -420,7 +421,9 @@ public class ValueHandlerFactory {
 				return (Boolean) value;
 			}
 			if (String.class.isInstance(value)) {
-				return Boolean.getBoolean((String) value);
+				//P1-17: 原来用 Boolean.getBoolean(字符串) —— 那是"读名叫这个字符串的系统属性",
+				//不是解析布尔文本, 结果恒 false 且不报错。改用 parseBoolean。
+				return Boolean.parseBoolean(((String) value).trim());
 			}
 			if (Integer.class.isInstance(value)) {
 				Integer integerValue = (Integer) value;

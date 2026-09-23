@@ -606,23 +606,25 @@ public class IOUtils {
 	 * 从InputStream读取字符串
 	 *
 	 * @param in
-	 * @param autoClose
+	 * @param autoClose true 表示本方法接管关闭调用方的流; false 时调用方的流保持打开
 	 * @return String
 	 */
 	public static String readAsString(InputStream in, boolean autoClose) {
 		List<String> lines = new ArrayList<String>();
-		try (BufferedInputStream bufferedInputStream = new BufferedInputStream(in);
-		     Scanner scanner = new Scanner(bufferedInputStream)) {
-			while (scanner.hasNextLine()) {
-				String line = scanner.nextLine();
-				lines.add(line);
-			}
-			scanner.close();
-			if (autoClose) {
+		//P1-13: 不能把包装器 BufferedInputStream、也不能把 Scanner(其 close() 对 Closeable 源
+		//同样连带关闭底层流)放进 try-with-resources——关它们会传染到调用方的流, autoClose=false 形同虚设。
+		//对内存流而言 scanner 本身无需 close, 读完即弃。
+		Scanner scanner = new Scanner(new BufferedInputStream(in));
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+			lines.add(line);
+		}
+		if (autoClose) {
+			try {
 				in.close();
+			} catch (IOException e) {
+				log.warn(e.getMessage());
 			}
-		} catch (IOException e) {
-			log.warn(e.getMessage());
 		}
 		return join(lines, System.lineSeparator());
 	}
@@ -704,7 +706,7 @@ public class IOUtils {
 	}
 
 	/**
-	 * Write string data to file
+	 * Write string data to file (覆盖写入, 如需追加请用 append 方法)
 	 *
 	 * @param path
 	 * @param data
@@ -712,11 +714,11 @@ public class IOUtils {
 	 */
 	public static boolean write(Path path, String data) {
 		Objects.requireNonNull(path, "path cannot be null!");
-		return write(path, Optional.of(data).orElse("").getBytes(UTF_8), CREATE, APPEND);
+		return write(path, Optional.of(data).orElse("").getBytes(UTF_8), CREATE, TRUNCATE_EXISTING);
 	}
 
 	/**
-	 * 用指定的编码格式写文件
+	 * 用指定的编码格式写文件（覆盖写入, 如需追加请用 append 方法）
 	 *
 	 * @param path
 	 * @param data
@@ -725,7 +727,7 @@ public class IOUtils {
 	 */
 	public static boolean write(Path path, String data, Charset charset) {
 		Objects.requireNonNull(path, "path cannot be null!");
-		return write(path, Optional.of(data).orElse("").getBytes(charset), CREATE, APPEND);
+		return write(path, Optional.of(data).orElse("").getBytes(charset), CREATE, TRUNCATE_EXISTING);
 	}
 
 	/**
@@ -738,7 +740,7 @@ public class IOUtils {
 	public static boolean append(String filePath, byte[] data) {
 		Objects.requireNonNull(filePath, "filePath cannot be null!");
 		Path path = Paths.get(filePath);
-		return write(path, data);
+		return append(path, data);
 	}
 
 	/**
@@ -824,17 +826,23 @@ public class IOUtils {
 	 * false 不存在
 	 */
 	public static boolean createParentDir(Path path) {
-		Optional.ofNullable(path.getParent())
-				.ifPresent(parent -> {
-					if (!Files.exists(parent, NOFOLLOW_LINKS)) {
-						try {
-							Files.createDirectories(parent);
-						} catch (IOException e) {
-							log.warn(format("create parent directory [{0}] failed", parent), e);
-						}
-					}
-				});
-		return Files.exists(path.getParent(), NOFOLLOW_LINKS);
+		//P1-12: 不带目录的相对路径(如 "out.txt")的 getParent() 返回 null,
+		//原实现最后一行把 null 直接喂给 Files.exists 抛 NPE。
+		//评审修复(2026-09-23): 先 toAbsolutePath 再取父——不带目录的文件名, 其实际父目录是进程当前目录(存在),
+		//上一版直接 return false 与 javadoc"父目录存在与否"矛盾, 还让 copy() 把这种路径判成"父目录建不出来"
+		//而不拷贝、也不给任何提示。toAbsolutePath().getParent() 两个问题一起解决。
+		Path parent = path.toAbsolutePath().getParent();
+		if (parent == null) { //仅根路径(如 "C:\\" 或 "/")会走到这里
+			return Files.exists(path, NOFOLLOW_LINKS);
+		}
+		if (!Files.exists(parent, NOFOLLOW_LINKS)) {
+			try {
+				Files.createDirectories(parent);
+			} catch (IOException e) {
+				log.warn(format("create parent directory [{0}] failed", parent), e);
+			}
+		}
+		return Files.exists(parent, NOFOLLOW_LINKS);
 	}
 
 	public static boolean createDir(Path path) {
@@ -1188,11 +1196,14 @@ public class IOUtils {
 	 * <p>
 	 * This method buffers the input internally, so there is no need to use a
 	 * <code>BufferedInputStream</code>.
+	 * <p>
+	 * 注意实现与下方 javadoc 标签的既成契约：input 为 null 时返回空数组（不抛
+	 * NullPointerException）；读失败抛 {@link IORuntimeException}（不抛受检 IOException）。
+	 * 此语义为历史行为，被仓库内多处调用依赖，改动需另行评审。
 	 *
-	 * @param input the <code>InputStream</code> to read from
+	 * @param input the <code>InputStream</code> to read from（为 null 时返回空数组）
 	 * @return the requested byte array
-	 * @throws NullPointerException if the input is null
-	 * @throws IOException          if an I/O error occurs
+	 * @throws IORuntimeException if an I/O error occurs
 	 */
 	public static byte[] toByteArray(final InputStream input) {
 		if (input == null) {
@@ -1207,19 +1218,16 @@ public class IOUtils {
 			throw new IORuntimeException(e);
 		}
 
-		//如果input已经结束, 或者发送的数据小于MIN_BUFFER_SIZE, 那么一次就读完了, 不需要再次读取
+		//input已结束才允许直接返回空数组
+		//注意: read 返回值小于缓冲区长度是 InputStream 契约允许的行为(分段/慢速流),
+		//不代表流结束——只有 -1 才是 EOF, 所以其余情况一律继续累积读取直到读完
 		if (read == -1) {
 			return new byte[0];
 		}
-		if (read < initialBuffer.length) {
-			byte[] bytes = new byte[read];
-			System.arraycopy(initialBuffer, 0, bytes, 0, read);
-			return bytes;
-		}
 
-		//一次读不完, 那么多次读取, 累积放入ByteArrayOutputStream, 最后返回byte[]
+		//把第一次读到的部分写入 output, 再从当前位置继续读剩下的
 		try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-			output.write(initialBuffer, 0, initialBuffer.length);
+			output.write(initialBuffer, 0, read);
 			copy(input, output);
 			return output.toByteArray();
 		} catch (IOException e) {
@@ -1236,32 +1244,28 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static byte[] toByteArray(final ByteChannel channel) throws IOException {
-		ByteBuffer buffer = ByteBuffer.allocate(MIN_BUFFER_SIZE);
-		int read = channel.read(buffer);
-
-		//如果input已经结束, 不需要再次读取
-		if (read == -1) {
-			return new byte[0];
-		}
-		//发送的数据小于MIN_BUFFER_SIZE, 那么一次就读完了, 不需要再次读取
-		if (buffer.hasRemaining()) {
-			return buffer.array();
-		}
-
-		//一次读不完, 那么多次读取, 累积放入ByteArrayOutputStream, 最后返回byte[]
-		try (final ByteArrayOutputStream output = new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE * 4)) {
-			//先把上面第一次读取的放入output
-			output.write(buffer.array(), 0, buffer.capacity());
-
-			//1024 bytes一次读不完, 那么一次分配大一点的buffer
-			buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
-			//只要读到了数据就往output里面写
+		//P1-11: 原实现两处错误——(1)短读时 return buffer.array() 把整个 1024 缓冲区原样交出,
+		//尾部 0 填充被当成数据; (2)只 read 一次, 大文件必截断。
+		//ByteChannel.read 与 InputStream.read 同契约: 返回小于请求长度是合法行为, 只有 -1 才是结束。
+		try (final ByteArrayOutputStream output = new ByteArrayOutputStream(DEFAULT_BUFFER_SIZE)) {
+			ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
+			int read;
+			int zeroReads = 0;
 			while ((read = channel.read(buffer)) != -1) {
-				output.write(buffer.array(), 0, read);
-				//清空buffer, 为继续写入buffer做准备
+				if (read > 0) {
+					//只取真正读到的前 read 个字节
+					output.write(buffer.array(), 0, read);
+					zeroReads = 0;
+				} else {
+					//评审修复(2026-09-23): read()==0 对非阻塞通道是合法返回, 原循环只认 -1 会永久自旋占核。
+					//连续大量 0 读说明没有进展(通道未就绪/误用), 报错退出而不是死转
+					if (++zeroReads > 10_000) {
+						throw new IOException("ByteChannel 连续返回 0 字节读取(疑似非阻塞通道未就绪), 已读取 "
+								+ output.size() + " 字节后中止");
+					}
+				}
 				buffer.clear();
 			}
-
 			return output.toByteArray();
 		}
 	}

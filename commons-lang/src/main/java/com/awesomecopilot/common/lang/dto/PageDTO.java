@@ -5,7 +5,8 @@ import com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION;
 import com.awesomecopilot.common.lang.vo.Page;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.awesomecopilot.common.lang.vo.OrderBean.DIRECTION.ASC;
 
@@ -39,6 +40,12 @@ public class PageDTO {
 
 	/**
 	 * 根据PageDTO中的pageNum, pageSize, order初始化Page对象
+	 * <p/>
+	 * P1-20: 修复前只填 orders 不填 order(copilot-orm 的 JPACriteriaQuery 只读 getOrder(),
+	 * 判 null 后整条排序被无声丢弃), 且不 trim 字段名("id:asc, create_time:desc" 的第二项
+	 * 变成带前导空格的 " create_time")。现在第一个排序项同时填进 order, 其余按 Page 的
+	 * 注释语义("orders 是第二第三...级排序")进 orders, 两个查询入口看到同一份排序。
+	 *
 	 * @return Page
 	 */
 	public Page getPage() {
@@ -47,14 +54,23 @@ public class PageDTO {
 		page.setPageSize(pageSize);
 		if (StringUtils.isNotEmpty(order)) {
 			String[] orderList = order.split(",");
-			Stream.of(orderList).forEach(o -> {
+			List<OrderBean> beans = new ArrayList<>();
+			for (String o : orderList) {
 				String[] arr = o.split(":");
 				DIRECTION direction = arr.length == 1 ? ASC : DIRECTION.of(arr[1]);
-				OrderBean order = new OrderBean();
-				order.setOrderBy(arr[0]);
-				order.setDirection(direction);
-				page.getOrders().add(order);
-			});
+				OrderBean orderBean = new OrderBean();
+				orderBean.setOrderBy(arr[0].trim()); //修复前: 不 trim, 第二个及以后的字段名带前导空格
+				orderBean.setDirection(direction);
+				if (StringUtils.isEmpty(orderBean.getOrderBy())) {
+					continue; //评审修复(2026-09-23): 空段(" "或"id:asc,,b")不产出 orderBy="" 的排序项,
+				}             //否则被放进 page.order 后, JPA 入口 root.get("") 抛查询期异常(修复前是整条忽略)
+				beans.add(orderBean);
+			}
+			if (!beans.isEmpty()) {
+				page.setOrder(beans.get(0)); //第一排序项
+				//Page 注释语义: orders 是第二第三...级排序
+				page.getOrders().addAll(beans.subList(1, beans.size()));
+			}
 		}
 		return page;
 	}

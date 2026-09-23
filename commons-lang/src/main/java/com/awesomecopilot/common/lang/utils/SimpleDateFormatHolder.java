@@ -37,11 +37,13 @@ final class SimpleDateFormatHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, SimpleDateFormat>>(formats));
 		}
 		
-		SimpleDateFormat format = formats.get(pattern);
+		//P1-2: 键带完整维度并用分隔符连接, 与 (pattern,locale) 入口区分
+		String key = pattern + "|#|zh-CN-default";
+		SimpleDateFormat format = formats.get(key);
 		if (format == null) {
 			format = new SimpleDateFormat(pattern, Locale.CHINA);
 			format.setTimeZone(CHINA);
-			formats.put(pattern, format);
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -63,7 +65,8 @@ final class SimpleDateFormatHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, SimpleDateFormat>>(formats));
 		}
 		
-		SimpleDateFormat format = formats.get(pattern + timezone.getID());
+		String key = pattern + "|#|!derived!|#|" + timezone.getID();
+		SimpleDateFormat format = formats.get(key);
 		if (format == null) {
 			Locale locale = TIME_ZONE_LOCALE_HASH_MAP.get(timezone.getID());
 			if (locale == null) {
@@ -72,7 +75,7 @@ final class SimpleDateFormatHolder {
 				format = new SimpleDateFormat(pattern, locale);
 			}
 			format.setTimeZone(timezone);
-			formats.put(pattern + timezone.getID(), format);
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -94,10 +97,12 @@ final class SimpleDateFormatHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, SimpleDateFormat>>(formats));
 		}
 		
-		SimpleDateFormat format = formats.get(pattern + locale.getCountry());
+		//P1-2: getCountry() 对 ENGLISH/FRENCH 都是空串, 键会碰撞; 改用 toLanguageTag + 分隔符
+		String key = pattern + "|#|" + locale.toLanguageTag() + "|#|" + TimeZone.getDefault().getID(); //评审修复: 键带默认时区, 运行期改默认时区后不会拿过期实例
+		SimpleDateFormat format = formats.get(key);
 		if (format == null) {
 			format = new SimpleDateFormat(pattern, locale);
-			formats.put(pattern + locale.getCountry(), format);
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -120,11 +125,12 @@ final class SimpleDateFormatHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, SimpleDateFormat>>(formats));
 		}
 		
-		SimpleDateFormat format = formats.get(pattern + timezone.getID() + locale.getCountry());
+		String key = pattern + "|#|" + locale.toLanguageTag() + "|#|" + timezone.getID();
+		SimpleDateFormat format = formats.get(key);
 		if (format == null) {
 			format = new SimpleDateFormat(pattern, locale);
 			format.setTimeZone(timezone);
-			formats.put(pattern + timezone.getID() + locale.getCountry(), format);
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -453,6 +459,31 @@ final class SimpleDateFormatHolder {
 		return finalShot(source, null);
 	}
 	
+	/**
+	 * 把时间串里的秒小数部分规整为 3 位（P0-4 的输入侧修复）：
+	 * 多于 3 位取前 3 位（Date 只有毫秒精度，截断规则与 java.time 转毫秒值的结果一致），少于 3 位右补 0
+	 * （0.45 秒 = 450 毫秒）。最终拼接的解析模式固定 3 个 S，输入必须先把小数位补齐/截断到 3 位，
+	 * 否则 SimpleDateFormat 会把连续数字整个当毫秒整数读（"4567"→4567 毫秒并进位）。
+	 * 不含小数秒、或本来就 3 位、或不匹配 PT_ALL 的串原样返回。
+	 */
+	static String normalizeFractionalSeconds(String source) {
+		if (source == null) {
+			return null;
+		}
+		Matcher matcher = PT_ALL.matcher(source);
+		if (!matcher.matches()) {
+			return source;
+		}
+		String milli = matcher.group(8);
+		if (milli == null || milli.length() == 0 || milli.length() == 3) {
+			return source;
+		}
+		String normalized = milli.length() > 3
+				? milli.substring(0, 3)
+				: milli + "0".repeat(3 - milli.length());
+		return source.substring(0, matcher.start(8)) + normalized + source.substring(matcher.end(8));
+	}
+	
 	private static SimpleDateFormat finalShot(String source, TimeZone timeZone) {
 		Matcher matcher = PT_ALL.matcher(source);
 		if (!matcher.matches()) {
@@ -522,12 +553,13 @@ final class SimpleDateFormatHolder {
 				format.append("s");
 			}
 		}
-		//.SSSSSS
+		//.SSS
 		if (isNotBlank(milli)) {
+			//P0-4: SimpleDateFormat 的 S 是"毫秒数"不是"小数位", 按输入位数动态拼 S 必错:
+			//"45"被当 45 毫秒(应为 450)、位数>3 时 lenient 进位改秒/分。
+			//模式固定 3 位 S, 输入由 normalizeFractionalSeconds 统一补齐/截断到 3 位。
 			format.append(".");
-			for (int i = 0; i < milli.length(); i++) {
-				format.append("S");
-			}
+			format.append("SSS");
 		}
 		//Z
 		if (isNotBlank(zone)) {

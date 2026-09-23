@@ -305,7 +305,17 @@ public class SnowflakeId {
 			//毫秒内序列溢出
 			if (sequence == 0) {
 				//虚拟时间模式下不能等挂钟(会停摆), 直接把虚拟时间戳加1毫秒; 正常模式阻塞到下一毫秒
-				timestamp = virtualTimestamp ? lastTimestamp + 1 : tilNextMillis(lastTimestamp);
+				if (virtualTimestamp) {
+					timestamp = lastTimestamp + 1;
+					//P1-10: 虚拟毫秒的 sequence 不从 0 起步, 从 sequenceMask/2 起步。
+					//跨进程场景: 同 workerId 的另一进程从未经历时钟回拨, 挂钟真正走到这个毫秒后
+					//从 0 开始发号; 本进程若也从 0 起步, 两边在同一毫秒的 sequence 空间完全重叠,
+					//理论上可产出完全相同的 ID。错开一半(2048个号)后, 对端单毫秒要发到 2047 个号
+					//以上才会撞进本进程用过的区间。
+					sequence = (sequenceMask + 1) / 2; //2048(sequenceMask=4095, 直接/2得2047差一)
+				} else {
+					timestamp = tilNextMillis(lastTimestamp);
+				}
 			}
 		}
 		//时间戳改变, 毫秒内序列重置

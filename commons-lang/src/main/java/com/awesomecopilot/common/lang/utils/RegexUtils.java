@@ -40,10 +40,10 @@ public final class RegexUtils {
 	 * <li/>0      完整url
 	 * <li/>1      https:                     (([^:/?#]+):)?
 	 * <li/>2      https                      ([^:/?#]+)
-	 * <li/>3      //www.google.com:80        (//([^/?#:]*)(:(\d{2,}))?)?
+	 * <li/>3      //www.google.com:80        (//([^/?#:]*)(:(\d+))?)?
 	 * <li/>4      www.google.com             ([^/?#:]*):?
-	 * <li/>5      :80                        (:(\d{2,}))?
-	 * <li/>6      80                         (\d{2,})
+	 * <li/>5      :80                        (:(\d+))?
+	 * <li/>6      80                         (\d+)
 	 * <li/>7      /dir/1/2/search.html       ([^?#]*)
 	 * <li/>8      ?arg=0-a&arg1=1-b&arg3-c   (\?([^#]*))?
 	 * <li/>9      arg=0-a&arg1=1-b&arg3-c    ([^#]*)
@@ -53,7 +53,7 @@ public final class RegexUtils {
 	 * <p>
 	 * 我们一般比较关系的是Group 2, 4, 6, 7, 9, 分别代表 scheme, host, port, path, args
 	 */
-	public static final String URL_REGEX = "^(([^:/?#]+):)?(//([^/?#:]*)(:(\\d{2,}))?)?([^?#]*)(\\?([^#]*))?(#(.*))?";
+	public static final String URL_REGEX = "^(([^:/?#]+):)?(//([^/?#:]*)(:(\\d+))?)?([^?#]*)(\\?([^#]*))?(#(.*))?";
 	
 	public static final Pattern I18N_MSG_PATTERN = Pattern.compile(I18N_MSG_REGEX);
 	

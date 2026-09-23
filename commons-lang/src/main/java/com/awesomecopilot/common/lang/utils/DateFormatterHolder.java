@@ -37,11 +37,15 @@ final class DateFormatterHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, DateTimeFormatter>>(formats));
 		}
 		
-		DateTimeFormatter format = formats.get(pattern);
+		//P1-2: 键必须覆盖全部影响维度(pattern/locale/zone)并用分隔符连接, 否则与 (pattern,locale) 入口互相顶掉
+		//P1-1: DateTimeFormatter 不可变, withZone 返回新实例必须接收
+		String key = pattern + "|#|!default!|#|" + CHINA.getID();
+		DateTimeFormatter format = formats.get(key);
 		if (format == null) {
-			format = DateTimeFormatter.ofPattern(pattern);
-			format.withZone(CHINA.toZoneId());
-			formats.put(pattern, format);
+			//评审修复(2026-09-23): 实现原样用 JVM 默认 locale, 与 javadoc(承诺 CHINA)和孪生类 SimpleDateFormatHolder 相反;
+			//显式传 Locale.CHINA 兑现文档。键标记用 !default! 防止 Locale.forLanguageTag("default") 拼出同键
+			format = DateTimeFormatter.ofPattern(pattern, Locale.CHINA).withZone(CHINA.toZoneId());
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -63,7 +67,9 @@ final class DateFormatterHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, DateTimeFormatter>>(formats));
 		}
 		
-		DateTimeFormatter format = formats.get(pattern + timezone.getID());
+		//P1-2: 键加入 pattern 维度(原键只有 timezone 时两个不同 pattern 传同一 timezone 互相顶掉)
+		String key = pattern + "|#|!derived!|#|" + timezone.getID();
+		DateTimeFormatter format = formats.get(key);
 		if (format == null) {
 			Locale locale = TIME_ZONE_LOCALE_HASH_MAP.get(timezone.getID());
 			if (locale == null) {
@@ -71,8 +77,8 @@ final class DateFormatterHolder {
 			} else {
 				format = DateTimeFormatter.ofPattern(pattern, locale);
 			}
-			format.withZone(timezone.toZoneId());
-			formats.put(pattern + timezone.getID(), format);
+			format = format.withZone(timezone.toZoneId()); //P1-1: 不可变对象, withZone 返回值必须接收
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -94,10 +100,12 @@ final class DateFormatterHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, DateTimeFormatter>>(formats));
 		}
 		
-		DateTimeFormatter format = formats.get(pattern + locale.getCountry());
+		//P1-2: getCountry() 对 ENGLISH/FRENCH 都是空串, 改用 toLanguageTag + 分隔符
+		String key = pattern + "|#|" + locale.toLanguageTag() + "|#|" + TimeZone.getDefault().getID(); //评审修复: 该入口实例带JVM默认时区, 键必须含时区维度, "no-zone"名不副实
+		DateTimeFormatter format = formats.get(key);
 		if (format == null) {
 			format = DateTimeFormatter.ofPattern(pattern, locale);
-			formats.put(pattern + locale.getCountry(), format);
+			formats.put(key, format);
 		}
 		
 		return format;
@@ -120,11 +128,11 @@ final class DateFormatterHolder {
 			THREADLOCAL_FORMATS.set(new SoftReference<Map<String, DateTimeFormatter>>(formats));
 		}
 		
-		DateTimeFormatter format = formats.get(pattern + timezone.getID() + locale.getCountry());
+		String key = pattern + "|#|" + locale.toLanguageTag() + "|#|" + timezone.getID();
+		DateTimeFormatter format = formats.get(key);
 		if (format == null) {
-			format = DateTimeFormatter.ofPattern(pattern, locale);
-			format.withZone(timezone.toZoneId());
-			formats.put(pattern + timezone.getID() + locale.getCountry(), format);
+			format = DateTimeFormatter.ofPattern(pattern, locale).withZone(timezone.toZoneId()); //P1-1: 接收 withZone 返回值
+			formats.put(key, format);
 		}
 		
 		return format;

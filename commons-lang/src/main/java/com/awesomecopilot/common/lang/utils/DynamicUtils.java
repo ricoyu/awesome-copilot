@@ -8,6 +8,7 @@ import net.bytebuddy.implementation.FieldAccessor;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -46,12 +47,17 @@ public class DynamicUtils {
 
 		/**
 		 * 输入属性值是null, 那么在生成对象的时候无法进行类型推断导致报错
+		 * P1-19: 原来在 for-each 遍历 properties 的同时 properties.remove(...)——
+		 * 第一个抛 ConcurrentModificationException, 最后一个则不抛但悄悄删掉调用方入参的键。
+		 * 改为在过滤后的新 Map 上构建, 入参保持不动。
 		 */
-		for (Map.Entry entry : properties.entrySet()) {
-			if (entry.getValue() == null) {
-				properties.remove(entry.getKey());
+		Map<String, Object> effective = new LinkedHashMap<>();
+		for (Map.Entry<String, Object> entry : properties.entrySet()) {
+			if (entry.getValue() != null) {
+				effective.put(entry.getKey(), entry.getValue());
 			}
 		}
+		properties = effective;
 
 		ByteBuddy byteBuddy = new ByteBuddy();
 		DynamicType.Builder<T> builder = byteBuddy.subclass(targetClass);

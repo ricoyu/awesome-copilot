@@ -27,19 +27,22 @@ public final class KryoUtils {
 	
 	private static final String DEFAULT_ENCODING = "UTF-8";
 	
-	private static final Kryo kryo = new Kryo();
-	
 	/**
-	 * 不要轻易改变这里的配置, 更改之后, 序列化的格式就会发生变化
-	 * 上线的同时就必须清除 Redis 里的所有缓存, 否则那些缓存再回来反序列化的时候就会报错
-	 *
+	 * Kryo 实例不是线程安全的(官方文档明确声明, 内部复用 class 注册表和引用解析表),
+	 * 多线程共用一个实例会把字节流写坏。改为每个线程持有自己的实例——
+	 * Kryo 实例创建成本低, 线程复用时可长期持有。
+	 * <p>
+	 * 不要轻易改变下面的配置, 更改之后序列化的格式就会发生变化;
+	 * 上线的同时就必须清除 Redis 里的所有缓存, 否则旧缓存反序列化时会报错。
 	 */
-	static {
+	private static final ThreadLocal<Kryo> kryo = ThreadLocal.withInitial(() -> {
+		Kryo instance = new Kryo();
+		
 		/*
 		 * 支持对象循环引用(否则会栈溢出)
 		 * 默认值就是 true, 不要改变这个配置
 		 */
-		kryo.setReferences(true);
+		instance.setReferences(true);
 		
 		/*
 		 * 不强制要求注册类
@@ -47,12 +50,13 @@ public final class KryoUtils {
 		 * 而且业务系统中大量的 Class 也难以一一注册
 		 * 默认值就是 false
 		 */
-		kryo.setRegistrationRequired(false);
+		instance.setRegistrationRequired(false);
 		
 		//Fix the NPE bug when deserializing Collections.
-		kryo.getInstantiatorStrategy();
+		instance.getInstantiatorStrategy();
 		
-	}
+		return instance;
+	});
 	
 	/**
 	 * 将对象【及类型】序列化为字节数组
@@ -65,7 +69,7 @@ public final class KryoUtils {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		Output output = new Output(byteArrayOutputStream);
 		
-		kryo.writeClassAndObject(output, obj);
+		kryo.get().writeClassAndObject(output, obj);
 		output.flush();
 		
 		return byteArrayOutputStream.toByteArray();
@@ -83,7 +87,7 @@ public final class KryoUtils {
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
 		Input input = new Input(byteArrayInputStream);
 		
-		return (T) kryo.readClassAndObject(input);
+		return (T) kryo.get().readClassAndObject(input);
 	}
 	
 	/**

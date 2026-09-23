@@ -69,9 +69,13 @@ public class UrlParts {
 			String nameValue = paramArr[i];
 			if (isNotBlank(nameValue)) {
 				//每个参数都由 参数名=参数值 组成
-				String[] paramNameValue = nameValue.split("=");
-				if (paramNameValue.length == 2) {
-					multiMap.put(paramNameValue[0], paramNameValue[1]);
+				//P1-5: 按第一个 = 切分(值里可以再有 =, 如 base64 的填充符; 原 split("=") 后要求
+				//length==2 会把 token=abc=def 整条丢弃, 空值参数 flag= 也被丢)
+				int eq = nameValue.indexOf('=');
+				if (eq < 0) {
+					multiMap.put(nameValue, "");
+				} else {
+					multiMap.put(nameValue.substring(0, eq), nameValue.substring(eq + 1));
 				}
 			}
 		}

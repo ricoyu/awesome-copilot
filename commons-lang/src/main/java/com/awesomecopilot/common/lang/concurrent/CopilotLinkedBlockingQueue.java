@@ -836,12 +836,25 @@ public class CopilotLinkedBlockingQueue<E> extends AbstractQueue<E>
         int batch;          // batch size for splits
         boolean exhausted;  // true when no more nodes
         long est;           // size estimate
+
         LBQSpliterator(CopilotLinkedBlockingQueue<E> queue) {
             this.queue = queue;
             this.est = queue.size();
         }
 
         public long estimateSize() { return est; }
+
+        /**
+         * 返回 p 的下一个存活后继节点; 若 p 已被消费(dequeue 把它的 next 指向自己,
+         * 见 CopilotLinkedBlockingQueue#dequeue), 则跳到 head.next。
+         * 与 JDK LinkedBlockingQueue#succ 一致——缺少这个自指判断会让下面的
+         * trySplit/tryAdvance/forEachRemaining 在节点上绕圈死循环(P0-3)。
+         */
+        private Node<E> succ(Node<E> p) {
+            if (p == (p = p.next))
+                p = queue.head.next;
+            return p;
+        }
 
         public Spliterator<E> trySplit() {
             Node<E> h;
@@ -857,10 +870,11 @@ public class CopilotLinkedBlockingQueue<E> extends AbstractQueue<E>
                 q.fullyLock();
                 try {
                     if (p != null || (p = q.head.next) != null) {
-                        do {
-                            if ((a[i] = p.item) != null)
+                        for (; p != null && i < n; p = succ(p)) {
+                            if ((a[i] = p.item) != null) {
                                 ++i;
-                        } while ((p = p.next) != null && i < n);
+                            }
+                        }
                     }
                 } finally {
                     q.fullyUnlock();
@@ -887,24 +901,33 @@ public class CopilotLinkedBlockingQueue<E> extends AbstractQueue<E>
             if (!exhausted) {
                 exhausted = true;
                 Node<E> p = current;
+                current = null;
+                // Extract batches of elements while holding the lock; then
+                // run the action on the elements while not
+                final int batchSize = 64;       // max number of elements per batch
+                Object[] es = null;             // container for batch of elements
+                int n, len = 0;
                 do {
-                    E e = null;
                     q.fullyLock();
                     try {
-                        if (p == null)
-                            p = q.head.next;
-                        while (p != null) {
-                            e = p.item;
-                            p = p.next;
-                            if (e != null)
-                                break;
+                        if (es == null) {
+                            if (p == null) p = q.head.next;
+                            for (Node<E> fn = p; fn != null; fn = succ(fn))
+                                if (fn.item != null && ++len == batchSize)
+                                    break;
+                            es = new Object[len];
                         }
+                        for (n = 0; p != null && n < len; p = succ(p))
+                            if ((es[n] = p.item) != null)
+                                n++;
                     } finally {
                         q.fullyUnlock();
                     }
-                    if (e != null)
+                    for (int i = 0; i < n; i++) {
+                        @SuppressWarnings("unchecked") E e = (E) es[i];
                         action.accept(e);
-                } while (p != null);
+                    }
+                } while (n > 0 && p != null);
             }
         }
 
@@ -915,19 +938,17 @@ public class CopilotLinkedBlockingQueue<E> extends AbstractQueue<E>
                 E e = null;
                 q.fullyLock();
                 try {
-                    if (current == null)
-                        current = q.head.next;
-                    while (current != null) {
-                        e = current.item;
-                        current = current.next;
-                        if (e != null)
-                            break;
-                    }
+                    Node<E> p;
+                    if ((p = current) != null || (p = q.head.next) != null)
+                        do {
+                            e = p.item;
+                            p = succ(p);
+                        } while (e == null && p != null);
+                    if ((current = p) == null)
+                        exhausted = true;
                 } finally {
                     q.fullyUnlock();
                 }
-                if (current == null)
-                    exhausted = true;
                 if (e != null) {
                     action.accept(e);
                     return true;

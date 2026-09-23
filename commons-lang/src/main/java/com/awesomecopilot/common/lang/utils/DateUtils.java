@@ -339,7 +339,8 @@ public final class DateUtils {
 		}
 		
 		try {
-			return simpleDateFormat.parse(source);
+			//P0-4: 小数秒位数不等于3时规整到3位再解析(见 SimpleDateFormatHolder#normalizeFractionalSeconds)
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format("Parse date string:[{0}]", source);
 			log.error(message);
@@ -363,7 +364,9 @@ public final class DateUtils {
 		Objects.requireNonNull(format);
 		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(format);
 		try {
-			return simpleDateFormat.parse(source);
+			//评审修复(2026-09-23): 显式 format 入口同样存在 S 读整段连续数字的问题(SSS 挡不住 .456789),
+			//与自动识别入口共用 normalizeFractionalSeconds 规整到3位小数再解析
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format("Parse date string:[{0}]", source);
 			log.error(message);
@@ -393,7 +396,8 @@ public final class DateUtils {
 		}
 		
 		try {
-			return simpleDateFormat.parse(source);
+			//P0-4: 小数秒位数不等于3时规整到3位再解析(见 SimpleDateFormatHolder#normalizeFractionalSeconds)
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format("Parse date string:[{0}]", source);
 			log.error(message);
@@ -417,7 +421,7 @@ public final class DateUtils {
 		Objects.requireNonNull(format);
 		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(format, timezone);
 		try {
-			return simpleDateFormat.parse(source);
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format("Parse date string:[{0}] with timezone:[{1}] and format:[{2}] failed!",
 					source, timezone,
@@ -443,7 +447,7 @@ public final class DateUtils {
 		Objects.requireNonNull(format);
 		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(format, locale);
 		try {
-			return simpleDateFormat.parse(source);
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format("Parse date string:[{0}] with locale:[{1}] and format:[{2}] failed!",
 					source, locale,
@@ -469,7 +473,7 @@ public final class DateUtils {
 		
 		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(FMT_ISO_DATETIME_1, timezone, locale);
 		try {
-			return simpleDateFormat.parse(source);
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format(
 					"Parse date string:[{0}] with timezone:[{1}], locale:[{2}] and format:[{3}] failed!",
@@ -494,7 +498,7 @@ public final class DateUtils {
 		
 		SimpleDateFormat simpleDateFormat = SimpleDateFormatHolder.formatFor(format, timezone, locale);
 		try {
-			return simpleDateFormat.parse(source);
+			return simpleDateFormat.parse(SimpleDateFormatHolder.normalizeFractionalSeconds(source));
 		} catch (ParseException e) {
 			String message = MessageFormat.format(
 					"Parse date string:[{0}] with timezone:[{1}], locale:[{2}] and format:[{3}] failed!",
@@ -565,6 +569,19 @@ public final class DateUtils {
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
+	/**
+	 * P1-16 修活的 MM-dd-yyyy(连字符)家族专用: 值越界(如 13-45-2020)时直接调 LocalDate.parse 会抛原生
+	 * DateTimeParseException; 修复前正则不匹配、方法走到末尾抛 UnsupportedLocalDateFormatException。
+	 * 评审修复(2026-09-23): 保持对外异常类型与修复前一致(copilot-json 的 LocalDateDeserializer 会捕获
+	 * DateTimeException 并转成无信息量的 UnsupportedOperationException)。
+	 */
+	private static LocalDate parseEnDash(String source, DateTimeFormatter formatter) {
+		try {
+			return LocalDate.parse(source, formatter);
+		} catch (DateTimeParseException e) {
+			throw new UnsupportedLocalDateFormatException(source + " is not a valid date in format " + formatter);
+		}
+	}
 	public static LocalDate toLocalDate(String source) {
 		if (isBlank(source)) {
 			return null;
@@ -586,19 +603,19 @@ public final class DateUtils {
 		}
 		
 		if (PT_DATE_EN.matcher(source).matches()) {
-			return LocalDate.parse(source, DTF_DATE_FORMAT_EN);
+			return parseEnDash(source, DTF_DATE_FORMAT_EN);
 		}
 		
 		if (PT_DATE_EN_1.matcher(source).matches()) {
-			return LocalDate.parse(source, DTF_DATE_FORMAT_EN_1);
+			return parseEnDash(source, DTF_DATE_FORMAT_EN_1);
 		}
 		
 		if (PT_DATE_EN_2.matcher(source).matches()) {
-			return LocalDate.parse(source, DTF_DATE_FORMAT_EN_2);
+			return parseEnDash(source, DTF_DATE_FORMAT_EN_2);
 		}
 		
 		if (PT_DATE_EN_3.matcher(source).matches()) {
-			return LocalDate.parse(source, DTF_DATE_FORMAT_EN_3);
+			return parseEnDash(source, DTF_DATE_FORMAT_EN_3);
 		}
 		
 		if (PT_DATE_EN_5.matcher(source).matches()) {
