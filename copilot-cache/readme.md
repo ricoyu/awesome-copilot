@@ -4,6 +4,22 @@ https://blog.didispace.com/JedisPool%E8%B5%84%E6%BA%90%E6%B1%A0%E4%BC%98%E5%8C%9
 
 https://gist.github.com/JonCole/925630df72be1351b21440625ff2671f
 
+# 〇 能力总览
+
+Jedis（Redis 客户端）封装层（包名 `com.awesomecopilot.cache`），入口是静态门面 `JedisUtils`。key/value 支持任意类型（内部用 Jackson 序列化），单实例 / Sentinel / Cluster 三种部署自动适配。
+
+| 分类 | 核心类 | 提供什么 |
+|------|--------|----------|
+| 门面 | `JedisUtils` | set/get/del/exists/expire/ttl/incr、Lua 脚本（eval/evalsha）、key 扫描等顶层 API |
+| 数据结构 | `JedisUtils` 嵌套类 | 按类型分组：`LIST` / `SET` / `ZSET` / `HASH`（支持 field 级过期）/ `Bitmap` / `HyperLogLog` / `GEO` / `AFFLUENT` |
+| 分布式锁 | `BlockingLock` / `NonBlockingLock` / `WatchDog` | 阻塞锁（watchdog 自动续期）、非阻塞 tryLock，`JedisUtils.blockingLock(key)` 获取 |
+| 发布订阅 | `CancellableJedisPubSub` / `MessageListener` | 可取消的订阅（解决订阅未建立就取消的竞态） |
+| 阻塞队列 | `QueueListener` | Redis 队列消费监听 |
+| 认证 | `AuthUtils` | 基于 Redis 的登录/token 体系：login/logout/checkToken/踢人 |
+| 多连接池 | `RedisPoolContextHolder` | ThreadLocal 切换目标 Redis Pool |
+| 配置 | `RedisConfig` / `RedisConfigReader` | 读 redis.properties；Spring Boot 下自动把 Environment 里的 `redis.*` 灌进来 |
+| 工厂 | `JedisPoolFactory` / `JedisSentinelPoolFactory` / `JedisClusterPoolFactory` | 三种部署模式的连接池创建 |
+
 # 一 摘要
 
 src/main/resources下放redis.properties, 配置Redis IP和密码等等, 具体可配置项如下
@@ -237,6 +253,28 @@ redis.db=0
    ```java
    JedisUtils.HASH.hset("k1", "field1", "v1");     //无过期时间的版本 
    JedisUtils.HASH.hset("k1", "field1", "v1", 12); //field1 12秒后过期, k1不过期
+   ```
+
+2. 发布订阅（可取消的订阅句柄）
+
+   ```java
+   JedisUtils.publish("channel1", orderEvent);   // Object 自动 Jackson 序列化，返回收到消息的订阅者数
+   JedisUtils.subscribe((channel, message) -> System.out.println(message), "channel1");
+   ```
+
+3. Lua 脚本
+
+   ```java
+   Long r = JedisUtils.eval("return redis.call('incr', KEYS[1])", 1, "counter"); // 内联脚本
+   String sha = JedisUtils.scriptLoad(scriptBody);        // 加载脚本返回 sha 并缓存
+   Object v = JedisUtils.evalsha(sha, 1, "key1", "arg1"); // 按 sha 执行
+   ```
+
+4. 原子自增 / 数值 CAS
+
+   ```java
+   JedisUtils.incr("counter");
+   boolean ok = JedisUtils.casNumber("stock", 10, mode);  // 内部走 cas.lua 的比较并交换
    ```
 
 ## 5.1 分布式锁

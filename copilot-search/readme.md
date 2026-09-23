@@ -1,5 +1,24 @@
 Transport Client 在ES 8.0开始就不能用了
 
+# 〇 能力总览
+
+Elasticsearch 7.9.3 transport-client 的 fluent 封装（包名 `com.awesomecopilot.search`）。静态门面 `ElasticUtils`（内部持有 `TransportClientFactory` 创建的 `CLIENT`），所有 API 都是静态方法或嵌套静态类分组：
+
+| 分组 | 核心入口 | 提供什么 |
+|------|----------|----------|
+| 文档 CRUD | `ElasticUtils.index/create/get/getWithVersion/update/upsert/delete/deleteBy/exists/docCount/mget` | 单条与批量读写；`get` 直接反序列化成 POJO；乐观锁版 `VersionedDoc` |
+| 批量 | `bulkIndex(...)` / `bulkIndexConcurrent(...)` / `bulkUpdate(...)` | Bulk builder + 多线程分片写入 |
+| 查询 | `ElasticUtils.Query` 嵌套类 + `ElasticQueryBuilder` 等 builder | matchQuery/matchPhrase/matchPhrasePrefix/multiMatch/queryString/term/terms/ids/byId/range/exists/bool/prefix/uri/geoDistance/templateQuery/scrollQuery 等；结果自动封装 POJO |
+| 聚合 | `ElasticUtils.Aggs` | terms/multiTerms/composite/range/histogram/dateHistogram/cardinality + avg/sum/min/max/stats/totalHits，支持子聚合 |
+| 索引管理 | `ElasticUtils.Admin` | createIndex/deleteIndex/existsIndex/listIndices/listIndexNames/reindex、别名(createIndexAlias/deleteIndexAlias)、IndexTemplate(put/delete/ByFile)、pipeline、searchTemplate |
+| Mapping | `ElasticUtils.Mappings` | put mapping、`@Index/@Field/@DocId` 注解自动建 mapping（`FieldType`/`Analyzer` 枚举） |
+| Settings | `ElasticUtils.Settings` / `ElasticUtils.Cluster` | 索引级与集群级设置读写 |
+| 分页/滚动 | `ElasticPage` / `ElasticScroll` | from/size 分页与 scroll 深分页 |
+| 缓存 | `ElasticCacheUtils` / `FieldCache` | 字段元数据缓存 |
+| 异常 | `exception/` 包 22 个 | 每种操作失败抛专用异常（IndexCreateException、DocumentSaveException…） |
+
+连接配置：workingDir（或 workingDir/conf）下 `elastic.properties`，由 `TransportClientFactory` 通过 `PropertyReader("elastic")` 读取。ES 8 的迁移版本见 `copilot-search-8.x` 模块（API 同名，底层换 elasticsearch-java）。
+
 # 一 配置
 
 working dir 或者 workingDir/conf目录下添加 elastic.properties

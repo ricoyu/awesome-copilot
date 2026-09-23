@@ -1,3 +1,21 @@
+# copilot-workbook
+
+POJO List ⇄ Excel 的序列化/反序列化（Apache POI 封装，包名 `com.awesomecopilot.workbook`）。
+
+# 〇 能力总览
+
+| 分类 | 核心类 | 提供什么 |
+|------|--------|----------|
+| 读（Unmarshal） | `ExcelUnmarshaller` + `AssassinatorMaster`/`POJOAssassinator` | 按 `@Col` 注解把 Sheet 各行读成 POJO 列表，支持列名 fallback、按列 index 映射、JSR380 校验 |
+| 读-单元格命令 | `command/` 包 | String/Integer/Long/Double/BigDecimal/Boolean/Enum/LocalDate(LocalDateTime) 各类型 Cell→字段命令 |
+| 读-日期转换 | `DateTimeConvertors` + 13~19 位转换器 | 按字符串长度自动识别的 Excel 日期时间解析链 |
+| 读-行迭代 | `RowIterator` | 流式逐行迭代，带总行数 |
+| 写（Marshal） | `ExcelUtils.write2Excel(...)` + `CellWriter`/`VarInfo` | 模板 Excel 中 `${var}` 占位符按 POJO 属性填充，数字可配精度/负号显示，日期可配格式 |
+| 基础读写 | `ExcelUtils` | getWorkbook(File/InputStream/MultipartFile/Path)、getSheet、csvToXLS、write2TmpFile、removeRow/shiftRowsAfter、单元格取值 stringVal/intVal/dateTimeVal… |
+| 注解 | `@Col(name, fallback, index)` | 字段↔列映射；fallback 应对列名改版，index 直接锁列号 |
+| 校验 | `ValidationUtils` + hibernate-validator | 反序列化时逐行校验，失败抛带行号的 BindException |
+| 异常 | `exception/` 包 15 个 | SheetNotExist/RowNotFound/CellNotFound/WorkbookCreation 等细粒度异常 |
+
 **实现将POJO List序列化成一个Excel(Marshal), 从Excel中读取数据反序列化成POJO列表(Unmarshal)**
 
 * Marshal的过程是通过定义一个Excel模版, 在其中指定每一列对应POJO的属性名来实现. 数字类型可以指定以字符串或者数字的形式写入Excel. 日期类型可以指定日期格式

@@ -1,5 +1,27 @@
 
 
+# 〇 能力总览
+
+基于 Hibernate 6 的 ORM 封装（包名 `com.awesomecopilot.orm`），在 JPA 之上提供 fluent 风格的 CRUD、Criteria 构建、原生 SQL 命名模板与分页/排序/逻辑删除/多租户能力。
+
+| 分类 | 核心类 | 提供什么 |
+|------|--------|----------|
+| DAO 基类 | `JpaDao` | 实体通用操作入口（内部组合下面三组 Operations） |
+| 实体操作 | `EntityOperations` | persist/save/merge/get/load/find/findAll/findOne/listByIds/delete + begin/commit/rollback/flush 手动事务 |
+| Criteria | `CriteriaOperations` / `CriteriaQueryBuilder` / `JPACriteriaQuery` | fluent 条件查询：`eq/ne/ge/le/gt/lt/like/in/between/isNull/asc/desc/limit` + `findOne/findList/findPage` |
+| 原生 SQL | `SQLOperations` / `SqlQueryBuilder` / `NativeSqlQueryBuilder` | named-sql 模板文件 + Velocity 式条件指令（`#if`/`#between`/`#like`） |
+| 谓词 | `predicate/` 包 | 各类型谓词：String/Integer/Long/Boolean/Date/LocalDate/LocalDateTime/In 等，带 MatchMode |
+| 动态 SQL 指令 | `directive/` 包 | `IfPresent` / `IfNotNull` / `IfNull` / `IfEqual` / `Between` |
+| 实体基类 | `BaseEntity` / `BaseEntitySimple` / `BaseEntitySnowflake*` | 公共审计字段（创建/更新人时间、逻辑删除、租户 ID）、雪花主键 |
+| 主键生成 | `CopilotSnowflakeIdGenerator` | Hibernate 雪花 ID 生成器 |
+| 类型转换 | `@Convert` + `ValueHandler` 体系 | 枚举/JSON/列表 ↔ 数据库列自动转换（`IntegerListConverter`/`StringListConverter`） |
+| 拦截器 | `DeletedTenantIdConditionInterceptor` | 自动给查询追加逻辑删除与租户 ID 条件 |
+| 分页排序 | `Page`/`Orders`（commons-lang）+ `OrderByValidator` | criteria/SQL 双通路分页排序 |
+| 结果映射 | `ValueHandlerResultTransformer` | 查询结果按列类型自动转值对象 |
+| 工具 | `NamedSqlUtils`(NamedQueryUtils) / `SQLUtils`(jsqlparser) / `Defaults` / `EqualsUtils` / `HashUtils` | named-sql 加载、SQL 解析改写、默认值、散列 |
+
+配置与详细用法见下文各章节。
+
 ## 一 配置
 
 ### 1.1 Maven依赖

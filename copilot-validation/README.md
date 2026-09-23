@@ -12,7 +12,26 @@
 9. UniqueValue
 10. Username
 
+## 〇 能力总览
 
+| 注解 | 校验器 | 规则 |
+|------|--------|------|
+| `@AllowedValues` | AllowedValueValidator | 字段值必须在允许集合内（支持普通类型 + 枚举） |
+| `@IP` | IPValidator | 合法 IP 地址（`IPCategory` 枚举区分 v4/v6） |
+| `@MandatoryIf` / `@MandatoryIfs` | MandatoryIfValidator | 当 referenceField == referenceValue 时 mandatoryField 必填 |
+| `@Mobile` | MobileValidator | 手机号 |
+| `@Password` | PasswordValidator | 强密码（大小写、特殊字符、长度等主流安全规则） |
+| `@PasswordMatch` | PasswordMatchValidator | 标在类上，两次密码一致 |
+| `@Past` | PastValidator | 日期必须是过去时 |
+| `@UniqueValue` / `@UniqueValues` | UniqueValueValidator | 字段值在数据库表中唯一（需实现 `UniqueEntityService.count`） |
+| `@Username` | UsernameValidator | 字母/数字/下划线/@，以字母或数字开头 |
+
+配套工具：
+
+- `ValidationUtils.validate(obj)`：非 Spring MVC 场景手动触发校验，`getErrorMessage` 提取可读错误。
+- `CollectionValidator`：Spring Validator，遍历集合元素逐个校验。
+- `SimpleBindingResult`：收集校验错误成 BindingResult 结构（带行号，供 Excel 导入等场景使用）。
+- `ValidatePatterns`：`isValidEmail` / `isValidCommaSeparatedEmail` 纯正则判断。
 
 ## 1.1 UniqueValue用法
 
