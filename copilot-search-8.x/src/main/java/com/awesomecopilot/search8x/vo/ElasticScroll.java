@@ -31,8 +31,8 @@ public class ElasticScroll<T> extends Page {
 	
 	public static <T> ElasticScroll<T> emptyResult() {
 		ElasticScroll<T> scroll = new ElasticScroll<>();
-		// TODO: Lombok should generate these setters
-		// scroll.setResults(Collections.emptyList());
+		// @Data 会生成 setResults, 此前被 TODO 注释掉导致返回 results=null 的对象
+		scroll.setResults(Collections.emptyList());
 		return scroll;
 	}
 	

@@ -60,3 +60,26 @@ ElasticUtils.Aggs.terms(...)
 ```
 
 各查询/聚合的完整示例可参考 `copilot-search/readme.md` 第一~四章（DSL 语义相同），以及本模块 `src/test` 下的 `ElasticUtilsTest` / `AdminTest` / `AggTest` 用例。
+
+## scroll 深度遍历与上下文释放（2026-09-24，评审报告 P0-8 修复）
+
+`Query.scrollQuery(index)` 返回的 `ElasticScrollQueryBuilder` 实现了 `AutoCloseable`，服务端 scroll 上下文在以下时机自动释放（`clearScroll`），不再只等 `scrollTime` 到期回收：
+
+- 遍历到空批次（数据读完）时；
+- `queryForList()` 通信失败（IOException）或 ES 返回错误（ElasticsearchException）时。
+
+结果解析异常（如 `resultType` 配错导致反序列化失败）不会释放上下文——catch 之后重试可以跳过坏批继续遍历。
+
+**提前放弃遍历（中途 return/break、或拿到 `getScrollId()` 后不再使用）不会自动释放**，必须自己 close，否则上下文仍保留到 `scrollTime` 到期。推荐 try-with-resources：
+
+```java
+try (ElasticScrollQueryBuilder builder = ElasticUtils.Query.scrollQuery("product").size(1000)) {
+    while (true) {
+        List<Product> batch = builder.queryForList();
+        if (batch.isEmpty()) break;
+        export(batch);
+    }
+}   // 即使中途 break/抛异常, 上下文也会在这里被 clear
+```
+
+`close()` 幂等，重复调用无害；close 后 `scrollId` 置空，同一 builder 再次 `queryForList()` 会发起新的初始查询（注意：是重新从头遍历，不是续跑）。builder 非线程安全，不要跨线程共享。不主动 clear 的后果：全集群打开的 scroll 上下文堆到 `search.max_open_scroll_context`（默认 500）后，所有新 scroll 请求被拒。

@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Operator;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.search8x.ElasticUtils.Query;
+import com.awesomecopilot.search8x.builder.query.ElasticScrollQueryBuilder;
 import com.awesomecopilot.search8x.pojo.AirConditioner;
 import com.awesomecopilot.search8x.pojo.GoodsEs;
 import com.awesomecopilot.search8x.pojo.GoodsInfo;
@@ -3089,10 +3090,9 @@ public class QueryTest {
 	 */
 	@Test
 	public void testScrollQuery() {
-		try {
-			List<String> movies = Query.scrollQuery("movies")
-					.size(100)
-					.queryForList();
+		// P0-8 后 builder 可自动关闭: 只取一批也必须 close, 否则上下文留到 scrollTime 到期
+		try (ElasticScrollQueryBuilder builder = Query.scrollQuery("movies").size(100)) {
+			List<String> movies = builder.queryForList();
 			log.info("Scroll query results: {}", movies.size());
 			movies.forEach(System.out::println);
 		} catch (Exception e) {
