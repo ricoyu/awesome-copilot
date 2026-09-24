@@ -223,7 +223,7 @@ public final class JedisUtils {
 		});
 	}
 	
-	private static boolean isNoScript(Throwable e) {
+	public static boolean isNoScript(Throwable e) {
 		Set<Throwable> seen = new HashSet<>();
 		for (Throwable t = e; t != null && seen.add(t); t = t.getCause()) {
 			if (t.getClass().getSimpleName().contains("NoScript")) {
@@ -1689,8 +1689,37 @@ public final class JedisUtils {
 	 */
 	public static final class HASH {
 		
-		// hash每个field的过期时间记录在key为 jedis_utils:__timeout__set:key 的zset中
+		// hash每个field的过期时间记录在key为 "{<hashKey>}:jedis_utils:__timeout__set" 的zset中。
+		// hash key 用大括号包成 hash tag: 集群模式下两个 key 落同一 slot, Lua 脚本才能同时操作它们
+		// (评审报告 P0-4: 旧格式 jedis_utils:__timeout__set:<key> 与 hash key 几乎必然不同 slot, 集群下直接抛
+		//  "Keys must belong to same hashslot")。单节点行为不变, 但升级前旧格式的 zset 键会失去关联,
+		//  其中记录的 field 过期时间不再生效, 需要时自行清理旧键。
 		private static final String HASH_EXPIRE_ZSET_PREFIX = "jedis_utils:__timeout__set";
+
+		/**
+		 * 由 hash key 派生记录 field 过期时间的 zset key, 保证两者在集群下落到同一 slot:
+		 * <ul>
+		 *   <li>key 不含大括号: zset = {hashKey}:jedis_utils:__timeout__set (整个 key 作 tag)</li>
+		 *   <li>key 已含 hash tag(如 {auth}:token:login:info): 提取其 tag 复用,
+		 *       zset = {tag}:jedis_utils:__timeout__set:hashKey——Redis 的 tag 规则是
+		 *       "第一个 { 到其后第一个 } 之间的非空内容", 若不提取而是再包一层 {..},
+		 *       内层的 {auth} 会让两个 key 算出不同 slot</li>
+		 * </ul>
+		 * 已知限制: key 的"第一个 {} 对为空"时(如 a{}.b 或 foo{}bar——Redis/jedis 的 tag 规则只看第一对
+		 * 花括号, 空对即视为无 tag、按整键算 slot), 无论怎么派生都无法与整键同 slot, 集群下这类键
+		 * 仍会报 CROSSSLOT; 这类键名本身违反常规命名约定, 出现概率极低。
+		 */
+		private static String timeoutZsetKey(String hashKey) {
+			int left = hashKey.indexOf('{');
+			if (left >= 0) {
+				int right = hashKey.indexOf('}', left + 1);
+				if (right > left + 1) {
+					return joinKey("{" + hashKey.substring(left + 1, right) + "}",
+							HASH_EXPIRE_ZSET_PREFIX, hashKey);
+				}
+			}
+			return joinKey("{" + hashKey + "}", HASH_EXPIRE_ZSET_PREFIX);
+		}
 		
 		/**
 		 * key 是Map的名字
@@ -1776,7 +1805,7 @@ public final class JedisUtils {
 		public static HSet hset(byte[] key, byte[] field, byte[] value, long ttl) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, new String(key, UTF_8));
+			String zsetKey = timeoutZsetKey(new String(key, UTF_8));
 			Long result = (Long) evalLua("hash.lua", key, 2,
 				key, // hash key
 					toBytes(zsetKey), // zset key
@@ -1851,7 +1880,7 @@ public final class JedisUtils {
 		public static byte[] hget(byte[] key, byte[] field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(new String(key, UTF_8));
 			byte[] data = (byte[]) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
@@ -2104,7 +2133,7 @@ public final class JedisUtils {
 		public static Long hdel(String key, Object field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			return (Long) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
@@ -2126,7 +2155,7 @@ public final class JedisUtils {
 		public static String hdelGet(String key, Object field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			byte[] data = (byte[]) evalLua("hash.lua", key, 2,
 				toBytes(key), // hash key
 					toBytes(zsetKey), // zset key
@@ -2152,7 +2181,7 @@ public final class JedisUtils {
 		public static TTL ttl(String key, String field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
@@ -2188,7 +2217,7 @@ public final class JedisUtils {
 		public static int expire(String key, String field, int ttl) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
@@ -2212,7 +2241,7 @@ public final class JedisUtils {
 		public static int persist(String key, String field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			Long result = (Long) evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
@@ -2242,7 +2271,7 @@ public final class JedisUtils {
 		public static List<String> expiredFields(String key) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			byte[] bytes = (byte[]) evalLua("hash.lua", key, 1,
 				toBytes(zsetKey),
 					toBytes("expiredFields"));
@@ -2256,7 +2285,7 @@ public final class JedisUtils {
 		public static void testPurpose(String key, String field) {
 			
 			
-			String zsetKey = joinKey(HASH_EXPIRE_ZSET_PREFIX, key);
+			String zsetKey = timeoutZsetKey(key);
 			Object data = (Object)  evalLua("hash.lua", key, 2,
 				toBytes(key),
 					toBytes(zsetKey),
@@ -3030,6 +3059,26 @@ public final class JedisUtils {
 		log.debug("Load script {}", luaPath);
 		if (jedisOperations instanceof JedisClusterOperations) {
 			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString(luaPath), luaPath);
+		}
+		return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString(luaPath));
+	}
+
+	/**
+	 * 集群模式下按 routingKey 所在 slot 把脚本加载到对应主节点。
+	 * <p>
+	 * 脚本内部访问的 key 群有固定归属 slot 时(如 auth 系列全部 {auth} 前缀),
+	 * 必须用本方法并传该 slot 内任一真实 key 作为 routingKey——否则 EVALSHA 路由到
+	 * 目标节点后脚本不在其缓存里, 每次都报 NOSCRIPT(评审报告 P0-3)。
+	 * 单节点模式下 routingKey 无意义, 与 {@link #scriptLoad(String)} 行为一致。
+	 *
+	 * @param luaPath    classpath 下脚本路径
+	 * @param routingKey 脚本将要执行于其上的 slot 中的任一真实 key
+	 * @return 脚本 sha1
+	 */
+	public static String scriptLoad(String luaPath, String routingKey) {
+		log.debug("Load script {} to slot of routing key {}", luaPath, routingKey);
+		if (jedisOperations instanceof JedisClusterOperations) {
+			return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString(luaPath), routingKey);
 		}
 		return jedisOperations.scriptLoad(IOUtils.readClassPathFileAsString(luaPath));
 	}

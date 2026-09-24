@@ -8,6 +8,7 @@ import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import com.awesomecopilot.networking.constants.HttpHeaders;
 import com.awesomecopilot.common.lang.exception.BusinessException;
+import com.awesomecopilot.common.lang.resource.PropertyReader;
 import com.awesomecopilot.networking.enums.HttpMethod;
 import com.awesomecopilot.networking.enums.Scheme;
 import com.awesomecopilot.networking.exception.HttpRequestException;
@@ -71,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -329,6 +331,37 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected Consumer<Exception> errorCallback;
 
+	// ==================== P0-6: 三个超时的默认值回落 ====================
+
+	/** 建连超时硬默认(毫秒): 此前不设置 = 无限等待 */
+	private static final int DEFAULT_CONNECTION_TIMEOUT = 5000;
+	/** 数据等待超时硬默认(毫秒, 两次数据包之间最大空闲) */
+	private static final int DEFAULT_SO_TIMEOUT = 10000;
+	/** 从连接池借连接超时硬默认(毫秒) */
+	private static final int DEFAULT_CONNECTION_MANAGER_TIMEOUT = 2000;
+
+	/**
+	 * http.properties 解析缓存: 每个键只解析一次。PropertyReader 底层是 ResourceBundle,
+	 * JVM 本身就会按文件名缓存属性内容(运行期改文件不生效), 这里缓存不损失任何灵活性;
+	 * 并发下 computeIfAbsent 至多各解析一次, 结果一致, 无害。
+	 */
+	private static final ConcurrentHashMap<String, Integer> DEFAULT_TIMEOUT_CACHE = new ConcurrentHashMap<>();
+
+	/**
+	 * 本次请求生效的超时毫秒数: 显式设置 > http.properties > 硬默认。
+	 * 显式传 -1 或 0 会按调用方原意透传(httpclient 语义: -1=无限等待, 0=系统默认即不超时)——
+	 * 生产环境请谨慎, 那正是 P0-6 报告描述的事故形态。http.properties 里的值必须是正整数
+	 * 才会被采纳, 写 0/-1/非法值一律回落硬默认。
+	 */
+	private static int effective(Long explicitValue, String propertyKey, int hardDefault) {
+		if (explicitValue != null) {
+			return explicitValue.intValue();
+		}
+		return DEFAULT_TIMEOUT_CACHE.computeIfAbsent(propertyKey, k -> {
+			int fromProperties = new PropertyReader("http").getInt(k, -1);
+			return fromProperties > 0 ? fromProperties : hardDefault;
+		});
+	}
 	/**
 	 * 通过连接池获取HttpClient
 	 *
@@ -336,16 +369,16 @@ public abstract class AbstractRequestBuilder {
 	 */
 	protected CloseableHttpClient buildHttpClient() {
 		//超时设置
+		// P0-6 修复: 三个超时此前"不设=无限等待"(RequestConfig 默认 -1), 慢下游会把调用线程
+		// 和共享连接池(每路由 20 连接)一起拖到排队。现在未显式设置时回落到
+		// http.properties 的对应键, 再没有则落到保守硬默认, 保证任何请求都有上界。
 		RequestConfig.Builder builder = RequestConfig.custom();
-		if (connectionManagerTimeout != null) {
-			builder.setConnectionRequestTimeout(connectionManagerTimeout.intValue());
-		}
-		if (connectionTimeout != null) {
-			builder.setConnectTimeout(connectionTimeout.intValue());
-		}
-		if (soTimeout != null) {
-			builder.setSocketTimeout(soTimeout.intValue());
-		}
+		builder.setConnectionRequestTimeout(
+				effective(connectionManagerTimeout, "http.connection-manager.timeout", DEFAULT_CONNECTION_MANAGER_TIMEOUT));
+		builder.setConnectTimeout(
+				effective(connectionTimeout, "http.connection.timeout", DEFAULT_CONNECTION_TIMEOUT));
+		builder.setSocketTimeout(
+				effective(soTimeout, "http.socket.timeout", DEFAULT_SO_TIMEOUT));
 		// P2-1: 按调用方是否显式声明"信任所有证书"选池; 默认(不声明)走校验证书的安全池
 		final PoolingHttpClientConnectionManager pool =
 				trustAllCerts ? insecureConnectionManager : secureConnectionManager;

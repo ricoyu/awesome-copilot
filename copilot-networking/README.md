@@ -43,6 +43,7 @@ HttpUtils.form(url).param("k", "v").file("f", new File("a.xlsx")).request();
 - `addHeader` / `addCookie`：请求头与 Cookie。
 - `body(obj)` / `responseType(Class)` / `returnBytes(true)`：请求体（Object 自动 Jackson 序列化）与响应处理方式。
 - `trustAllCerts(true)`：显式开启才信任所有证书（内网自签场景）；默认走正常证书校验。
+- 三个超时 `connectionTimeout / soTimeout / connectionManagerTimeout(value, TimeUnit)`：分别控制建连、传输（两次数据包间最大空闲）、从连接池借连接。**不调用也有默认值**：5s / 10s / 2s；可在 classpath 或工作目录放 `http.properties` 按 `http.connection.timeout` / `http.socket.timeout` / `http.connection-manager.timeout`（毫秒）整体覆盖（值必须为正整数才生效），显式调用优先级最高（评审报告 P0-6 修复——此前三个超时不设 = 无限等待，慢下游会占满每路由 20 个连接的共享池，把同池所有调用拖到排队）。注意与 `timeout(...)`（整个请求生命周期的中断上限）的交互：只设 `timeout(60s)` 而不设 `soTimeout` 的请求，现在会先在 10s 处抛读超时——明知下游慢的场景请显式放宽 `soTimeout`。
 - `resolveRetryHandler(...)`：重试策略；`cookieStore(...)`：Cookie 管理。
 - `request()`：执行；非 2xx 由 `ErrorUtils.checkError` 判定并抛 `HttpRequestException`。
 

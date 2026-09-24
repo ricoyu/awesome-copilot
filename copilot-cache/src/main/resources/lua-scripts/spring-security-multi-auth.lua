@@ -1,5 +1,5 @@
 --[[
-调用方式：EVAL(script, 0, operate, username, token, expires, userDetails, authorities, loginInfo, singleSign)
+调用方式：EVAL(script, 1, "{auth}:token:username", operate, username, token, expires, userDetails, authorities, loginInfo, singleSign)
 
 实现功能：支持多点/单点登录, 指定时间内token自动过期
 登录信息由5个map, 1个SET 1个ZSET 存储
@@ -18,21 +18,23 @@
   auth:token:ttl:zset       放token和token到期timestamp, zset类型, score是timestamp
 ]]
 
-local AUTH_TOKEN_USERNAME_HASH = "auth:token:username"
-local AUTH_TOKEN_USERDETAILS_HASH = "auth:token:userdetails"
-local AUTH_TOKEN_AUTHORITIES_HASH = "auth:token:authorities"
-local AUTH_TOKEN_LOGIN_INFO_HASH = "auth:token:loginInfo"
-local AUTH_TOKEN_TTL_HASH = "auth:token:ttl"
-local AUTH_TOKEN_TTL_ZSET = "auth:token:ttl:zset"
+-- 路由键: 集群下由调用方作为 KEYS[1] 传入(jedis 按 KEYS[1] 所在 slot 路由到该分片),
+-- 值恒为 {auth}:token:username; 脚本内其余 {auth} 键与本键同 slot, 允许直接访问
+local AUTH_TOKEN_USERNAME_HASH = KEYS[1]
+local AUTH_TOKEN_USERDETAILS_HASH = "{auth}:token:userdetails"
+local AUTH_TOKEN_AUTHORITIES_HASH = "{auth}:token:authorities"
+local AUTH_TOKEN_LOGIN_INFO_HASH = "{auth}:token:login:info"
+local AUTH_TOKEN_TTL_HASH = "{auth}:token:ttl"
+local AUTH_TOKEN_TTL_ZSET = "{auth}:token:ttl:zset"
 
 --token过期时发布的频道
-local AUTH_TOKEN_EXPIRE_CHANNEL = "auth:token:expired:channel"
+local AUTH_TOKEN_EXPIRE_CHANNEL = "{auth}:token:expired:channel"
 --用户异地登录时踢掉前一个登录时发布的频道, 即单点登录下线通知
-local AUTH_SINGLE_SIGNON_CHANNEL = "auth:single:signon:channel"
+local AUTH_SINGLE_SIGNON_CHANNEL = "{auth}:single:signon:channel"
 --用户退出登录时发布的频道
-local AUTH_LOGOUT_CHANNEL = "auth:logout:channel"
+local AUTH_LOGOUT_CHANNEL = "{auth}:logout:channel"
 --用户成功登录后发布的频道
-local AUTH_LOGIN_CHANNEL = "auth:user:login:channel"
+local AUTH_LOGIN_CHANNEL = "{auth}:user:login:channel"
 
 local OPERATE_LOGIN = "login" -- 登录
 local OPERATE_LOGOUT = "logout" -- 登出
@@ -64,7 +66,7 @@ local setExpires = function(token, expires)
 end
 
 local usernameTokenSet = function(username)
-    return "auth:" .. username .. ":token"
+    return "{auth}:" .. username .. ":token"
 end
 
 --[[

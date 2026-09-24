@@ -444,16 +444,19 @@ public final class ElasticUtils {
     }
 
     /**
-     * 基于分批BulkRequest批量创建文档, 模拟原ES 7.x BulkProcessor的多线程批量行为<p>
-     * 将文档列表按每批1000条拆分为多个BulkRequest依次发送
+     * 基于分批BulkRequest批量创建文档, 模拟原ES 7.x BulkProcessor的分批批量行为<p>
+     * 将文档列表按每批1000条拆分为多个BulkRequest依次发送; 每批响应检查 errors/items,
+     * 逐条失败(如映射冲突)汇总进返回值, 调用方可据此判断是否全部写入成功
      *
      * @param index 索引名
      * @param docs  文档列表(支持POJO/Map/String)
+     * @return BulkResult 成功数/失败数/成功文档id/失败原因
      */
-    public static void bulkIndexConcurrent(String index, List<?> docs) {
+    public static BulkResult bulkIndexConcurrent(String index, List<?> docs) {
         Objects.requireNonNull(index, "index cannot be null!");
+        BulkResult bulkResult = new BulkResult();
         if (docs == null || docs.isEmpty()) {
-            return;
+            return bulkResult;
         }
 
         int batchSize = 1000;
@@ -470,22 +473,38 @@ public final class ElasticUtils {
             )));
 
             if (batch.size() >= batchSize) {
-                try {
-                    INDEX_CLIENT.bulk(BulkRequest.of(b -> b.operations(batch)));
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to execute bulk index", e);
-                }
-                batch.clear();
+                flushBulkBatch(batch, bulkResult);
             }
         }
 
         // 发送剩余文档
         if (!batch.isEmpty()) {
-            try {
-                INDEX_CLIENT.bulk(BulkRequest.of(b -> b.operations(batch)));
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to execute bulk index", e);
+            flushBulkBatch(batch, bulkResult);
+        }
+        return bulkResult;
+    }
+
+    /**
+     * 发送一个批次的bulk请求并把逐条结果记入 bulkResult。
+     * ES bulk 在个别文档被拒时仍返回 HTTP 200(errors=true, 原因在 items 里),
+     * 因此必须逐条读 item.error() 而不是只看方法没抛异常就算成功。
+     */
+    private static void flushBulkBatch(List<BulkOperation> batch, BulkResult bulkResult) {
+        try {
+            BulkResponse response = INDEX_CLIENT.bulk(BulkRequest.of(b -> b.operations(new ArrayList<>(batch))));
+            for (BulkResponseItem item : response.items()) {
+                if (item.error() != null) {
+                    bulkResult.fail();
+                    bulkResult.addFailMessage("doc[" + item.id() + "] 写入失败: " + item.error().reason());
+                } else {
+                    bulkResult.success();
+                    bulkResult.addId(item.id());
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to execute bulk index", e);
+        } finally {
+            batch.clear();
         }
     }
 

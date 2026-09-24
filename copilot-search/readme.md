@@ -1,5 +1,7 @@
 Transport Client 在ES 8.0开始就不能用了
 
+> **⚠️ 本模块已废弃（2026-09-23）**：底层 transport-client 是 ES 7.9.3 时代产物，ES 8 集群连不上。新项目和存量迁移一律使用 `copilot-search-8.x`（包名 `com.awesomecopilot.search8x`，门面 API 同名）。本模块仅为兼容仍在跑 ES 7.x 集群的老项目保留，不再新增功能。
+
 # 〇 能力总览
 
 Elasticsearch 7.9.3 transport-client 的 fluent 封装（包名 `com.awesomecopilot.search`）。静态门面 `ElasticUtils`（内部持有 `TransportClientFactory` 创建的 `CLIENT`），所有 API 都是静态方法或嵌套静态类分组：

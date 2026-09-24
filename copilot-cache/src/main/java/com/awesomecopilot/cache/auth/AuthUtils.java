@@ -46,42 +46,42 @@ public final class AuthUtils {
 	/**
 	 * 根据token获取用户名的 Redis Key
 	 */
-	public static final String AUTH_TOKEN_USERNAME_HASH = "auth:token:username";
+	public static final String AUTH_TOKEN_USERNAME_HASH = "{auth}:token:username";
 	
 	/**
 	 * 根据token获取userdetails Redis Key, Spring Security的UserDetails对象
 	 */
-	public static final String AUTH_TOKEN_USERDETAILS_HASH = "auth:token:userdetails";
+	public static final String AUTH_TOKEN_USERDETAILS_HASH = "{auth}:token:userdetails";
 	
 	/**
 	 * 根据token获取authorities, Spring Security的GrantedAuthority对象
 	 */
-	public static final String AUTH_TOKEN_AUTHORITIES_HASH = "auth:token:authorities";
+	public static final String AUTH_TOKEN_AUTHORITIES_HASH = "{auth}:token:authorities";
 	
 	/**
 	 * 根据token获取loginInfo Redis Key, 这是调用login时传入的额外信息, 如设备ID, IP地址等等
 	 */
-	public static final String AUTH_TOKEN_LOGIN_INFO_HASH = "auth:token:login:info";
+	public static final String AUTH_TOKEN_LOGIN_INFO_HASH = "{auth}:token:login:info";
 	
 	/**
 	 * 用户登录时通知的channel
 	 */
-	public static final String AUTH_LOGIN_CHANNEL = "auth:user:login:channel";
+	public static final String AUTH_LOGIN_CHANNEL = "{auth}:user:login:channel";
 	
 	/**
 	 * 用户主动退出登录, 这个channel会发通知
 	 */
-	public static final String AUTH_LOGOUT_CHANNEL = "auth:logout:channel";
+	public static final String AUTH_LOGOUT_CHANNEL = "{auth}:logout:channel";
 	
 	/**
 	 * token过期后, 会publish一条消息到这个channel, 消息体是username
 	 */
-	public static final String AUTH_TOKEN_EXPIRE_CHANNEL = "auth:token:expired:channel";
+	public static final String AUTH_TOKEN_EXPIRE_CHANNEL = "{auth}:token:expired:channel";
 	
 	/**
 	 * 用户异地登录时踢掉前一个登录时发布的频道, 即单点登录下线通知
 	 */
-	public static final String AUTH_SINGLE_SIGNON_CHANNEL = "auth:single:signon:channel";
+	public static final String AUTH_SINGLE_SIGNON_CHANNEL = "{auth}:single:signon:channel";
 
 	/**
 	 * 这是一个哈希的key, field是token, fieldvalue是UsernamePasswordAuthenticationToken序列化之后的JSON串
@@ -94,8 +94,15 @@ public final class AuthUtils {
 	 */
 	private static boolean autoRefresh = propertyReader.getBoolean("redis.auth.auto-refresh", true);
 	
+	/**
+	 * 脚本操作的 {auth} 键群固定归属该 hash tag 的 slot;
+	 * 集群模式必须按路由键加载脚本(scriptLoad 第二参)并让 evalsha 携带同 slot 的 KEYS[1],
+	 * 否则脚本被路由到随机节点、目标节点没有这份 sha, 每次报 NOSCRIPT(评估报告 P0-3)。
+	 */
+	private static final String AUTH_ROUTING_KEY = "{auth}:token:username";
+
 	//private static final String sha1 = JedisUtils.scriptLoad("/lua-scripts/spring-security-auth.lua");
-	private static final String sha1 = JedisUtils.scriptLoad("/lua-scripts/spring-security-multi-auth.lua");
+	private static final String sha1 = JedisUtils.scriptLoad("/lua-scripts/spring-security-multi-auth.lua", AUTH_ROUTING_KEY);
 	
 	/**
 	 * 执行登录操作, 返回登录成功与否, 如果同一账号已经在别处登录, 先对其执行登出, 
@@ -185,8 +192,7 @@ public final class AuthUtils {
 	                                       boolean singleSigin) {
 		Objects.requireNonNull(timeUnit);
 		
-		Long result = JedisUtils.evalsha(sha1,
-				0,
+		Long result = evalWithRetry(
 				"login",
 				username,
 				token,
@@ -213,8 +219,7 @@ public final class AuthUtils {
 	 * @return boolean
 	 */
 	public static <T> boolean logout(String token) {
-		Long result = JedisUtils.evalsha(sha1,
-				0,
+		Long result = evalWithRetry(
 				"logout",
 				token);
 		//登出后再清理一下token:authentication这个哈希
@@ -237,7 +242,7 @@ public final class AuthUtils {
 	 */
 	public static boolean clearExpired() {
 		log.info("Start cleaning token...");
-		Long result = JedisUtils.evalsha(sha1, 0, "clearExpired");
+		Long result = evalWithRetry("clearExpired");
 		return toBoolean(result);
 	}
 	
@@ -253,8 +258,7 @@ public final class AuthUtils {
 	public static String checkToken(String token) {
 		Objects.requireNonNull(token, "token cannot be null");
 		
-		byte[] bytes = JedisUtils.evalsha(sha1,
-				0,
+		byte[] bytes = evalWithRetry(
 				"auth",
 				token,
 				autoRefresh);
@@ -267,7 +271,7 @@ public final class AuthUtils {
 	 * @param username
 	 */
 	public static boolean isLogined(String username) {
-		Long result = JedisUtils.evalsha(sha1, 0, "isLogined", username, autoRefresh);
+		Long result = evalWithRetry("isLogined", username, autoRefresh);
 		return toBoolean(result);
 	}
 	
@@ -323,10 +327,53 @@ public final class AuthUtils {
 	 * @return Set<String>
 	 */
 	public static Set<String> tokens(String username) {
-		String setKey = StringUtils.join("auth:", username, ":token");
+		String setKey = StringUtils.join("{auth}:", username, ":token");
 		return JedisUtils.SET.smembers(setKey);
 	}
 	
+	/**
+	 * 带 NOSCRIPT 自愈的 evalsha: Redis 节点重启/主从切换后脚本缓存丢失时,
+	 * 重新按路由键加载脚本并重试一次。
+	 * <p>
+	 * KEYS 声明 1 个(auth 键群的路由键): 集群下 jedis 依据 KEYS[1] 的 slot 把 EVALSHA
+	 * 定向到脚本所在分片; 单节点/哨兵模式下 KEYS 数量不影响行为。
+	 */
+	@SuppressWarnings("unchecked")
+	private static <T> T evalWithRetry(String operate, Object... args) {
+		Object[] params = new Object[args.length + 2];
+		params[0] = AUTH_ROUTING_KEY;
+		params[1] = operate;
+		System.arraycopy(args, 0, params, 2, args.length);
+		try {
+			return (T) JedisUtils.evalsha(currentSha(), 1, params);
+		} catch (RuntimeException e) {
+			if (!JedisUtils.isNoScript(e)) {
+				throw e;
+			}
+			log.warn("Redis 端登录脚本缓存失效(NOSCRIPT), 重新加载后重试一次");
+			reloadSha();
+			return (T) JedisUtils.evalsha(currentSha(), 1, params);
+		}
+	}
+
+	/**
+	 * 当前使用的脚本 sha; NOSCRIPT 重载后指向新值, 未重载时用类加载时的 sha1
+	 */
+	private static volatile String shaCache;
+
+	private static String currentSha() {
+		String sha = shaCache;
+		if (sha == null) {
+			sha = sha1;
+			shaCache = sha;
+		}
+		return sha;
+	}
+
+	private static synchronized void reloadSha() {
+		shaCache = JedisUtils.scriptLoad("/lua-scripts/spring-security-multi-auth.lua", AUTH_ROUTING_KEY);
+	}
+
 	private static String toString(byte[] bytes) {
 		if (bytes == null) {
 			return null;

@@ -13,8 +13,8 @@ Maven 多模块 Java 基础设施工具库集合（groupId `com.awesomecopilot`�
 | copilot-codec | AES/DES/RSA/哈希/Base64/进制转换/JWT | [→](copilot-codec/readme.md) |
 | copilot-cache | Jedis 封装：JedisUtils 数据结构分组、分布式锁(watchdog)、pub/sub、Lua、Redis 登录认证 | [→](copilot-cache/readme.md) |
 | copilot-orm | Hibernate 6 封装：JpaDao、Criteria fluent、named-sql 动态模板、逻辑删除/多租户拦截 | [→](copilot-orm/readme.md) |
-| copilot-search | ES 7.9.3 transport-client 封装：ElasticUtils 门面 + Query/Aggs/Admin/Mappings 分组 | [→](copilot-search/readme.md) |
-| copilot-search-8.x | 同上的 ES 8 版（elasticsearch-java REST 客户端），API 与 7.x 保持一致 | [→](copilot-search-8.x/readme.md) |
+| copilot-search | ~~ES 7.9.3 transport-client 封装~~ **已废弃**，仅留给 ES 7.x 老集群；新代码用 8.x 版 | [→](copilot-search/readme.md) |
+| copilot-search-8.x | ES 8 版（elasticsearch-java REST 客户端），ElasticUtils 门面与 7.x 同名，**当前主力** | [→](copilot-search-8.x/readme.md) |
 | copilot-networking | Apache HttpClient 版 fluent 请求构建 + IP/域名工具 + 连接池回收 | [→](copilot-networking/README.md) |
 | copilot-validation | 自定义 JSR303 校验器：@Password/@UniqueValue/@MandatoryIf 等 10 个注解 | [→](copilot-validation/README.md) |
 | copilot-web | Web 层组件：全局异常 Advice、RestUtils 输出/下载、XSS 清洗、日期绑定、TraceFilter | [→](copilot-web/README.md) |

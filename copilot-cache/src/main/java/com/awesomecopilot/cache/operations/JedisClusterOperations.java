@@ -402,6 +402,18 @@ public class JedisClusterOperations implements JedisOperations {
 	public String scriptLoad(String script, String sampleKey) {
 		return jedisCluster.scriptLoad(script, sampleKey);
 	}
+
+	/**
+	 * 接口里 (String, Object) 这个重载在集群下必须实现: JedisUtils.loadScript 以 Object 传 sampleKey,
+	 * 静态分派到这里; 若不覆盖会落进接口的默认实现并抛"不支持"(集群脚本加载即失效)。
+	 */
+	@Override
+	public String scriptLoad(String script, Object sampleKey) {
+		if (sampleKey instanceof byte[]) {
+			return jedisCluster.scriptLoad(script, new String((byte[]) sampleKey, java.nio.charset.StandardCharsets.UTF_8));
+		}
+		return jedisCluster.scriptLoad(script, String.valueOf(sampleKey));
+	}
 	
 	@Override
 	public byte[] scriptLoad(byte[] script, byte[] sampleKey) {

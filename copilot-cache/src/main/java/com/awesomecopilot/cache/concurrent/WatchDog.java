@@ -18,8 +18,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 不值得每次加锁新建线程池). 续期只通过 renew.lua 在"锁的 value 仍是本轮写入的 requestId"
  * 时才刷新过期时间, 不会给其他客户端的锁续期.
  * <p>
- * 停止续期只有三种情况: 持锁线程调用 stop()(典型是 unlock)、持锁线程死亡、
- * 锁已过期或已易主(续期返回失败). 另有续期次数硬上限: 达到上限打 error 日志并停止,
+ * 停止续期只有这几种情况: 持锁线程调用 stop()(典型是 unlock)、持锁线程死亡、
+ * 锁已过期或已易主(续期返回 -1/0)、续期请求连续失败达到阈值(网络持续不通).
+ * 单次续期异常(网络抖动/超时)不停止, 下一周期继续尝试——这与 Redisson 看门狗行为一致:
+ * 只有确认"锁没了"或"一直联系不上 Redis"才放弃; 一次抖动不会停止续期, 避免锁在一个租期后过期、
+ * 第二个客户端加锁成功导致两方同时进临界区(评审报告 P0-2).
+ * 另有续期次数硬上限: 达到上限打 error 日志并停止,
  * 锁将在一个租期后自然过期, 防止业务线程泄漏后锁被永久续期.
  * <p>
  * Copyright: (C), 2026/9/22
@@ -57,11 +61,33 @@ final class WatchDog implements Runnable {
 	private static final int MAX_RENEW_COUNT =
 			Integer.getInteger("copilot.cache.lock.watchdog.max-renew-count", 360);
 
+	/**
+	 * 续期连续失败多少次才放弃(JVM 参数 -Dcopilot.cache.lock.watchdog.max-consecutive-errors=N, 默认 3).
+	 * 续期间隔是 租期/3, 连续 3 次失败约等于容忍 1 个租期时长的 Redis 不可用(30 秒租期即约 30 秒),
+	 * 期间锁靠上一轮续期写入的 TTL 维持; 超过阈值则认为 Redis 长时间不可达, 停止续期, 让锁按租期自然过期.
+	 */
+	private static final int MAX_CONSECUTIVE_ERRORS = Math.max(1,
+			Integer.getInteger("copilot.cache.lock.watchdog.max-consecutive-errors", 3));
+
+	/**
+	 * 续期动作的注入点: 测试可替换成抛异常/返回指定值的桩, 生产走 JedisUtils.renewLock
+	 */
+	@FunctionalInterface
+	interface Renewer {
+		int renew(String key, String lockValue, int leaseSeconds) throws Exception;
+	}
+
 	private final String key;
 	private final String lockValue;
 	private final int leaseSeconds;
 	private final Thread holderThread;
+	private final Renewer renewer;
 	private final AtomicInteger counter = new AtomicInteger();
+
+	/**
+	 * 连续续期异常计数: 续期成功一次即清零; 达到 MAX_CONSECUTIVE_ERRORS 才停止本轮看护
+	 */
+	private final AtomicInteger consecutiveErrors = new AtomicInteger();
 
 	/**
 	 * stop() 可能由持锁线程或看门狗任务线程自己调用, volatile 保证任务线程及时可见
@@ -73,10 +99,19 @@ final class WatchDog implements Runnable {
 	 * 必须在持锁线程上构造: 构造时捕获当前线程作为被看护线程
 	 */
 	WatchDog(String key, String lockValue, int leaseSeconds) {
+		this(key, lockValue, leaseSeconds,
+				(k, v, lease) -> JedisUtils.renewLock(k, v, lease, TimeUnit.SECONDS));
+	}
+
+	/**
+	 * 测试用的续期动作注入构造
+	 */
+	WatchDog(String key, String lockValue, int leaseSeconds, Renewer renewer) {
 		this.key = key;
 		this.lockValue = lockValue;
 		this.leaseSeconds = leaseSeconds;
 		this.holderThread = Thread.currentThread();
+		this.renewer = renewer;
 	}
 
 	/**
@@ -111,7 +146,8 @@ final class WatchDog implements Runnable {
 				return;
 			}
 			// renew.lua 区分三种结果: 1=续期成功; -1=key 已不存在(锁已过期); 0=被别的客户端持有(已易主)
-			int renewed = JedisUtils.renewLock(key, lockValue, leaseSeconds, TimeUnit.SECONDS);
+			int renewed = renewer.renew(key, lockValue, leaseSeconds);
+			consecutiveErrors.set(0);
 			if (renewed == -1) {
 				log.warn("续期失败: 锁已过期(key 不存在了), 停止续期, key={}, 本轮任务value={}", key, lockValue);
 				stop();
@@ -123,8 +159,19 @@ final class WatchDog implements Runnable {
 						counter.get(), key, leaseSeconds, lockValue);
 			}
 		} catch (Exception e) {
-			log.error("看门狗续期异常, key={}", key, e);
-			stop();
+			// 可重试路径(P0-2): 网络抖动/socket 超时/连接池暂时借不到连接等异常不代表锁已丢失。
+			// 原实现在这里直接 stop(), 一次抖动就让锁在一个租期后自然过期、被第二个客户端抢走。
+			// 修复: 连续失败达到阈值(默认3次, 约等于 2 个租期的不可用时长)才停止;
+			// 单次异常只记日志, 锁靠上一轮续期写入的 TTL 继续维持, 下一周期再试。
+			int errors = consecutiveErrors.incrementAndGet();
+			if (errors >= MAX_CONSECUTIVE_ERRORS) {
+				log.error("看门狗连续 {} 次续期异常, 判定 Redis 长时间不可达, 停止续期(锁将在一个租期后过期), key={}",
+						errors, key, e);
+				stop();
+			} else {
+				log.warn("看门狗续期异常(第 {} 次, 连续失败达 {} 次才停止), 下一周期继续尝试, key={}: {}",
+						errors, MAX_CONSECUTIVE_ERRORS, key, e.getMessage());
+			}
 		}
 	}
 
@@ -143,5 +190,12 @@ final class WatchDog implements Runnable {
 			boolean cancelled = f.cancel(false);
 			log.debug("取消续期任务 key={}, cancel返回={}", key, cancelled);
 		}
+	}
+
+	/**
+	 * 本轮看护是否已停止(供测试与诊断使用)
+	 */
+	boolean isStopped() {
+		return stopped;
 	}
 }

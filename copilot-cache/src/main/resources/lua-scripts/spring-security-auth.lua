@@ -1,4 +1,7 @@
 --[[
+【已废弃 2026-09-24】本脚本已无加载点, 保留仅供历史参考; 现行登录态脚本是 spring-security-multi-auth.lua
+        (键统一 {auth} hash tag + KEYS[1] 路由, 集群/单节点通用)。
+
 调用方式：EVAL(script, 0, operate, username, token, expires, userDetails, authorities)
 
 实现功能：单点登录, 指定时间内token自动过期

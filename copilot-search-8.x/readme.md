@@ -1,8 +1,8 @@
 # copilot-search-8.x
 
-Elasticsearch **8.x** 客户端封装（包名 `com.awesomecopilot.search8x`），底层官方 `co.elastic.clients:elasticsearch-java`（REST 协议）。它是 `copilot-search`（transport-client 7.9.3 版）的迁移目标：**`ElasticUtils` 门面与 API 分组和 7.x 版保持一致**，让原有业务代码/测试尽量少改。
+Elasticsearch **8.x** 客户端封装（包名 `com.awesomecopilot.search8x`），底层官方 `co.elastic.clients:elasticsearch-java`（REST 协议）。它是 `copilot-search`（transport-client 7.9.3 版，**已废弃**）的替代品：**`ElasticUtils` 门面与 API 分组和 7.x 版保持一致**，让原有业务代码/测试尽量少改。
 
-> ES 8 已彻底移除 transport-client，新集群一律用本模块。7.x 老集群继续用 `copilot-search`。
+> 本模块是 Elasticsearch 集成的当前主力，所有新代码一律用 `com.awesomecopilot.search8x.ElasticUtils`。`copilot-search` 仅为仍在跑 ES 7.x 集群的老项目保留。
 
 # 一 能力总览（与 copilot-search 同构）
 

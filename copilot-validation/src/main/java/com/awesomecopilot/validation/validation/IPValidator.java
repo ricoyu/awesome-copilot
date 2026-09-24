@@ -51,19 +51,20 @@ public class IPValidator implements ConstraintValidator<IP, String> {
 		}
 		
 		boolean isValid = false;
-		
+
 		if (category == IPCategory.IP_V4) {
 			isValid = IPUtils.isValidIpV4(ip);
-		}
-		if (category == IPCategory.IP_V6) {
+		} else if (category == IPCategory.IP_V6) {
 			isValid = IPUtils.isValidIpV6(ip);
 		} else {
+			// UN_RESTRICTED 接受两种地址族; IPCategory 若新增常量, 需在此显式补分支而不是落到这里
 			isValid = IPUtils.isValidIpV4(ip) || IPUtils.isValidIpV6(ip);
 		}
 		
 		if (!isValid) {
 			context.disableDefaultConstraintViolation();
-			String msg = I18N.i18nMessage(message);
+			// 用带 defaultMessage 的重载: 消息源里查不到该 code 时返回默认消息, 而不是抛 NoSuchMessageException
+			String msg = I18N.i18nMessage(message, "IP 地址不合法");
 			context.buildConstraintViolationWithTemplate(ofNullable(msg).orElse("IP 地址不合法"))
 					.addConstraintViolation();
 		}

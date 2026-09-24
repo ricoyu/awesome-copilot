@@ -17,7 +17,7 @@
 | 注解 | 校验器 | 规则 |
 |------|--------|------|
 | `@AllowedValues` | AllowedValueValidator | 字段值必须在允许集合内（支持普通类型 + 枚举） |
-| `@IP` | IPValidator | 合法 IP 地址（`IPCategory` 枚举区分 v4/v6） |
+| `@IP` | IPValidator | 合法 IP 地址（`IPCategory` 枚举区分 v4/v6）。注意：2026-09-24 前版本标 IP_V4 会误放行 IPv6（if 未写成 else if），回归见 IPValidatorCategoryTest |
 | `@MandatoryIf` / `@MandatoryIfs` | MandatoryIfValidator | 当 referenceField == referenceValue 时 mandatoryField 必填 |
 | `@Mobile` | MobileValidator | 手机号 |
 | `@Password` | PasswordValidator | 强密码（大小写、特殊字符、长度等主流安全规则） |

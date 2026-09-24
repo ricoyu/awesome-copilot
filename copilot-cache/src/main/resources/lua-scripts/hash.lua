@@ -3,28 +3,29 @@
   
   支持Hash field 级别的细粒度过期时间控制
   
+-- zset 键由调用方(Java JedisUtils.HASH)通过 KEYS[2] 传入, 派生格式保证与 hash key 在集群下同 slot:
+--   key 不含 {}: {<key>}:jedis_utils:__timeout__set (整个 key 作 hash tag)
+--   key 已含非空 tag: {<tag>}:jedis_utils:__timeout__set:<key> (复用原 tag; 首对花括号为空的键无法派生同 slot 键, 见 JedisUtils javadoc 限制说明)
  1.给HASH设置值的时候分两步操作  
   - hset key field value, 给指定的field设置值  redis.call("HSET", key, field, value)
-  - zadd jedis_utils__timeout_set:{key} ch currentMilis+timeout field, 设置一个ZSET, element是field, score是field过期的timestamp
+  - zadd KEYS[2] ch currentMilis+timeout field, 设置一个ZSET, element是field, score是field过期的timestamp
     local currentTimestamp = redis.call("TIME")[1] -- 得到当前时间,单位是秒
-    redis.call("ZADD", jedis_utils__timeout_set:{key}, currentTimestamp + expires, field)
-    eval "return redis.call('zadd', KEYS[1], ARGV[1], ARGV[2])" 1 jedis_utils__timeout_set:usershash 3 xuehua
-    eval "return redis.call('zscore', KEYS[1], ARGV[1])" 1 jedis_utils__timeout_set:usershash xuehua
+    redis.call("ZADD", KEYS[2], currentTimestamp + expires, field)
     zadd ch 作用: field 不存在则插入, 同时设置score, 否则更新其score
   
  2.获取hash时的操作
-  zscore jedis_utils:__timeout__set:{key} field 获取ZSET中成员field的score
+  zscore KEYS[2] field 获取ZSET中成员field的score
   - 返回nil 表示这个key没有设置过期时间
           直接 hget key field
   - 返回score
     - score >= current_timestamp ?
                - 是(表示HASH的field已经过期)
-                 1)zrem jedis_utils:__timeout__set:{key} field  -- 从ZSET中移除field
+                 1)zrem KEYS[2] field  -- 从ZSET中移除field
                  2)hdel key field -- 从HASH中删除field
                - 否
                  hget key field
  3.显式删除 field
-   zrem jedis_utils:__timeout__set:{key} field1 field2 先删zset中的member
+   zrem KEYS[2] field1 field2 先删zset中的member
    hdel key field1 field2...
           返回删除的field数量     
    
@@ -83,7 +84,7 @@ end
   - 返回score
     - score >= current_timestamp ?
                - 是(表示HASH的field已经过期)
-                 1)zrem jedis_utils:__timeout__set:{key} field  -- 从ZSET中移除field
+                 1)zrem KEYS[2] field  -- 从ZSET中移除field
                  2)hdel key field -- 从HASH中删除field
                - 否
                  hget key field
