@@ -66,6 +66,8 @@ public abstract class AbstractOrmIntegrationTest {
 		seedEm.createNativeQuery("delete from book").executeUpdate();
 		seedEm.createNativeQuery("delete from product").executeUpdate();
 		seedEm.createNativeQuery("delete from user_order").executeUpdate();
+		seedEm.createNativeQuery("delete from shelf_item").executeUpdate();
+		seedEm.createNativeQuery("delete from shelf").executeUpdate();
 		seedEm.getTransaction().commit();
 	}
 

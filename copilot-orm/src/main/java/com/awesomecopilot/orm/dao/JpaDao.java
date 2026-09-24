@@ -315,18 +315,81 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			return emptyList();
 		}
 		List<T> results = new ArrayList<>();
-		for (T entity : entities) {
+		for (int i = 0, length = entities.size(); i < length; i++) {
+			T entity = entities.get(i);
 			Objects.requireNonNull(entity, "entity cannot be null");
 			try {
+				// 每批第一条前先做一次 IN 预热(评审报告 P1-9): 把本批 id 对应的实体
+				// 一次性读进持久化上下文, 后续 em.merge 命中已管理实例, 不再逐条 SELECT。
+				// 200 条的 SELECT 次数从 200 降到批数级别。
+				if (i % batchSize == 0) {
+					prewarmForMerge(entities, i, Math.min(i + batchSize, length));
+				}
 				results.add(em().merge(entity));
 			} catch (Throwable e) {
 				String msg = format("Entity: {0}", JsonUtils.toPrettyJson(entity));
 				log.error(msg, e);
 				throw new PersistenceException(e);
 			}
+			if (i > 0 && ((i + 1) % batchSize == 0)) {
+				flush();
+				// 每批 flush 后把受管副本逐出持久化上下文(I-12 同族): 与 persist(List)
+				// 一致, 防止大批量 merge 时受管实例线性膨胀占满堆。
+				detachBatch(results, i + 1 - batchSize, i);
+			}
 		}
 		flush();
+		int remainder = entities.size() % batchSize;
+		if (remainder != 0) {
+			detachBatch(results, results.size() - remainder, results.size() - 1);
+		}
 		return results;
+	}
+
+	/** 把 results[from..to] 的受管合并副本逐出持久化上下文 */
+	private <T> void detachBatch(List<T> results, int from, int to) {
+		for (int j = from; j <= to; j++) {
+			em().detach(results.get(j));
+		}
+	}
+
+	/**
+	 * 批量 merge 预热: 按 [from,to) 区间收集非空主键, 一条 IN 查询把已存在实体
+	 * 加载成受管实例。主键为 null 的(新记录)跳过——merge 对 null id 会走 persist,
+	 * 本来就不 SELECT。
+	 */
+	private <T> void prewarmForMerge(List<T> entities, int from, int to) {
+		Class<?> entityClass = null;
+		List<Object> ids = new ArrayList<>();
+		String idAttribute = null;
+		for (int i = from; i < to; i++) {
+			T entity = entities.get(i);
+			if (entity == null) {
+				continue;
+			}
+			if (entityClass == null) {
+				entityClass = entity.getClass();
+				idAttribute = resolveIdAttributeName(entityClass);
+			} else if (!entityClass.equals(entity.getClass())) {
+				// 批内混了不同实体类: 放弃预热, 退回逐条 merge 的原生行为(正确性优先)
+				return;
+			}
+			Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entityClass, Id.class);
+			Object id = idField == null ? null : ReflectionUtils.getFieldValue(idField, entity);
+			if (id != null) {
+				ids.add(id);
+			}
+		}
+		if (ids.isEmpty()) {
+			return;
+		}
+		try {
+			String jpql = "select e from " + entityClass.getSimpleName() + " e where e." + idAttribute + " in :ids";
+			em().createQuery(jpql).setParameter("ids", ids).getResultList();
+		} catch (RuntimeException e) {
+			// 预热只是优化, 失败不影响正确性——退回逐条 merge(各自 SELECT)
+			log.debug("merge 预热查询失败, 回退逐条 merge: {}", e.getMessage());
+		}
 	}
 
 	@Override
@@ -381,6 +444,9 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			 */
 			if (i > 0 && ((i + 1) % batchSize == 0)) {
 				flush();
+				// 评审报告 P1-9: 与 persist(List) 的 I-12 修复同族——旧实现每批只 flush
+				// 不 detach, 大批量 save 时受管实体线性膨胀。detach 后本批脏检查释放。
+				detachBatch(results, i + 1 - batchSize, i);
 			}
 		}
 		/*
@@ -389,6 +455,10 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		 * objects remain in the persistence context until it is closed.
 		 */
 		flush();
+		int remainder = entities.size() % batchSize;
+		if (remainder != 0) {
+			detachBatch(results, results.size() - remainder, results.size() - 1);
+		}
 		return results;
 	}
 
@@ -941,15 +1011,50 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	public <T> T findOneImpl(Class<T> entityClass, String propertyName, Object value) {
-		List<T> resultList = null;
 		JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass);
 		if (value == null) {
 			jpaCriteriaQuery.isNull(propertyName);
 		} else {
 			jpaCriteriaQuery.eq(propertyName, value);
 		}
-		resultList = jpaCriteriaQuery.list();
+		// 评审报告 M-4: 旧实现全量 list() 再 get(0), 命中 N 条就把 N 条全拉进内存再丢弃
+		jpaCriteriaQuery.limit(1);
+		List<T> resultList = jpaCriteriaQuery.list();
 		return resultList.isEmpty() ? null : resultList.get(0);
+	}
+
+	/**
+	 * 按属性查唯一一条(评审报告 M-4 新增): 命中多条抛
+	 * {@link jakarta.persistence.NonUniqueResultException}, 不悄悄取第一条。
+	 * SQL 最多取 2 行, 判唯一不需要全量加载。
+	 */
+	@Override
+	public <T> T findUnique(Class<T> entityClass, String propertyName, Object value) {
+		try {
+			return findUniqueImpl(entityClass, propertyName, value);
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
+	}
+
+	public <T> T findUniqueImpl(Class<T> entityClass, String propertyName, Object value) {
+		JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass);
+		if (value == null) {
+			jpaCriteriaQuery.isNull(propertyName);
+		} else {
+			jpaCriteriaQuery.eq(propertyName, value);
+		}
+		jpaCriteriaQuery.limit(2);
+		List<T> resultList = jpaCriteriaQuery.list();
+		if (resultList.isEmpty()) {
+			return null;
+		}
+		if (resultList.size() > 1) {
+			throw new jakarta.persistence.NonUniqueResultException(
+					"findUnique 条件命中 " + resultList.size() + " 条以上, 实体: " + entityClass.getName()
+							+ ", 属性: " + propertyName + "=" + value + "; 若确需多条取一请用 findOne()");
+		}
+		return resultList.get(0);
 	}
 
 	/**
@@ -963,6 +1068,8 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 			} else {
 				jpaCriteriaQuery.eq(propertyName, value);
 			}
+			// 评审报告 M-4: 与 findOneImpl 同, 带 1 行限制, 不全量拉
+			jpaCriteriaQuery.limit(1);
 			List<T> resultList = jpaCriteriaQuery.list();
 			return resultList.isEmpty() ? null : resultList.get(0);
 		} finally {

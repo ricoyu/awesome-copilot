@@ -353,16 +353,45 @@ public class CriteriaQueryBuilder {
 	}
 	
 	/**
-	 * 返回一条数据, 如果查到多条数据，则返回第一条, 不会报错
+	 * 返回一条数据, 如果查到多条数据，则返回第一条, 不会报错。
+	 * SQL 带 1 行限制(fetch first), 不会把命中多条全部加载进内存（评审报告 M-4）。
 	 *
 	 * @param <T>
 	 * @return T
 	 */
 	public <T> T findOne() {
 		try {
+			jpaCriteriaQuery.limit(1);
 			List results = jpaCriteriaQuery.list();
 			if (results.isEmpty()) {
 				return null;
+			}
+			return (T) results.get(0);
+		} finally {
+			entityManagerHolder.closeIfNeeded();
+		}
+	}
+
+	/**
+	 * 返回唯一一条数据(评审报告 M-4 新增): 命中多条抛
+	 * {@link jakarta.persistence.NonUniqueResultException}, 把"唯一约束失效"
+	 * 显式暴露出来, 不像 findOne 那样悄悄取第一条。SQL 最多取 2 行, 判唯一
+	 * 不需要全量加载。
+	 *
+	 * @param <T>
+	 * @return T
+	 */
+	public <T> T findUnique() {
+		try {
+			jpaCriteriaQuery.limit(2);
+			List results = jpaCriteriaQuery.list();
+			if (results.isEmpty()) {
+				return null;
+			}
+			if (results.size() > 1) {
+				throw new jakarta.persistence.NonUniqueResultException(
+						"findUnique 条件命中 " + results.size() + " 条以上, 实体: " + entityClass.getName()
+								+ "; 若确需多条取一请用 findOne()");
 			}
 			return (T) results.get(0);
 		} finally {

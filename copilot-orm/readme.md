@@ -543,6 +543,21 @@ JPA的entity对象的一些简单操作API
   public <T> T findUniqueByProperty(Class<T> entityClass, String propertyName, Object value, OrderBean... orders);
   ```
 
+* **查唯一一条（2026-09-24 新增，评审报告 M-4）**：命中多条直接抛
+  `NonUniqueResultException`，零条返回 null。业务上"按唯一键查询"场景用它，
+  不要用 `findOne`（多条时悄悄取第一条）：
+
+  ```java
+  public <T> T findUnique(Class<T> entityClass, String propertyName, Object value);
+  // CriteriaQueryBuilder 变体:
+  // dao.query(Book.class).eq("isbn", isbn).findUnique();
+  ```
+
+* **findOne 不再全量拉取（行为修正，评审报告 M-4）**：`findOne` 系列
+  （`CriteriaQueryBuilder.findOne()` / `dao.findOne(Class,prop,value)`）旧实现是
+  全表条件命中 N 条就 `list()` 全部加载再取第一条；现在 SQL 带 `fetch first 1`
+  行数限制，只取 1 行。"多条取第一条不报错"的旧语义保持不变。
+
 * 根据日期区间查找
 
   ```java

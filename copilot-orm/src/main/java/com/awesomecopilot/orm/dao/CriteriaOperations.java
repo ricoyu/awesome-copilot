@@ -28,6 +28,12 @@ public interface CriteriaOperations {
 	public <T> T findOne(Class<T> entityClass, String propertyName, Object value);
 
 	/**
+	 * 按属性查唯一一条(评审报告 M-4): 命中多条抛 NonUniqueResultException,
+	 * 零条返回 null。业务上"按唯一键查询"场景用它, 不用 findOne 的悄悄取第一条。
+	 */
+	public <T> T findUnique(Class<T> entityClass, String propertyName, Object value);
+
+	/**
 	 * 根据某个属性查找
 	 * @param entityClass 实体类
 	 * @param propertyName 实体类属性名, 不是数据库字段名

@@ -541,6 +541,33 @@ public class JPACriteriaQuery<T> implements Serializable {
 	}
 
 	/**
+	 * 关联集合上按属性 like 过滤(评审报告 I-10 配套 API)。
+	 * <p>
+	 * 一对多集合 join 会让 SQL 行倍增(一个主表记录匹配 N 条子表记录出现 N 行),
+	 * 所以此方法同步做三件事: ①主查询与 count 查询<b>各自</b>创建 join 并挂条件
+	 * (Predicate 不能跨查询复用, 复用会报 Already registered a copy——本类字段区
+	 * 的 countPredicates 注释就是历史教训); ②主查询实体去重(distinct);
+	 * ③分页 count 改用 countDistinct(见 list()), 保证 totalCount 与列表条数一致。
+	 *
+	 * @param association  主实体上的集合属性名(如 "items")
+	 * @param propertyName 关联实体上的属性名(如 "name")
+	 * @param value        like 值, 不含 % 时自动加 %value%
+	 */
+	public JPACriteriaQuery<T> joinLike(String association, String propertyName, String value) {
+		if (isNullOrEmpty(value)) {
+			return this;
+		}
+		if (value.indexOf("%") < 0) {
+			value = "%" + value + "%";
+		}
+		this.predicates.add(criteriaBuilder.like((Expression) root.join(association).get(propertyName), value));
+		this.countPredicates.add(criteriaBuilder.like((Expression) countRoot.join(association).get(propertyName), value));
+		// 行倍增由主查询 distinct 去重, count 侧在 list() 里同步走 countDistinct
+		this.criteriaQuery.distinct(true);
+		return this;
+	}
+
+	/**
 	 * 别看这个方法名是list(), 分页查询也是走这个方法哦
 	 * @return
 	 */
@@ -552,8 +579,13 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 			// 获取总记录数
 			countQuery.where(allPredicates(countPredicates, countRoot));
-			// 6. 设置SELECT子句（COUNT）
-			countQuery.select(criteriaBuilder.count(countRoot));
+			// 设置SELECT子句（COUNT）。评审报告 I-10: 主查询 distinct(含 joinLike 自动加的
+			// 去重)时 count 必须用 countDistinct, 否则按 join 后物理行统计, totalCount 偏大、页数算错。
+			if (criteriaQuery.isDistinct()) {
+				countQuery.select(criteriaBuilder.countDistinct(countRoot));
+			} else {
+				countQuery.select(criteriaBuilder.count(countRoot));
+			}
 
 			// 7. 执行查询并返回结果
 			Long totalCount = entityManager.createQuery(countQuery).getSingleResult();

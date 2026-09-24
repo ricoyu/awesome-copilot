@@ -4,6 +4,8 @@
     <class>com.awesomecopilot.orm.it.entity.Book</class>
     <class>com.awesomecopilot.orm.it.entity.Product</class>
     <class>com.awesomecopilot.orm.it.entity.UserOrder</class>
+    <class>com.awesomecopilot.orm.it.entity.Shelf</class>
+    <class>com.awesomecopilot.orm.it.entity.ShelfItem</class>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ormtest;DB_CLOSE_DELAY=-1"/>
@@ -11,6 +13,8 @@
       <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
       <property name="hibernate.show_sql" value="true"/>
+      <!-- 测试用 SQL 探针(默认关闭收集, 见 SqlProbe) -->
+      <property name="hibernate.session_factory.statement_inspector" value="com.awesomecopilot.orm.it.SqlProbe"/>
       <property name="hibernate.format_sql" value="true"/>
       <!-- 避免加载 hibernate-validator 时缺 jakarta.el 报错 -->
       <property name="jakarta.persistence.validation.mode" value="none"/>
