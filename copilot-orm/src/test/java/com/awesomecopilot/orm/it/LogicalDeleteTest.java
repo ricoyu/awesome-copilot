@@ -12,9 +12,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 逻辑删除场景: logicalDeleteEnabled=true 时的行为。
  * <p>
- * 注意: 框架的逻辑删除过滤目前只覆盖 find / findIn / findBetween / deleteByPK 几条路径,
- * findAll 和 query(Class) criteria 查询暂未接入过滤(那是已知的不一致, 不是本测试要断言的行为),
- * 所以这里用原生 SQL 直接数物理记录, 绕开 findAll, 聚焦"已实现的逻辑删除行为"是否稳定。
+ * 2026-09-24 起过滤已接入全部 criteria 查询入口(find/findAll/findList/findOne/findIn/
+ * findBetween/findIsNull/query(Class) 构建器, 评审报告 P0-7); 本类保留"用原生 SQL 直接数
+ * 物理记录"的写法作为物理层对照, 入口全覆盖的断言见 LogicalDeleteAllEntriesTest 与
+ * LogicalDeleteIncludeDeletedTest。
  *
  * @author Rico Yu
  */
@@ -52,7 +53,7 @@ class LogicalDeleteTest extends AbstractOrmIntegrationTest {
 		seedEm.getTransaction().commit();
 	}
 
-	/** 直接数物理记录数, 绕开 findAll(它不过滤 deleted) */
+	/** 直接数物理记录数, 与框架查询返回的结果做对照 */
 	private long countPhysical() {
 		return ((Number) seedEm.createNativeQuery("select count(*) from book").getSingleResult()).longValue();
 	}

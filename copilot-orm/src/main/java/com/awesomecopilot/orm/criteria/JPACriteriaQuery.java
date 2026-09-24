@@ -74,6 +74,16 @@ public class JPACriteriaQuery<T> implements Serializable {
 
 	private CriteriaBuilder criteriaBuilder;
 
+	/**
+	 * 逻辑删除统一过滤(评审报告 P0-7): 非 null 时 list()/分页count 在
+	 * fillUpCriterias 执行期用本查询自己的 criteriaBuilder 追加该谓词。
+	 * 只传字段名+值不传 Predicate, 避免跨 EntityManager 造谓词的未定义行为。
+	 */
+	private String logicalDeleteField;
+	private Object logicalDeleteNotDeletedValue;
+	/** true 时即使配置了逻辑删除过滤也不追加(includeDeleted 逃生门) */
+	private boolean includeDeleted = false;
+
 	// 排序方式列表
 	private List<Order> orders;
 
@@ -107,11 +117,30 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @return
 	 */
 	public static <T> JPACriteriaQuery<T> from(Class<T> clazz, EntityManager entityManager, boolean useQueryCache) {
+		return from(clazz, entityManager, useQueryCache, null, null);
+	}
+
+	/**
+	 * @param logicalDeleteField       逻辑删除字段名, null=该实体不参与过滤
+	 * @param logicalDeleteNotDeletedValue 未删除标记值(按字段类型推导: Boolean→false, Integer→0)
+	 */
+	public static <T> JPACriteriaQuery<T> from(Class<T> clazz, EntityManager entityManager, boolean useQueryCache,
+	                                           String logicalDeleteField, Object logicalDeleteNotDeletedValue) {
 		JPACriteriaQuery<T> jpaCriteriaQuery = new JPACriteriaQuery<T>(clazz, entityManager);
+		jpaCriteriaQuery.logicalDeleteField = logicalDeleteField;
+		jpaCriteriaQuery.logicalDeleteNotDeletedValue = logicalDeleteNotDeletedValue;
 		if (useQueryCache) {
 			jpaCriteriaQuery.setHint(HINT_QUERY_CACHE, true);
 		}
 		return jpaCriteriaQuery;
+	}
+
+	/**
+	 * includeDeleted 逃生门: true 时本次查询不追加逻辑删除过滤
+	 */
+	public JPACriteriaQuery<T> includeDeleted(boolean includeDeleted) {
+		this.includeDeleted = includeDeleted;
+		return this;
 	}
 
 	/**
@@ -378,7 +407,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * @return JPA离线查询
 	 */
 	public CriteriaQuery<T> fillUpCriterias() {
-		criteriaQuery.select(root).where(predicates.toArray(new Predicate[0]));
+		criteriaQuery.select(root).where(allPredicates(predicates, root));
 		if (!isNullOrEmpty(groupBy)) {
 			criteriaQuery.groupBy(root.get(groupBy));
 		}
@@ -522,7 +551,7 @@ public class JPACriteriaQuery<T> implements Serializable {
 					.setMaxResults(page.getMaxResults());
 
 			// 获取总记录数
-			countQuery.where(countPredicates.toArray(new Predicate[countPredicates.size()]));
+			countQuery.where(allPredicates(countPredicates, countRoot));
 			// 6. 设置SELECT子句（COUNT）
 			countQuery.select(criteriaBuilder.count(countRoot));
 
@@ -553,6 +582,18 @@ public class JPACriteriaQuery<T> implements Serializable {
 			logger.error("Error executing JPA criteria query for entity: " + clazz.getSimpleName(), e);
 			throw new JPACriteriaQueryException(e);
 		}
+	}
+
+	/**
+	 * 业务谓词 + 逻辑删除谓词(未设 includeDeleted 且配置了过滤时)合并。
+	 * 逻辑删除谓词在这里用本查询自己的 builder/root 现造, 保证同一 EntityManager 会话内合法。
+	 */
+	private Predicate[] allPredicates(List<Predicate> businessPredicates, Root<?> targetRoot) {
+		List<Predicate> all = new ArrayList<>(businessPredicates);
+		if (logicalDeleteField != null && !includeDeleted) {
+			all.add(criteriaBuilder.equal(targetRoot.get(logicalDeleteField), logicalDeleteNotDeletedValue));
+		}
+		return all.toArray(new Predicate[0]);
 	}
 
 	private boolean isNullOrEmpty(Object value) {

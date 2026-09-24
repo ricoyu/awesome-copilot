@@ -560,9 +560,30 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return idFields.iterator().next().getName();
 	}
 
+	/**
+	 * 该实体的逻辑删除规格: 开关关闭返回 null; 否则返回 [字段名, 未删除标记值(按字段类型推导)]。
+	 * 评审报告 P0-7: 所有 criteria 入口统一走 JPACriteriaQuery.from(...) 传入本规格,
+	 * 由 fillUpCriterias 执行期追加谓词(列表与分页 count 同一开关控制)。
+	 */
+	private Object[] logicalDeleteSpec(Class<?> entityClass) {
+		if (!logicalDeleteEnabled) {
+			return null;
+		}
+		// 评审 P0-7 修复(独立评审 F2): 实体没有该字段时视为不参与过滤,
+		// 否则谓词 eq("deleted",...) 会在 Hibernate 解析属性时直接抛 PathElementException
+		if (ReflectionUtils.findField(logicalDeleteField, entityClass) == null) {
+			return null;
+		}
+		return new Object[]{logicalDeleteField, resolveNotDeletedValue(entityClass)};
+	}
+
 	private void applyLogicalDeleteFilter(JPACriteriaQuery<?> query, Class<?> entityClass,
 	                                      boolean includeDeleted) {
 		if (!logicalDeleteEnabled || includeDeleted) {
+			return;
+		}
+		// 同上: 字段不存在的实体跳过过滤(评审 F2)
+		if (ReflectionUtils.findField(logicalDeleteField, entityClass) == null) {
 			return;
 		}
 		query.eq(logicalDeleteField, resolveNotDeletedValue(entityClass));
@@ -832,10 +853,44 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 	}
 
+	/**
+
+	 * includeDeleted=true 时放行逻辑删除记录(逃生门, 评审报告 P0-7)
+
+	 */
+
+	public <T> List<T> findList(Class<T> entityClass, String propertyName, Object value,
+	                            boolean includeDeleted) {
+		Objects.requireNonNull(propertyName, "propertyName cannot be null!");
+		try {
+
+			JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass).includeDeleted(includeDeleted);
+
+			if (value == null) {
+
+				jpaCriteriaQuery.isNull(propertyName);
+
+			} else {
+
+				jpaCriteriaQuery.eq(propertyName, value);
+
+			}
+
+			return jpaCriteriaQuery.list();
+
+		} finally {
+
+			releaseEntityManagerIfIdle();
+
+		}
+
+	}
+
+
+
 	public <T> List<T> findListImpl(Class<T> entityClass, String propertyName, Object value) {
 		Objects.requireNonNull(propertyName, "propertyName cannot be null!");
-		JPACriteriaQuery<T> jpaCriteriaQuery =
-				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
+		JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass);
 		if (value == null) {
 			jpaCriteriaQuery.isNull(propertyName);
 		} else {
@@ -860,9 +915,20 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return sqlQueryBuilder;
 	}
 
+	/** 按实体逻辑删除规格创建 criteria 查询(评审报告 P0-7 统一入口) */
+	private <T> JPACriteriaQuery<T> filteredFrom(Class<T> entityClass) {
+		Object[] spec = logicalDeleteSpec(entityClass);
+		return spec == null
+				? JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
+				: JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache,
+					(String) spec[0], spec[1]);
+	}
+
 	@Override
 	public CriteriaQueryBuilder query(Class entityClass) {
-		return new CriteriaQueryBuilder(entityManager, entityManagerFactory, entityClass);
+		Object[] spec = logicalDeleteSpec(entityClass);
+		return new CriteriaQueryBuilder(entityManager, entityManagerFactory, entityClass,
+				spec == null ? null : (String) spec[0], spec == null ? null : spec[1]);
 	}
 
 	@Override
@@ -876,8 +942,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	public <T> T findOneImpl(Class<T> entityClass, String propertyName, Object value) {
 		List<T> resultList = null;
-		JPACriteriaQuery<T> jpaCriteriaQuery =
-				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
+		JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass);
 		if (value == null) {
 			jpaCriteriaQuery.isNull(propertyName);
 		} else {
@@ -885,6 +950,24 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		resultList = jpaCriteriaQuery.list();
 		return resultList.isEmpty() ? null : resultList.get(0);
+	}
+
+	/**
+	 * includeDeleted=true 时放行逻辑删除记录(逃生门)
+	 */
+	public <T> T findOne(Class<T> entityClass, String propertyName, Object value, boolean includeDeleted) {
+		try {
+			JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass).includeDeleted(includeDeleted);
+			if (value == null) {
+				jpaCriteriaQuery.isNull(propertyName);
+			} else {
+				jpaCriteriaQuery.eq(propertyName, value);
+			}
+			List<T> resultList = jpaCriteriaQuery.list();
+			return resultList.isEmpty() ? null : resultList.get(0);
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 	@Override
@@ -903,9 +986,16 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		String idAttribute = resolveIdAttributeName(clazz);
 		jakarta.persistence.criteria.Predicate idPredicate =
 				criteriaBuilder.equal(root.get(idAttribute), id);
-		criteriaQuery.select(root)
-				.where(idPredicate)
-				.distinct(true);
+		// 评审报告 P0-7: findOne(Class,PK) 与 findImpl 用同一组过滤条件, 默认过滤逻辑删除记录
+		// (独立评审 F2: 走 logicalDeleteSpec 判定, 实体无该字段时不加谓词)
+		Object[] findOneSpec = logicalDeleteSpec(clazz);
+		if (findOneSpec != null) {
+			criteriaQuery.select(root)
+					.where(idPredicate, criteriaBuilder.equal(root.get((String) findOneSpec[0]), findOneSpec[1]))
+					.distinct(true);
+		} else {
+			criteriaQuery.select(root).where(idPredicate).distinct(true);
+		}
 		TypedQuery<T> query = em().createQuery(criteriaQuery);
 		if (hibernateUseQueryCache) {
 			query.setHint(HINT_QUERY_CACHE, true);
@@ -956,8 +1046,15 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	public <T> List<T> findAllImpl(Class<T> entityClass) {
-		CriteriaQuery<T> criteriaQuery = em().getCriteriaBuilder().createQuery(entityClass);
-		criteriaQuery.from(entityClass);
+		var criteriaBuilder = em().getCriteriaBuilder();
+		CriteriaQuery<T> criteriaQuery = criteriaBuilder.createQuery(entityClass);
+		var root = criteriaQuery.from(entityClass);
+		// 评审报告 P0-7: findAll 是列表查询主入口, 默认必须过滤逻辑删除记录
+		// (独立评审 F2: 走 logicalDeleteSpec 判定, 实体无该字段时不加谓词)
+		Object[] spec = logicalDeleteSpec(entityClass);
+		if (spec != null) {
+			criteriaQuery.where(criteriaBuilder.equal(root.get((String) spec[0]), spec[1]));
+		}
 		TypedQuery<T> query = em().createQuery(criteriaQuery);
 		if (hibernateUseQueryCache) {
 			query.setHint(HINT_QUERY_CACHE, true);
@@ -965,6 +1062,17 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		return query.getResultList();
 	}
 
+
+	/**
+	 * includeDeleted=true 时放行逻辑删除记录(逃生门)
+	 */
+	public <T> List<T> findAll(Class<T> entityClass, boolean includeDeleted) {
+		try {
+			return filteredFrom(entityClass).includeDeleted(includeDeleted).list();
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
+	}
 
 	@Override
 	public <T> List<T> findIn(Class<T> entityClass, final String propertyName, Collection<?> values) {
@@ -976,16 +1084,30 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	public <T> List<T> findInImpl(Class<T> entityClass, final String propertyName, Collection<?> values) {
-		boolean includeDeleted = false;
+		return findInImpl(entityClass, propertyName, values, false);
+	}
+
+	/**
+	 * 评审报告 P0-7(独立评审 F7): 逃生门重载, 过滤统一走 filteredFrom 规格(不再两套实现)
+	 */
+	public <T> List<T> findInImpl(Class<T> entityClass, final String propertyName, Collection<?> values,
+	                             boolean includeDeleted) {
 		Objects.requireNonNull(propertyName);
 		if (isEmpty(values)) {
 			return new ArrayList<>();
 		}
+		return filteredFrom(entityClass).includeDeleted(includeDeleted)
+				.in(propertyName, values)
+				.list();
+	}
 
-		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
-				.in(propertyName, values);
-		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
-		return jpaCriteriaQuery.list();
+	public <T> List<T> findIn(Class<T> entityClass, final String propertyName, Collection<?> values,
+	                        boolean includeDeleted) {
+		try {
+			return findInImpl(entityClass, propertyName, values, includeDeleted);
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 	public <T, E> List<T> findIn(Class<T> entityClass, String propertyName, E[] values) {
@@ -1020,15 +1142,27 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, LocalDateTime begin,
 	                               LocalDateTime end) {
-		boolean includeDeleted = false;
+		return findBetweenImpl(entityClass, propertyName, begin, end, false);
+	}
+
+	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, LocalDateTime begin,
+	                               LocalDateTime end, boolean includeDeleted) {
 		Objects.requireNonNull(propertyName);
 		if (begin == null && end == null) {
 			throw new IllegalArgumentException("begin and end cannot be null at the same time!");
 		}
-		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
-				.between(propertyName, begin, end);
-		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
-		return jpaCriteriaQuery.list();
+		return filteredFrom(entityClass).includeDeleted(includeDeleted)
+				.between(propertyName, begin, end)
+				.list();
+	}
+
+	public <T> List<T> findBetween(Class<T> entityClass, String propertyName, LocalDateTime begin,
+	                               LocalDateTime end, boolean includeDeleted) {
+		try {
+			return findBetweenImpl(entityClass, propertyName, begin, end, includeDeleted);
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 	@Override
@@ -1041,14 +1175,26 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	}
 
 	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, Long begin, Long end) {
-		boolean includeDeleted = false;
+		return findBetweenImpl(entityClass, propertyName, begin, end, false);
+	}
+
+	public <T> List<T> findBetweenImpl(Class<T> entityClass, String propertyName, Long begin, Long end,
+	                                   boolean includeDeleted) {
 		Objects.requireNonNull(propertyName);
 		Objects.requireNonNull(begin);
 		Objects.requireNonNull(end);
-		JPACriteriaQuery<T> jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache)
-				.between(propertyName, begin, end);
-		applyLogicalDeleteFilter(jpaCriteriaQuery, entityClass, includeDeleted);
-		return jpaCriteriaQuery.list();
+		return filteredFrom(entityClass).includeDeleted(includeDeleted)
+				.between(propertyName, begin, end)
+				.list();
+	}
+
+	public <T> List<T> findBetween(Class<T> entityClass, String propertyName, Long begin, Long end,
+	                               boolean includeDeleted) {
+		try {
+			return findBetweenImpl(entityClass, propertyName, begin, end, includeDeleted);
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 
@@ -1063,10 +1209,20 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 
 	public <T> List<T> findIsNullImpl(Class<T> entityClass, String propertyName) {
 		Objects.requireNonNull(propertyName, "propertyName cannot be null!");
-		JPACriteriaQuery<T> jpaCriteriaQuery =
-				JPACriteriaQuery.from(entityClass, em(), hibernateUseQueryCache);
+		JPACriteriaQuery<T> jpaCriteriaQuery = filteredFrom(entityClass);
 		jpaCriteriaQuery.isNull(propertyName);
 		return jpaCriteriaQuery.list();
+	}
+
+	/**
+	 * includeDeleted=true 时放行逻辑删除记录(逃生门)
+	 */
+	public <T> List<T> findIsNull(Class<T> entityClass, String propertyName, boolean includeDeleted) {
+		try {
+			return filteredFrom(entityClass).includeDeleted(includeDeleted).isNull(propertyName).list();
+		} finally {
+			releaseEntityManagerIfIdle();
+		}
 	}
 
 	@Override
@@ -1108,6 +1264,13 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		Path<?> attributePath = subRootEntity.get(propertyName);
 		jakarta.persistence.criteria.Predicate predicate = criteriaBuilder.equal(attributePath,
 				criteriaBuilder.literal(value));
+		// 评审 P0-7(独立评审 F6): 存在性判断与 findList 用同一组过滤条件,
+		// 否则已删除记录会让 ifExists 返回 true 而列表查不到
+		Object[] spec = logicalDeleteSpec(entityClass);
+		if (spec != null) {
+			predicate = criteriaBuilder.and(predicate,
+					criteriaBuilder.equal(subRootEntity.get((String) spec[0]), spec[1]));
+		}
 		subquery.where(predicate);
 		query.where(criteriaBuilder.exists(subquery));
 

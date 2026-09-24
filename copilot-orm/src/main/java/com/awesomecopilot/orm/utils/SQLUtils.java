@@ -5,6 +5,18 @@ import com.awesomecopilot.common.lang.exception.SqlParseException;
 import com.awesomecopilot.common.lang.utils.StringUtils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
+import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.LateralSubSelect;
+import net.sf.jsqlparser.statement.select.ParenthesedFromItem;
+import net.sf.jsqlparser.statement.select.ParenthesedSelect;
+import net.sf.jsqlparser.statement.select.SelectVisitor;
+import net.sf.jsqlparser.statement.select.SetOperationList;
+import net.sf.jsqlparser.statement.select.TableStatement;
+import net.sf.jsqlparser.statement.select.Values;
+import net.sf.jsqlparser.statement.select.WithItem;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -713,7 +725,7 @@ public class SQLUtils {
 	 */
 	public static String addDeleteTenantIdCondition(String originalQuerySql) {
 		Long tenantId = ThreadContext.get("tenantId");
-		String sqlCacheKey = originalQuerySql + (tenantId == null ? "" : tenantId);
+		String sqlCacheKey = tenantId + "\u0000" + originalQuerySql;
 		return TENANT_SQL_CACHE.get(sqlCacheKey, k -> doAddDeleteTenantIdCondition(originalQuerySql, tenantId));
 	}
 	
@@ -728,94 +740,342 @@ public class SQLUtils {
 		}
 		
 		try {
-			if (statement instanceof PlainSelect plainSelect) {
-				applyCondition(plainSelect, tenantId);
-				return plainSelect.toString();
-			}
+			// 评审报告 P0-7: 改为 AST 级递归改写——每张表(含子查询/派生表/UNION 分支内的表)
+			// 各自追加 带限定符(deleted = 0 / tenant_id = N) 的条件;
+			// "是否已有该条件"按 AST 判断(字符串字面量里的 deleted=1 不再误判)。
 			if (statement instanceof Select select) {
-				//UNION/SetOperationList: 逐个子句追加条件, 保证每个分支都被过滤
-				appendConditionsToSelectBody(select, tenantId);
+				new TableConditionRewriter(tenantId).dispatch(select);
 				return select.toString();
 			}
 			if (statement instanceof Update update) {
-				update.setWhere(CCJSqlParserUtil.parseCondExpression(
-						buildNewCondition(update.getWhere() != null ? update.getWhere().toString() : "", tenantId)));
+				// 评审 F5: 多表 UPDATE(update t1 join t2 ...) 对每张参与表都追加, 不只主表
+				List<net.sf.jsqlparser.schema.Table> tables = new ArrayList<>();
+				tables.add(update.getTable());
+				if (update.getStartJoins() != null) {
+					update.getStartJoins().forEach(j -> addIfTable(tables, j.getRightItem()));
+				}
+				if (update.getJoins() != null) {
+					update.getJoins().forEach(j -> addIfTable(tables, j.getRightItem()));
+				}
+				for (net.sf.jsqlparser.schema.Table t : tables) {
+					update.setWhere(combine(update.getWhere(),
+							conditionsFor(qualifier(t), tenantId, update.getWhere())));
+				}
 				return update.toString();
 			}
 			if (statement instanceof Delete delete) {
-				delete.setWhere(CCJSqlParserUtil.parseCondExpression(
-						buildNewCondition(delete.getWhere() != null ? delete.getWhere().toString() : "", tenantId)));
+				List<net.sf.jsqlparser.schema.Table> tables = new ArrayList<>();
+				tables.add(delete.getTable());
+				if (delete.getTables() != null) {
+					tables.addAll(delete.getTables());
+				}
+				if (delete.getJoins() != null) {
+					delete.getJoins().forEach(j -> addIfTable(tables, j.getRightItem()));
+				}
+				for (net.sf.jsqlparser.schema.Table t : tables) {
+					delete.setWhere(combine(delete.getWhere(),
+							conditionsFor(qualifier(t), tenantId, delete.getWhere())));
+				}
 				return delete.toString();
 			}
-		} catch (JSQLParserException e) {
+		} catch (RuntimeException e) {
 			log.warn("SQLUtils.addDeleteTenantIdCondition 追加条件失败, 已原样放行: {}", originalQuerySql, e);
 			return originalQuerySql;
 		}
 		return originalQuerySql;
 	}
 	
-	private static void applyCondition(PlainSelect plainSelect, Long tenantId) throws JSQLParserException {
-		String newCondition = buildNewCondition(
-				plainSelect.getWhere() != null ? plainSelect.getWhere().toString() : "", tenantId);
-		if (isNotBlank(newCondition)) {
-			plainSelect.setWhere(CCJSqlParserUtil.parseCondExpression(newCondition));
+	/** join 右项可能是派生表(ParenthesedSelect), 只收集真实表 */
+	private static void addIfTable(List<net.sf.jsqlparser.schema.Table> out, FromItem fromItem) {
+		if (fromItem instanceof net.sf.jsqlparser.schema.Table table) {
+			out.add(table);
 		}
 	}
 	
-	private static void appendConditionsToSelectBody(Select select, Long tenantId) {
-		if (select instanceof PlainSelect plainSelect) {
-			try {
-				applyCondition(plainSelect, tenantId);
-			} catch (JSQLParserException e) {
-				log.warn("无法为 UNION 子句追加条件, 该子句保持原样: {}", plainSelect, e);
-			}
-			return;
+	/** 表的限定符: 有别名用别名, 否则用表名(与 Column 前缀匹配的一方) */
+	private static String qualifier(net.sf.jsqlparser.schema.Table table) {
+		if (table == null) {
+			return null;
 		}
-		if (select instanceof net.sf.jsqlparser.statement.select.SetOperationList setOperationList) {
-			for (Select body : setOperationList.getSelects()) {
-				appendConditionsToSelectBody(body, tenantId);
+		return table.getAlias() != null && isNotBlank(table.getAlias().getName())
+				? table.getAlias().getName() : table.getName();
+	}
+	
+	/**
+	 * 为限定符 qual 生成缺失的过滤条件文本; 已有比较(qual.<field> 或无表前缀的 <field>) 则跳过。
+	 * qual 为 null(函数/未知来源)时不加条件, 保守放行。
+	 */
+	private static String conditionsFor(String qual, Long tenantId, Expression where) {
+		if (qual == null) {
+			return "";
+		}
+		StringBuilder sb = new StringBuilder();
+		if (logicalDeleteEnabled && !hasComparisonOn(where, logicalDeleteField, qual)) {
+			sb.append(qual).append('.').append(logicalDeleteField).append(" = 0");
+		}
+		if (tenantId != null && !hasComparisonOn(where, "tenant_id", qual)) {
+			if (sb.length() > 0) {
+				sb.append(" AND ");
+			}
+			sb.append(qual).append(".tenant_id = ").append(tenantId);
+		}
+		return sb.toString();
+	}
+	
+	/** 表达式树里是否存在对列 field 的比较(限定符匹配 qual 或无表前缀; qual 为 null 时不比较前缀) */
+	private static boolean hasComparisonOn(Expression expr, String field, String qual) {
+		if (expr == null) {
+			return false;
+		}
+		ColumnFinder finder = new ColumnFinder(field, qual);
+		expr.accept(finder);
+		return finder.found;
+	}
+	
+	/** 原 WHERE 与新增条件合并; 原条件含 OR 时先整体括号, 避免 AND 优先级吃进 OR 分支 */
+	private static Expression combine(Expression original, String newCondition) {
+		if (newCondition.isEmpty()) {
+			return original;
+		}
+		try {
+			net.sf.jsqlparser.expression.Expression added = CCJSqlParserUtil.parseCondExpression(newCondition);
+			if (original == null) {
+				return added;
+			}
+			String originalText = original.toString();
+			String combined = originalText.toLowerCase().matches("(?s).*\\bor\\b.*")
+					? "(" + originalText + ") AND " + newCondition
+					: originalText + " AND " + newCondition;
+			return CCJSqlParserUtil.parseCondExpression(combined);
+		} catch (JSQLParserException e) {
+			log.warn("combine 新过滤条件失败, 保留原条件: {}", newCondition, e);
+			return original;
+		}
+	}
+	
+	/**
+	 * 递归改写器: 对每一层 PlainSelect 收集本层可见的表(含括号连接组), 追加各自的过滤条件,
+	 * 并深入 FROM/WHERE/HAVING/JOIN ON/UNION/CTE 里的子查询。
+	 */
+	private static class TableConditionRewriter implements SelectVisitor {
+		
+		private final Long tenantId;
+		
+		TableConditionRewriter(Long tenantId) {
+			this.tenantId = tenantId;
+		}
+
+		/** Select 抽象类型分发: 交给 accept 回调到具体 visit 方法 */
+		public void dispatch(Select select) {
+			if (select != null) {
+				select.accept(this);
+			}
+		}
+		
+		@Override
+		public void visit(PlainSelect plainSelect) {
+			applyToPlainSelect(plainSelect);
+		}
+		
+		@Override
+		public void visit(ParenthesedSelect parenthesedSelect) {
+			dispatch(parenthesedSelect.getSelect());
+		}
+		
+		@Override
+		public void visit(SetOperationList setOperationList) {
+			for (Select branch : setOperationList.getSelects()) {
+					dispatch(branch);
+			}
+		}
+		
+		@Override
+		public void visit(WithItem withItem) {
+			dispatch(withItem.getSelect());
+		}
+		
+		@Override
+		public void visit(Values values) {
+			// 常量行, 无表
+		}
+		
+		@Override
+		public void visit(LateralSubSelect lateralSubSelect) {
+			dispatch(lateralSubSelect.getSelect());
+		}
+		
+		@Override
+		public void visit(TableStatement tableStatement) {
+			// 形如 select * from only t 的表语句, 保守不动
+		}
+		
+		private void applyToPlainSelect(PlainSelect plainSelect) {
+			// 1. CTE(WITH)先各自改写
+			if (plainSelect.getWithItemsList() != null) {
+				for (WithItem withItem : plainSelect.getWithItemsList()) {
+						dispatch(withItem.getSelect());
+				}
+			}
+			// 2. 收集本层直接可见的表(括号连接组摊平), 派生表/侧身查询递归
+			List<net.sf.jsqlparser.schema.Table> visible = new ArrayList<>();
+			collectTables(plainSelect.getFromItem(), visible);
+			if (plainSelect.getJoins() != null) {
+				for (Join join : plainSelect.getJoins()) {
+					collectTables(join.getRightItem(), visible);
+				}
+			}
+			// 评审 F4: WITH 定义的 CTE 名不是物理表, 对它追加 x.deleted 会生成引用不存在列的SQL
+			java.util.Set<String> cteNames = new java.util.HashSet<>();
+			if (plainSelect.getWithItemsList() != null) {
+				for (WithItem wi : plainSelect.getWithItemsList()) {
+					if (wi.getAlias() != null && isNotBlank(wi.getAlias().getName())) {
+						cteNames.add(wi.getAlias().getName().toLowerCase());
+					}
+				}
+			}
+			// 已有条件按合并后的整体 WHERE 判断(逐表追加时用当前累积值)
+			for (net.sf.jsqlparser.schema.Table table : visible) {
+				if (cteNames.contains(table.getName() == null ? "" : table.getName().toLowerCase())) {
+					continue;
+				}
+				String qual = qualifier(table);
+				plainSelect.setWhere(combine(plainSelect.getWhere(),
+						conditionsFor(qual, tenantId, plainSelect.getWhere())));
+			}
+			// 3. 递归 WHERE/HAVING/JOIN ON/SELECT 项里的子查询
+			ExpressionSubqueryProbe probe = new ExpressionSubqueryProbe(new TableConditionRewriter(tenantId));
+			if (plainSelect.getWhere() != null) {
+				plainSelect.getWhere().accept(probe);
+			}
+			if (plainSelect.getHaving() != null) {
+				plainSelect.getHaving().accept(probe);
+			}
+			if (plainSelect.getJoins() != null) {
+				for (Join join : plainSelect.getJoins()) {
+					if (join.getOnExpressions() != null) {
+						join.getOnExpressions().forEach(on -> on.accept(probe));
+					}
+				}
+			}
+			if (plainSelect.getSelectItems() != null) {
+				plainSelect.getSelectItems().forEach(item -> {
+					if (item.getExpression() != null) {
+						item.getExpression().accept(probe);
+					}
+				});
+			}
+		}
+		
+		private void collectTables(FromItem fromItem, List<net.sf.jsqlparser.schema.Table> out) {
+			if (fromItem == null) {
+				return;
+			}
+			if (fromItem instanceof net.sf.jsqlparser.schema.Table table) {
+				out.add(table);
+				return;
+			}
+			if (fromItem instanceof ParenthesedFromItem pfi) {
+				// (a JOIN b ...) 括号组: 内部表仍在本层作用域, 摊平收集
+				collectTables(pfi.getFromItem(), out);
+				if (pfi.getJoins() != null) {
+					for (Join join : pfi.getJoins()) {
+						collectTables(join.getRightItem(), out);
+					}
+				}
+				return;
+			}
+			if (fromItem instanceof ParenthesedSelect ps) {
+				// 派生表: 作为独立查询层递归改写
+					dispatch(ps.getSelect());
+			}
+		}
+	}
+	
+	/** 只收集"是否存在对 field 的比较"(=, <>, >, <, >=, <=)的比较器, 表限定符需匹配 qual 或未限定 */
+	private static class ColumnFinder extends ExpressionVisitorAdapter {
+		
+		private final String field;
+		private final String qual;
+		boolean found = false;
+		
+		ColumnFinder(String field, String qual) {
+			this.field = field;
+			this.qual = qual;
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.EqualsTo equalsTo) {
+			check(equalsTo.getLeftExpression());
+			check(equalsTo.getRightExpression());
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.NotEqualsTo notEqualsTo) {
+			check(notEqualsTo.getLeftExpression());
+			check(notEqualsTo.getRightExpression());
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.GreaterThan gt) {
+			check(gt.getLeftExpression());
+			check(gt.getRightExpression());
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.GreaterThanEquals gte) {
+			check(gte.getLeftExpression());
+			check(gte.getRightExpression());
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.MinorThan lt) {
+			check(lt.getLeftExpression());
+			check(lt.getRightExpression());
+		}
+		
+		@Override
+		public void visit(net.sf.jsqlparser.expression.operators.relational.MinorThanEquals lte) {
+			check(lte.getLeftExpression());
+			check(lte.getRightExpression());
+		}
+		
+		private void check(Expression expr) {
+			if (found || !(expr instanceof net.sf.jsqlparser.schema.Column column)) {
+				return;
+			}
+			if (!field.equalsIgnoreCase(column.getColumnName())) {
+				return;
+			}
+			String colQual = column.getTable() == null ? null : qualifier(column.getTable());
+			// 未限定列视为匹配本表(单表场景旧行为); 有前缀则要求一致
+			if (colQual == null || colQual.isEmpty() || colQual.equalsIgnoreCase(qual)) {
+				found = true;
 			}
 		}
 	}
 	
 	/**
-	 * 在原 WHERE 条件上补齐 deleted / tenant_id 过滤。
-	 *
-	 * @param originalCondition 原 WHERE 子句文本(可能为空串)
-	 * @param tenantId          当前租户, null 表示不做租户过滤
+	 * 表达式遍历探针: 遇到任何子查询(ParenthesedSelect: IN (...)/EXISTS (...)/标量子查询)
+	 * 就把它交给 rewriter 递归改写。不覆盖函数参数里的极端形态, 该类 SQL 交由调用方告警策略处理。
 	 */
-	private static String buildNewCondition(String originalCondition, Long tenantId) {
-		String trimmedSql = StringUtils.trimAll(originalCondition);
-		boolean alreadyContainDeleted = trimmedSql.toLowerCase().contains(logicalDeleteField + "=");
-		boolean alreadyContainTenantId = trimmedSql.toLowerCase().contains("tenant_id=");
+	private static class ExpressionSubqueryProbe extends ExpressionVisitorAdapter {
 		
-		/*
-		 * 原条件含 OR 时必须整体括起来再 AND, 否则 AND 优先级高于 OR,
-		 * 会变成 a=1 OR (b=2 AND deleted=0) —— 已删除数据从 a=1 分支泄漏。
-		 * 这里用词边界匹配(兼容 or 前后换行/制表/多空格/括号粘连), 只要存在 OR 就加括号,
-		 * 多加括号无副作用, 宁可保守。
-		 */
-		String parsedOriginalCondition = originalCondition;
-		if (originalCondition.toLowerCase().matches("(?s).*\\bor\\b.*")) {
-			parsedOriginalCondition = "(" + originalCondition + ")";
+		private final SelectVisitor rewriter;
+		
+		ExpressionSubqueryProbe(SelectVisitor rewriter) {
+			this.rewriter = rewriter;
+			setSelectVisitor(rewriter);
 		}
 		
-		StringBuilder sb = new StringBuilder();
-		if (!originalCondition.isEmpty()) {
-			sb.append(parsedOriginalCondition);
+		@Override
+		public void visit(net.sf.jsqlparser.statement.select.ParenthesedSelect parenthesedSelect) {
+			((TableConditionRewriter) rewriter).dispatch(parenthesedSelect.getSelect());
+			// 继续深入子查询自身内部由 rewriter 处理
 		}
-		if (!alreadyContainDeleted && logicalDeleteEnabled) {
-			if (sb.length() > 0) {
-				sb.append(" AND ");
-			}
-			sb.append(logicalDeleteField).append(" = 0");
+		
+		@Override
+		public void visit(Select select) {
+			select.accept(rewriter);
 		}
-		if (tenantId != null && !alreadyContainTenantId) {
-			if (sb.length() > 0) {
-				sb.append(" AND ");
-			}
-			sb.append("tenant_id = ").append(tenantId);
-		}
-		return sb.toString();
 	}
 }

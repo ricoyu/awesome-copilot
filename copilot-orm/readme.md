@@ -1302,6 +1302,14 @@ SQLOperations 和 CriteriaOperations两个接口都支持
 
 关闭以后只会检查租户ID的存在性来自动判断是否加入 tenant_id=xxx 条件
 
+补充说明（2026-09-24，评审报告 P0-7 修复）：
+
+- criteria 侧各查询入口（`findAll` / `findList` / `findOne` / `findIsNull` / `ifExists` / `query(Class)` 构建器等）现已统一接入逻辑删除过滤，行为与 `find`/`findIn` 一致；`findIn`/`findBetween` 也补了 `includeDeleted` 重载。需要读取含已删除记录时用各入口的 `includeDeleted(true)` 重载 / 构建器的 `.includeDeleted(true)`。
+- 实体没有配置的逻辑删除字段（如继承不含 `deleted` 属性的基类）时，该实体不参与过滤，各入口正常查询、不报错。
+- 按主键的 `get`/`load` 保持 JPA 语义不过滤（可能返回已删记录/null 视数据库而定）；要"过滤后的单条读取"用 `find(Class, id)` 或 `findOne(Class, id)`。
+- 拦截器（StatementInspector）侧改为 AST 级递归改写：join 的每张表按别名各自追加 `别名.deleted = 0` 与 `别名.tenant_id = N`（此前追加的是不限定列名，多表 join 会报列名歧义）；`IN`/`EXISTS` 子查询、UNION 分支、派生表内的表同样被过滤；"是否已有条件"按表达式树判断，字符串字面量里的 `deleted=1` 不再造成漏加。
+- 升级提醒：修复前"join 查询能跑"依赖的是不限定条件在单表场景的巧合，多表 SQL 此前实际是报错或漏过滤两种表现，升级后以每张表都有正确的过滤为准。
+
 
 
 # 十  SQL自动修复

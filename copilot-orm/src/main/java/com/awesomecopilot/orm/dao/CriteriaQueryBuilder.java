@@ -31,18 +31,40 @@ public class CriteriaQueryBuilder {
 	private JPACriteriaQuery jpaCriteriaQuery;
 	
 	private Class entityClass;
-	
+
+	/** 逻辑删除字段名, null=不过滤(评审报告 P0-7, 由 JpaDao.query(Class) 注入) */
+	private final String logicalDeleteField;
+	private final Object logicalDeleteNotDeletedValue;
+
 	public CriteriaQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
 	                            Class entityClass) {
+		this(entityManager, entityManagerFactory, entityClass, null, null);
+	}
+
+	public CriteriaQueryBuilder(EntityManager entityManager, EntityManagerFactory entityManagerFactory,
+	                            Class entityClass, String logicalDeleteField, Object logicalDeleteNotDeletedValue) {
 
 		this.entityManager = entityManager;
 		this.entityManagerHolder = new EntityManagerHolder(entityManager, entityManagerFactory);
 		this.entityClass = entityClass;
+		this.logicalDeleteField = logicalDeleteField;
+		this.logicalDeleteNotDeletedValue = logicalDeleteNotDeletedValue;
 
 		this.criteriaBuilder = em().getCriteriaBuilder();
-		this.jpaCriteriaQuery = JPACriteriaQuery.from(entityClass, em(), false);
+		this.jpaCriteriaQuery = logicalDeleteField == null
+				? JPACriteriaQuery.from(entityClass, em(), false)
+				: JPACriteriaQuery.from(entityClass, em(), false, logicalDeleteField, logicalDeleteNotDeletedValue);
 	}
-	
+
+	/**
+	 * includeDeleted=true 时本次查询放行逻辑删除记录(逃生门, 评审报告 P0-7)。
+	 * 需在终结方法(findOne/findList/findPage)之前调用。
+	 */
+	public CriteriaQueryBuilder includeDeleted(boolean includeDeleted) {
+		this.jpaCriteriaQuery.includeDeleted(includeDeleted);
+		return this;
+	}
+
 	/**
 	 * 如果propertyValue为null则查询propertyName为null的记录
 	 *
