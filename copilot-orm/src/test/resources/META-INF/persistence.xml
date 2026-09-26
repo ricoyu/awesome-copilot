@@ -6,6 +6,7 @@
     <class>com.awesomecopilot.orm.it.entity.UserOrder</class>
     <class>com.awesomecopilot.orm.it.entity.Shelf</class>
     <class>com.awesomecopilot.orm.it.entity.ShelfItem</class>
+    <class>com.awesomecopilot.orm.it.entity.Shipment</class>
     <properties>
       <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ormtest;DB_CLOSE_DELAY=-1"/>

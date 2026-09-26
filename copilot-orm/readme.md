@@ -513,6 +513,18 @@ JPA的entity对象的一些简单操作API
 
 * ......
 
+> **批量入口返回对象语义（2026-09-24 起统一）**：`persist(List)` / `save(List)` /
+> `save(Set)` / `merge(List)` 每满一批（`copilot.orm.sql.batch-size`，默认 100）
+> flush 后会把本批实体 detach 出持久化上下文——防止十万级批量写时受管实例线性
+> 膨胀占满堆。代价是：**批量入口之后对返回对象再改字段不会落库**（游离对象失去
+> 脏检查），需要继续修改请重新 `merge` 或用条件 update。单条 `persist/save` 返回
+> 入参本身且保持受管；单条 `merge` 的**返回值**受管、入参仍是游离对象。带主键的
+> 批量 save/merge 每批用一条 `IN` 查询预热，消除逐条 merge 的 N+1 SELECT
+> （评审 deleg_df7e37a8 F2/F4、deleg_d5016c35 N3/N7）。`save(Set)` 转交
+> `save(List)` 实现，批量行为（预热/每批 flush+detach）完全一致。
+> 复合主键实体无法按单列主键预热，自动回退逐条 merge，正确性不受影响
+> （每类实体首次遇到提示一次 INFO）。
+
 ## 3.2 CriteriaOperations
 
 一些简单的查询可以通过CriteriaOperations来完成, 毕竟写SQL码字数量也挺多的...

@@ -48,6 +48,12 @@ final class EntityManagerHolder {
 		if (createdEntityManager == null) {
 			return;
 		}
+		// 评审 deleg_d5016c35 R1: begin() 开启的本地事务归调用方管——终结查询不能
+		// rollback+close 它(旧实现只认 Spring 事务, 与 JpaDao.releaseEntityManagerIfIdle
+		// 的 hasActiveLocalTransaction 守卫不一致, 读查询会悄悄回滚写入事务)
+		if (createdEntityManager.isOpen() && createdEntityManager.getTransaction().isActive()) {
+			return;
+		}
 		try {
 			if (createdEntityManager.isOpen()) {
 				if (createdEntityManager.getTransaction().isActive()) {

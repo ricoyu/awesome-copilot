@@ -160,12 +160,11 @@ public class JPACriteriaQuery<T> implements Serializable {
 	}
 	
 	/**
-	 * 限制取几条记录
-	 *
-	 * @param limit
-	 * @return
+	 * 限制取几条记录; 传 null 清除(评审 deleg_df7e37a8 F3)。
+	 * findOne/findUnique 这类终结方法用完必须复位, 否则同一 builder/查询实例
+	 * 后续 findList() 会被残留的 limit(1) 污染成只返回 1 条。
 	 */
-	public JPACriteriaQuery<T> limit(int limit) {
+	public JPACriteriaQuery<T> limit(Integer limit) {
 		this.limit = limit;
 		return this;
 	}
@@ -537,6 +536,9 @@ public class JPACriteriaQuery<T> implements Serializable {
 	}
 
 	public void setGroupBy(String groupBy) {
+		// 评审 deleg_df7e37a8 F6: groupBy 只作用于主查询, 分页 count 不带 groupBy
+		// ——分组查询 + findPage 同用时 totalCount 是行数而非组数。全模块当前无
+		// groupBy+分页 调用点, 暂不实现组数 count(需子查询包裹); 组合使用前须知晓此限制。
 		this.groupBy = groupBy;
 	}
 
@@ -548,6 +550,10 @@ public class JPACriteriaQuery<T> implements Serializable {
 	 * (Predicate 不能跨查询复用, 复用会报 Already registered a copy——本类字段区
 	 * 的 countPredicates 注释就是历史教训); ②主查询实体去重(distinct);
 	 * ③分页 count 改用 countDistinct(见 list()), 保证 totalCount 与列表条数一致。
+	 * <p>
+	 * 注意(评审 deleg_df7e37a8 F7): join 为 INNER 语义——没有任何匹配子行的父
+	 * 会被整行排除; 需要 LEFT JOIN"可选子集过滤"语义请另用 root.join(..., LEFT)
+	 * 手工构造。value 已含 % 时不再包装。
 	 *
 	 * @param association  主实体上的集合属性名(如 "items")
 	 * @param propertyName 关联实体上的属性名(如 "name")

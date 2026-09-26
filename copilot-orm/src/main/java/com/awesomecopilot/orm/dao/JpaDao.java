@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -187,6 +188,12 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 	@PostConstruct
 	public void initialize() {
 		try {
+			// 评审 deleg_df7e37a8 F9: batchSize<=0 会让批量循环 % batchSize 抛
+			// ArithmeticException 且看不出根因, 在配置生效点直接归正并点名
+			if (batchSize <= 0) {
+				log.warn("copilot.orm.sql.batch-size 配置为 {}, 非法(须>0), 已按 100 运行", batchSize);
+				batchSize = 100;
+			}
 			SQLUtils.configureLogicalDelete(this.logicalDeleteEnabled, this.logicalDeleteField);
 			this.query("首次使用前的初始化");
 			log.info("首次使用前的初始化完成");
@@ -353,42 +360,72 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 	}
 
+	/** 复合主键实体跳过预热的提示去重(每类一次, 评审 deleg_d5016c35 N1) */
+	private static final Set<Class<?>> COMPOSITE_KEY_PREWARM_WARNED = ConcurrentHashMap.newKeySet();
+
+	private void warnCompositeKeyPrewarmOnce(Class<?> entityClass) {
+		if (COMPOSITE_KEY_PREWARM_WARNED.add(entityClass)) {
+			log.info("实体类 {} 是复合主键, 批量 merge 无法按单列主键预热, 回退逐条 merge(正确性不受影响, 仅少一项优化)",
+					entityClass.getName());
+		}
+	}
+
 	/**
 	 * 批量 merge 预热: 按 [from,to) 区间收集非空主键, 一条 IN 查询把已存在实体
 	 * 加载成受管实例。主键为 null 的(新记录)跳过——merge 对 null id 会走 persist,
 	 * 本来就不 SELECT。
+	 * <p>
+	 * 预热只是优化: 复合主键实体、批内混类、代理类、JPQL 拼不出等任何解析/执行
+	 * 失败都整段降级为"不预热"(退回逐条 merge 的原生行为), 绝不让 merge 本身失败
+	 * (评审 deleg_df7e37a8 F1: 旧写法 resolveIdAttributeName 在 try 外, 复合主键
+	 * 实体整批 merge 被单列主键守卫误伤抛异常)。
 	 */
 	private <T> void prewarmForMerge(List<T> entities, int from, int to) {
-		Class<?> entityClass = null;
-		List<Object> ids = new ArrayList<>();
-		String idAttribute = null;
-		for (int i = from; i < to; i++) {
-			T entity = entities.get(i);
-			if (entity == null) {
-				continue;
+		try {
+			Class<?> entityClass = null;
+			List<Object> ids = new ArrayList<>();
+			String idAttribute = null;
+			Field idField = null;
+			for (int i = from; i < to; i++) {
+				T entity = entities.get(i);
+				if (entity == null) {
+					continue;
+				}
+				if (entityClass == null) {
+					entityClass = entity.getClass();
+					// 评审 deleg_d5016c35 N1/N4: 复合主键显式判定后跳过, 不用
+					// resolveIdAttributeName 的异常当控制流——那条守卫消息是为
+					// deleteByPK 写的, 透传到 merge 路径会把人引向"删除不支持"
+					// 的错误结论, 且每批一条 WARN 刷屏
+					if (ReflectionUtils.findFieldsWithAnnotation(entityClass, Id.class).size() > 1) {
+						warnCompositeKeyPrewarmOnce(entityClass);
+						return;
+					}
+					idAttribute = resolveIdAttributeName(entityClass);
+					idField = ReflectionUtils.findFirstFieldWithAnnotation(entityClass, Id.class);
+				} else if (!entityClass.equals(entity.getClass())) {
+					// 批内混了不同实体类: 放弃预热, 退回逐条 merge 的原生行为(正确性优先)
+					return;
+				}
+				Object id = idField == null ? null : ReflectionUtils.getFieldValue(idField, entity);
+				if (id != null) {
+					ids.add(id);
+				}
 			}
-			if (entityClass == null) {
-				entityClass = entity.getClass();
-				idAttribute = resolveIdAttributeName(entityClass);
-			} else if (!entityClass.equals(entity.getClass())) {
-				// 批内混了不同实体类: 放弃预热, 退回逐条 merge 的原生行为(正确性优先)
+			if (ids.isEmpty()) {
 				return;
 			}
-			Field idField = ReflectionUtils.findFirstFieldWithAnnotation(entityClass, Id.class);
-			Object id = idField == null ? null : ReflectionUtils.getFieldValue(idField, entity);
-			if (id != null) {
-				ids.add(id);
-			}
-		}
-		if (ids.isEmpty()) {
-			return;
-		}
-		try {
+			// 评审 deleg_d5016c35 R4: IN 列表按 900 分块——Oracle 对 IN 有 1000 项
+			// 硬上限(ORA-01795), batchSize 配大时整条预热会失败退化成逐条 SELECT
 			String jpql = "select e from " + entityClass.getSimpleName() + " e where e." + idAttribute + " in :ids";
-			em().createQuery(jpql).setParameter("ids", ids).getResultList();
+			jakarta.persistence.Query query = em().createQuery(jpql);
+			for (int k = 0; k < ids.size(); k += 900) {
+				query.setParameter("ids", ids.subList(k, Math.min(k + 900, ids.size()))).getResultList();
+			}
 		} catch (RuntimeException e) {
-			// 预热只是优化, 失败不影响正确性——退回逐条 merge(各自 SELECT)
-			log.debug("merge 预热查询失败, 回退逐条 merge: {}", e.getMessage());
+			// 预热失败不影响正确性——退回逐条 merge(各自 SELECT)。warn 级别让
+			// "预热长期没生效"在默认日志下可见(评审 F9)。
+			log.warn("merge 批量预热未生效, 回退逐条 merge: {}", e.getMessage());
 		}
 	}
 
@@ -438,6 +475,12 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		List<T> results = new ArrayList<>();
 		for (int i = 0, length = entities.size(); i < length; i++) {
+			// 评审 deleg_df7e37a8 F4: save 是 save-or-update 入口, 带主键的元素走
+			// em().merge——旧实现只给 merge(List) 做了 IN 预热, 带主键的 save(List)
+			// 仍逐条 SELECT(N+1)。每批同样先预热(null 主键的新元素会被跳过, 不受影响)。
+			if (i % batchSize == 0) {
+				prewarmForMerge(entities, i, Math.min(i + batchSize, length));
+			}
 			results.add(doSave(entities.get(i)));
 			/*
 			 * i+1是因为i是从0开始的, 如果batchSize=100, 那么i=99的时候, i+1=100, 正好是100的倍数, 此时需要flush
@@ -475,22 +518,10 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		if (isEmpty(entities)) {
 			return emptyList();
 		}
-		List<T> results = new ArrayList<>();
-		int i = 0;
-		for (T entity : entities) {
-			results.add(doSave(entity));
-			i++;
-			if (i > 0 && (i % batchSize == 0)) {
-				flush();
-			}
-		}
-		/*
-		 * You may also want to flush and clear the persistence context
-		 * after each batch to release memory, otherwise all of the managed
-		 * objects remain in the persistence context until it is closed.
-		 */
-		flush();
-		return results;
+		// 评审 deleg_d5016c35 N3: 直接转交 List 实现, 批量预热/每批 flush+detach
+		// 只维护一处(旧实现自带一份循环, 没有预热, 带主键的 save(Set) 仍是 N+1,
+		// 与 README "带主键的批量 save/merge 每批一条 IN 预热" 的说法不符)
+		return doSave(new ArrayList<>(entities));
 	}
 
 	/**
@@ -1051,7 +1082,7 @@ public class JpaDao implements SQLOperations, CriteriaOperations,
 		}
 		if (resultList.size() > 1) {
 			throw new jakarta.persistence.NonUniqueResultException(
-					"findUnique 条件命中 " + resultList.size() + " 条以上, 实体: " + entityClass.getName()
+					"findUnique 条件命中至少 2 条(已截断), 实体: " + entityClass.getName()
 							+ ", 属性: " + propertyName + "=" + value + "; 若确需多条取一请用 findOne()");
 		}
 		return resultList.get(0);

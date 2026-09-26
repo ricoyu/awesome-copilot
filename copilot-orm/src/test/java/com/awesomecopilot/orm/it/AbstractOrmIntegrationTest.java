@@ -68,11 +68,16 @@ public abstract class AbstractOrmIntegrationTest {
 		seedEm.createNativeQuery("delete from user_order").executeUpdate();
 		seedEm.createNativeQuery("delete from shelf_item").executeUpdate();
 		seedEm.createNativeQuery("delete from shelf").executeUpdate();
+		seedEm.createNativeQuery("delete from shipment").executeUpdate();
 		seedEm.getTransaction().commit();
 	}
 
 	@AfterEach
 	void teardownDao() {
+		// 评审 deleg_df7e37a8 F5: 探针是静态全局, 用例中途抛异常没走 finally 会把
+		// enabled 漏成 true, 污染后续用例的 SQL 计数断言——每个用例结束强制复位
+		SqlProbe.enabled = false;
+		SqlProbe.reset();
 		if (seedEm != null && seedEm.getTransaction().isActive()) {
 			seedEm.getTransaction().rollback();
 		}

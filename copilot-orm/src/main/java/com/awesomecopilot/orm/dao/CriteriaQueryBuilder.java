@@ -342,9 +342,15 @@ public class CriteriaQueryBuilder {
 	}
 	
 	public CriteriaQueryBuilder limit(Integer limit) {
+		// 评审 deleg_d5016c35 N2: 记住调用方自己设的行数, findOne/findUnique
+		// 借用终结语义后恢复到这里, 而不是抹成 null(抹 null 会让调用方的限制失效)
+		this.callerLimit = limit;
 		jpaCriteriaQuery.limit(limit);
 		return this;
 	}
+
+	/** 调用方显式设置的 limit, 供 findOne/findUnique 用后恢复(N2) */
+	private Integer callerLimit;
 	
 	public CriteriaQueryBuilder desc(String propertyName) {
 		OrderBean order = Orders.desc(propertyName);
@@ -368,6 +374,8 @@ public class CriteriaQueryBuilder {
 			}
 			return (T) results.get(0);
 		} finally {
+			// 复位 limit(F3): 终结方法的行数限制不外漏; 恢复到调用方自己设的值(N2)
+			jpaCriteriaQuery.limit(callerLimit);
 			entityManagerHolder.closeIfNeeded();
 		}
 	}
@@ -390,11 +398,13 @@ public class CriteriaQueryBuilder {
 			}
 			if (results.size() > 1) {
 				throw new jakarta.persistence.NonUniqueResultException(
-						"findUnique 条件命中 " + results.size() + " 条以上, 实体: " + entityClass.getName()
+						"findUnique 条件命中至少 2 条(已截断), 实体: " + entityClass.getName()
 								+ "; 若确需多条取一请用 findOne()");
 			}
 			return (T) results.get(0);
 		} finally {
+			// 复位 limit(F3): 恢复到调用方自己设的值(N2)
+			jpaCriteriaQuery.limit(callerLimit);
 			entityManagerHolder.closeIfNeeded();
 		}
 	}

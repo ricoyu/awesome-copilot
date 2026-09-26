@@ -140,6 +140,59 @@ class MergeSelectCountTest extends AbstractOrmIntegrationTest {
 	}
 
 	@Test
+	@DisplayName("带主键的 save(List)(save-or-update 路径)同样走批量预热, SELECT 批数级别")
+	void saveBatchWithIdsIsAlsoPrewarmed() {
+		// 评审 deleg_df7e37a8 F4: save 带 id 元素走 merge 分支, 旧实现只有
+		// merge(List) 预热, save(List) 更新路径仍逐条 SELECT(N+1)
+		List<Book> books = seedDetachedBooks(200);
+		books.forEach(b -> b.setStock(b.getStock() + 2));
+
+		SqlProbe.reset();
+		SqlProbe.enabled = true;
+		jpaDao.begin();
+		try {
+			jpaDao.save(books);
+			jpaDao.commit();
+		} finally {
+			SqlProbe.enabled = false;
+		}
+		long selects = SqlProbe.countMatching(" from book ");
+		assertTrue(selects <= 4,
+				"200 条带主键 save(List) 的 SELECT 应批数级别(≤4), 实际 " + selects + " 次(N+1 未消除)");
+		Book check = seedEm.find(Book.class, books.get(0).getId());
+		assertEquals(12, check.getStock(), "更新必须真实落库");
+	}
+
+	@Test
+	@DisplayName("带主键的 save(Set) 同样走批量预热(N3: 转交 List 实现后行为一致)")
+	void saveSetWithIdsIsAlsoPrewarmed() {
+		// 评审 deleg_d5016c35 N3: 旧 doSave(Set) 自带一份逐条循环, 没有预热,
+		// 实测 5 条带主键实体 = 5 次 SELECT; 转交 List 实现后应为 1 次
+		seedEm.getTransaction().begin();
+		for (int i = 0; i < 5; i++) {
+			insertBook("预热Set_" + i, "预热Set作者", "10.00", 1, true,
+					LocalDateTime.now(), "DRAFT");
+		}
+		seedEm.getTransaction().commit();
+		List<Book> seeded = seedEm.createQuery(
+				"select b from Book b where b.author='预热Set作者'", Book.class).getResultList();
+		assertEquals(5, seeded.size());
+
+		SqlProbe.reset();
+		SqlProbe.enabled = true;
+		jpaDao.begin();
+		try {
+			jpaDao.save(new java.util.LinkedHashSet<>(seeded));
+			jpaDao.commit();
+		} finally {
+			SqlProbe.enabled = false;
+			if (jpaDao.em().getTransaction().isActive()) jpaDao.rollback();
+		}
+		assertEquals(1, SqlProbe.countMatching(" in ("),
+				"5 条带主键 save(Set) 预热 SELECT 应为 1 条 IN(转交 List 实现前是 5 条单行 SELECT)");
+	}
+
+	@Test
 	@DisplayName("save(List) 批量新增: 每批 flush 后 detach, 上下文不滞留受管实体")
 	void saveBatchNewEntitiesDetach() {
 		List<Book> fresh = new ArrayList<>();

@@ -61,6 +61,7 @@ ObjectMapper customized = new ObjectMapperDecorator()
 # 五 JsonPath
 
 ```java
+import com.awesomecopilot.json.jsonpath.context.DocumentContext;
 import static com.awesomecopilot.json.jsonpath.JsonPathUtils.*;
 
 String name = readNode(json, "$.store.book[0].title");           // 路径不存在会抛异常
@@ -70,6 +71,12 @@ List<String> titles = readListNode(json, "$..title");
 List<User> users = readListNode(json, "$.users", User.class);
 Object single = readNodeSingleValue(json, "$.store.book[*].isbn"); // 单值结果（数组只有一个元素时取出来）
 boolean has = ifExists(json, "$.store.book[2].price");
+
+// 同一份报文读多个字段: 先 parse 一次, 再走 ctx 重载(收 String 的入口每次调用都会重解析整篇文档)
+DocumentContext ctx = JsonPathUtils.parse(json);
+String v1 = readNode(ctx, "$.a.b");
+Money m2 = readNode(ctx, "$.amount", Money.class);
+// 报文确定不含内嵌JSON字符串时可用 parse(json, false) 跳过整树展开(2MB 文档实测解析省 45%)
 ```
 
 # 六 注意事项
