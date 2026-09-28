@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Locale;
 
 /**
  * 排序
@@ -79,7 +80,7 @@ public class OrderBean implements Serializable {
 				throw new IllegalArgumentException("direction 不能为 null, 期望值: ASC / DESC");
 			}
 			try {
-				return DIRECTION.valueOf(direction.toUpperCase());
+				return DIRECTION.valueOf(direction.toUpperCase(Locale.ROOT));
 			} catch (IllegalArgumentException e) {
 				throw new IllegalArgumentException("无法将 " + direction + " 转成 DIRECTION 枚举, 期望值: ASC / DESC", e);
 			}

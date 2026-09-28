@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -375,7 +376,7 @@ public final class EnumUtils {
 			logger.trace("msg", e);
 		}
 		try {
-			return (T)Enum.valueOf(clazz, name.toUpperCase());
+			return (T)Enum.valueOf(clazz, name.toUpperCase(Locale.ROOT));
 		} catch (IllegalArgumentException e) {
 			logger.trace("msg", e);
 			return null;

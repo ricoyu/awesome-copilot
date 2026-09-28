@@ -10,16 +10,13 @@ import java.util.Map;
 
 /**
  * 2016-01-16 改用TransmittableThreadLocal
- * A ThreadContext provides a means of binding and unbinding objects to the
- * current thread based on key/value pairs.
+ * ThreadContext 提供了一种基于键值对把对象绑定到当前线程、以及解绑的机制。
  * <p/>
- * <p>An internal {@link HashMap} is used to maintain the key/value pairs
- * for each thread.</p>
+ * <p>内部使用一个 {@link HashMap} 来维护每个线程的键值对。</p>
  * <p/>
- * <p>If the desired behavior is to ensure that bound data is not shared across
- * threads in a pooled or reusable threaded environment, the application (or more likely a framework) must
- * bind and remove any necessary values at the beginning and end of stack
- * execution, respectively (i.e. individually explicitly or all via the <tt>clear</tt> method).</p>
+ * <p>如果希望确保绑定的数据在线程池等可复用线程环境中不跨线程共享，
+ * 应用程序（或更可能是框架）必须在线程执行的开始处绑定所需的值、
+ * 在结束处移除它们（即逐个显式操作，或通过 <tt>clear</tt> 方法一次性全部清除）。</p>
  *
  * @on
  * @see #remove()
@@ -27,23 +24,27 @@ import java.util.Map;
  */
 public final class ThreadContext {
 	/**
-	 * Private internal log instance.
+	 * 私有的内部日志实例。
 	 */
 	private static final Logger logger = LoggerFactory.getLogger(ThreadContext.class);
 
 	private static final ThreadLocal<Map<Object, Object>> resources = new TransmittableThreadLocalMap<>();
 
 	/**
-	 * Default no-argument constructor.
+	 * 默认的无参构造器。
 	 */
 	private ThreadContext() {
 	}
 
 	/**
-	 * Returns the ThreadLocal Map. This Map is used internally to bind objects to the
-	 * current thread by storing each object under a unique key.
+	 * 返回 ThreadLocal 内部的 Map。该 Map 在内部通过把每个对象存放在唯一键下，
+	 * 来实现对象与当前线程的绑定。
+	 * <p/>
+	 * P2-35: 返回的是当前绑定资源表的<b>拷贝</b>(空时返回不可变的 emptyMap), 不是内部
+	 * 那张表本身——{@code getResources().put(k, v)} 这种写法编译通过, 但值写进的是拷贝,
+	 * 真实绑定里读不到, 修改绑定请用 {@link #put(Object, Object)}。
 	 *
-	 * @return the map of bound resources
+	 * @return 已绑定资源 Map 的拷贝（没有任何绑定时返回不可变的空 Map）
 	 */
 	public static Map<Object, Object> getResources() {
 		if (resources.get() == null) {
@@ -54,13 +55,16 @@ public final class ThreadContext {
 	}
 
 	/**
-	 * Allows a caller to explicitly set the entire resource map. This operation
-	 * overwrites everything that existed previously in the ThreadContext - if you
-	 * need to retain what was on the thread prior to calling this method, call the
-	 * {@link #getResources()} method, which will give you the existing state.
+	 * 允许调用方显式设置整个资源 Map。该操作会覆盖 ThreadContext 中此前存在的
+	 * 全部内容——如果需要保留调用本方法前线程上已有的内容，请先调用
+	 * {@link #getResources()} 获取现有状态。
+	 * <p/>
+	 * P2-35: 如实描述实现契约——入参为 null 或空 Map 时本方法是<b>空操作</b>,
+	 * 不会清空已有绑定(javadoc 旧句"overwrites everything"在这两个入参下不成立)。
+	 * 想清空当前线程全部绑定请用 {@link #remove()}。
 	 *
-	 * @param newResources the resources to replace the existing
-	 *            {@link #getResources() resources}.
+	 * @param newResources 用于替换现有 {@link #getResources() resources} 的资源；
+	 *            传入 null 或空 Map 时被忽略（空操作）。
 	 * @since 1.0
 	 */
 	public static void setResources(Map<Object, Object> newResources) {
@@ -73,12 +77,12 @@ public final class ThreadContext {
 	}
 
 	/**
-	 * Returns the value bound in the {@code ThreadContext} under the specified
-	 * {@code key}, or {@code null} if there is no value for that {@code key}.
+	 * 返回 {@code ThreadContext} 中绑定在指定 {@code key} 下的值；
+	 * 若该 {@code key} 没有绑定值则返回 {@code null}。
 	 *
-	 * @param key the map key to use to lookup the value
-	 * @return the value bound in the {@code ThreadContext} under the specified
-	 *         {@code key}, or {@code null} if there is no value for that {@code key}.
+	 * @param key 用于查找值的 Map 键
+	 * @return {@code ThreadContext} 中绑定在指定 {@code key} 下的值，
+	 *         若该 {@code key} 没有绑定值则返回 {@code null}。
 	 * @since 1.0
 	 */
 	private static Object getValue(Object key) {
@@ -93,12 +97,11 @@ public final class ThreadContext {
 	}
 
 	/**
-	 * Returns the object for the specified <code>key</code> that is bound to the
-	 * current thread.
+	 * 返回绑定在当前线程上、指定 <code>key</code> 对应的对象。
 	 *
-	 * @param key the key that identifies the value to return
-	 * @return the object keyed by <code>key</code> or <code>null</code> if no value
-	 *         exists for the specified <code>key</code>
+	 * @param key 用于标识待返回值的键
+	 * @return <code>key</code> 对应的对象；若指定 <code>key</code>
+	 *         不存在绑定值则返回 <code>null</code>
 	 */
 	public static <T> T get(Object key) {
 		if (logger.isTraceEnabled()) {
@@ -116,10 +119,10 @@ public final class ThreadContext {
 	}
 
 	/**
-     * Binds <tt>value</tt> for the given <code>key</code> to the current thread.
+     * 把 <tt>value</tt> 以给定 <code>key</code> 绑定到当前线程。
      * <p/>
-     * <p>A <tt>null</tt> <tt>value</tt> has the same effect as if <tt>remove</tt> was called for the given
-     * <tt>key</tt>, i.e.:
+     * <p><tt>null</tt> 的 <tt>value</tt> 与对给定 <tt>key</tt> 调用 <tt>remove</tt>
+     * 效果相同，即：
      * <p/>
      * <pre>
      * if ( value == null ) {
@@ -127,9 +130,9 @@ public final class ThreadContext {
      * }</pre>
      *
      * @on
-     * @param key   The key with which to identify the <code>value</code>.
-     * @param value The value to bind to the thread.
-     * @throws IllegalArgumentException if the <code>key</code> argument is <tt>null</tt>.
+     * @param key   用于标识 <code>value</code> 的键。
+     * @param value 要绑定到线程的值。
+     * @throws IllegalArgumentException 如果 <code>key</code> 参数为 <tt>null</tt>。
      */
 	public static void put(Object key, Object value) {
 		if (key == null) {
@@ -152,11 +155,10 @@ public final class ThreadContext {
 	}
 
 	/**
-	 * Unbinds the value for the given <code>key</code> from the current thread.
+	 * 从当前线程解绑给定 <code>key</code> 对应的值。
 	 *
-	 * @param key The key identifying the value bound to the current thread.
-	 * @return the object unbound or <tt>null</tt> if there was nothing bound under
-	 *         the specified <tt>key</tt> name.
+	 * @param key 标识绑定在当前线程上的值的键。
+	 * @return 被解绑的对象；若指定 <tt>key</tt> 下没有绑定内容则返回 <tt>null</tt>。
 	 */
 	public static Object remove(Object key) {
 		Map<Object, Object> perThreadResources = resources.get();
@@ -172,10 +174,10 @@ public final class ThreadContext {
 	}
 
 	/**
-	 * {@link ThreadLocal#remove Remove}s the underlying {@link ThreadLocal
-	 * ThreadLocal} from the thread. <p/> This method is meant to be the final 'clean
-	 * up' operation that is called at the end of thread execution to prevent thread
-	 * corruption in pooled thread environments.
+	 * 从线程上移除底层的 {@link ThreadLocal ThreadLocal}
+	 * （调用 {@link ThreadLocal#remove Remove}）。
+	 * <p/> 本方法是在线程池环境中防止线程数据残留、互相干扰的最终"清理"操作，
+	 * 应在线程执行结束时调用。
 	 *
 	 * @since 1.0
 	 */
@@ -187,14 +189,12 @@ public final class ThreadContext {
 			extends TransmittableThreadLocal<Map<Object, Object>> {
 
 		/**
-		 * This implementation was added to address a <a
-		 * href="http://jsecurity.markmail.org/search/?q=#query:+page:1+mid:xqi2yxurwmrpqrvj+state:results">
-		 * user-reported issue</a>.
+		 * 该实现是为了解决一个
+		 * <a href="http://jsecurity.markmail.org/search/?q=#query:+page:1+mid:xqi2yxurwmrpqrvj+state:results">
+		 * 用户报告的问题</a>。
 		 * 
-		 * @param parentValue the parent value, a HashMap as defined in the
-		 *            {@link #initialValue()} method.
-		 * @return the HashMap to be used by any parent-spawned child threads (a clone
-		 *         of the parent HashMap).
+		 * @param parentValue 父线程的值，即 {@link #initialValue()} 方法所定义的 HashMap。
+		 * @return 父线程派生的子线程要使用的 HashMap（父 HashMap 的一份拷贝）。
 		 */
 		@SuppressWarnings({ "unchecked" })
 		protected Map<Object, Object> childValue(Map<Object, Object> parentValue) {

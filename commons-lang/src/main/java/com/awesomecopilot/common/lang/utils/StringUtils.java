@@ -21,9 +21,9 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -213,7 +213,9 @@ public abstract class StringUtils {
 			try {
 				return URLDecoder.decode(string, charset);
 			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
+				// 库代码统一走 slf4j(与 encodeUrl 同型): 修复前 printStackTrace 直打标准错误,
+				// 生产按日志文件采集时这条失败完全丢失
+				log.error("decode url failed, unsupported charset: {}", charset, e);
 				return null;
 			}
 		}
@@ -261,7 +263,10 @@ public abstract class StringUtils {
 	}
 	
 	/**
-	 * 通过Java API生成指定长度的随机字符串
+	 * 通过Java API生成指定长度的随机字符串（a-z）。
+	 * 用 SecureRandom（类内已有的 SECURE_RANDOM 共享实例）: java.util.Random 是线性同余,
+	 * 观测到足够输出可反推内部状态预测后续值, 不适合做验证码/Token 这类凭证;
+	 * SecureRandom 线程安全, 静态共享一份即可, 无需每次 new。
 	 *
 	 * @param targetStringLength
 	 * @return
@@ -269,10 +274,9 @@ public abstract class StringUtils {
 	public static String randomStr(int targetStringLength) {
 		int leftLimit = 97; // letter 'a'
 		int rightLimit = 122; // letter 'z'
-		Random random = new Random();
 		StringBuilder buffer = new StringBuilder(targetStringLength);
 		for (int i = 0; i < targetStringLength; i++) {
-			int randomLimitedInt = leftLimit + (int) (random.nextFloat() * (rightLimit - leftLimit + 1));
+			int randomLimitedInt = leftLimit + SECURE_RANDOM.nextInt(rightLimit - leftLimit + 1);
 			buffer.append((char) randomLimitedInt);
 		}
 		return buffer.toString();
@@ -766,7 +770,9 @@ public abstract class StringUtils {
 			return false;
 		}
 		
-		return source.toLowerCase().indexOf(target.toLowerCase()) != -1;
+		// Locale.ROOT: 无参 toLowerCase 用 JVM 默认 Locale, 土耳其语下 'I'→'ı'(无点),
+		// "TITLE" 里找不到 "i" —— 大小写不敏感比较必须固定英文规则
+		return source.toLowerCase(Locale.ROOT).indexOf(target.toLowerCase(Locale.ROOT)) != -1;
 	}
 	
 	public static boolean containsAnyIgCase(String source, String... targets) {
@@ -784,7 +790,7 @@ public abstract class StringUtils {
 			if (target == null) {
 				continue;
 			}
-			if (source.toLowerCase().indexOf(target.toLowerCase()) != -1) {
+			if (source.toLowerCase(Locale.ROOT).indexOf(target.toLowerCase(Locale.ROOT)) != -1) {
 				contains = true;
 				break;
 			}
@@ -840,7 +846,7 @@ public abstract class StringUtils {
 			if (target == null) {
 				continue;
 			}
-			if (source.toLowerCase().indexOf(target.toLowerCase()) == -1) {
+			if (source.toLowerCase(Locale.ROOT).indexOf(target.toLowerCase(Locale.ROOT)) == -1) {
 				return false;
 			}
 		}
@@ -1097,14 +1103,15 @@ public abstract class StringUtils {
 		if (str == null) {
 			return str;
 		}
-		return str.toLowerCase();
+		// Locale.ROOT: 固定英文规则, 不随 JVM 默认 Locale(如土耳其语的 i/İ 差异)变化
+		return str.toLowerCase(Locale.ROOT);
 	}
 	
 	public static String toUpperCase(String str) {
 		if (str == null) {
 			return str;
 		}
-		return str.toUpperCase();
+		return str.toUpperCase(Locale.ROOT);
 	}
 	
 	/**

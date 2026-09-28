@@ -2,6 +2,7 @@ package com.awesomecopilot.common.lang.enums;
 
 import com.awesomecopilot.common.lang.exception.UnsupportedSizeUnitException;
 
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,7 +66,7 @@ public enum SizeUnit {
 			return GB;
 		}
 		
-		String units = Stream.of(SizeUnit.values()).map(sizeUnit -> sizeUnit.name().toLowerCase()).collect(Collectors.joining(","));
+		String units = Stream.of(SizeUnit.values()).map(sizeUnit -> sizeUnit.name().toLowerCase(Locale.ROOT)).collect(Collectors.joining(","));
 		throw new UnsupportedSizeUnitException("支持的单位有: " + units);
 	}
 }

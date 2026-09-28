@@ -312,29 +312,4 @@ public class LeakyBucketRateLimiter implements RateLimiter {
             runRequest(request);
         }
     }
-
-    // 测试用例
-    public static void main(String[] args) throws InterruptedException {
-        // 容量10，每秒处理2个请求
-        LeakyBucketRateLimiter limiter = new LeakyBucketRateLimiter(10, 2);
-
-        // 模拟突发20个请求
-        for (int i = 1; i <= 20; i++) {
-            final int requestId = i;
-            boolean accepted = limiter.submitRequest(() -> {
-                System.out.println("处理请求 " + requestId);
-                try {
-                    // 模拟处理耗时
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            });
-            System.out.println("请求 " + i + ": " + (accepted ? "已加入队列" : "被拒绝"));
-        }
-
-        // 等待所有请求处理完成
-        Thread.sleep(10000);
-        limiter.shutdown();
-    }
 }

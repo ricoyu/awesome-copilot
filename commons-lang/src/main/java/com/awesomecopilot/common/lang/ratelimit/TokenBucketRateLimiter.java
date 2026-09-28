@@ -175,7 +175,7 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	/**
 	 * 尝试获取一个令牌（请求放行的唯一入口），自旋 CAS 扣减：
 	 * <ol>
-	 * <li>读当前令牌数，≤0 直接拒绝——不排队、不等待（fail fast），
+	 * <li>读当前令牌数，≤0 立即返回拒绝——不排队、不等待,
 	 * 这是与漏桶"排队等处理"的本质区别；</li>
 	 * <li>compareAndSet 扣 1：成功即放行；失败说明有别的线程刚改过计数
 	 * （可能又扣了也可能刚补了），回到第 1 步重读重试。</li>
@@ -213,24 +213,5 @@ public class TokenBucketRateLimiter implements RateLimiter {
 	@Override
 	public void close() {
 		shutdown();
-	}
-
-	// 测试用例
-	public static void main(String[] args) throws InterruptedException {
-		// 创建一个令牌桶：容量=10，每秒补充5个令牌
-		TokenBucketRateLimiter limiter = new TokenBucketRateLimiter(10, 5, 1000);
-
-		// 模拟20个请求，间隔200毫秒
-		for (int i = 1; i <= 20; i++) {
-			boolean acquired = limiter.canPass();
-			System.out.printf("Request %2d: %s (Tokens: %d)%n",
-					i,
-					acquired ? "Accepted" : "Rejected",
-					limiter.tokens.get()
-			);
-			Thread.sleep(200);
-		}
-
-		limiter.shutdown();
 	}
 }

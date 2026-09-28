@@ -1,6 +1,6 @@
-package com.awesomecopilot.common.lang.utils;
-
-import org.slf4j.Logger;
+package com.awesomecopilot.common.lang.utils;
+
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
  * @author Rico Yu ricoyu520@gmail.com
  * @version 1.0
  */
-public final class AlgorithmUtils {
-
+public final class AlgorithmUtils {
+
     private static final Logger log = LoggerFactory.getLogger(AlgorithmUtils.class);
 
     /**

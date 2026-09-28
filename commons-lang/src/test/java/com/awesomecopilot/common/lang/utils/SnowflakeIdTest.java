@@ -82,7 +82,9 @@ public class SnowflakeIdTest {
 	}
 	
 	/**
-	 * 回拨≤50ms 且挂钟很快回头: 等待后恢复, 不出重复ID (保留旧行为)
+	 * 回拨30ms且挂钟正常走动(每读前进1ms): 虚拟续发与挂钟前进交替, 不出重复ID。
+	 * P2-38 修订: 修复前这里有"≤50ms 先等待挂钟追回"一档, 现一律立即虚拟时间续发,
+	 * 断言的耗时上限从"约1秒等待后恢复"改为"不等待"。
 	 */
 	@Test
 	public void testSmallBackwardWaitRecover() {
@@ -106,8 +108,8 @@ public class SnowflakeIdTest {
 	}
 	
 	/**
-	 * 回拨≤50ms 但挂钟永远不回头: 等待超时后降级虚拟时间续发, 不再抛异常
-	 * (旧实现: 1秒后抛"等待超时, 拒绝生成ID")
+	 * P2-38 修订: 挂钟停走 + 回拨30ms(≤50ms档)。旧行为是临界区内等待约1秒再降级虚拟续发;
+	 * 新行为是立即虚拟时间续发、不等待(等待分支把无关取号线程挂在同一把锁上最多1秒, 已删)。
 	 */
 	@Test
 	public void testSmallBackwardWaitTimeoutDegrades() {
@@ -117,10 +119,10 @@ public class SnowflakeIdTest {
 		Set<Long> ids = new HashSet<>();
 		ids.add(first);
 		long start = System.nanoTime();
-		for (int i = 0; i < 5; i++) ids.add(id.nextId()); // 时钟不动, 第一次会等约1秒后降级
+		for (int i = 0; i < 5; i++) ids.add(id.nextId());
 		long waitedMs = (System.nanoTime() - start) / 1_000_000;
 		assertThat(ids).hasSize(6);
-		assertThat(waitedMs).isBetween(900L, 3000L); // 确实经历了等待窗口
+		assertThat(waitedMs).isLessThan(200L); // P2-38: 不再等待, 立即虚拟续发
 	}
 	
 	/**

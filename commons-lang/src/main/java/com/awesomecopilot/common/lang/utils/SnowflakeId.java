@@ -6,6 +6,8 @@ import com.awesomecopilot.common.lang.resource.YamlProfileReaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +36,12 @@ public class SnowflakeId {
 	 * 见 {@link #claimAutoSlot} 的说明。
 	 */
 	private static final Set<Long> AUTO_SLOTS = ConcurrentHashMap.newKeySet();
+	
+	/**
+	 * 槽位租约释放器: 自动推导实例被 GC 时释放文件锁并移出登记表(P2-38)。
+	 * JDK Cleaner 的注册对象只被弱引用持有, 不会阻止实例回收。
+	 */
+	private static final Cleaner CLEANER = Cleaner.create();
 	
 	/**
 	 * 开始时间截 (2015-01-01)
@@ -86,20 +94,10 @@ public class SnowflakeId {
 	private final long sequenceMask = -1L ^ (-1L << sequenceBits);
 	
 	/**
-	 * 可容忍的最大时钟回拨时间（毫秒），适配NTP同步场景
-	 */
-	private static final long MAX_CLOCK_BACKWARD_MS = 50L;
-	
-	/**
 	 * 回拨幅度超过此值（毫秒）不再用虚拟时间续发, 直接抛异常。
 	 * 回拨超过1分钟多半是虚机快照恢复/手动大改系统时间, 机器ID可能已被别的实例复用, 必须人工介入
 	 */
 	private static final long MAX_VIRTUAL_COMPENSATE_MS = 60_000L;
-	
-	/**
-	 * 等待时钟恢复的最大超时时间（毫秒）
-	 */
-	private static final long MAX_WAIT_MS_FOR_CLOCK = 1000L;
 	
 	/**
 	 * 工作机器ID(0~31)
@@ -120,12 +118,6 @@ public class SnowflakeId {
 	 * 上次生成ID的时间截
 	 */
 	protected long lastTimestamp = -1L;
-	
-	/**
-	 * 轻微回拨等待是否已经超时过。超时过说明挂钟短期不会回头, 后续取号不再重复等待1秒,
-	 * 直接虚拟时间续发; 挂钟重新走上来(timestamp超过lastTimestamp)时清掉
-	 */
-	private boolean clockWaitTimedOut = false;
 	
 	//==============================Constructors=====================================
 	
@@ -183,37 +175,156 @@ public class SnowflakeId {
 			logger.warn("未显式配置 {}, 按本机IP+进程号推导出 workerId={}, datacenterId={}。自动推导不保证跨机器不重号,"
 					+ " 生产环境请用系统属性 -D{}=N 或环境变量 COPILOT_SNOWFLAKE_WORKER_ID 为每个实例显式指定。",
 					workerKey, workerId, datacenterId, workerKey);
-			workerId = claimAutoSlot(datacenterId, workerId);
+			workerId = claimAutoSlot(datacenterId, workerId, this);
+		} else {
+			checkExplicitSlotCollision(datacenterId, workerId);
 		}
 		this.workerId = workerId;
 		this.datacenterId = datacenterId;
 	}
 	
 	/**
-	 * 在自动推导实例之间登记并认领 (datacenterId, workerId) 槽位: 同JVM里两个生成器共用同一编号时,
-	 * 各自的序列计数器互相看不见, 同一毫秒必生成重复ID——这种必撞场景当场解决掉:
-	 * 槽位已被占用则顺延到本 datacenterId 下的下一个空闲 workerId。
-	 * 显式配置的实例不登记(编号由配置者负责, 且同配置多实例本就该在不同机器上)。
+	 * 在自动推导实例之间认领 (datacenterId, workerId) 槽位（P2-38 重写）。同JVM里两个
+	 * 生成器共用同一编号时, 各自的序列计数器互相看不见, 同一毫秒必生成重复ID, 认领按两层做:
+	 * <ol>
+	 * <li><b>跨进程租约</b>：先调 {@link #acquireSlotLease} 申请槽位租约(默认是 tmp 目录
+	 *     文件锁), 租不到说明同机另一个进程在用这个编号, 顺延下一个槽位——修复前只登记
+	 *     JVM 内集合, 进程重启后拿同一推导值与还在跑的旧进程并行发号, 重复ID无人发现;</li>
+	 * <li><b>JVM 内登记</b>：AUTO_SLOTS 挡住本进程内重复认领; 租约随实例被回收而释放
+	 *     (Cleaner), 登记表同时移除——修复前登记表只进不出, 同JVM累计构造第33个自动推导
+	 *     实例时无限抛 IllegalStateException。</li>
+	 * </ol>
+	 * 32 个槽位全部租不到时构造直接抛异常, 提示显式配置, 不带病发号。
+	 * 显式配置的实例不认领登记, 但会通过 checkExplicitSlotCollision 探测同一槽位的租约,
+	 * 探测不到只 WARN(编号是配置者指定的, 不能擅自顺延)。
+	 * <p>
+	 * 租约文件放在 java.io.tmpdir: Linux 的 /tmp 全机共享, 跨进程检测对所有账号有效;
+	 * Windows 的 TEMP 按用户隔离, 不同服务账号的进程互相看不到 lock 文件, 跨账号场景
+	 * 只能靠显式配置 worker-id 保证不重号。
 	 *
 	 * @return 实际认领到的 workerId (可能与推导值不同, 发生顺延时会打日志)
 	 */
-	private long claimAutoSlot(long datacenterId, long workerId) {
+	private long claimAutoSlot(long datacenterId, long workerId, SnowflakeId owner) {
 		for (long probe = 0; probe <= maxWorkerId; probe++) {
 			long candidate = (workerId + probe) & maxWorkerId;
 			long slot = datacenterId * (maxWorkerId + 1) + candidate;
-			if (AUTO_SLOTS.add(slot)) {
-				if (candidate != workerId) {
-					logger.warn("雪花ID自动推导撞号: datacenterId={}, workerId={} 已被本进程另一个生成器占用, 顺延到 workerId={}",
-							datacenterId, workerId, candidate);
-				}
-				return candidate;
+			AutoCloseable lease = acquireSlotLease(slot);
+			if (lease == null) {
+				continue; // 租约被同机其它进程持有, 顺延
 			}
+			if (!AUTO_SLOTS.add(slot)) {
+				try {
+					lease.close();
+				} catch (Exception ignored) {
+				}
+				continue; // 本JVM已占用(与租约判断等效, 防御两个构造器同时进入)
+			}
+			// 实例被回收时释放租约并从登记表移除(Cleaner 只弱引用 lease/slot, 不引用 owner)
+			CLEANER.register(owner, new SlotReleaseAction(lease, slot));
+			if (candidate != workerId) {
+				logger.warn("雪花ID自动推导撞号: datacenterId={}, workerId={} 槽位不可用(本进程或其它进程已认领), 顺延到 workerId={}",
+						datacenterId, workerId, candidate);
+			}
+			return candidate;
 		}
 		throw new IllegalStateException(String.format(
-				"datacenterId=%d 下32个workerId槽位已全部被本进程的自动推导生成器占用, 请显式配置 %s",
+				"datacenterId=%d 下32个workerId槽位已全部被占用(本进程或其它进程), 请显式配置 %s",
 				datacenterId, "copilot.snowflake.worker-id"));
 	}
+
+	/**
+	 * 槽位释放动作: 单独 static 类, 只持有租约与槽位号——若写成 owner 的实例方法引用,
+	 * lambda 会捕获 SnowflakeId 本体, 实例永远不可回收, Cleaner 就失去意义。
+	 */
+	private static final class SlotReleaseAction implements Runnable {
+		private final AutoCloseable lease;
+		private final long slot;
+
+		SlotReleaseAction(AutoCloseable lease, long slot) {
+			this.lease = lease;
+			this.slot = slot;
+		}
+
+		@Override
+		public void run() {
+			try {
+				lease.close();
+			} catch (Exception e) {
+				// 租约释放失败只影响该槽位复用, 不影响数据正确性
+			}
+			AUTO_SLOTS.remove(slot);
+		}
+	}
 	
+	/**
+	 * 为一个 (datacenterId, workerId) 槽位申请**跨进程租约**（P2-38）。默认实现是
+	 * java.io.tmpdir 下的独占文件锁：文件 copilot-snowflake-{slot}.lock，锁是 OS 级的，
+	 * 同机另一个 Java 进程持有时本方法返回 null（租不到，调用方应顺延下一个槽位）。
+	 * 租约要一直持有到生成器实例废弃——返回的 {@link AutoCloseable} 就是租约本身，
+	 * 由实例的 Cleaner 释放（见 claimAutoSlot）。
+	 * <p>
+	 * 这是刻意保留的**测试接缝**：SnowflakeP238FixTest 覆盖它注入"哪些槽位被别的进程占用"，
+	 * 不需要起第二个真实进程。文件锁机制本身不可用（受限环境/容器只读tmp）时返回一个
+	 * 空租约并记 WARN——退化成修复前的"仅JVM内登记"，不让租约故障阻断发号。
+	 *
+	 * @param slot 槽位编号 = datacenterId * 32 + workerId
+	 * @return 租约（close 即释放）；null 表示该槽位已被同机其它进程占用
+	 */
+	protected AutoCloseable acquireSlotLease(long slot) {
+		java.nio.file.Path lockFile = java.nio.file.Paths.get(
+				System.getProperty("java.io.tmpdir"), "copilot-snowflake-" + slot + ".lock");
+		java.nio.channels.FileChannel channel = null;
+		try {
+			channel = java.nio.channels.FileChannel.open(lockFile,
+					java.util.EnumSet.of(java.nio.file.StandardOpenOption.CREATE,
+							java.nio.file.StandardOpenOption.WRITE));
+			java.nio.channels.FileLock lock;
+			try {
+				lock = channel.tryLock();
+			} catch (java.nio.channels.OverlappingFileLockException sameJvmConflict) {
+				// 本JVM已有通道持有该文件锁(显式配置实例多实例共用同一编号时会走到这里)
+				// 或按"租不到"处理, 由调用方决定顺延/告警
+				channel.close();
+				channel = null;
+				return null;
+			} catch (IOException osConflict) {
+				// 打开/锁定文件本身失败(权限、只读文件系统等 OS 级故障)
+				channel.close();
+				channel = null;
+				return null;
+			}
+			if (lock == null) {
+				// 其它进程已持有该文件的 OS 级独占锁。双进程探针实测: Windows 与 POSIX
+				// 下 tryLock 冲突都走这里返回 null(不抛异常), 调用方据此顺延
+				channel.close();
+				channel = null;
+				return null;
+			}
+			final java.nio.channels.FileChannel leasedChannel = channel;
+			channel = null; // 所有权移交租约 lambda, 外层异常分支不再关闭
+			return () -> {
+				try {
+					lock.release();
+				} finally {
+					leasedChannel.close();
+				}
+			};
+		} catch (Exception e) {
+			// 评审修复(2026-09-28): 异常分支也要关掉已打开的 channel, 否则泄漏的 OS 句柄
+			// 可能仍持有槽位锁, 该槽位对其他进程变成假占用
+			if (channel != null) {
+				try {
+					channel.close();
+				} catch (Exception ignored) {
+				}
+			}
+			logger.warn("雪花ID槽位租约机制不可用(slot={}, {}), 退化为仅JVM内登记——"
+					+ "同机多进程场景请显式配置 copilot.snowflake.worker-id", slot, e.toString());
+			return () -> {
+			};
+		}
+	}
+
 	/**
 	 * 按参数顺序取第一个能解析成long的配置值(用于"系统属性>环境变量>配置文件"的优先级读取),
 	 * 全部为空白则返回null; 遇到非数字值记日志跳过继续向后找
@@ -241,8 +352,27 @@ public class SnowflakeId {
 			throw new IllegalArgumentException(String.format("数据中心ID不能大于%d或小于0",
 					maxDatacenterId));
 		}
+		checkExplicitSlotCollision(datacenterId, workerId);
 		this.workerId = workerId;
 		this.datacenterId = datacenterId;
+	}
+
+	/**
+	 * 评审补漏(2026-09-28): 显式配置实例也探测槽位租约。修复前租约只在自动推导分支申请,
+	 * 同机"显式配了 worker-id=N 的进程"与"自动推导恰好撞到 N 的进程"并行发号无人检测,
+	 * 跨进程重复 ID 风险漏掉这一半。探测到冲突时不顺延、不抛异常(编号是配置者指定的,
+	 * 擅自改动违反配置), 只 WARN 可能重号。租约申请到时同样交给 Cleaner, 实例回收即释放。
+	 */
+	private void checkExplicitSlotCollision(long datacenterId, long workerId) {
+		long slot = datacenterId * (maxWorkerId + 1) + workerId;
+		AutoCloseable lease = acquireSlotLease(slot);
+		if (lease == null) {
+			logger.warn("workerId={}, datacenterId={} 的槽位租约已被本机另一个生成器或其它进程持有, "
+					+ "两边并行发号可能产生重复ID, 请检查 copilot.snowflake.worker-id 配置(同机实例必须不同编号)。",
+					workerId, datacenterId);
+			return;
+		}
+		CLEANER.register(this, new SlotReleaseAction(lease, -1L)); // -1: 只释放租约, 不碰 AUTO_SLOTS(显式实例不登记)
 	}
 
 	/**
@@ -253,41 +383,17 @@ public class SnowflakeId {
 	public synchronized long nextId() {
 		long timestamp = getTimeMillis();
 		
-		// 当前时间小于上一次生成ID的时间戳, 说明系统时钟回退过(或者上次的时间戳是挂钟被向前跳时写高的)。分三种情况处理:
-		// 1) 轻微回拨(≤50ms, NTP微调的常见幅度): 短暂等待挂钟越过上次时间戳, 等待超时则降级到第2种情况继续发号;
-		// 2) 回拨在1分钟内: 多数是挂钟曾被向前跳、把lastTimestamp写高后又被纠正。这时死等挂钟追上那个虚高值,
-		//    生成器会停摆与跳变同样长的时间, 所以改用"虚拟时间": 从lastTimestamp续发, 时间戳在本进程内永不倒退,
-		//    (时间戳, 序列)组合不会重复, 生成器立即恢复工作;
-		// 3) 回拨超过1分钟: 多半是虚机快照恢复或手动大改系统时间, 机器ID可能已被别的实例占用, 进程内状态防不住
-		//    跨进程的重复ID, 立刻抛异常并说清原因, 请人工检查。
+		// 当前时间小于上一次生成ID的时间戳, 说明系统时钟回退过(或者上次的时间戳是挂钟被向前跳时写高的)。分两种情况处理:
+		// 1) 回拨在1分钟内: 改用"虚拟时间"续发——从lastTimestamp继续, 时间戳在本进程内永不倒退,
+		//    (时间戳, 序列)组合不会重复, 生成器立即恢复工作。P2-38: 修复前对≤50ms的轻微回拨
+		//    先在 synchronized 临界区内 sleep(1) 循环等挂钟回头(最长1秒), 一次轻微回拨会把全部
+		//    取号线程(包括与本次无关的)在同一把锁上排队; 等待分支的收益(用真表时间)不值得这个代价, 删除。
+		// 2) 回拨超过1分钟: 多半是虚机快照恢复或手动大改系统时间, 机器ID可能已被别的实例占用,
+		//    进程内状态防不住跨进程的重复ID, 立刻抛异常并说清原因, 请人工检查。
 		boolean virtualTimestamp = false;
 		if (timestamp < lastTimestamp) {
 			long timeDiff = lastTimestamp - timestamp;
-			
-			if (timeDiff <= MAX_CLOCK_BACKWARD_MS && !clockWaitTimedOut) {
-				long waitStart = System.nanoTime();
-				while (timestamp <= lastTimestamp) {
-					try {
-						// 短暂休眠, 避免自旋消耗CPU
-						Thread.sleep(1);
-					} catch (InterruptedException e) {
-						// 恢复中断标志再抛出, 不让上层线程池的关闭流程丢掉这次中断
-						Thread.currentThread().interrupt();
-						throw new RuntimeException("等待时钟恢复时被中断", e);
-					}
-					timestamp = getTimeMillis();
-					
-					// 等待超时(挂钟迟迟不回头): 不再抛异常停摆, 降级用虚拟时间续发, 并记住超时避免下次再等1秒
-					if (System.nanoTime() - waitStart > MAX_WAIT_MS_FOR_CLOCK * 1_000_000L) {
-						virtualTimestamp = true;
-						clockWaitTimedOut = true;
-						timestamp = lastTimestamp;
-						break;
-					}
-				}
-			}
-			// 回拨幅度在可补偿范围内: 用虚拟时间续发, 不阻塞
-			else if (timeDiff <= MAX_VIRTUAL_COMPENSATE_MS) {
+			if (timeDiff <= MAX_VIRTUAL_COMPENSATE_MS) {
 				virtualTimestamp = true;
 				timestamp = lastTimestamp;
 			}
@@ -321,8 +427,6 @@ public class SnowflakeId {
 		//时间戳改变, 毫秒内序列重置
 		else {
 			sequence = 0L;
-			// 挂钟重新走到了lastTimestamp前面(回拨影响已过), 清掉"等待超时"标记, 下次轻微回拨还可以再等
-			clockWaitTimedOut = false;
 		}
 		
 		//上次生成ID的时间截
@@ -339,7 +443,7 @@ public class SnowflakeId {
 	 * 获取当前毫秒时间戳。
 	 * <p/>
 	 * 注意: 这是刻意的**测试接缝**(test seam), 不要被"一行转发方法应内联"的规则误伤删掉。
-	 * 时钟回拨的三档处理(等待/虚拟时间续发/抛异常)必须有确定性测试, 而 System.currentTimeMillis()
+	 * 时钟回拨的两档处理(≤60秒虚拟时间续发/>60秒抛异常)必须有确定性测试, 而 System.currentTimeMillis()
 	 * 不可伪造: 改系统时钟要管理员权限且CI不可行, 真实等待又慢且测不了超时降级分支。
 	 * SnowflakeIdTest 用子类覆盖本方法注入假时钟, 复现向前跳/回退/停走场景。业务代码不要覆盖它。
 	 *
