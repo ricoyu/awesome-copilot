@@ -216,7 +216,11 @@ public final class JedisUtils {
 		return shaHashs.computeIfAbsent(luaFile, x -> {
 			log.debug("Load script {}", luaFile);
 			String script = IOUtils.readClassPathFileAsString("/lua-scripts/" + luaFile);
-			if (jedisOperations instanceof JedisClusterOperations) {
+			// sampleKey 为 null 表示"无路由键脚本"(只读服务端全局状态, 如 hash.lua 的 time 操作):
+			// 集群下必须广播加载到所有节点, 否则随机路由大概率 NOSCRIPT(clauter评审 P0-3)。
+			// 有 sampleKey 则维持"只加载到路由键所在分片"的精确加载。SHA 按脚本内容算,
+			// 两种加载方式得到同一个 sha, shaHashs 缓存可以安全共用。
+			if (sampleKey != null && jedisOperations instanceof JedisClusterOperations) {
 				return jedisOperations.scriptLoad(script, sampleKey);
 			}
 			return jedisOperations.scriptLoad(script);
@@ -2252,13 +2256,17 @@ public final class JedisUtils {
 		
 		/**
 		 * 拿redis服务器当前时间戳
+		 * <p>
+		 * 2026-09-28 集群兼容修复(clauter评审 P0-3): 本操作 keyCount=0 无路由键, Jedis 会随机挑节点
+		 * 执行(含从节点); 旧版脚本按样例键 "hash.lua" 只加载到某一个分片, 随机路由约 2/3 概率
+		 * NOSCRIPT 且自愈无效。现传 sampleKey=null 走广播加载(全节点持有), 随机路由也能执行。
 		 *
 		 * @return
 		 */
 		public static long time() {
 			
 			
-			long milis = (long) evalLua("hash.lua", "hash.lua", 0,
+			long milis = (long) evalLua("hash.lua", null, 0,
 				toBytes("time"));
 			return milis;
 		}
@@ -2510,12 +2518,17 @@ public final class JedisUtils {
 	 * 一些比较我特色的功能
 	 */
 	public static final class AFFLUENT {
-		
+
+		/**
+		 * slidingWindows 的 zset 键前缀(保留历史拼写 slading, 与线上已有键一致)
+		 */
+		private static final String SLIDING_WINDOW_KEY_PREFIX = "slading_window:zset:";
+
 		
 		/**
 		 * 滑动时间窗口限流算法
 		 * <p>
-		 * name        给这个zset起一个有业务意义的名字, 最终的key值是 KEY_PREFIX+key
+		 * key        业务名, 真实的 zset 键名由本方法拼前缀 "slading_window:zset:" 生成
 		 * member     随机数, 没有什么意义, 就是要唯一
 		 * score      客户端请求的时间戳
 		 * windowSize 时间窗口大小
@@ -2529,10 +2542,11 @@ public final class JedisUtils {
 		 * @return boolean
 		 */
 		public static boolean slidingWindows(String key, String member, long score, long windowSize, long limitCount) {
-			
-			
-			Long result = (Long) evalLua("slidingWindow.lua", key, 1,
-				toBytes(key),
+			// 2026-09-28 集群兼容修复(clauter评审 P0-1): 旧版把业务名直接传给脚本, 由 Lua 拼实际键,
+			// 集群下脚本访问未在 KEYS 声明的键会被服务端拒绝; 拼接移到此处, 最终键名与旧版一致。
+			String zsetKey = SLIDING_WINDOW_KEY_PREFIX + key;
+			Long result = (Long) evalLua("slidingWindow.lua", zsetKey, 1,
+				toBytes(zsetKey),
 					toBytes(member),
 					toBytes(score),
 					toBytes(windowSize),
@@ -2555,11 +2569,12 @@ public final class JedisUtils {
 		 * @return boolean
 		 */
 		public static boolean rateLimit(String key, int expire, int count) {
-			
-			
-			
-			long result = (long) evalLua("rateLimit.lua", key, 1,
-				toBytes(join(":", "rate", "limit", key)),
+			// 2026-09-28 集群兼容修复(clauter评审 P0-2): 旧版脚本加载按原始 key 路由、执行却操作
+			// rate:limit:<key>, 两键分属不同主节点时执行节点没有脚本, 报 NOSCRIPT 且自愈无效(自愈重新
+			// 加载仍按原始 key)。改为加载与执行都用拼好的真实键。Redis 中键名不变。
+			String realKey = join(":", "rate", "limit", key);
+			long result = (long) evalLua("rateLimit.lua", realKey, 1,
+					toBytes(realKey),
 					toBytes(expire), toBytes(count));
 			return result == 1;
 		}

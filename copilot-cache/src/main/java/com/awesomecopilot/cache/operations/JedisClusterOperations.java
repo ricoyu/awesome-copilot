@@ -1,19 +1,31 @@
 package com.awesomecopilot.cache.operations;
 
+import com.awesomecopilot.cache.concurrent.ThreadPool;
+import com.awesomecopilot.cache.exception.JedisException;
+import com.awesomecopilot.cache.utils.CancellableJedisPubSub;
 import com.awesomecopilot.json.jackson.JacksonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.BuilderFactory;
+import redis.clients.jedis.CommandArguments;
+import redis.clients.jedis.CommandObject;
+import redis.clients.jedis.Connection;
+import redis.clients.jedis.ConnectionPool;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPubSub;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.args.BitOP;
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.resps.GeoRadiusResponse;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import static com.awesomecopilot.cache.utils.ByteUtils.toBytes;
 import static java.util.stream.Collectors.*;
@@ -33,7 +45,13 @@ public class JedisClusterOperations implements JedisOperations {
 	private static final Logger log = LoggerFactory.getLogger(JedisClusterOperations.class);
 	
 	private final JedisCluster jedisCluster;
-	
+
+	/**
+	 * 订阅动作专用线程池: SUBSCRIBE 会独占连接直到退订, 不能在调用线程上执行
+	 * (与 JedisPoolOperations 的订阅线程池同理由), 见 subscribe/psubscribe
+	 */
+	private static final ExecutorService SUBSCRIBE_POOL = ThreadPool.newThreadPool();
+
 	public JedisClusterOperations(JedisCluster jedisCluster) {
 		this.jedisCluster = jedisCluster;
 	}
@@ -65,7 +83,24 @@ public class JedisClusterOperations implements JedisOperations {
 	
 	@Override
 	public List<String> keys(String pattern) {
-		return jedisCluster.keys(pattern).stream().collect(toList());
+		// 2026-09-28 集群兼容修复(clauter评审 P1-4): 旧版直接调 jedisCluster.keys(pattern),
+		// 而 Jedis 对集群版 KEYS 有两道客户端限制——pattern 必须含 hash tag(否则本地抛
+		// IllegalArgumentException)、有 tag 也只路由到该 tag 的单一 slot, 结果不是全库的键。
+		// 改为向每个节点的连接池借一条连接、逐个节点执行原始 KEYS 再合并(Redis 对 KEYS 就地执行,
+		// 不做 MOVED 重定向; 从节点执行返回其副本键空间内容, 用 Set 去重)。
+		Set<String> merged = new HashSet<>();
+		for (ConnectionPool pool : jedisCluster.getClusterNodes().values()) {
+			try (Connection connection = pool.getResource()) {
+				Set<String> nodeKeys = connection.executeCommand(new CommandObject<>(
+						new CommandArguments(Protocol.Command.KEYS).add(pattern),
+						BuilderFactory.STRING_SET));
+				merged.addAll(nodeKeys);
+			} catch (Exception e) {
+				throw new JedisException(
+						"集群 keys() 在某节点执行失败, pattern=" + pattern + ": " + e.getMessage(), e);
+			}
+		}
+		return new ArrayList<>(merged);
 	}
 	
 	@Override
@@ -398,6 +433,17 @@ public class JedisClusterOperations implements JedisOperations {
 		return jedisCluster.eval(script, keyCount, params);
 	}
 	
+	/**
+	 * 集群版广播加载: 委托 jedisCluster.scriptLoad(script) —— Jedis 会向集群所有节点
+	 * (主+从, 实测 6/6)逐个 SCRIPT LOAD, 各节点返回同一 SHA。
+	 * 供无路由键的脚本(keyCount=0, 如 hash.lua 的 time 操作)使用: 随机路由到的任何节点都持有脚本,
+	 * 不会 NOSCRIPT(clauter评审 P0-3)。
+	 */
+	@Override
+	public String scriptLoad(String script) {
+		return jedisCluster.scriptLoad(script);
+	}
+
 	@Override
 	public String scriptLoad(String script, String sampleKey) {
 		return jedisCluster.scriptLoad(script, sampleKey);
@@ -440,14 +486,61 @@ public class JedisClusterOperations implements JedisOperations {
 		return jedisCluster.publish(channel, message);
 	}
 	
+	/**
+	 * 集群订阅(clauter评审 P1-5 修复): 旧实现只打一行日志不做事, 调用方无感知,
+	 * BlockingLock 等锁线程收不到解锁通知、auth 频道监听丢消息。
+	 * <p>
+	 * 原理: Redis 普通 pubsub 消息经集群总线在所有节点间转发, 在任意一个节点执行 SUBSCRIBE
+	 * 就能收到全集群的发布(Jedis 官方 UnifiedJedis.subscribe 即"取一条随机连接执行 proceed");
+	 * 这里从集群各节点连接池随机挑一个照做, 订阅线程池异步执行(SUBSCRIBE 独占连接直到退订,
+	 * 不能占用调用线程), 逐个节点尝试直到建立成功; 排队期间被取消的订阅直接放弃。
+	 */
 	@Override
 	public void subscribe(JedisPubSub jedisPubSub, String... channels) {
-		log.info("Not implemented yet!");
+		SUBSCRIBE_POOL.execute(() -> {
+			if (jedisPubSub instanceof CancellableJedisPubSub cancellable && cancellable.isCancelled()) {
+				log.debug("订阅在排队期间已被取消, 不再建立订阅: {}", String.join(",", channels));
+				return;
+			}
+			runSubscribed(jedisPubSub, "subscribe", String.join(",", channels),
+					(connection) -> jedisPubSub.proceed(connection, channels));
+		});
 	}
-	
+
+	/**
+	 * 集群模式订阅, 语义同 {@link #subscribe(JedisPubSub, String...)}
+	 */
 	@Override
 	public void psubscribe(JedisPubSub jedisPubSub, String... patterns) {
-		log.info("Not implemented yet!");
+		SUBSCRIBE_POOL.execute(() -> {
+			if (jedisPubSub instanceof CancellableJedisPubSub cancellable && cancellable.isCancelled()) {
+				log.debug("订阅在排队期间已被取消, 不再建立模式订阅: {}", String.join(",", patterns));
+				return;
+			}
+			runSubscribed(jedisPubSub, "psubscribe", String.join(",", patterns),
+					(connection) -> jedisPubSub.proceedWithPatterns(connection, patterns));
+		});
+	}
+
+	/**
+	 * 从集群各节点连接池中随机依次挑连接执行订阅动作(proceed 阻塞到退订结束),
+	 * 某节点借连接失败就换下一个; 全部失败记错误日志。
+	 */
+	private void runSubscribed(JedisPubSub jedisPubSub, String op, String targets,
+	                           java.util.function.Consumer<Connection> action) {
+		List<ConnectionPool> pools = new ArrayList<>(jedisCluster.getClusterNodes().values());
+		java.util.Collections.shuffle(pools);
+		Exception last = null;
+		for (ConnectionPool pool : pools) {
+			try (Connection connection = pool.getResource()) {
+				action.accept(connection);
+				return;
+			} catch (Exception e) {
+				last = e;
+				log.warn("集群 {} 在节点 {} 上失败, 尝试下一个节点: {}", op, pool, e.getMessage());
+			}
+		}
+		log.error("集群 {} 所有节点都失败, 订阅未建立: targets={}", op, targets, last);
 	}
 	
 	@Override
